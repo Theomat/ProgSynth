@@ -1,1 +1,33 @@
-# TODO
+import random
+import pathlib
+
+from synth.syntax.type_system import INT, FunctionType
+from synth.task import Task, Dataset
+from synth.specification import PBE, Example
+
+
+def test_dataset_save_and_load(tmp_path: pathlib.Path) -> None:
+    file_path = tmp_path / "dataset.pickle"
+    random.seed(0)
+    dataset = Dataset(
+        [
+            Task(
+                FunctionType(INT, INT, INT),
+                PBE(
+                    [
+                        Example(
+                            [random.randint(0, 100), random.randint(0, 100)],
+                            random.randint(0, 100),
+                        )
+                        for _ in range(5)
+                    ]
+                ),
+                metadata={"index": i},
+            )
+            for i in range(10)
+        ],
+        metadata={"something": False, "else": "is", "coming": 42},
+    )
+    dataset.save(file_path.as_posix())
+    loaded = Dataset[PBE].load(file_path.as_posix())
+    assert dataset == loaded
