@@ -1,0 +1,9 @@
+
+# VS code
+.vscode
+
+# Python files
+__pycache__
+
+# Pytest
+.pytest_cache
