@@ -1,12 +1,11 @@
 import pickle
 import glob
-from typing import Any, Callable, Dict, Tuple, List as TList
+from typing import List, Callable
 
 
 from synth.task import Task, Dataset
 from synth.specification import PBE, Example
-from synth.syntax.type_system import INT, FunctionType, List, Type
-from synth.syntax.program import Function, Primitive, Program, Variable
+from synth.syntax.type_system import List
 
 
 def __convert__(load: Callable[[], Dataset[PBE]], name: str) -> None:
