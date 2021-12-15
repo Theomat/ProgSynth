@@ -1,5 +1,5 @@
 import copy
-from typing import Dict, Optional, Set
+from typing import Mapping, Optional, Set
 
 from synth.syntax.type_system import Type, Arrow, List
 from synth.syntax.program import Primitive
@@ -15,7 +15,7 @@ class DSL:
 
     def __init__(
         self,
-        syntax: Dict[str, Type],
+        syntax: Mapping[str, Type],
         no_repetitions: Optional[Set[str]] = None,
     ):
         self.list_primitives = [
