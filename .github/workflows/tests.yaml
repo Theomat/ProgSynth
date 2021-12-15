@@ -59,7 +59,7 @@ jobs:
           poetry run black --check --diff .
       - name: MyPy
         run: |
-          poetry run mypy autosynth
+          poetry run mypy synth
           poetry run mypy tools
           poetry run mypy examples
       - name: Run tests
