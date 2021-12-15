@@ -14,7 +14,7 @@ T = TypeVar("T", bound=TaskSpecification)
 class Task(Generic[T]):
     type_request: Type
     specification: T
-    solution: Optional[Program]
+    solution: Optional[Program] = field(default=None)
     metadata: Dict[str, Any] = field(default_factory=lambda: {})
 
     def __str__(self) -> str:
