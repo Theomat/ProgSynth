@@ -1,4 +1,5 @@
 from synth.syntax.type_system import INT, Arrow, PolymorphicType, List
+from synth.semantic.evaluator import DSLEvaluator
 from synth.syntax.dsl import DSL
 
 t0 = PolymorphicType("t0")
@@ -28,7 +29,7 @@ def __scanl__(op):
     return aux
 
 
-semantics = {
+__semantics = {
     "HEAD": lambda l: l[0] if len(l) > 0 else None,
     "TAIL": lambda l: l[-1] if len(l) > 0 else None,
     "ACCESS": lambda i: lambda l: __access__(i, l),
@@ -129,3 +130,4 @@ __no_repetitions = {
 
 
 dsl = DSL(__primitive_types, __no_repetitions)
+evaluator = DSLEvaluator(__semantics)
