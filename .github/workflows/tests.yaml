@@ -60,8 +60,6 @@ jobs:
       - name: MyPy
         run: |
           poetry run mypy synth
-          poetry run mypy tools
-          poetry run mypy examples
       - name: Run tests
         run: |
           poetry run pytest -v
