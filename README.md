@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 
-ProgSynth is a high-level framework that enbales to leverage program synthesis for other domains such as reinforcement learning, system design...
+ProgSynth is a high-level framework that enbales to leverage program synthesis for other domains such as reinforcement learning or system design.
 
 <!-- toc -->
 
@@ -13,7 +13,7 @@ ProgSynth is a high-level framework that enbales to leverage program synthesis f
   - [From Source](#from-source)
     - [Install ProgSynth](#install-progsynth)
 - [Getting Started](#getting-started)
-- [Resources](#resources)
+- [Tools](./tools)
 - [The Team](#the-team)
 - [License](#license)
 
@@ -63,11 +63,7 @@ pip install .
 
 ## Getting Started
 
-To get started we recommend you take a look at the examples provided.
-
-## Resources
-
-TODO: see examples, tools
+You can observe the [tools](./tools) made available, they should provide you with examples use of ProgSynth.
 
 ## The Team
 
