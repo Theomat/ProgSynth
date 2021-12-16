@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Any, Dict, Generic, Iterator, List, Optional, TypeVar
-import pickle
+import _pickle as cPickle  # type: ignore
+import bz2
 
 from synth.specification import TaskSpecification
 from synth.syntax.program import Program
@@ -28,6 +29,10 @@ class Task(Generic[T]):
 
 @dataclass
 class Dataset(Generic[T]):
+    """
+    Represents a list of tasks in a given specification.
+    """
+
     tasks: List[Task[T]]
     metadata: Dict[str, Any] = field(default_factory=lambda: {})
 
@@ -38,10 +43,17 @@ class Dataset(Generic[T]):
         return self.tasks.__iter__()
 
     def save(self, path: str) -> None:
-        with open(path, "wb") as fd:
-            pickle.dump(self, fd)
+        """
+        Save this dataset in the specified file.
+        The dataset file is compressed.
+        """
+        with bz2.BZ2File(path, "w") as fd:
+            cPickle.dump(self, fd)
 
     @classmethod
     def load(cls, path: str) -> "Dataset[T]":
-        with open(path, "rb") as fd:
-            return pickle.load(fd)  # type: ignore
+        """
+        Load the dataset object stored in this file.
+        """
+        with bz2.BZ2File(path, "rb") as fd:
+            return cPickle.load(fd)  # type: ignore
