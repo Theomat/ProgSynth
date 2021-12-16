@@ -71,7 +71,7 @@ def __pcfg_from__(
 
     # At this point rules can generate all partial programs
     # Get the S to normalize by descending depth order
-    to_normalise = sorted(list(rules.keys()), key=lambda x: x[-1])
+    to_normalise = sorted(list(rules.keys()), key=lambda x: x.depth)
     # print("To normalise:", to_normalise)
     # print("To fill:", [x[1][0] for x in to_fill])
 
@@ -109,7 +109,7 @@ def __pcfg_from__(
         # The updated probabilities may not sum to 1 so we need to normalise them
         # But let ConcretePCFG do it with clean=True
 
-    min_depth: int = start[-1]
+    min_depth: int = start.depth
     program_prefix = group[0][2][: len(min_prefix)]
     # print("Program prefix=", program_prefix)
 
@@ -154,11 +154,13 @@ def __pcfg_from__(
     l += i + 1
 
     # print("start=", start)
-    min_depth = start[-1]
+    min_depth = start.depth
     program_prefix = group[0][2][:l]
 
     # Ensure rules are depth ordered
-    rules = {key: rules[key] for key in sorted(list(rules.keys()), key=lambda x: x[-1])}
+    rules = {
+        key: rules[key] for key in sorted(list(rules.keys()), key=lambda x: x.depth)
+    }
 
     # Update max depth
     max_depth: int = original_pcfg.max_program_depth - min_depth

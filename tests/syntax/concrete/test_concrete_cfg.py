@@ -25,7 +25,7 @@ def test_from_dsl() -> None:
     for max_depth in [3, 7, 11]:
         cfg = ConcreteCFG.from_dsl(dsl, FunctionType(INT, INT), max_depth)
         for rule in cfg.rules:
-            assert rule[-1] <= max_depth
+            assert rule.depth <= max_depth
             for P in cfg.rules[rule]:
                 if isinstance(P, Primitive):
                     assert P.primitive != "non_reachable"
@@ -38,7 +38,7 @@ def test_clean() -> None:
     for max_depth in [3, 7, 11]:
         cfg = ConcreteCFG.from_dsl(dsl, FunctionType(INT, INT), max_depth)
         for rule in cfg.rules:
-            assert rule[-1] <= max_depth
+            assert rule.depth <= max_depth
             for P in cfg.rules[rule]:
                 if isinstance(P, Primitive):
                     assert P.primitive != "non_reachable"

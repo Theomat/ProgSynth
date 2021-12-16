@@ -1,11 +1,17 @@
 from collections import deque
 from typing import Deque, Dict, Optional, Set, Tuple, List, Union
+from dataclasses import dataclass, field
 
 from synth.syntax.dsl import DSL
 from synth.syntax.program import Primitive, Variable
 from synth.syntax.type_system import Arrow, Type
 
-Context = Tuple[Type, Optional[List], int]
+
+@dataclass(frozen=True)
+class Context:
+    type: Type
+    predecessors: Optional[List] = field(default=None)
+    depth: int = field(default=0)
 
 
 class ConcreteCFG:
@@ -40,7 +46,7 @@ class ConcreteCFG:
             self.clean()
 
         # Find the type request
-        type_req = self.start[0]
+        type_req = self.start.type
         variables: List[Variable] = []
         for S in self.rules:
             for P in self.rules[S]:
@@ -152,8 +158,8 @@ class ConcreteCFG:
             current_type: Type, context: List, depth: int
         ) -> Context:
             if len(context) == 0:
-                return current_type, None, depth
-            return current_type, context[0], depth
+                return Context(current_type, None, depth)
+            return Context(current_type, context[0], depth)
 
         list_to_be_treated: Deque[
             Tuple[Type, List[Tuple[Primitive, int]], int]
@@ -212,7 +218,7 @@ class ConcreteCFG:
                         rules[non_terminal][P] = decorated_arguments_P
 
         return ConcreteCFG(
-            start=(return_type, None, 0),
+            start=Context(return_type, None, 0),
             rules=rules,
             max_program_depth=max_depth,
             clean=True,

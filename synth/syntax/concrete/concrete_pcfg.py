@@ -46,7 +46,7 @@ class ConcretePCFG:
             self.clean()
 
         # Compute the type request
-        type_req = self.start[0]
+        type_req = self.start.type
         variables: List[Variable] = []
         for S in self.rules:
             for P in self.rules[S]:
