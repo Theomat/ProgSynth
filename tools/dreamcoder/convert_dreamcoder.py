@@ -1,6 +1,5 @@
-import pickle
-import glob
-from typing import List, Callable
+import json
+from typing import Any, Dict, List, Callable
 
 
 from synth.task import Task, Dataset
@@ -18,20 +17,25 @@ def __convert__(load: Callable[[], Dataset[PBE]], name: str) -> None:
 
 
 def convert_dreamcoder(
-    folder: str,
+    file: str,
     output_file: str = "dreamcoder.pickle",
 ) -> None:
     def load() -> Dataset[PBE]:
         tasks: List[Task[PBE]] = []
-        for file in glob.glob(f"{folder}/*.pickle"):
-            with open(file, "rb") as fd:
-                (name, examples) = pickle.load(fd)
-                examples = [Example(list(I)[:-1], O) for I, O in examples]
+        with open(file, "rb") as fd:
+            li: List[Dict[str, Any]] = json.load(fd)
+            for task_dict in li:
+
+                examples = [
+                    Example([dico["i"]], dico["o"]) for dico in task_dict["examples"]
+                ]
                 spec = PBE(examples)
                 tasks.append(
-                    Task[PBE](spec.guess_type(), spec, metadata={"name": name})
+                    Task[PBE](
+                        spec.guess_type(), spec, metadata={"name": task_dict["name"]}
+                    )
                 )
-        return Dataset(tasks, metadata={"dataset": "dreamcoder", "source:": folder})
+        return Dataset(tasks, metadata={"dataset": "dreamcoder", "source:": file})
 
     __convert__(load, output_file)
 
@@ -49,9 +53,9 @@ if __name__ == "__main__":
 
     argument_parser.add_argument(
         type=str,
-        dest="folder",
+        dest="file",
         action="store",
-        help="Source folder containing dreamcoder tasks to be converted",
+        help="Source JSON file containing dreamcoder tasks to be converted",
     )
     argument_parser.add_argument(
         "-o",
@@ -62,4 +66,4 @@ if __name__ == "__main__":
         help=f"Output dataset file in ProgSynth format (default: '{argument_default_values['output']}')",
     )
     parsed_parameters = argument_parser.parse_args()
-    convert_dreamcoder(parsed_parameters.folder, parsed_parameters.output)
+    convert_dreamcoder(parsed_parameters.file, parsed_parameters.output)
