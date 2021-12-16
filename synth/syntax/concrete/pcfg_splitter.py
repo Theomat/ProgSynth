@@ -245,8 +245,11 @@ def __is_fixing_any_hole__(
 def __are_compatible__(pcfg: ConcretePCFG, node1: NodeData, node2: NodeData) -> bool:
     """
     Two nodes prefix are compatible if one does not fix a context for the other.
-    TODO: find example
-    e.g. something -> *  and something -> map are incompatible because the latter implies that after something it must be map whereas the former implies that it can be anything including map. If there was no intersection they would have been compatible.
+    e.g. a -> b -> map -> *  and c -> b -> map -> +1 -> * are incompatible.
+
+    In both cases map have the same context (bigram context) which is ((predecessor=b, argument=0), depth=2) thus are indistinguishables.
+    However in the former all derivations are allowed in this context whereas in the latter +1 must be derived.
+    Thus we cannot create a CFG that enables both.
     """
     holes1 = __holes_of__(pcfg, node1)
     if __is_fixing_any_hole__(pcfg, node2, holes1):
