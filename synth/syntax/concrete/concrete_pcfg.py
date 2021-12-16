@@ -77,7 +77,7 @@ class ConcretePCFG:
     def __hash__(self) -> int:
         return self.hash
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         s = "Print a PCFG\n"
         s += "start: {}\n".format(self.start)
         for S in reversed(self.rules):

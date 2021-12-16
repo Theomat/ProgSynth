@@ -23,7 +23,7 @@ class DSL:
         ]
         self.no_repetitions: Set[str] = no_repetitions or set()
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         s = "Print a DSL\n"
         for P in self.list_primitives:
             s = s + "{}: {}\n".format(P, P.type)

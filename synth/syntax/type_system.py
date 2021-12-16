@@ -89,7 +89,7 @@ class PolymorphicType(Type):
         self.name = name
         self.hash = hash(name)
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return format(self.name)
 
     def __eq__(self, o: object) -> bool:
@@ -116,7 +116,7 @@ class PrimitiveType(Type):
         self.type_name = type_name
         self.hash = hash(type_name)
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return format(self.type_name)
 
     def __eq__(self, o: object) -> bool:
@@ -142,7 +142,7 @@ class Arrow(Type):
         self.type_out = type_out
         self.hash = hash((type_in.hash, type_out.hash))
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         rep_in = format(self.type_in)
         rep_out = format(self.type_out)
         return "({} -> {})".format(rep_in, rep_out)
@@ -198,7 +198,7 @@ class List(Type):
         self.element_type = element_type
         self.hash = hash(18923 + element_type.hash)
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         if isinstance(self.element_type, Arrow):
             return "list{}".format(self.element_type)
         else:
@@ -237,7 +237,7 @@ class UnknownType(Type):
     def __init__(self) -> None:
         self.hash = 1984
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return "UnknownType"
 
     def __eq__(self, __o: object) -> bool:

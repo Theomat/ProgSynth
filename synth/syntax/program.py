@@ -50,7 +50,7 @@ class Variable(Program):
         if self.variable in vars:
             vars.remove(self.variable)
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return "var" + format(self.variable)
 
     def __eq__(self, other: Any) -> bool:
@@ -69,7 +69,7 @@ class Constant(Program):
         self.value = value
         self.type: Type = type
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return format(self.value)
 
     def is_constant(self) -> bool:
@@ -99,7 +99,7 @@ class Function(Program):
         self.function = function
         self.arguments = arguments
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         if len(self.arguments) == 0:
             return format(self.function)
         else:
@@ -156,7 +156,7 @@ class Lambda(Program):
         super().__init__(type, hash(94135 + body.hash))
         self.body = body
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return "(lambda " + format(self.body) + ")"
 
     def __eq__(self, other: Any) -> bool:
@@ -178,7 +178,7 @@ class Primitive(Program):
         super().__init__(type, hash(primitive) + type.hash)
         self.primitive = primitive
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         """
         representation without type
         """

@@ -117,7 +117,7 @@ class ConcreteCFG:
             if S not in reachable:
                 del self.rules[S]
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         s = "Print a ConcreteCFG\n"
         s += "start: {}\n".format(self.start)
         for S in reversed(self.rules):
