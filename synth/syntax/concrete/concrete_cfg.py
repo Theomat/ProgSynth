@@ -1,5 +1,5 @@
 from collections import deque
-from typing import Deque, Dict, Optional, Set, Tuple, List, Union
+from typing import Deque, Dict, Set, Tuple, List, Union
 from dataclasses import dataclass, field
 
 from synth.syntax.dsl import DSL
@@ -10,8 +10,11 @@ from synth.syntax.type_system import Arrow, Type
 @dataclass(frozen=True)
 class Context:
     type: Type
-    predecessors: Optional[List] = field(default=None)
+    predecessors: List[Tuple[Primitive, int]] = field(default_factory=lambda: [])
     depth: int = field(default=0)
+
+    def __hash__(self) -> int:
+        return hash((self.type, tuple(self.predecessors), self.depth))
 
 
 class ConcreteCFG:
@@ -138,6 +141,7 @@ class ConcreteCFG:
         max_depth: int,
         upper_bound_type_size: int = 10,
         min_variable_depth: int = 1,
+        n_gram: int = 2,
     ) -> "ConcreteCFG":
         """
         Constructs a CFG from a DSL imposing bounds on size of the types
@@ -154,24 +158,15 @@ class ConcreteCFG:
 
         rules: Dict[Context, Dict[Union[Variable, Primitive], List]] = {}
 
-        def encode_non_terminal(
-            current_type: Type, context: List, depth: int
-        ) -> Context:
-            if len(context) == 0:
-                return Context(current_type, None, depth)
-            return Context(current_type, context[0], depth)
-
-        list_to_be_treated: Deque[
-            Tuple[Type, List[Tuple[Primitive, int]], int]
-        ] = deque()
-        list_to_be_treated.append((return_type, [], 0))
+        list_to_be_treated: Deque[Context] = deque()
+        list_to_be_treated.append(Context(return_type, [], 0))
 
         while len(list_to_be_treated) > 0:
-            current_type, context, depth = list_to_be_treated.pop()
-            non_terminal = encode_non_terminal(current_type, context, depth)
+            non_terminal = list_to_be_treated.pop()
+            depth = non_terminal.depth
+            current_type = non_terminal.type
             # a non-terminal is a triple (type, context, depth)
             # context is a list of (primitive, number_argument)
-            # print("\ncollecting from the non-terminal ", non_terminal)
 
             # Create rule if non existent
             if non_terminal not in rules:
@@ -194,8 +189,8 @@ class ConcreteCFG:
                 for P in dsl.list_primitives:
                     if (
                         P.primitive in dsl.no_repetitions
-                        and len(context) > 0
-                        and context[0][0].primitive == P.primitive
+                        and len(non_terminal.predecessors) > 0
+                        and non_terminal.predecessors[0][0].primitive == P.primitive
                     ):
                         continue
                     type_P = P.type
@@ -203,22 +198,18 @@ class ConcreteCFG:
                     if arguments_P is not None:
                         decorated_arguments_P = []
                         for i, arg in enumerate(arguments_P):
-                            new_context = context.copy()
-                            new_context = [(P, i)] + new_context
-                            if len(new_context) > 1:
-                                new_context.pop()
-                            decorated_arguments_P.append(
-                                encode_non_terminal(arg, new_context, depth + 1)
-                            )
-                            if (arg, new_context, depth + 1) not in list_to_be_treated:
-                                list_to_be_treated.appendleft(
-                                    (arg, new_context, depth + 1)
-                                )
+                            new_predecessors = [(P, i)] + non_terminal.predecessors
+                            if len(new_predecessors) > n_gram - 1:
+                                new_predecessors.pop()
+                            new_context = Context(arg, new_predecessors, depth + 1)
+                            decorated_arguments_P.append(new_context)
+                            if new_context not in list_to_be_treated:
+                                list_to_be_treated.appendleft(new_context)
 
                         rules[non_terminal][P] = decorated_arguments_P
 
         return ConcreteCFG(
-            start=Context(return_type, None, 0),
+            start=Context(return_type, [], 0),
             rules=rules,
             max_program_depth=max_depth,
             clean=True,
