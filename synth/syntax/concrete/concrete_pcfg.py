@@ -77,6 +77,13 @@ class ConcretePCFG:
     def __hash__(self) -> int:
         return self.hash
 
+    def __eq__(self, o: object) -> bool:
+        return (
+            isinstance(o, ConcretePCFG)
+            and self.type_request == o.type_request
+            and self.rules == o.rules
+        )
+
     def __str__(self) -> str:
         s = "Print a PCFG\n"
         s += "start: {}\n".format(self.start)
