@@ -62,9 +62,12 @@ class ListSampler(Sampler[TList]):
 
 
 class UnionSampler(Sampler[Any]):
-    def __init__(self, samplers: Dict[Type, Sampler]) -> None:
+    def __init__(self, samplers: Dict[Type, Sampler], fallback: Optional[Sampler] = None) -> None:
         super().__init__()
         self.samplers = samplers
+        self.fallback = fallback
 
     def sample(self, type: Type, **kwargs: Any) -> Any:
-        return self.samplers[type].sample(**kwargs)
+        sampler = self.samplers.get(type, self.fallback)
+        assert sampler
+        return sampler.sample(type, **kwargs)
