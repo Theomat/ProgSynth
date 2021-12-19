@@ -52,7 +52,7 @@ class ListSampler(Sampler[TList]):
         self.sampler = vose.Sampler(np.array([p for _, p in correct_prob]), seed=seed)
 
     def sample(self, type: Type, **kwargs: Any) -> TList:
-        assert self.max_depth < 0 and type.depth() <= self.max_depth
+        assert self.max_depth < 0 or type.depth() <= self.max_depth
         assert isinstance(type, List)
         sampler: Sampler = self
         if not isinstance(type.element_type, List):
