@@ -34,7 +34,7 @@ class LexiconSampler(Sampler[U]):
         return self.lexicon[index]
 
 
-class ListSampler(Sampler[TList]):
+class ListSampler(Sampler[Union[TList, U]]):
     def __init__(
         self,
         element_sampler: Sampler[U],
@@ -51,18 +51,22 @@ class ListSampler(Sampler[TList]):
         self._length_mapping = [n for n, _ in correct_prob]
         self.sampler = vose.Sampler(np.array([p for _, p in correct_prob]), seed=seed)
 
-    def sample(self, type: Type, **kwargs: Any) -> TList:
+    def sample(self, type: Type, **kwargs: Any) -> Union[TList, U]:
         assert self.max_depth < 0 or type.depth() <= self.max_depth
-        assert isinstance(type, List)
-        sampler: Sampler = self
-        if not isinstance(type.element_type, List):
-            sampler = self.element_sampler
-        length: int = self._length_mapping[self.sampler.sample()]
-        return [sampler.sample(type.element_type, **kwargs) for _ in range(length)]
+        if isinstance(type, List):
+            sampler: Sampler = self
+            if not isinstance(type.element_type, List):
+                sampler = self.element_sampler
+            length: int = self._length_mapping[self.sampler.sample()]
+            return [sampler.sample(type.element_type, **kwargs) for _ in range(length)]
+        else:
+            return self.element_sampler.sample(type, **kwargs)
 
 
 class UnionSampler(Sampler[Any]):
-    def __init__(self, samplers: Dict[Type, Sampler], fallback: Optional[Sampler] = None) -> None:
+    def __init__(
+        self, samplers: Dict[Type, Sampler], fallback: Optional[Sampler] = None
+    ) -> None:
         super().__init__()
         self.samplers = samplers
         self.fallback = fallback
