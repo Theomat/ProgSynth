@@ -1,9 +1,16 @@
 from heapq import heappush, heappop
-from typing import Dict, Generator, List, Optional, Set, Tuple
+from typing import Dict, Generator, List, Optional, Set
+from dataclasses import dataclass, field
 
 from synth.syntax.program import Program, Function, Variable
 from synth.syntax.concrete.concrete_cfg import Context
 from synth.syntax.concrete.concrete_pcfg import ConcretePCFG
+
+
+@dataclass(order=True, frozen=True)
+class HeapElement:
+    priority: float
+    program: Program = field(compare=False)
 
 
 def enumerate(G: ConcretePCFG) -> Generator[Program, None, None]:
@@ -36,9 +43,7 @@ class heap_search_object:
         self.symbols = [S for S in self.rules]
 
         # self.heaps[S] is a heap containing programs generated from the non-terminal S
-        self.heaps: Dict[Context, List[Tuple[float, Program]]] = {
-            S: [] for S in self.symbols
-        }
+        self.heaps: Dict[Context, List[HeapElement]] = {S: [] for S in self.symbols}
 
         # the same program can be pushed in different heaps, with different probabilities
         # however, the same program cannot be pushed twice in the same heap
@@ -64,7 +69,6 @@ class heap_search_object:
         ## 1. add P(max(S1),max(S2), ...) to self.heaps[S] for all S -> P(S1, S2, ...)
         for S in reversed(self.rules):
             for P in self.rules[S]:
-                args_P, w = self.rules[S][P]
                 program = self.G.max_probability[(S, P)]
                 hash_program = program.hash
 
@@ -80,7 +84,7 @@ class heap_search_object:
                 # print("adding to the heap", program, program.probability[S])
                 heappush(
                     self.heaps[S],
-                    (-self.probabilities[program][S], program),
+                    HeapElement(-self.probabilities[program][S], program),
                 )
 
         # 2. call query(S, None) for all non-terminal symbols S, from leaves to root
@@ -114,7 +118,8 @@ class heap_search_object:
 
         # otherwise the successor is the next element in the heap
         try:
-            _, succ = heappop(self.heaps[S])
+            element = heappop(self.heaps[S])
+            succ = element.program
             # print("found succ in the heap", S, program, succ)
         except:
             return None  # the heap is empty: there are no successors from S
@@ -143,7 +148,7 @@ class heap_search_object:
                         probability = self.G.rules[S][F][1]
                         for arg, S3 in zip(new_arguments, self.G.rules[S][F][0]):
                             probability *= self.probabilities[arg][S3]
-                        heappush(self.heaps[S], (-probability, new_program))
+                        heappush(self.heaps[S], HeapElement(-probability, new_program))
                         self.probabilities[new_program][S] = probability
 
         if isinstance(succ, Variable):
