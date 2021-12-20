@@ -16,6 +16,12 @@ class Context:
     def __hash__(self) -> int:
         return hash((self.type, tuple(self.predecessors), self.depth))
 
+    def __str__(self) -> str:
+        return f"({self.type}, {self.depth}, {self.predecessors})"
+
+    def __repr__(self) -> str:
+        return self.__str__()
+
 
 class ConcreteCFG:
     """
