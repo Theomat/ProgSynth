@@ -109,7 +109,7 @@ class ConcretePCFG:
                 np.array(
                     [self.rules[S][P][1] for P in self.list_derivations[S]], dtype=float
                 ),
-                seed,
+                seed=seed,
             )
 
     def __sort__(self) -> None:
