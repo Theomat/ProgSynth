@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Generic, List as TList, Optional, Tuple, TypeVar, Union
+from typing import Any, Dict, Generic, Iterable, List as TList, Optional, Tuple, TypeVar, Union
 import copy
 
 import numpy as np
@@ -21,7 +21,7 @@ class LexiconSampler(Sampler[U]):
     def __init__(
         self,
         lexicon: TList[U],
-        probabilites: Optional[TList[float]] = None,
+        probabilites: Optional[Iterable[float]] = None,
         seed: Optional[int] = None,
     ) -> None:
         super().__init__()
