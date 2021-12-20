@@ -21,6 +21,9 @@ class Type(ABC):
     def __hash__(self) -> int:
         return self.hash
 
+    def __repr__(self) -> str:
+        return self.__str__()
+
     def is_polymorphic(self) -> bool:
         return False
 

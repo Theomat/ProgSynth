@@ -15,6 +15,9 @@ class Program:
     def __hash__(self) -> int:
         return self.hash
 
+    def __repr__(self) -> str:
+        return self.__str__()
+
     def is_using_all_variables(self, variables: int) -> bool:
         l = list(range(variables))
         self.__remove_used_variables__(l)
