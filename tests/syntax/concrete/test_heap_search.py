@@ -23,22 +23,22 @@ syntax = {
 
 def test_unicity() -> None:
     dsl = DSL(syntax)
-    for max_depth in [3, 7, 11]:
-        cfg = ConcreteCFG.from_dsl(dsl, FunctionType(INT, INT), max_depth)
-        pcfg = ConcretePCFG.uniform_from_cfg(cfg)
-        seen = set()
-        for program in enumerate(pcfg):
-            assert program not in seen
-            seen.add(program)
+    max_depth = 3
+    cfg = ConcreteCFG.from_dsl(dsl, FunctionType(INT, INT), max_depth)
+    pcfg = ConcretePCFG.uniform_from_cfg(cfg)
+    seen = set()
+    for program in enumerate(pcfg):
+        assert program not in seen
+        seen.add(program)
 
 
 def test_order() -> None:
     dsl = DSL(syntax)
-    for max_depth in [3, 7, 11]:
-        cfg = ConcreteCFG.from_dsl(dsl, FunctionType(INT, INT), max_depth)
-        pcfg = ConcretePCFG.uniform_from_cfg(cfg)
-        last = 1.0
-        for program in enumerate(pcfg):
-            p = pcfg.probability_program(pcfg.start, program)
-            assert p <= last
-            last = p
+    max_depth = 3
+    cfg = ConcreteCFG.from_dsl(dsl, FunctionType(INT, INT), max_depth)
+    pcfg = ConcretePCFG.uniform_from_cfg(cfg)
+    last = 1.0
+    for program in enumerate(pcfg):
+        p = pcfg.probability_program(pcfg.start, program)
+        assert p <= last
+        last = p
