@@ -1,4 +1,6 @@
 from typing import Callable, Dict, Generator, List, Optional, Set, Tuple, Union
+from collections import defaultdict
+
 import numpy as np
 
 import vose
@@ -191,7 +193,7 @@ class ConcretePCFG:
             Union[Context, Tuple[Context, Program]], Program
         ] = {}
 
-        probabilities: Dict[Program, Dict[Context, float]] = {}
+        probabilities: Dict[Program, Dict[Context, float]] = defaultdict(lambda: {})
 
         for S in reversed(self.rules):
             best_program = None
