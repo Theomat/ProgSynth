@@ -96,6 +96,9 @@ class ConcretePCFG:
                 s += "   {} - {}: {}     {}\n".format(P, P.type, args_P, w)
         return s
 
+    def __repr__(self) -> str:
+        return self.__str__()
+
     def init_sampling(self, seed: Optional[int] = None) -> None:
         self.ready_for_sampling = True
         self.vose_samplers = {}
