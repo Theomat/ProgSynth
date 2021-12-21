@@ -18,7 +18,10 @@ class DSLEvaluator(Evaluator):
         self._cache: Dict[Any, Dict[Program, Any]] = {}
 
     def eval(self, program: Program, input: List) -> Any:
-        evaluations: Dict[Program, Any] = self._cache[input] if self.use_cache else {}
+        key = tuple(input)
+        if key not in self._cache and self.use_cache:
+            self._cache[key] = {}
+        evaluations: Dict[Program, Any] = self._cache[key] if self.use_cache else {}
         for sub_prog in program.depth_first_iter():
             if sub_prog in evaluations:
                 continue
