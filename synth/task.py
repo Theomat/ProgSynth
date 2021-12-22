@@ -1,5 +1,15 @@
 from dataclasses import dataclass, field
-from typing import Any, Dict, Generic, Iterator, List, Optional, TypeVar
+from typing import (
+    Any,
+    Dict,
+    Generic,
+    Iterator,
+    List,
+    Optional,
+    SupportsIndex,
+    TypeVar,
+    overload,
+)
 import _pickle as cPickle  # type: ignore
 import bz2
 
@@ -41,6 +51,17 @@ class Dataset(Generic[T]):
 
     def __iter__(self) -> Iterator[Task[T]]:
         return self.tasks.__iter__()
+
+    @overload
+    def __getitem__(self, key: SupportsIndex) -> Task[T]:
+        pass
+
+    @overload
+    def __getitem__(self, key: slice) -> List[Task[T]]:
+        pass
+
+    def __getitem__(self, key: Any) -> Any:
+        return self.tasks.__getitem__(key)
 
     def save(self, path: str) -> None:
         """
