@@ -1,6 +1,5 @@
-from synth.syntax.type_system import INT, Arrow, PolymorphicType, List
-from synth.semantic.evaluator import DSLEvaluator
-from synth.syntax.dsl import DSL
+from synth.semantic import DSLEvaluator
+from synth.syntax import DSL, INT, Arrow, PolymorphicType, List
 
 t0 = PolymorphicType("t0")
 t1 = PolymorphicType("t1")

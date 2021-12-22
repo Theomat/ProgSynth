@@ -3,10 +3,17 @@ from typing import Any, Callable, Dict, Tuple, List as TList
 
 import tqdm
 
-from synth.task import Task, Dataset
-from synth.specification import PBE, Example
-from synth.syntax.type_system import INT, FunctionType, List, Type
-from synth.syntax.program import Function, Primitive, Program, Variable
+from synth import Task, Dataset, PBE, Example
+from synth.syntax import (
+    INT,
+    FunctionType,
+    List,
+    Type,
+    Function,
+    Primitive,
+    Program,
+    Variable,
+)
 
 from deepcoder import dsl
 
@@ -16,7 +23,7 @@ name2type = {p.primitive: p.type for p in dsl.list_primitives}
 def __convert__(load: Callable[[], Dataset[PBE]], name: str) -> None:
     tasks = load()
     tasks.save(name)
-    sols = len([0 for t in tasks if t.solution])
+    sols = sum(1 for t in tasks if t.solution)
     print(
         f"Converted {len(tasks)} tasks {int(100 * sols / len(tasks))}% containing solutions"
     )
@@ -37,7 +44,11 @@ def convert_deepcoder(
                 outputs: TList = [raw_example["output"] for raw_example in raw_examples]
 
                 prog, type_request = __deepcoder_str2prog(name)
-                examples = [Example(inp, out) for inp, out in zip(inputs, outputs) if out is not None]
+                examples = [
+                    Example(inp, out)
+                    for inp, out in zip(inputs, outputs)
+                    if out is not None
+                ]
                 if len(examples) < len(inputs):
                     continue
                 tasks.append(

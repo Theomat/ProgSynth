@@ -1,6 +1,5 @@
-from synth.syntax.type_system import PolymorphicType, Arrow, INT, BOOL, List
-from synth.semantic.evaluator import DSLEvaluator
-from synth.syntax.dsl import DSL
+from synth.syntax import PolymorphicType, Arrow, INT, BOOL, List, DSL
+from synth.semantic import DSLEvaluator
 
 import math
 from functools import reduce

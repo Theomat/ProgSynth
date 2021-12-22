@@ -3,9 +3,7 @@ from typing import Any, Dict, List, Callable
 
 import tqdm
 
-from synth.task import Task, Dataset
-from synth.specification import PBE, Example
-from synth.syntax.type_system import List
+from synth import Task, Dataset, PBE, Example
 
 
 def __convert__(load: Callable[[], Dataset[PBE]], name: str) -> None:
