@@ -1,4 +1,4 @@
-from synth.utils import make_deterministic_hash, to_partial_fun
+from synth.utils import make_deterministic_hash, to_partial_fun, gen_take
 
 
 def test_deterministic() -> None:
@@ -12,3 +12,9 @@ def test_to_partial_fun() -> None:
         plusa = plus(a)
         for b in range(20):
             assert a + b == plusa(b)
+
+def test_gen_take() -> None:
+    g = (x for x in range(10000))
+    for i in range(10):
+        l = gen_take(g, 100)
+        assert l == list(range(i * 100, (i + 1) * 100))

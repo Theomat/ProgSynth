@@ -1,5 +1,5 @@
 import os
-from typing import Any, Callable, List
+from typing import Any, Callable, Generator, List, TypeVar
 
 
 def make_deterministic_hash() -> None:
@@ -31,3 +31,19 @@ def to_partial_fun(f: Callable, nargs: int) -> Callable:
         return lambda y: partial(y, li)
 
     return lambda x: partial(x, [])
+
+
+T = TypeVar("T")
+
+
+def gen_take(gen: Generator[T, Any, Any], n: int) -> List[T]:
+    """
+    Take the first n elements of a generator and return them as a list.
+    """
+    out: List[T] = []
+    try:
+        for _ in range(n):
+            out.append(next(gen))
+    except StopIteration:
+        pass
+    return out
