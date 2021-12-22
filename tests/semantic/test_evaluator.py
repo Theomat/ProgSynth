@@ -1,6 +1,6 @@
 from synth.syntax.concrete.concrete_cfg import ConcreteCFG
 from synth.syntax.concrete.concrete_pcfg import ConcretePCFG
-from synth.semantic.evaluator import DSLEvaluator
+from synth.semantic.evaluator import DSLEvaluator, __tuplify__
 from synth.syntax.dsl import DSL
 from synth.syntax.type_system import (
     INT,
@@ -39,6 +39,18 @@ def test_eval() -> None:
         except Exception as e:
             assert False, e
 
+def test_supports_list() -> None:
+    eval = DSLEvaluator(semantics)
+    pcfg = ConcretePCFG.uniform_from_cfg(cfg)
+    pcfg.init_sampling(0)
+    for _ in range(100):
+        program = pcfg.sample_program()
+        try:
+            for i in range(-25, 25):
+                assert eval.eval(program, [i, [i]]) == program.length() + i - 1
+        except Exception as e:
+            assert False, e
+
 
 def test_use_cache() -> None:
     eval = DSLEvaluator(semantics)
@@ -49,6 +61,6 @@ def test_use_cache() -> None:
         try:
             for i in range(-25, 25):
                 assert eval.eval(program, [i]) == program.length() + i - 1
-                assert eval._cache[tuple([i])][program] == program.length() + i - 1
+                assert eval._cache[__tuplify__([i])][program] == program.length() + i - 1
         except Exception as e:
             assert False, e

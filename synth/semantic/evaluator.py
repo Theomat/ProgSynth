@@ -10,6 +10,13 @@ class Evaluator(ABC):
         pass
 
 
+def __tuplify__(element: Any) -> Any:
+    if isinstance(element, List):
+        return tuple(__tuplify__(x) for x in element)
+    else:
+        return element
+
+
 class DSLEvaluator(Evaluator):
     def __init__(self, semantics: Dict[str, Any], use_cache: bool = True) -> None:
         super().__init__()
@@ -18,7 +25,7 @@ class DSLEvaluator(Evaluator):
         self._cache: Dict[Any, Dict[Program, Any]] = {}
 
     def eval(self, program: Program, input: List) -> Any:
-        key = tuple(input)
+        key = __tuplify__(input)
         if key not in self._cache and self.use_cache:
             self._cache[key] = {}
         evaluations: Dict[Program, Any] = self._cache[key] if self.use_cache else {}
