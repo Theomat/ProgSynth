@@ -112,5 +112,7 @@ class UnionSampler(RequestSampler[Any]):
 
     def sample_for(self, type: Type, **kwargs: Any) -> Any:
         sampler = self.samplers.get(type, self.fallback)
-        assert sampler
+        assert (
+            sampler
+        ), f"UnionSampler: No sampler found for type {type} in {self.samplers}"
         return sampler.sample(type=type, **kwargs)
