@@ -1,6 +1,7 @@
 import json
 from typing import Any, Callable, Dict, Tuple, List as TList
 
+import tqdm
 
 from synth.task import Task, Dataset
 from synth.specification import PBE, Example
@@ -29,7 +30,7 @@ def convert_deepcoder(
         tasks: TList[Task[PBE]] = []
         with open(file, "r") as fd:
             raw_tasks: TList[Dict[str, Any]] = json.load(fd)
-            for raw_task in raw_tasks:
+            for raw_task in tqdm.tqdm(raw_tasks, desc="converting"):
                 name: str = raw_task["program"]
                 raw_examples: TList[Dict[str, Any]] = raw_task["examples"]
                 inputs = [raw_example["inputs"] for raw_example in raw_examples]
