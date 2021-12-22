@@ -144,7 +144,7 @@ def reproduce_dataset(
         if isinstance(type, List):
             elt_type = type.element_type
             if len(element) > 0:
-                __multi_discrete_distribution__(list_length, elt_type, len(element))
+                __multi_discrete_distribution__(list_length, type, len(element))
                 for el in element:
                     analyze(el, elt_type, depth + 1)
         elif element:
