@@ -41,7 +41,7 @@ def test_gen() -> None:
         DSLEvaluator(semantics),
         LexiconSampler([type_req], seed=0),
         LexiconSampler(samples_lexicon, [0.25, 0.5, 0.25], seed=0),
-        {type_req: pcfg},
+        {pcfg},
         validator,
     )
     for _ in range(100):
@@ -64,7 +64,7 @@ def test_seed() -> None:
         DSLEvaluator(semantics),
         LexiconSampler([type_req], seed=0),
         LexiconSampler([2, 3, 4], [0.25, 0.5, 0.25], seed=0),
-        {type_req: pcfg},
+        {pcfg},
         validator,
     )
     pcfg = ConcretePCFG.uniform_from_cfg(ConcreteCFG.from_dsl(dsl, type_req, max_depth))
@@ -74,7 +74,7 @@ def test_seed() -> None:
         DSLEvaluator(semantics),
         LexiconSampler([type_req], seed=0),
         LexiconSampler([2, 3, 4], [0.25, 0.5, 0.25], seed=0),
-        {type_req: pcfg},
+        {pcfg},
         validator,
     )
     for _ in range(100):

@@ -1,4 +1,13 @@
-from typing import Callable, Dict, Generator, List as TList, Any, Optional, Tuple
+from typing import (
+    Callable,
+    Dict,
+    Generator,
+    Iterable,
+    List as TList,
+    Any,
+    Optional,
+    Tuple,
+)
 
 import numpy as np
 
@@ -26,7 +35,7 @@ class TaskGenerator:
         evaluator: Evaluator,
         gen_random_type_request: Sampler[Type],
         gen_random_sample_number: Sampler[int],
-        type2pcfg: Dict[Type, ConcretePCFG],
+        pcfgs: Iterable[ConcretePCFG],
         output_validator: Callable[[Any], bool],
         max_tries: int = 100,
     ) -> None:
@@ -34,7 +43,7 @@ class TaskGenerator:
         self.evaluator = evaluator
         self.gen_random_type_request = gen_random_type_request
         self.gen_random_sample_number = gen_random_sample_number
-        self.type2pcfg = type2pcfg
+        self.type2pcfg = {pcfg.type_request: pcfg for pcfg in pcfgs}
         self.max_tries = max_tries
         self.output_validator = output_validator
         # For statistics
@@ -187,11 +196,11 @@ def reproduce_dataset(
 
     int_lexicon = list(range(int_range[0], int_range[1] + 1))
 
-    type2PCFG = {
-        t: ConcretePCFG.uniform_from_cfg(ConcreteCFG.from_dsl(dsl, t, max_depth))
+    pcfgs = {
+        ConcretePCFG.uniform_from_cfg(ConcreteCFG.from_dsl(dsl, t, max_depth))
         for t in allowed_types
     }
-    for pcfg in type2PCFG.values():
+    for pcfg in pcfgs:
         pcfg.init_sampling(seed)
 
     input_sampler = ListSampler(
@@ -212,7 +221,7 @@ def reproduce_dataset(
             evaluator,
             type_sampler,
             no_samples_gen,
-            type2PCFG,
+            pcfgs,
             basic_output_validator(
                 int_lexicon, max(max(l.keys()) for l in list_length.values())
             ),
