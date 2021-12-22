@@ -2,6 +2,7 @@ import random
 import pathlib
 
 from synth.syntax.type_system import INT, FunctionType
+from synth.syntax.program import Variable
 from synth.task import Task, Dataset
 from synth.specification import PBE, Example
 
@@ -22,9 +23,10 @@ def test_dataset_save_and_load(tmp_path: pathlib.Path) -> None:
                         for _ in range(5)
                     ]
                 ),
+                Variable(0, INT) if random.random() > .5 else None,
                 metadata={"index": i},
             )
-            for i in range(10)
+            for i in range(100)
         ],
         metadata={"something": False, "else": "is", "coming": 42},
     )
