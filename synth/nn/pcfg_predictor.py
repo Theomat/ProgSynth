@@ -1,4 +1,4 @@
-from typing import Dict, Iterable, List, Tuple, Optional
+from typing import Callable, Dict, Iterable, List, Tuple, Optional
 
 import numpy as np
 
@@ -224,3 +224,17 @@ class BigramsPredictorLayer(nn.Module):
                     rules[S][O] = rules[S][O][0], rules[S][O][1] + to_add
         grammar = ConcreteLogPCFG(cfg.start, rules, cfg.max_program_depth, type_request)
         return grammar
+
+
+def loss_negative_log_prob(
+    programs: Iterable[Program],
+    log_pcfgs: Iterable[ConcreteLogPCFG],
+    reduce: Optional[Callable[[Tensor], Tensor]] = torch.mean,
+) -> Tensor:
+    log_prob_list = [
+        log_pcfg.probability_program(p) for p, log_pcfg in zip(programs, log_pcfgs)
+    ]
+    out = -torch.stack(log_prob_list)
+    if reduce:
+        out = reduce(out)
+    return out
