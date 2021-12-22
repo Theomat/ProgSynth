@@ -138,7 +138,7 @@ def reproduce_dataset(
     int_range: TList[int] = [999999999, 0]
     int_range[1] = -int_range[0]
 
-    def analyze(element: Any, type: Type, depth: int = 0) -> None:
+    def analyze(element: Any, type: Type, depth: int = 1) -> None:
         if depth > max_list_depth[0]:
             max_list_depth[0] = depth
         if isinstance(type, List):
