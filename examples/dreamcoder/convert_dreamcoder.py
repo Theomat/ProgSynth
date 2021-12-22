@@ -1,6 +1,7 @@
 import json
 from typing import Any, Dict, List, Callable
 
+import tqdm
 
 from synth.task import Task, Dataset
 from synth.specification import PBE, Example
@@ -24,7 +25,7 @@ def convert_dreamcoder(
         tasks: List[Task[PBE]] = []
         with open(file, "rb") as fd:
             li: List[Dict[str, Any]] = json.load(fd)
-            for task_dict in li:
+            for task_dict in tqdm.tqdm(li, desc="converting"):
 
                 examples = [
                     Example([dico["i"]], dico["o"]) for dico in task_dict["examples"]
