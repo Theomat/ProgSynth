@@ -124,7 +124,7 @@ def reproduce_dataset(
     evaluator: Evaluator,
     seed: Optional[int] = None,
     max_tries: int = 100,
-    int_bound: int = 1000
+    int_bound: int = 1000,
 ) -> Tuple[TaskGenerator, TList[int]]:
 
     max_depth = -1

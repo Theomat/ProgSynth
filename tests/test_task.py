@@ -23,7 +23,7 @@ def test_dataset_save_and_load(tmp_path: pathlib.Path) -> None:
                         for _ in range(5)
                     ]
                 ),
-                Variable(0, INT) if random.random() > .5 else None,
+                Variable(0, INT) if random.random() > 0.5 else None,
                 metadata={"index": i},
             )
             for i in range(100)
