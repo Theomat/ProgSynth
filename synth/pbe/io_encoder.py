@@ -12,7 +12,7 @@ class IOEncoder(SpecificationEncoder[PBE, Tensor]):
     def __init__(self, output_dimension: int, lexicon: List[Any]) -> None:
         self.output_dimension = output_dimension
 
-        self.specialSymbols = [
+        self.special_symbols = [
             "STARTING",  # start of entire sequence
             "ENDOFINPUT",  # delimits the ending of an input - we might have multiple inputs
             "STARTOFOUTPUT",  # begins the start of the output
@@ -20,8 +20,8 @@ class IOEncoder(SpecificationEncoder[PBE, Tensor]):
             "STARTOFLIST",
             "ENDOFLIST",
         ]
-        self.lexicon = lexicon + self.specialSymbols
-        self.lexicon_size = len(lexicon)
+        self.lexicon = lexicon + self.special_symbols
+        self.non_special_lexicon_size = len(lexicon)
         self.symbol2index = {symbol: index for index, symbol in enumerate(self.lexicon)}
         self.starting_index = self.symbol2index["STARTING"]
         self.end_of_input_index = self.symbol2index["ENDOFINPUT"]
