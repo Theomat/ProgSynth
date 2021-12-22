@@ -23,7 +23,7 @@ cfg = ConcreteCFG.from_dsl(dsl, INT, 4)  # FunctionType(INT, INT), 4)
 
 
 def test_forward() -> None:
-    layer = BigramsPredictorLayer(50, {cfg.type_request: cfg}, dsl)
+    layer = BigramsPredictorLayer(50, dsl, {cfg})
     generator = torch.manual_seed(0)
     nb_parents = len(syntax) + 1 - 1
     max_args = 2
@@ -36,7 +36,7 @@ def test_forward() -> None:
 
 
 def test_to_logpcfg() -> None:
-    layer = BigramsPredictorLayer(50, {cfg.type_request: cfg}, dsl)
+    layer = BigramsPredictorLayer(50, dsl, {cfg})
     generator = torch.manual_seed(0)
     for _ in range(20):
         x = torch.randn((5, 50), generator=generator)
@@ -53,7 +53,7 @@ def test_to_logpcfg() -> None:
 
 
 def test_logpcfg2pcfg() -> None:
-    layer = BigramsPredictorLayer(50, {cfg.type_request: cfg}, dsl)
+    layer = BigramsPredictorLayer(50, dsl, {cfg})
     generator = torch.manual_seed(0)
     for _ in range(20):
         x = torch.randn((5, 50), generator=generator)

@@ -1,4 +1,4 @@
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, Iterable, List, Tuple, Optional
 
 import numpy as np
 
@@ -90,21 +90,21 @@ class BigramsPredictorLayer(nn.Module):
     Parameters:
     ------------
     - input_size: int - the input size of the tensor to this layer
-    - cfg_dictionary: dictionary {type_request: cfg}
     - dsl: DSL - the dsl with which this predictor is used
+    - cfgs: Iterable[ConcreteCFG] - the set of all supported CFG
     - variable_probability: float = 0.2 - the probability mass of all variable at any given derivation level
     """
 
     def __init__(
         self,
         input_size: int,
-        cfg_dictionary: Dict[Type, ConcreteCFG],
         dsl: DSL,
+        cfgs: Iterable[ConcreteCFG],
         variable_probability: float = 0.2,
     ):
         super(BigramsPredictorLayer, self).__init__()
 
-        self.cfg_dictionary = cfg_dictionary
+        self.cfg_dictionary = {cfg.type_request: cfg for cfg in cfgs}
         self.variable_probability = variable_probability
         self.dsl = dsl
 
