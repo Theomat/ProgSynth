@@ -36,7 +36,10 @@ class LexiconSampler(Sampler[U]):
     ) -> None:
         super().__init__()
         self.lexicon = copy.deepcopy(lexicon)
-        filled_probabilities = probabilites or [1 / len(self.lexicon) for _ in lexicon]
+        if isinstance(probabilites, np.ndarray) or probabilites:
+            filled_probabilities = probabilites
+        else:
+            filled_probabilities = [1 / len(self.lexicon) for _ in lexicon]
         self.sampler = vose.Sampler(np.asarray(filled_probabilities), seed=seed)
 
     def sample(self, **kwargs: Any) -> U:
