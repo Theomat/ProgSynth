@@ -13,6 +13,7 @@ def test_to_partial_fun() -> None:
         for b in range(20):
             assert a + b == plusa(b)
 
+
 def test_gen_take() -> None:
     g = (x for x in range(10000))
     for i in range(10):

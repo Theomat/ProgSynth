@@ -206,17 +206,20 @@ def reproduce_dataset(
         seed=seed,
     )
 
-    return TaskGenerator(
-        input_sampler,
-        evaluator,
-        type_sampler,
-        no_samples_gen,
-        type2PCFG,
-        basic_output_validator(
-            int_lexicon, max(max(l.keys()) for l in list_length.values())
+    return (
+        TaskGenerator(
+            input_sampler,
+            evaluator,
+            type_sampler,
+            no_samples_gen,
+            type2PCFG,
+            basic_output_validator(
+                int_lexicon, max(max(l.keys()) for l in list_length.values())
+            ),
+            max_tries,
         ),
-        max_tries,
-    ), int_lexicon
+        int_lexicon,
+    )
 
 
 def __multi_discrete_distribution__(
