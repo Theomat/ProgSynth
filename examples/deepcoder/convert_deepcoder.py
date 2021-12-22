@@ -37,7 +37,9 @@ def convert_deepcoder(
                 outputs: TList = [raw_example["output"] for raw_example in raw_examples]
 
                 prog, type_request = __deepcoder_str2prog(name)
-                examples = [Example(inp, out) for inp, out in zip(inputs, outputs)]
+                examples = [Example(inp, out) for inp, out in zip(inputs, outputs) if out is not None]
+                if len(examples) < len(inputs):
+                    continue
                 tasks.append(
                     Task[PBE](type_request, PBE(examples), prog, {"name": name})
                 )
