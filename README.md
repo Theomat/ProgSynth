@@ -13,8 +13,7 @@ ProgSynth is a high-level framework that enbales to leverage program synthesis f
 - [Installation](#installation)
   - [From Source](#from-source)
     - [Install ProgSynth](#install-progsynth)
-- [Getting Started](#getting-started)
-- [Tools](./tools)
+- [Examples](./examples)
 - [The Team](#the-team)
 - [License](#license)
 
@@ -57,15 +56,11 @@ If you are installing from source, you will need Python 3.7.1 or later.
 
 #### Install ProgSynth
 
-ProgSynth can be installed from source with `pip`, `conda`, `poetry`.
+ProgSynth can be installed from source with `pip`, `conda` or `poetry`.
 
 ```bash
 pip install .
 ```
-
-## Getting Started
-
-You can observe the [tools](./tools) made available, they should provide you with examples use of ProgSynth.
 
 ## The Team
 
