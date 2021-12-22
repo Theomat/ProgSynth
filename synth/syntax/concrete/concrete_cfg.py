@@ -70,6 +70,11 @@ class ConcreteCFG:
                     type_req = Arrow(v.type, type_req)
         self.type_request = type_req
 
+        self.hash = hash(str(rules))
+
+    def __hash__(self) -> int:
+        return self.hash
+
     def clean(self) -> None:
         """
         remove non-terminals which do not produce programs.
