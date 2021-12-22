@@ -1,4 +1,4 @@
-from typing import Callable, Dict, Generator, List as TList, Any, Optional
+from typing import Callable, Dict, Generator, List as TList, Any, Optional, Tuple
 
 import numpy as np
 
@@ -124,7 +124,7 @@ def reproduce_dataset(
     evaluator: Evaluator,
     seed: Optional[int] = None,
     max_tries: int = 100,
-) -> TaskGenerator:
+) -> Tuple[TaskGenerator, TList[int]]:
 
     max_depth = -1
     allowed_types: TList[Type] = []
@@ -216,7 +216,7 @@ def reproduce_dataset(
             int_lexicon, max(max(l.keys()) for l in list_length.values())
         ),
         max_tries,
-    )
+    ), int_lexicon
 
 
 def __multi_discrete_distribution__(
