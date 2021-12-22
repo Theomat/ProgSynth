@@ -6,7 +6,9 @@ from typing import (
     List as TList,
     Any,
     Optional,
+    Set,
     Tuple,
+    Type as PythonType
 )
 
 import numpy as np
@@ -38,6 +40,7 @@ class TaskGenerator:
         pcfgs: Iterable[ConcretePCFG],
         output_validator: Callable[[Any], bool],
         max_tries: int = 100,
+        skip_exceptions: Optional[Set[PythonType]] = None
     ) -> None:
         self.input_generator = input_generator
         self.evaluator = evaluator
@@ -46,6 +49,7 @@ class TaskGenerator:
         self.type2pcfg = {pcfg.type_request: pcfg for pcfg in pcfgs}
         self.max_tries = max_tries
         self.output_validator = output_validator
+        self.skip_exceptions = skip_exceptions or set()
         # For statistics
         self.difficulty: Dict[Type, TList[int]] = {}
 
@@ -83,9 +87,11 @@ class TaskGenerator:
             ]
             try:
                 output = self.evaluator.eval(solution, new_input)
-            except:
-                # Catch errors just in case
-                continue
+            except Exception as e:
+                if type(e) in self.skip_exceptions:
+                    continue
+                else:
+                    raise e
             if self.output_validator(output):
                 inputs.append(new_input)
                 outputs.append(output)
