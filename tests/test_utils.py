@@ -1,9 +1,4 @@
-from synth.utils import make_deterministic_hash, to_partial_fun, gen_take
-
-
-def test_deterministic() -> None:
-    make_deterministic_hash()
-    assert hash(int) == hash(int)
+from synth.utils import to_partial_fun, gen_take
 
 
 def test_to_partial_fun() -> None:

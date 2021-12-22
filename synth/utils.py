@@ -1,14 +1,4 @@
-import os
 from typing import Any, Callable, Generator, List, TypeVar
-
-
-def make_deterministic_hash() -> None:
-    """
-    Make sure Python hash are deterministic.
-    """
-    hashseed = os.getenv("PYTHONHASHSEED")
-    if not hashseed:
-        os.environ["PYTHONHASHSEED"] = "0"
 
 
 def to_partial_fun(f: Callable, nargs: int) -> Callable:

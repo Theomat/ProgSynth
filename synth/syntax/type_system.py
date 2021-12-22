@@ -2,12 +2,9 @@
 Objective: define a type system.
 A type can be either PolymorphicType, PrimitiveType, Arrow, or List
 """
-from synth.utils import make_deterministic_hash
 from typing import Any, Dict, List as TList, Optional, Set, Tuple
 
 from abc import ABC, abstractmethod
-
-make_deterministic_hash()
 
 
 class Type(ABC):
