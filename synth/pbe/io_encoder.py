@@ -63,7 +63,7 @@ class IOEncoder(SpecificationEncoder[PBE, Tensor]):
                 size, self.output_dimension, IO
             )
         else:
-            for _ in range(self.output_dimension - size - 1):
+            for _ in range(self.output_dimension - size):
                 e.append(self.ending_index)
         res = torch.LongTensor(e)
         return res
