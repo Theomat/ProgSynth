@@ -207,7 +207,7 @@ class BigramsPredictorLayer(nn.Module):
                     var_probability / len(variables)
                 )
                 for P in variables:
-                    rules[S][P] = rules[S][P][0], torch.tensor(
+                    rules[S][P] = cfg.rules[S][P], torch.tensor(
                         normalised_variable_logprob
                     )
                     # Trick to allow a total ordering on variables

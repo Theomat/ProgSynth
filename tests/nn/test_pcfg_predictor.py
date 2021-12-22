@@ -19,7 +19,7 @@ syntax = {
 }
 
 dsl = DSL(syntax)
-cfg = ConcreteCFG.from_dsl(dsl, INT, 4)  # FunctionType(INT, INT), 4)
+cfg = ConcreteCFG.from_dsl(dsl, FunctionType(INT, INT), 4)
 
 
 def test_forward() -> None:
