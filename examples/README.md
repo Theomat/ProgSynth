@@ -1,6 +1,6 @@
-# Tools
+# Examples
 
-This folder contains ready to use scripts and files that ou can leverage to reproduce results from papers for example or to test your new ideas.
+This folder contains ready to use scripts and files that you can leverage to reproduce results from papers for example or to test your new ideas.
 
 <!-- toc -->
 
