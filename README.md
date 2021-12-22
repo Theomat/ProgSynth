@@ -3,7 +3,7 @@
 --------------------------------------------------------------------------------
 [![Tests](https://github.com/nathanael-fijalkow/AutoSynth/actions/workflows/tests.yaml/badge.svg)](https://github.com/nathanael-fijalkow/AutoSynth/actions/workflows/tests.yaml)
 
-ProgSynth is a high-level framework that enbales to leverage program synthesis for other domains such as reinforcement learning or system design.
+ProgSynth is a high-level framework that enables to leverage program synthesis for other domains such as reinforcement learning or system design.
 
 <!-- toc -->
 
@@ -25,12 +25,12 @@ At a granular level, ProgSynth is a library that consists of the following compo
 
 | Component | Description |
 | ---- | --- |
-| [**synth**](./synth) | The high level synthesis libary |
+| [**synth**](./synth) | A high level synthesis libary |
 | [**synth.generation**](./synth/generation) | A compilation of tools to generate objetcs needed for the synthesis, it is mainly used with deep learning  |
 | [**synth.nn**](./synth/nn) | A library to build neural network with for synthesis  |
 | [**synth.pbe**](./synth/pbe) | A library to work in the Programming By Example (PBE) framework |
-| [**synth.semantic**](./synth/semantic) | The library of program evaluators |
-| [**synth.syntax**](./synth/syntax) | The library to manipulate dsl, grammars, probabilistic grammars |
+| [**synth.semantic**](./synth/semantic) | A library of program evaluators |
+| [**synth.syntax**](./synth/syntax) | A library to manipulate dsl, grammars, probabilistic grammars |
 
 Elaborating Further:
 
