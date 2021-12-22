@@ -124,6 +124,7 @@ def reproduce_dataset(
     evaluator: Evaluator,
     seed: Optional[int] = None,
     max_tries: int = 100,
+    int_bound: int = 1000
 ) -> Tuple[TaskGenerator, TList[int]]:
 
     max_depth = -1
@@ -147,8 +148,8 @@ def reproduce_dataset(
                 for el in element:
                     analyze(el, elt_type, depth + 1)
         elif element:
-            int_range[0] = min(int_range[0], element)
-            int_range[1] = max(int_range[1], element)
+            int_range[0] = min(int_range[0], max(-int_bound, element))
+            int_range[1] = max(int_range[1], min(int_bound, element))
 
     # Capture all information in one dataset pass
     for task in dataset:
@@ -173,7 +174,6 @@ def reproduce_dataset(
 
         # Input data analysis
         for ex in task.specification.examples:
-
             for input, ti in zip(ex.inputs, args):
                 analyze(input, ti)
             analyze(ex.output, r)
