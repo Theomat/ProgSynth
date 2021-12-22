@@ -27,7 +27,7 @@ class heap_search_object:
         it is represented by the same object,
         so we do not evaluate it several times
         """
-        hash_P = P.hash
+        hash_P = hash(P)
         if hash_P in self.hash_table_global:
             return self.hash_table_global[hash_P]
         else:
@@ -70,7 +70,7 @@ class heap_search_object:
         for S in reversed(self.rules):
             for P in self.rules[S]:
                 program = self.G.max_probability[(S, P)]
-                hash_program = program.hash
+                hash_program = hash(program)
 
                 # Remark: the program cannot already be in self.heaps[S]
                 assert hash_program not in self.hash_table_program[S]
@@ -107,7 +107,7 @@ class heap_search_object:
         computing the successor of program from S
         """
         if program:
-            hash_program = program.hash
+            hash_program = hash(program)
         else:
             hash_program = 123891
 
@@ -141,7 +141,7 @@ class heap_search_object:
 
                     new_program: Program = Function(F, new_arguments)
                     new_program = self.return_unique(new_program)
-                    hash_new_program = new_program.hash
+                    hash_new_program = hash(new_program)
 
                     if hash_new_program not in self.hash_table_program[S]:
                         self.hash_table_program[S].add(hash_new_program)

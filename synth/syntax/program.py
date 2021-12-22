@@ -8,12 +8,8 @@ class Program:
     Object that represents a program: a lambda term with basic primitives.
     """
 
-    def __init__(self, type: Type, hash: int) -> None:
+    def __init__(self, type: Type) -> None:
         self.type = type
-        self.hash = hash
-
-    def __hash__(self) -> int:
-        return self.hash
 
     def __repr__(self) -> str:
         return self.__str__()
@@ -43,11 +39,12 @@ class Program:
 
 
 class Variable(Program):
-    __hash__ = Program.__hash__
-
     def __init__(self, variable: int, type: Type = UnknownType()):
-        super().__init__(type, variable)
+        super().__init__(type)
         self.variable: int = variable
+
+    def __hash__(self) -> int:
+        return hash((self.variable, self.type))
 
     def __remove_used_variables__(self, vars: TList[int]) -> None:
         if self.variable in vars:
@@ -61,16 +58,12 @@ class Variable(Program):
 
 
 class Constant(Program):
-    __hash__ = Program.__hash__
-
     def __init__(self, value: Any, type: Type = UnknownType()):
-        try:
-            my_hash = hash(value) + 81937
-        except:
-            my_hash = hash(str(value)) + 81937
-        super().__init__(type, my_hash)
+        super().__init__(type)
         self.value = value
-        self.type: Type = type
+
+    def __hash__(self) -> int:
+        return hash((str(self.value), self.type))
 
     def __str__(self) -> str:
         return format(self.value)
@@ -87,8 +80,6 @@ class Constant(Program):
 
 
 class Function(Program):
-    __hash__ = Program.__hash__
-
     def __init__(self, function: Program, arguments: TList[Program]):
         # Build automatically the type of the function
         type = function.type
@@ -96,11 +87,12 @@ class Function(Program):
         args = type.arguments()[len(arguments) :]
         my_type = FunctionType(*args, type.returns())
 
-        super().__init__(
-            my_type, hash(tuple([arg.hash for arg in arguments] + [function.hash]))
-        )
+        super().__init__(my_type)
         self.function = function
         self.arguments = arguments
+
+    def __hash__(self) -> int:
+        return hash(tuple([arg for arg in self.arguments] + [self.function]))
 
     def __str__(self) -> str:
         if len(self.arguments) == 0:
@@ -153,11 +145,12 @@ class Function(Program):
 
 
 class Lambda(Program):
-    __hash__ = Program.__hash__
-
     def __init__(self, body: Program, type: Type = UnknownType()):
-        super().__init__(type, hash(94135 + body.hash))
+        super().__init__(type)
         self.body = body
+
+    def __hash__(self) -> int:
+        return hash(94135 + hash(self.body))
 
     def __str__(self) -> str:
         return "(lambda " + format(self.body) + ")"
@@ -175,11 +168,12 @@ class Lambda(Program):
 
 
 class Primitive(Program):
-    __hash__ = Program.__hash__
-
     def __init__(self, primitive: str, type: Type = UnknownType()):
-        super().__init__(type, hash(primitive) + type.hash)
+        super().__init__(type)
         self.primitive = primitive
+
+    def __hash__(self) -> int:
+        return hash((self.primitive, self.type))
 
     def __str__(self) -> str:
         """

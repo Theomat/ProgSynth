@@ -70,10 +70,8 @@ class ConcreteCFG:
                     type_req = Arrow(v.type, type_req)
         self.type_request = type_req
 
-        self.hash = hash(str(rules))
-
     def __hash__(self) -> int:
-        return self.hash
+        return hash((self.start, str(self.rules), self.max_program_depth))
 
     def clean(self) -> None:
         """

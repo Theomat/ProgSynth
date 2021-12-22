@@ -42,8 +42,6 @@ class ConcretePCFG:
         self.max_program_depth = max_program_depth
         self.hash_table_programs: Dict[int, Program] = {}
 
-        self.hash = hash(str(rules))
-
         if clean:
             self.clean()
 
@@ -77,7 +75,7 @@ class ConcretePCFG:
         self.__sort__()
 
     def __hash__(self) -> int:
-        return self.hash
+        return hash((self.start, str(self.rules), self.max_program_depth))
 
     def __eq__(self, o: object) -> bool:
         return (
@@ -137,10 +135,11 @@ class ConcretePCFG:
         ensures that if a program appears in several rules,
         it is represented by the same object
         """
-        if P.hash in self.hash_table_programs:
-            return self.hash_table_programs[P.hash]
+        h = hash(P)
+        if h in self.hash_table_programs:
+            return self.hash_table_programs[h]
         else:
-            self.hash_table_programs[P.hash] = P
+            self.hash_table_programs[h] = P
             return P
 
     def __remove_non_productive__(self) -> None:
