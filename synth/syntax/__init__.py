@@ -7,6 +7,7 @@ from synth.syntax.type_system import (
     Type,
     FunctionType,
     guess_type,
+    match,
     PrimitiveType,
     PolymorphicType,
     List,
