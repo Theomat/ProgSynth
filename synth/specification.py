@@ -10,6 +10,9 @@ class TaskSpecification:
 
 @dataclass
 class Example:
+    """
+    Represents an example pair of (inputs, output) 
+    """
     inputs: List[Any]
     output: Any
 
@@ -20,6 +23,9 @@ class Example:
 
 @dataclass
 class PBE(TaskSpecification):
+    """
+    Programming By Example (PBE) specification.
+    """
     examples: List[Example]
 
     def guess_type(self) -> Type:
