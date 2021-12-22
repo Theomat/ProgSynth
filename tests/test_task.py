@@ -61,4 +61,4 @@ def test_dataset_hash(tmp_path: pathlib.Path) -> None:
     dataset.save(file_path.as_posix())
     loaded = Dataset[PBE].load(file_path.as_posix())
     for t1, t2 in zip(dataset, loaded):
-        assert hash(t1.type_request) == hash(t2.type_request) 
+        assert hash(t1.type_request) == hash(t2.type_request)

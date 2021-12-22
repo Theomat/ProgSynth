@@ -8,7 +8,7 @@ from typing import (
     Optional,
     Set,
     Tuple,
-    Type as PythonType
+    Type as PythonType,
 )
 
 import numpy as np
@@ -40,7 +40,7 @@ class TaskGenerator:
         pcfgs: Iterable[ConcretePCFG],
         output_validator: Callable[[Any], bool],
         max_tries: int = 100,
-        skip_exceptions: Optional[Set[PythonType]] = None
+        skip_exceptions: Optional[Set[PythonType]] = None,
     ) -> None:
         self.input_generator = input_generator
         self.evaluator = evaluator

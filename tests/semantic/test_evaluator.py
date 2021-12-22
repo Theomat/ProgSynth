@@ -39,6 +39,7 @@ def test_eval() -> None:
         except Exception as e:
             assert False, e
 
+
 def test_supports_list() -> None:
     eval = DSLEvaluator(semantics)
     pcfg = ConcretePCFG.uniform_from_cfg(cfg)
@@ -61,6 +62,8 @@ def test_use_cache() -> None:
         try:
             for i in range(-25, 25):
                 assert eval.eval(program, [i]) == program.length() + i - 1
-                assert eval._cache[__tuplify__([i])][program] == program.length() + i - 1
+                assert (
+                    eval._cache[__tuplify__([i])][program] == program.length() + i - 1
+                )
         except Exception as e:
             assert False, e
