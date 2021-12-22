@@ -57,9 +57,7 @@ class IOEncoder(SpecificationEncoder[PBE, Tensor]):
         e.append(self.ending_index)
         size = len(e)
         if size > self.output_dimension:
-            assert (
-                False
-            ), "IOEncodings.py: VariableSizeEncoding: IO too large: {} > {} for {}".format(
+            assert False, "IOEncoder: IO too large: {} > {} for {}".format(
                 size, self.output_dimension, IO
             )
         else:
