@@ -154,6 +154,7 @@ def reproduce_dataset(
     dsl: DSL,
     evaluator: Evaluator,
     seed: Optional[int] = None,
+    uniform_pcfg: bool = True,
     max_tries: int = 100,
     int_bound: int = 1000,
 ) -> Tuple[TaskGenerator, TList[int]]:
@@ -218,10 +219,16 @@ def reproduce_dataset(
 
     int_lexicon = list(range(int_range[0], int_range[1] + 1))
 
-    pcfgs = {
-        ConcretePCFG.uniform_from_cfg(ConcreteCFG.from_dsl(dsl, t, max_depth))
-        for t in allowed_types
-    }
+    if uniform_pcfg:
+        pcfgs = {
+            ConcretePCFG.uniform_from_cfg(ConcreteCFG.from_dsl(dsl, t, max_depth))
+            for t in allowed_types
+        }
+    else:
+        pcfgs = {
+            dataset.to_pcfg(ConcreteCFG.from_dsl(dsl, t, max_depth), filter=True)
+            for t in allowed_types
+        }
     for pcfg in pcfgs:
         pcfg.init_sampling(seed)
 
