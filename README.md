@@ -31,6 +31,7 @@ At a granular level, ProgSynth is a library that consists of the following compo
 | [**synth.pbe**](./synth/pbe) | A library to work in the Programming By Example (PBE) framework |
 | [**synth.semantic**](./synth/semantic) | A library of program evaluators |
 | [**synth.syntax**](./synth/syntax) | A library to manipulate dsl, grammars, probabilistic grammars |
+| [**synth.utils**](./synth/utils) | Utility objects and functions that do not fit elsewhere |
 
 Elaborating Further:
 
