@@ -13,6 +13,7 @@ class IOEncoder(SpecificationEncoder[PBE, Tensor]):
         self.output_dimension = output_dimension
 
         self.special_symbols = [
+            "PADDING",  # padding symbol that can be used later
             "STARTING",  # start of entire sequence
             "ENDOFINPUT",  # delimits the ending of an input - we might have multiple inputs
             "STARTOFOUTPUT",  # begins the start of the output
@@ -29,6 +30,7 @@ class IOEncoder(SpecificationEncoder[PBE, Tensor]):
         self.ending_index = self.symbol2index["ENDING"]
         self.start_list_index = self.symbol2index["STARTOFLIST"]
         self.end_list_index = self.symbol2index["ENDOFLIST"]
+        self.pad_symbol = self.symbol2index["PADDING"]
 
     def __encode_element__(self, x: Any, encoding: List[int]) -> None:
         if isinstance(x, List):
