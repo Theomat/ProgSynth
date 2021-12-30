@@ -54,6 +54,7 @@ class TaskGenerator:
         self._failed_types: Set[Type] = set()
         # For statistics
         self.difficulty: Dict[Type, TList[int]] = {}
+        self.generated_types: Dict[Type, int] = {t: 0 for t in self.type2pcfg}
 
     def __generate_program__(self, type_request: Type) -> Program:
         nargs: int = (
@@ -120,6 +121,7 @@ class TaskGenerator:
             self._failed_types.add(type_request)
             return self.generate_task()
         self._failed_types = set()
+        self.generated_types[type_request] += 1
         return Task(
             type_request,
             PBE([Example(inp, out) for inp, out in zip(inputs, outputs)]),
