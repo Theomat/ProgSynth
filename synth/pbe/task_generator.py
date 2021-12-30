@@ -50,6 +50,8 @@ class TaskGenerator:
         self.max_tries = max_tries
         self.output_validator = output_validator
         self.skip_exceptions = skip_exceptions or set()
+
+        self._failed_types: Set[Type] = set()
         # For statistics
         self.difficulty: Dict[Type, TList[int]] = {}
 
@@ -64,6 +66,10 @@ class TaskGenerator:
 
     def generate_task(self) -> Task[PBE]:
         type_request = self.gen_random_type_request.sample()
+        i = 0
+        while type_request in self._failed_types and i <= self.max_tries:
+            type_request = self.gen_random_type_request.sample()
+            i += 1
         arguments = (
             [] if not isinstance(type_request, Arrow) else type_request.arguments()
         )
@@ -103,7 +109,9 @@ class TaskGenerator:
 
         # Sample another task if failed
         if len(inputs) < samples:
+            self._failed_types.add(type_request)
             return self.generate_task()
+        self._failed_types = set()
         return Task(
             type_request,
             PBE([Example(inp, out) for inp, out in zip(inputs, outputs)]),
