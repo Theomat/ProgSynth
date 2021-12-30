@@ -60,9 +60,17 @@ class TaskGenerator:
             0 if not isinstance(type_request, Arrow) else len(type_request.arguments())
         )
         solution: Program = self.type2pcfg[type_request].sample_program()
-        while not solution.is_using_all_variables(nargs):
+        tries: int = 0
+        var_used = len(solution.used_variables())
+        best = solution
+        while var_used < nargs and tries < self.max_tries:
             solution = self.type2pcfg[type_request].sample_program()
-        return solution
+            tries += 1
+            n = len(solution.used_variables())
+            if n > var_used:
+                var_used = n
+                best = solution
+        return best
 
     def generate_task(self) -> Task[PBE]:
         type_request = self.gen_random_type_request.sample()
