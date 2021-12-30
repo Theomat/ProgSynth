@@ -56,9 +56,9 @@ class ConcreteLogPCFG:
     def __repr__(self) -> str:
         return self.__str__()
 
-    def probability_program(self, P: Program, S: Optional[Context] = None) -> Tensor:
+    def log_probability(self, P: Program, S: Optional[Context] = None) -> Tensor:
         """
-        Compute the probability of a program P generated from the non-terminal S
+        Compute the log probability of a program P generated from the non-terminal S
         """
         S = S or self.start
         if isinstance(P, Function):
@@ -67,13 +67,13 @@ class ConcreteLogPCFG:
             probability = self.rules[S][F][1]
 
             for i, arg in enumerate(args_P):
-                probability += self.probability_program(arg, self.rules[S][F][0][i])
+                probability += self.log_probability(arg, self.rules[S][F][0][i])
             return probability
 
         elif isinstance(P, (Variable, Primitive)):
             return self.rules[S][P][1]
 
-        print("probability_program", P)
+        print("log_probability_program", P)
         assert False
 
     def to_pcfg(self) -> ConcretePCFG:
@@ -232,7 +232,7 @@ def loss_negative_log_prob(
     reduce: Optional[Callable[[Tensor], Tensor]] = torch.mean,
 ) -> Tensor:
     log_prob_list = [
-        log_pcfg.probability_program(p) for p, log_pcfg in zip(programs, log_pcfgs)
+        log_pcfg.log_probability(p) for p, log_pcfg in zip(programs, log_pcfgs)
     ]
     out = -torch.stack(log_prob_list)
     if reduce:
