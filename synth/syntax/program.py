@@ -1,15 +1,20 @@
 from typing import Generator, List as TList, Any, Set
+from abc import ABC, abstractmethod
 
 from synth.syntax.type_system import Arrow, FunctionType, Type, UnknownType
 
 
-class Program:
+class Program(ABC):
     """
     Object that represents a program: a lambda term with basic primitives.
     """
 
     def __init__(self, type: Type) -> None:
         self.type = type
+        self.hash: int = 0
+
+    def __hash__(self) -> int:
+        return self.hash
 
     def __repr__(self) -> str:
         return self.__str__()
@@ -37,14 +42,20 @@ class Program:
     def depth_first_iter(self) -> Generator["Program", None, None]:
         yield self
 
+    @abstractmethod
+    def __rehash__(self) -> None:
+        pass
+
 
 class Variable(Program):
+    __hash__ = Program.__hash__
+
     def __init__(self, variable: int, type: Type = UnknownType()):
         super().__init__(type)
         self.variable: int = variable
 
-    def __hash__(self) -> int:
-        return hash((self.variable, self.type))
+    def __rehash__(self) -> None:
+        self.hash = hash((self.variable, self.type))
 
     def __add_used_variables__(self, vars: Set[int]) -> None:
         vars.add(self.variable)
@@ -57,12 +68,15 @@ class Variable(Program):
 
 
 class Constant(Program):
+    __hash__ = Program.__hash__
+
     def __init__(self, value: Any, type: Type = UnknownType()):
         super().__init__(type)
         self.value = value
+        self.__rehash__()
 
-    def __hash__(self) -> int:
-        return hash((str(self.value), self.type))
+    def __rehash__(self) -> None:
+        self.hash = hash((str(self.value), self.type))
 
     def __str__(self) -> str:
         return format(self.value)
@@ -79,6 +93,8 @@ class Constant(Program):
 
 
 class Function(Program):
+    __hash__ = Program.__hash__
+
     def __init__(self, function: Program, arguments: TList[Program]):
         # Build automatically the type of the function
         type = function.type
@@ -89,9 +105,10 @@ class Function(Program):
         super().__init__(my_type)
         self.function = function
         self.arguments = arguments
+        self.__rehash__()
 
-    def __hash__(self) -> int:
-        return hash(tuple([arg for arg in self.arguments] + [self.function]))
+    def __rehash__(self) -> None:
+        self.hash = hash(tuple([arg for arg in self.arguments] + [self.function]))
 
     def __str__(self) -> str:
         if len(self.arguments) == 0:
@@ -142,12 +159,15 @@ class Function(Program):
 
 
 class Lambda(Program):
+    __hash__ = Program.__hash__
+
     def __init__(self, body: Program, type: Type = UnknownType()):
         super().__init__(type)
         self.body = body
+        self.__rehash__()
 
-    def __hash__(self) -> int:
-        return hash(94135 + hash(self.body))
+    def __rehash__(self) -> None:
+        self.hash = hash(94135 + hash(self.body))
 
     def __str__(self) -> str:
         return "(lambda " + format(self.body) + ")"
@@ -168,12 +188,15 @@ class Lambda(Program):
 
 
 class Primitive(Program):
+    __hash__ = Program.__hash__
+
     def __init__(self, primitive: str, type: Type = UnknownType()):
         super().__init__(type)
         self.primitive = primitive
+        self.__rehash__()
 
-    def __hash__(self) -> int:
-        return hash((self.primitive, self.type))
+    def __rehash__(self) -> None:
+        self.hash = hash((self.primitive, self.type))
 
     def __str__(self) -> str:
         """

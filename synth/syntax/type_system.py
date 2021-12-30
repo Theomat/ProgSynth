@@ -12,6 +12,13 @@ class Type(ABC):
     Object that represents a type.
     """
 
+    def __init__(self) -> None:
+        super().__init__()
+        self.hash = 0
+
+    def __hash__(self) -> int:
+        return self.hash
+
     def __repr__(self) -> str:
         return self.__str__()
 
@@ -75,13 +82,21 @@ class Type(ABC):
             return self.type_out.ends_with_rec(other, arguments_list)
         return None
 
+    @abstractmethod
+    def __rehash__(self) -> None:
+        pass
+
 
 class PolymorphicType(Type):
-    def __init__(self, name: str):
-        self.name = name
+    __hash__ = Type.__hash__
 
-    def __hash__(self) -> int:
-        return hash(self.name)
+    def __init__(self, name: str):
+        super().__init__()
+        self.name = name
+        self.__rehash__()
+
+    def __rehash__(self) -> None:
+        self.hash = hash(self.name)
 
     def __str__(self) -> str:
         return format(self.name)
@@ -104,11 +119,14 @@ class PolymorphicType(Type):
 
 
 class PrimitiveType(Type):
+    __hash__ = Type.__hash__
+
     def __init__(self, type_name: str):
         self.type_name = type_name
+        self.__rehash__()
 
-    def __hash__(self) -> int:
-        return hash(self.type_name)
+    def __rehash__(self) -> None:
+        self.hash = hash(self.type_name)
 
     def __str__(self) -> str:
         return format(self.type_name)
@@ -129,12 +147,15 @@ class Arrow(Type):
     Represents a function.
     """
 
+    __hash__ = Type.__hash__
+
     def __init__(self, type_in: Type, type_out: Type):
         self.type_in = type_in
         self.type_out = type_out
+        self.__rehash__()
 
-    def __hash__(self) -> int:
-        return hash((self.type_in, self.type_out))
+    def __rehash__(self) -> None:
+        self.hash = hash((self.type_in, self.type_out))
 
     def __str__(self) -> str:
         rep_in = format(self.type_in)
@@ -186,11 +207,14 @@ class Arrow(Type):
 
 
 class List(Type):
+    __hash__ = Type.__hash__
+
     def __init__(self, element_type: Type):
         self.element_type = element_type
+        self.__rehash__()
 
-    def __hash__(self) -> int:
-        return hash(18923 + hash(self.element_type))
+    def __rehash__(self) -> None:
+        self.hash = hash(18923 + hash(self.element_type))
 
     def __str__(self) -> str:
         if isinstance(self.element_type, Arrow):
@@ -226,8 +250,14 @@ class UnknownType(Type):
     In case we need to define an unknown type
     """
 
-    def __hash__(self) -> int:
-        return hash(1984)
+    __hash__ = Type.__hash__
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.__rehash__()
+
+    def __rehash__(self) -> None:
+        self.hash = hash(1984)
 
     def __str__(self) -> str:
         return "UnknownType"
