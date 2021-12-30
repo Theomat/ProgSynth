@@ -21,7 +21,7 @@ from synth.nn import (
 )
 from synth.pbe import reproduce_dataset, IOEncoder
 from synth.syntax import ConcreteCFG
-from synth.utils import gen_take
+from synth.utils import chrono, gen_take
 
 # ================================
 # Tunable parameters
@@ -42,13 +42,17 @@ weight_decay = 1e-4
 device = "cuda" if torch.cuda.is_available() else "cpu"
 print("Using device:", device)
 # Load dataset
-print("Loading dataset...")
-full_dataset: Dataset[PBE] = Dataset.load("./deepcoder.pickle")
+print("Loading dataset...", end="")
+with chrono.clock("dataset.load") as c:
+    full_dataset: Dataset[PBE] = Dataset.load("./deepcoder.pickle")
+    print("done in", c.elapsed_time(), "s")
 # Reproduce dataset distribution
-print("Reproducing dataset...")
-task_generator, lexicon = reproduce_dataset(
-    full_dataset, dsl, evaluator, 0, uniform_pcfg=False
-)
+print("Reproducing dataset...", end="")
+with chrono.clock("dataset.reproduce") as c:
+    task_generator, lexicon = reproduce_dataset(
+        full_dataset, dsl, evaluator, 0, uniform_pcfg=False
+    )
+    print("done in", c.elapsed_time(), "s")
 # Add some exceptions that are ignored during task generation
 task_generator.skip_exceptions.add(TypeError)
 # Generate the CFG dictionnary
@@ -87,25 +91,33 @@ print("Model:", predictor)
 optim = torch.optim.Adam(predictor.parameters(), lr, weight_decay=weight_decay)
 
 
+@chrono.clock(prefix="train")
 def do_batch(iter_number: int) -> None:
-    batch = gen_take(task_generator.generator(), batch_size)
+    with chrono.clock("train.do_batch.task_generation"):
+        batch = gen_take(task_generator.generator(), batch_size)
     batch_programs = [task.solution for task in batch]
+    # Logging
     writer.add_scalar(
         "program/depth", np.mean([p.depth() for p in batch_programs]), iter_number
     )
     mean_length = np.mean([p.length() for p in batch_programs])
     writer.add_scalar("program/length", mean_length, iter_number)
-
-    batch_outputs: Tensor = predictor(batch)
-    batch_log_pcfg = [
-        predictor.bigram_layer.tensor2pcfg(batch_outputs[i], task.type_request)
-        for i, task in enumerate(batch)
-    ]
+    with chrono.clock("train.do_batch.inference"):
+        batch_outputs: Tensor = predictor(batch)
+    with chrono.clock("train.do_batch.tensor2pcfg"):
+        batch_log_pcfg = [
+            predictor.bigram_layer.tensor2pcfg(batch_outputs[i], task.type_request)
+            for i, task in enumerate(batch)
+        ]
     # Gradient descent
-    optim.zero_grad()
-    loss = loss_negative_log_prob(batch_programs, batch_log_pcfg)
-    loss.backward()
-    optim.step()
+    with chrono.clock("train.do_batch.loss"):
+        optim.zero_grad()
+        with chrono.clock("train.do_batch.loss.compute"):
+            loss = loss_negative_log_prob(batch_programs, batch_log_pcfg)
+        with chrono.clock("train.do_batch.loss.backprop"):
+            loss.backward()
+            optim.step()
+    # Logging
     writer.add_scalar("loss/train", loss.item(), iter_number)
     writer.add_scalar(
         "length normed probability/train",
@@ -190,6 +202,11 @@ def on_exit():
     )
     writer.flush()
     writer.close()
+    print(
+        chrono.summary(
+            time_formatter=lambda t: f"{int(t*1000)}ms" if not np.isnan(t) else "nan"
+        )
+    )
 
 
 atexit.register(on_exit)
