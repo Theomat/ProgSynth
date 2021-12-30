@@ -58,9 +58,9 @@ def test_is_using_all_variables() -> None:
         f = Function(
             Primitive("f", FunctionType(*[INT for _ in range(c + 1)])), sub_vars
         )
-        assert f.is_using_all_variables(c)
+        assert len(f.used_variables()) == c
         sub_vars.pop()
         f = Function(
             Primitive("f", FunctionType(*[INT for _ in range(c + 1)])), sub_vars
         )
-        assert not f.is_using_all_variables(c)
+        assert len(f.used_variables()) == c - 1

@@ -1,4 +1,4 @@
-from typing import Generator, List as TList, Any
+from typing import Generator, List as TList, Any, Set
 
 from synth.syntax.type_system import Arrow, FunctionType, Type, UnknownType
 
@@ -14,12 +14,12 @@ class Program:
     def __repr__(self) -> str:
         return self.__str__()
 
-    def is_using_all_variables(self, variables: int) -> bool:
-        l = list(range(variables))
-        self.__remove_used_variables__(l)
-        return len(l) == 0
+    def used_variables(self) -> Set[int]:
+        s: Set[int] = set()
+        self.__add_used_variables__(s)
+        return s
 
-    def __remove_used_variables__(self, vars: TList[int]) -> None:
+    def __add_used_variables__(self, vars: Set[int]) -> None:
         pass
 
     def is_constant(self) -> bool:
@@ -46,9 +46,8 @@ class Variable(Program):
     def __hash__(self) -> int:
         return hash((self.variable, self.type))
 
-    def __remove_used_variables__(self, vars: TList[int]) -> None:
-        if self.variable in vars:
-            vars.remove(self.variable)
+    def __add_used_variables__(self, vars: Set[int]) -> None:
+        vars.add(self.variable)
 
     def __str__(self) -> str:
         return "var" + format(self.variable)
@@ -129,11 +128,9 @@ class Function(Program):
             self.function.depth(), max(arg.depth() for arg in self.arguments)
         )
 
-    def __remove_used_variables__(self, vars: TList[int]) -> None:
+    def __add_used_variables__(self, vars: Set[int]) -> None:
         for el in [self.function] + self.arguments:
-            el.__remove_used_variables__(vars)
-            if vars == []:
-                break
+            el.__add_used_variables__(vars)
 
     def depth_first_iter(self) -> Generator["Program", None, None]:
         for sub in self.function.depth_first_iter():
@@ -157,6 +154,9 @@ class Lambda(Program):
 
     def __eq__(self, other: Any) -> bool:
         return isinstance(other, Lambda) and self.body == other.body
+
+    def __add_used_variables__(self, vars: Set[int]) -> None:
+        return self.body.__add_used_variables__(vars)
 
     def depth(self) -> int:
         return 1 + self.body.depth()
