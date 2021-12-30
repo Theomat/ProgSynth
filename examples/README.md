@@ -19,6 +19,7 @@ This is a dataset of:
 This folder contains two files.
 The `deepcoder.py` file contains an impelementation of the DSL along with a default evaluator.
 The `convert_deepcoder.py` is a runnable python script which enables you to convert the original deepcoder dataset files to the ProgSynth format.
+The `pcfg_prediction.py` loads the deepcoder dataset, reproduces the task distribution, then train a neural net to predict the PCFG probabilities and compute the test loss on the deepcoder dataset, metrics are logged with [TensorBoard](https://www.tensorflow.org/tensorboard/).
 
 ### Downloading Deepcoder
 
