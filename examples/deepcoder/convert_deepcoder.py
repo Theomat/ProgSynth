@@ -15,7 +15,7 @@ from synth.syntax import (
     Variable,
 )
 
-from deepcoder import dsl
+from deepcoder import dsl, evaluator
 
 name2type = {p.primitive: p.type for p in dsl.list_primitives}
 
@@ -27,6 +27,10 @@ def __convert__(load: Callable[[], Dataset[PBE]], name: str) -> None:
     print(
         f"Converted {len(tasks)} tasks {int(100 * sols / len(tasks))}% containing solutions"
     )
+    # Integrity check
+    for task in tqdm.tqdm(tasks, desc="integrity check"):
+        for ex in task.specification.examples:
+            assert evaluator.eval(task.solution, ex.inputs) == ex.output
 
 
 def convert_deepcoder(
