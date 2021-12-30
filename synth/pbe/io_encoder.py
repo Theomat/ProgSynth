@@ -1,4 +1,4 @@
-from typing import Any, List, Tuple
+from typing import Any, List, Optional, Tuple
 
 import torch
 from torch import Tensor
@@ -41,7 +41,7 @@ class IOEncoder(SpecificationEncoder[PBE, Tensor]):
         else:
             encoding.append(self.symbol2index[x])
 
-    def encode_IO(self, IO: Tuple[List, Any]) -> Tensor:
+    def encode_IO(self, IO: Tuple[List, Any], device: Optional[str] = None) -> Tensor:
         """
         embed a list of inputs and its associated output
         IO is of the form [[I1, I2, ..., Ik], O]
@@ -65,13 +65,13 @@ class IOEncoder(SpecificationEncoder[PBE, Tensor]):
         else:
             for _ in range(self.output_dimension - size):
                 e.append(self.ending_index)
-        res = torch.LongTensor(e)
+        res = torch.LongTensor(e).to(device)
         return res
 
-    def encode(self, task: Task[PBE]) -> Tensor:
+    def encode(self, task: Task[PBE], device: Optional[str] = None) -> Tensor:
         return torch.stack(
             [
-                self.encode_IO((ex.inputs, ex.output))
+                self.encode_IO((ex.inputs, ex.output), device)
                 for ex in task.specification.examples
             ]
         )
