@@ -65,6 +65,6 @@ def test_logpcfg2pcfg() -> None:
             pcfg = log_pcfg.to_pcfg()
             pcfg.init_sampling(0)
             P = pcfg.sample_program()
-            prob = pcfg.probability_program(P)
+            prob = pcfg.probability(P)
             exp_logprob = np.exp(log_pcfg.log_probability(P).item())
             assert np.isclose(prob, exp_logprob)

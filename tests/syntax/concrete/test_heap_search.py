@@ -39,6 +39,6 @@ def test_order() -> None:
     pcfg = ConcretePCFG.uniform_from_cfg(cfg)
     last = 1.0
     for program in enumerate(pcfg):
-        p = pcfg.probability_program(program)
+        p = pcfg.probability(program)
         assert p <= last
         last = p

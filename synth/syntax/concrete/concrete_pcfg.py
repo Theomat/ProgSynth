@@ -256,7 +256,7 @@ class ConcretePCFG:
             arguments.append(self.sample_program(arg))
         return Function(P, arguments)
 
-    def probability_program(self, P: Program, S: Optional[Context] = None) -> float:
+    def probability(self, P: Program, S: Optional[Context] = None) -> float:
         """
         Compute the probability of a program P generated from the non-terminal S
         """
@@ -267,7 +267,7 @@ class ConcretePCFG:
             probability = self.rules[S][F][1]
 
             for i, arg in enumerate(args_P):
-                probability *= self.probability_program(arg, self.rules[S][F][0][i])
+                probability *= self.probability(arg, self.rules[S][F][0][i])
             return probability
 
         elif isinstance(P, (Variable, Primitive)):
