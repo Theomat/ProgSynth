@@ -78,7 +78,7 @@ __semantics = {
 __primitive_types = {
     "HEAD": Arrow(List(INT), INT),
     "TAIL": Arrow(List(INT), INT),
-    "ACCESS": Arrow(List(INT), INT),
+    "ACCESS": Arrow(INT, Arrow(List(INT), INT)),
     "MINIMUM": Arrow(List(INT), INT),
     "MAXIMUM": Arrow(List(INT), INT),
     "LENGTH": Arrow(List(INT), INT),
