@@ -114,5 +114,13 @@ class UnionSampler(RequestSampler[Any]):
         sampler = self.samplers.get(type, self.fallback)
         assert (
             sampler
-        ), f"UnionSampler: No sampler found for type {type} in {self.samplers}"
+        ), f"UnionSampler: No sampler found for type {type}({hash(type)}) in {self}"
         return sampler.sample(type=type, **kwargs)
+
+    def __str__(self) -> str:
+        s = (
+            f"UnionSampler(fallback={self.fallback}, samplers="
+            + ", ".join([f"{k}({hash(k)}):{v}" for k, v in self.samplers.items()])
+            + ")"
+        )
+        return s

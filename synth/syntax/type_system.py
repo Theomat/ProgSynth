@@ -273,7 +273,6 @@ class UnknownType(Type):
         pass
 
 
-
 INT = PrimitiveType("int")
 BOOL = PrimitiveType("bool")
 STRING = PrimitiveType("str")
@@ -330,4 +329,4 @@ def match(a: Type, b: Type) -> bool:
 import copyreg
 
 for cls in [PrimitiveType, PolymorphicType, List, Arrow, UnknownType]:
-    copyreg.pickle(cls, cls.__pickle__)
+    copyreg.pickle(cls, cls.__pickle__)  # type: ignore

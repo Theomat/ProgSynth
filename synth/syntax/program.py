@@ -212,4 +212,4 @@ class Primitive(Program):
 import copyreg
 
 for cls in [Primitive, Constant, Lambda, Function, Variable]:
-    copyreg.pickle(cls, cls.__pickle__)
+    copyreg.pickle(cls, cls.__pickle__)  # type: ignore
