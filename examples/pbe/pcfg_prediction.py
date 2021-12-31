@@ -41,21 +41,22 @@ batch_size = 16
 lr = 1e-3
 weight_decay = 1e-4
 # ================================
-# Initialisation
+# Load constants specific to dataset
 # ================================
+dataset_file = f"{dataset}.pickle"
+
 if dataset == DEEPCODER:
     from deepcoder.deepcoder import dsl, evaluator
 
     uniform_pcfg = False
-    dataset_file = "deepcoder.pickle"
 elif dataset == DREAMCODER:
     from dreamcoder.dreamcoder import dsl, evaluator
 
     uniform_pcfg = True
-    dataset_file = "dreamcoder.pickle"
-# Get device
-device = "cuda" if torch.cuda.is_available() else "cpu"
-print("Using device:", device)
+
+# ================================
+# Load dataset & Task Generator
+# ================================
 # Load dataset
 print(f"Loading {dataset_file}...", end="")
 with chrono.clock("dataset.load") as c:
@@ -70,6 +71,17 @@ with chrono.clock("dataset.reproduce") as c:
     print("done in", c.elapsed_time(), "s")
 # Add some exceptions that are ignored during task generation
 task_generator.skip_exceptions.add(TypeError)
+# ================================
+# Misc init
+# ================================
+# Get device
+device = "cuda" if torch.cuda.is_available() else "cpu"
+print("Using device:", device)
+# Logging
+writer = SummaryWriter()
+# ================================
+# Neural Network creation
+# ================================
 # Generate the CFG dictionnary
 all_type_requests = set(task_generator.type2pcfg.keys())
 if dataset == DEEPCODER:
@@ -77,11 +89,6 @@ if dataset == DEEPCODER:
 elif dataset == DREAMCODER:
     max_depth = 5
 cfgs = [ConcreteCFG.from_dsl(dsl, t, max_depth) for t in all_type_requests]
-# Logging
-writer = SummaryWriter()
-# ================================
-# Neural Network creation
-# ================================
 
 
 class MyPredictor(nn.Module):
