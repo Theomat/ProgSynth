@@ -5,6 +5,9 @@ from functools import wraps
 import time
 from dataclasses import dataclass, field
 from typing import Any, Callable, List, Optional, Tuple, Union
+from colorama import init, Fore
+
+init()
 
 
 @dataclass
@@ -79,13 +82,28 @@ class PrefixTree:
                 child.data._square_sum for child in self.children
             )
 
-    def to_string(self, time_formatter: Callable[[float], str], tabs: int = 0) -> str:
+    def to_string(
+        self, time_formatter: Callable[[float], str], tabs: int = 0, colors: bool = True
+    ) -> str:
         indent = "\t" * tabs
-        me = f"{self.name}:" if tabs == 0 else ""
-        value = f"total={time_formatter(self.data.total)} range=[{time_formatter(self.data.min)}-{time_formatter(self.data.max)}] mean={time_formatter(self.data.mean)}~{time_formatter(self.data.variance)}"
+        # Color management
+        light_green = Fore.LIGHTGREEN_EX if colors else ""
+        light_yellow = Fore.LIGHTYELLOW_EX if colors else ""
+        reset = Fore.RESET if colors else ""
+
+        me = f"{light_green}{self.name}{reset}:" if tabs == 0 else ""
+        # Write ClockData
+        value = f"total={time_formatter(self.data.total)}"
+        value += (
+            f" range=[{time_formatter(self.data.min)}-{time_formatter(self.data.max)}]"
+        )
+        value += f" mean={time_formatter(self.data.mean)}~{time_formatter(self.data.variance)}"
+
         s = f"{indent}{me} {value}\n"
         for child in self.children:
-            s += f"{indent}\t- {child.name} ({child.data.total/max(1, self.data.total)*100:.2f}%)\n{child.to_string(time_formatter, tabs + 1)}"
+            time_percent = child.data.total / max(1, self.data.total) * 100
+            s += f"{indent}\t- {light_green}{child.name}{reset} ({light_yellow}{time_percent:.2f}%{reset})\n"
+            s += child.to_string(time_formatter, tabs + 1, colors)
         return s
 
     def __str__(self) -> str:
@@ -113,11 +131,13 @@ def get(name: str) -> ClockData:
     return __node_from_name__(name).data
 
 
-def summary(time_formatter: Callable[[float], str], domain: str = "") -> str:
+def summary(
+    time_formatter: Callable[[float], str], domain: str = "", colors: bool = True
+) -> str:
     # Build the tree
     root = __node_from_name__(domain)
     root.autofill()
-    return root.to_string(time_formatter)
+    return root.to_string(time_formatter, colors=colors)
 
 
 class ClockContextManager:
