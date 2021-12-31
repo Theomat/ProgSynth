@@ -1,4 +1,3 @@
-from abc import ABC, abstractmethod
 from typing import Callable, Dict, Set, Tuple
 
 from synth.pruning.pruner import Pruner
@@ -6,10 +5,7 @@ from synth.syntax.program import Function, Primitive, Program
 from synth.syntax.type_system import Arrow, Type
 
 
-class SyntaxicPruner(Pruner, ABC):
-    @abstractmethod
-    def accept(self, obj: Tuple[Type, Program]) -> bool:
-        pass
+SyntaxicPruner = Pruner[Tuple[Type, Program]]
 
 
 class UseAllVariablesPruner(SyntaxicPruner):
