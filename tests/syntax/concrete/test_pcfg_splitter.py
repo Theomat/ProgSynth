@@ -1,4 +1,4 @@
-from synth.syntax.concrete.heap_search import enumerate
+from synth.syntax.concrete.heap_search import enumerate_pcfg
 from synth.syntax.concrete.pcfg_splitter import split
 from synth.syntax.concrete.concrete_cfg import ConcreteCFG
 from synth.syntax.concrete.concrete_pcfg import ConcretePCFG
@@ -32,7 +32,7 @@ def test_unicity() -> None:
         fragments, _ = split(pcfg, splits, desired_ratio=1.05)
         seen = set()
         for sub_pcfg in fragments:
-            for program in enumerate(sub_pcfg):
+            for program in enumerate_pcfg(sub_pcfg):
                 assert program not in seen
                 seen.add(program)
 
@@ -43,14 +43,14 @@ def prout_test_none_missing() -> None:
     cfg = ConcreteCFG.from_dsl(dsl, FunctionType(INT, INT), max_depth)
     pcfg = ConcretePCFG.uniform_from_cfg(cfg)
     seen = set()
-    for program in enumerate(pcfg):
+    for program in enumerate_pcfg(pcfg):
         seen.add(program)
     for splits in [2, 4, 5]:
         fragments, _ = split(pcfg, splits, desired_ratio=1.05)
         new_seen = set()
         for sub_pcfg in fragments:
             a = set()
-            for program in enumerate(sub_pcfg):
+            for program in enumerate_pcfg(sub_pcfg):
                 a.add(program)
             new_seen |= a
         assert len(seen.difference(new_seen)) == 0, seen.difference(new_seen)

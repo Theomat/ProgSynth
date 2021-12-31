@@ -1,4 +1,4 @@
-from synth.syntax.concrete.heap_search import enumerate
+from synth.syntax.concrete.heap_search import enumerate_pcfg
 from synth.syntax.concrete.concrete_cfg import ConcreteCFG
 from synth.syntax.concrete.concrete_pcfg import ConcretePCFG
 from synth.syntax.dsl import DSL
@@ -27,7 +27,7 @@ def test_unicity() -> None:
     cfg = ConcreteCFG.from_dsl(dsl, FunctionType(INT, INT), max_depth)
     pcfg = ConcretePCFG.uniform_from_cfg(cfg)
     seen = set()
-    for program in enumerate(pcfg):
+    for program in enumerate_pcfg(pcfg):
         assert program not in seen
         seen.add(program)
 
@@ -38,7 +38,7 @@ def test_order() -> None:
     cfg = ConcreteCFG.from_dsl(dsl, FunctionType(INT, INT), max_depth)
     pcfg = ConcretePCFG.uniform_from_cfg(cfg)
     last = 1.0
-    for program in enumerate(pcfg):
+    for program in enumerate_pcfg(pcfg):
         p = pcfg.probability(program)
         assert p <= last
         last = p

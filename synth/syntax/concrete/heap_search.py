@@ -13,7 +13,7 @@ class HeapElement:
     program: Program = field(compare=False)
 
 
-def enumerate(G: ConcretePCFG) -> Generator[Program, None, None]:
+def enumerate_pcfg(G: ConcretePCFG) -> Generator[Program, None, None]:
     H = heap_search_object(G)
     return H.generator()
 

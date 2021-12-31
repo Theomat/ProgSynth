@@ -16,4 +16,10 @@ from synth.syntax.type_system import (
     BOOL,
     STRING,
 )
-from synth.syntax.concrete import Context, ConcreteCFG, ConcretePCFG, enumerate, split
+from synth.syntax.concrete import (
+    Context,
+    ConcreteCFG,
+    ConcretePCFG,
+    enumerate_pcfg,
+    split,
+)
