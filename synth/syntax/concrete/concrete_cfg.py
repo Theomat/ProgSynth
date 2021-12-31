@@ -73,6 +73,19 @@ class ConcreteCFG:
     def __hash__(self) -> int:
         return hash((self.start, str(self.rules), self.max_program_depth))
 
+    def size(self) -> int:
+        total_programs: Dict[Context, int] = {}
+        for S in reversed(self.rules):
+            total = 0
+            for P in self.rules[S]:
+                args_P = self.rules[S][P]
+                if len(args_P) == 0:
+                    total += 1
+                else:
+                    total += sum(total_programs[C] for C in args_P)
+            total_programs[S] = total
+        return total_programs[self.start]
+
     def clean(self) -> None:
         """
         remove non-terminals which do not produce programs.
