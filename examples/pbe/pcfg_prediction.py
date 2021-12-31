@@ -27,7 +27,7 @@ from synth.utils import chrono, gen_take
 DREAMCODER = "dreamcoder"
 DEEPCODER = "deepcoder"
 
-dataset = DREAMCODER
+dataset = DEEPCODER
 # ================================
 # Tunable parameters
 # ================================
