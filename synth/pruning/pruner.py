@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Generic, Iterable, TypeVar
+from typing import Generic, TypeVar
 
 T = TypeVar("T")
 U = TypeVar("U")
@@ -12,7 +12,7 @@ class Pruner(ABC, Generic[T]):
 
 
 class UnionPruner(Pruner[U]):
-    def __init__(self, pruners: Iterable[Pruner[U]]) -> None:
+    def __init__(self, *pruners: Pruner[U]) -> None:
         self.pruners = list(pruners)
 
     def accept(self, obj: U) -> bool:
