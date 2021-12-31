@@ -1,8 +1,6 @@
 from typing import List
 import atexit
 
-from deepcoder import dsl, evaluator
-
 import tqdm
 
 import torch
@@ -23,6 +21,14 @@ from synth.pbe import reproduce_dataset, IOEncoder
 from synth.syntax import ConcreteCFG
 from synth.utils import chrono, gen_take
 
+# ================================
+# Change dataset
+# ================================
+from deepcoder.deepcoder import dsl, evaluator
+uniform_pcfg = False
+
+from dreamcoder.dreamcoder import dsl, evaluator
+uniform_pcfg = True
 # ================================
 # Tunable parameters
 # ================================
@@ -50,7 +56,7 @@ with chrono.clock("dataset.load") as c:
 print("Reproducing dataset...", end="")
 with chrono.clock("dataset.reproduce") as c:
     task_generator, lexicon = reproduce_dataset(
-        full_dataset, dsl, evaluator, 0, uniform_pcfg=False
+        full_dataset, dsl, evaluator, 0, uniform_pcfg=uniform_pcfg
     )
     print("done in", c.elapsed_time(), "s")
 # Add some exceptions that are ignored during task generation
