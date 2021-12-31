@@ -1,5 +1,5 @@
 import copy
-from typing import Mapping, Optional, Set
+from typing import Mapping, Optional, List as TList, Set
 
 from synth.syntax.type_system import Type, Arrow, List
 from synth.syntax.program import Primitive
@@ -16,12 +16,12 @@ class DSL:
     def __init__(
         self,
         syntax: Mapping[str, Type],
-        no_repetitions: Optional[Set[str]] = None,
+        forbidden_patterns: Optional[TList[TList[str]]] = None,
     ):
         self.list_primitives = [
             Primitive(primitive=p, type=t) for p, t in syntax.items()
         ]
-        self.no_repetitions: Set[str] = no_repetitions or set()
+        self.forbidden_patterns = forbidden_patterns or []
 
     def __str__(self) -> str:
         s = "Print a DSL\n"

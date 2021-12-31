@@ -209,12 +209,6 @@ class ConcreteCFG:
             # Add functions from the DSL
             elif depth < max_depth:
                 for P in dsl.list_primitives:
-                    if (
-                        P.primitive in dsl.no_repetitions
-                        and len(non_terminal.predecessors) > 0
-                        and non_terminal.predecessors[0][0].primitive == P.primitive
-                    ):
-                        continue
                     type_P = P.type
                     arguments_P = type_P.ends_with(current_type)
                     if arguments_P is not None:
@@ -229,6 +223,24 @@ class ConcreteCFG:
                                 list_to_be_treated.appendleft(new_context)
 
                         rules[non_terminal][P] = decorated_arguments_P
+
+        # Now delete all forbidden patterns
+        for pattern in dsl.forbidden_patterns:
+            # For now support only patterns of length 2
+            if len(pattern) != 2:
+                continue
+            source = pattern[0]
+            for S in rules:
+                if not (
+                    len(S.predecessors) >= 1
+                    and S.predecessors[0][0].primitive == source
+                ):
+                    continue
+                # Now we must remove derivation to pattern
+                for Q in list(rules[S]):
+                    if isinstance(Q, Primitive) and Q.primitive == pattern[1]:
+                        del rules[S][Q]
+                        break
 
         return ConcreteCFG(
             start=Context(return_type, [], 0),
