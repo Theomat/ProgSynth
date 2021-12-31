@@ -24,11 +24,10 @@ from synth.utils import chrono, gen_take
 # ================================
 # Change dataset
 # ================================
-from deepcoder.deepcoder import dsl, evaluator
-uniform_pcfg = False
+DREAMCODER = "dreamcoder"
+DEEPCODER = "deepcoder"
 
-from dreamcoder.dreamcoder import dsl, evaluator
-uniform_pcfg = True
+dataset = DREAMCODER
 # ================================
 # Tunable parameters
 # ================================
@@ -44,13 +43,23 @@ weight_decay = 1e-4
 # ================================
 # Initialisation
 # ================================
+if dataset == DEEPCODER:
+    from deepcoder.deepcoder import dsl, evaluator
+
+    uniform_pcfg = False
+    dataset_file = "deepcoder.pickle"
+elif dataset == DREAMCODER:
+    from dreamcoder.dreamcoder import dsl, evaluator
+
+    uniform_pcfg = True
+    dataset_file = "dreamcoder.pickle"
 # Get device
 device = "cuda" if torch.cuda.is_available() else "cpu"
 print("Using device:", device)
 # Load dataset
-print("Loading dataset...", end="")
+print(f"Loading {dataset_file}...", end="")
 with chrono.clock("dataset.load") as c:
-    full_dataset: Dataset[PBE] = Dataset.load("./deepcoder.pickle")
+    full_dataset: Dataset[PBE] = Dataset.load(dataset_file)
     print("done in", c.elapsed_time(), "s")
 # Reproduce dataset distribution
 print("Reproducing dataset...", end="")
@@ -63,7 +72,10 @@ with chrono.clock("dataset.reproduce") as c:
 task_generator.skip_exceptions.add(TypeError)
 # Generate the CFG dictionnary
 all_type_requests = set(task_generator.type2pcfg.keys())
-max_depth = max(task.solution.depth() for task in full_dataset)
+if dataset == DEEPCODER:
+    max_depth = max(task.solution.depth() for task in full_dataset)
+elif dataset == DREAMCODER:
+    max_depth = 5
 cfgs = [ConcreteCFG.from_dsl(dsl, t, max_depth) for t in all_type_requests]
 # Logging
 writer = SummaryWriter()
