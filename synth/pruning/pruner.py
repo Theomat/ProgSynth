@@ -11,7 +11,7 @@ class Pruner(ABC, Generic[T]):
         pass
 
 
-class UnionPruner(Pruner[U]):
+class UnionPruner(Pruner, Generic[U]):
     def __init__(self, *pruners: Pruner[U]) -> None:
         self.pruners = list(pruners)
 
