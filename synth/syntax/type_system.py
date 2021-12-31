@@ -4,7 +4,7 @@ A type can be either PolymorphicType, PrimitiveType, Arrow, or List
 """
 from typing import Any, Dict, List as TList, Optional, Set, Tuple
 
-from abc import ABC, abstractmethod
+from abc import ABC, abstractmethod, abstractstaticmethod
 
 
 class Type(ABC):
@@ -82,8 +82,8 @@ class Type(ABC):
             return self.type_out.ends_with_rec(other, arguments_list)
         return None
 
-    @abstractmethod
-    def __rehash__(self) -> None:
+    @abstractstaticmethod
+    def __pickle__(o: "Type") -> Tuple:
         pass
 
 
@@ -93,10 +93,10 @@ class PolymorphicType(Type):
     def __init__(self, name: str):
         super().__init__()
         self.name = name
-        self.__rehash__()
-
-    def __rehash__(self) -> None:
         self.hash = hash(self.name)
+
+    def __pickle__(o: Type) -> Tuple:
+        return PolymorphicType, (o.name,)  # type: ignore
 
     def __str__(self) -> str:
         return format(self.name)
@@ -123,10 +123,10 @@ class PrimitiveType(Type):
 
     def __init__(self, type_name: str):
         self.type_name = type_name
-        self.__rehash__()
-
-    def __rehash__(self) -> None:
         self.hash = hash(self.type_name)
+
+    def __pickle__(o: Type) -> Tuple:
+        return PrimitiveType, (o.type_name,)  # type: ignore
 
     def __str__(self) -> str:
         return format(self.type_name)
@@ -152,10 +152,10 @@ class Arrow(Type):
     def __init__(self, type_in: Type, type_out: Type):
         self.type_in = type_in
         self.type_out = type_out
-        self.__rehash__()
-
-    def __rehash__(self) -> None:
         self.hash = hash((self.type_in, self.type_out))
+
+    def __pickle__(o: Type) -> Tuple:
+        return Arrow, (o.type_in, o.type_out)  # type: ignore
 
     def __str__(self) -> str:
         rep_in = format(self.type_in)
@@ -211,10 +211,10 @@ class List(Type):
 
     def __init__(self, element_type: Type):
         self.element_type = element_type
-        self.__rehash__()
-
-    def __rehash__(self) -> None:
         self.hash = hash(18923 + hash(self.element_type))
+
+    def __pickle__(o: Type) -> Tuple:
+        return List, (o.element_type,)  # type: ignore
 
     def __str__(self) -> str:
         if isinstance(self.element_type, Arrow):
@@ -254,10 +254,10 @@ class UnknownType(Type):
 
     def __init__(self) -> None:
         super().__init__()
-        self.__rehash__()
-
-    def __rehash__(self) -> None:
         self.hash = hash(1984)
+
+    def __pickle__(o: Type) -> Tuple:
+        return UnknownType, ()
 
     def __str__(self) -> str:
         return "UnknownType"
@@ -271,6 +271,7 @@ class UnknownType(Type):
         set_polymorphic_types: Set["PolymorphicType"],
     ) -> None:
         pass
+
 
 
 INT = PrimitiveType("int")
@@ -324,3 +325,9 @@ def match(a: Type, b: Type) -> bool:
     elif isinstance(b, PolymorphicType):
         return match(b, a)
     return False
+
+
+import copyreg
+
+for cls in [PrimitiveType, PolymorphicType, List, Arrow, UnknownType]:
+    copyreg.pickle(cls, cls.__pickle__)

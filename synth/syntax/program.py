@@ -1,5 +1,5 @@
-from typing import Generator, List as TList, Any, Set
-from abc import ABC, abstractmethod
+from abc import ABC, abstractstaticmethod
+from typing import Generator, List as TList, Any, Set, Tuple
 
 from synth.syntax.type_system import Arrow, FunctionType, Type, UnknownType
 
@@ -42,8 +42,8 @@ class Program(ABC):
     def depth_first_iter(self) -> Generator["Program", None, None]:
         yield self
 
-    @abstractmethod
-    def __rehash__(self) -> None:
+    @abstractstaticmethod
+    def __pickle__(o: "Program") -> Tuple:
         pass
 
 
@@ -53,8 +53,6 @@ class Variable(Program):
     def __init__(self, variable: int, type: Type = UnknownType()):
         super().__init__(type)
         self.variable: int = variable
-
-    def __rehash__(self) -> None:
         self.hash = hash((self.variable, self.type))
 
     def __add_used_variables__(self, vars: Set[int]) -> None:
@@ -66,6 +64,9 @@ class Variable(Program):
     def __eq__(self, other: Any) -> bool:
         return isinstance(other, Variable) and self.variable == other.variable
 
+    def __pickle__(o: Program) -> Tuple:
+        return Variable, (o.variable, o.type)  # type: ignore
+
 
 class Constant(Program):
     __hash__ = Program.__hash__
@@ -73,9 +74,6 @@ class Constant(Program):
     def __init__(self, value: Any, type: Type = UnknownType()):
         super().__init__(type)
         self.value = value
-        self.__rehash__()
-
-    def __rehash__(self) -> None:
         self.hash = hash((str(self.value), self.type))
 
     def __str__(self) -> str:
@@ -91,6 +89,9 @@ class Constant(Program):
             and self.value == other.value
         )
 
+    def __pickle__(o: Program) -> Tuple:
+        return Constant, (o.value, o.type)  # type: ignore
+
 
 class Function(Program):
     __hash__ = Program.__hash__
@@ -105,10 +106,10 @@ class Function(Program):
         super().__init__(my_type)
         self.function = function
         self.arguments = arguments
-        self.__rehash__()
-
-    def __rehash__(self) -> None:
         self.hash = hash(tuple([arg for arg in self.arguments] + [self.function]))
+
+    def __pickle__(o: Program) -> Tuple:
+        return Function, (o.function, o.arguments)  # type: ignore
 
     def __str__(self) -> str:
         if len(self.arguments) == 0:
@@ -164,10 +165,10 @@ class Lambda(Program):
     def __init__(self, body: Program, type: Type = UnknownType()):
         super().__init__(type)
         self.body = body
-        self.__rehash__()
-
-    def __rehash__(self) -> None:
         self.hash = hash(94135 + hash(self.body))
+
+    def __pickle__(o: Program) -> Tuple:
+        return Lambda, (o.body, o.type)  # type: ignore
 
     def __str__(self) -> str:
         return "(lambda " + format(self.body) + ")"
@@ -193,10 +194,10 @@ class Primitive(Program):
     def __init__(self, primitive: str, type: Type = UnknownType()):
         super().__init__(type)
         self.primitive = primitive
-        self.__rehash__()
-
-    def __rehash__(self) -> None:
         self.hash = hash((self.primitive, self.type))
+
+    def __pickle__(o: Program) -> Tuple:
+        return Primitive, (o.primitive, o.type)  # type: ignore
 
     def __str__(self) -> str:
         """
@@ -206,3 +207,9 @@ class Primitive(Program):
 
     def __eq__(self, other: Any) -> bool:
         return isinstance(other, Primitive) and self.primitive == other.primitive
+
+
+import copyreg
+
+for cls in [Primitive, Constant, Lambda, Function, Variable]:
+    copyreg.pickle(cls, cls.__pickle__)

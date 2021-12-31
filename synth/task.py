@@ -38,11 +38,6 @@ class Task(Generic[T]):
             self.metadata,
         )
 
-    def __rehash__(self) -> None:
-        self.type_request.__rehash__()
-        if self.solution:
-            self.solution.__rehash__()
-
 
 @dataclass
 class Dataset(Generic[T]):
@@ -130,6 +125,4 @@ class Dataset(Generic[T]):
         """
         with bz2.BZ2File(path, "rb") as fd:
             dataset: Dataset = cPickle.load(fd)
-            for task in dataset:
-                task.__rehash__()
             return dataset
