@@ -101,7 +101,7 @@ class PrefixTree:
 
         s = f"{indent}{me} {value}\n"
         for child in self.children:
-            time_percent = child.data.total / max(1, self.data.total) * 100
+            time_percent = child.data.total / max(1e-13, self.data.total) * 100
             s += f"{indent}\t- {light_green}{child.name}{reset} ({light_yellow}{time_percent:.2f}%{reset})\n"
             s += child.to_string(time_formatter, tabs + 1, colors)
         return s
