@@ -138,8 +138,7 @@ class HSEnumerator:
                 # non-terminal symbol used to derive the i-th argument
                 S2 = self.G.rules[S][F][0][i]
                 succ_sub_program = self.query(S2, succ.arguments[i])
-
-                if isinstance(succ_sub_program, Program):
+                if succ_sub_program:
                     new_arguments = succ.arguments[:]
                     new_arguments[i] = succ_sub_program
 
