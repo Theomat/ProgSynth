@@ -14,7 +14,8 @@ This folder contains ready to use scripts and files that you can leverage to rep
 
 ## Programming By Example
 
-The `pcfg_prediction.py` can load either the `deepcoder` or `dreamcoder` datasets, reproduces the task distribution, then train a neural net to predict the PCFG probabilities and compute the test loss on the dataset. Metrics are logged with [TensorBoard](https://www.tensorflow.org/tensorboard/) and a report of time spent is printed at the end of the script.
+- The `pcfg_prediction.py` can load either the `deepcoder` or `dreamcoder` datasets, reproduces the task distribution, then train a neural net to predict the PCFG probabilities and compute the test loss on the dataset. Metrics are logged with [TensorBoard](https://www.tensorflow.org/tensorboard/) and a report of time spent is printed at the end of the script.
+- The `dsl_analyser.py` can load either the `deepcoder` or `dreamcoder` datasets, reproduces the input distribution, then try to find all redundant derivations at depth 2 such as `(MAP[/4] (MAP[*4] var0))` or `(LENGTH (SORT var0))`. For examples removing these patterns in the deepcoder CFG, reduces its size by 10.5% at depth 5.
 
 ### DeepCoder
 
