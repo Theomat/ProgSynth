@@ -46,3 +46,12 @@ class FunctionPruner(SyntaxicPruner):
             ):
                 return False
         return True
+
+
+class SetPruner(SyntaxicPruner):
+    def __init__(self, forbidden: Set[Program]) -> None:
+        super().__init__()
+        self.forbidden = forbidden
+
+    def accept(self, obj: Tuple[Type, Program]) -> bool:
+        return obj[1] not in self.forbidden

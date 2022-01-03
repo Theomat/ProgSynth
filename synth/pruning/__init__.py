@@ -6,4 +6,5 @@ from synth.pruning.syntaxic_pruner import (
     UseAllVariablesPruner,
     FunctionPruner,
     SyntaxicPruner,
+    SetPruner,
 )
