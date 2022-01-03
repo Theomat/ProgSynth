@@ -27,7 +27,7 @@ def test_unicity() -> None:
     dsl = DSL(syntax)
     max_depth = 4
     cfg = ConcreteCFG.from_dsl(dsl, FunctionType(INT, INT), max_depth)
-    pcfg = ConcretePCFG.uniform_from_cfg(cfg)
+    pcfg = ConcretePCFG.uniform(cfg)
     for splits in [2, 4, 5]:
         fragments, _ = split(pcfg, splits, desired_ratio=1.05)
         seen = set()
@@ -41,7 +41,7 @@ def prout_test_none_missing() -> None:
     dsl = DSL(syntax)
     max_depth = 3
     cfg = ConcreteCFG.from_dsl(dsl, FunctionType(INT, INT), max_depth)
-    pcfg = ConcretePCFG.uniform_from_cfg(cfg)
+    pcfg = ConcretePCFG.uniform(cfg)
     seen = set()
     for program in enumerate_pcfg(pcfg):
         seen.add(program)

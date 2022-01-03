@@ -29,7 +29,7 @@ cfg = ConcreteCFG.from_dsl(dsl, FunctionType(INT, INT), max_depth)
 
 def test_eval() -> None:
     eval = DSLEvaluator(semantics)
-    pcfg = ConcretePCFG.uniform_from_cfg(cfg)
+    pcfg = ConcretePCFG.uniform(cfg)
     pcfg.init_sampling(0)
     for _ in range(100):
         program = pcfg.sample_program()
@@ -42,7 +42,7 @@ def test_eval() -> None:
 
 def test_supports_list() -> None:
     eval = DSLEvaluator(semantics)
-    pcfg = ConcretePCFG.uniform_from_cfg(cfg)
+    pcfg = ConcretePCFG.uniform(cfg)
     pcfg.init_sampling(0)
     for _ in range(100):
         program = pcfg.sample_program()
@@ -55,7 +55,7 @@ def test_supports_list() -> None:
 
 def test_use_cache() -> None:
     eval = DSLEvaluator(semantics)
-    pcfg = ConcretePCFG.uniform_from_cfg(cfg)
+    pcfg = ConcretePCFG.uniform(cfg)
     pcfg.init_sampling(0)
     for _ in range(100):
         program = pcfg.sample_program()

@@ -223,7 +223,7 @@ def reproduce_dataset(
 
     if uniform_pcfg:
         pcfgs = {
-            ConcretePCFG.uniform_from_cfg(ConcreteCFG.from_dsl(dsl, t, max_depth))
+            ConcretePCFG.uniform(ConcreteCFG.from_dsl(dsl, t, max_depth))
             for t in allowed_types
         }
     else:

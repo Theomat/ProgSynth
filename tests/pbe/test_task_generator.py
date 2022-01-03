@@ -34,7 +34,7 @@ validator = basic_output_validator(int_lexicon, -1)
 
 def test_gen() -> None:
     samples_lexicon = [2, 3, 4]
-    pcfg = ConcretePCFG.uniform_from_cfg(ConcreteCFG.from_dsl(dsl, type_req, max_depth))
+    pcfg = ConcretePCFG.uniform(ConcreteCFG.from_dsl(dsl, type_req, max_depth))
     pcfg.init_sampling(0)
     g = TaskGenerator(
         LexiconSampler(int_lexicon, seed=0),
@@ -57,7 +57,7 @@ def test_gen() -> None:
 
 
 def test_seed() -> None:
-    pcfg = ConcretePCFG.uniform_from_cfg(ConcreteCFG.from_dsl(dsl, type_req, max_depth))
+    pcfg = ConcretePCFG.uniform(ConcreteCFG.from_dsl(dsl, type_req, max_depth))
     pcfg.init_sampling(0)
     g1 = TaskGenerator(
         LexiconSampler(int_lexicon, seed=0),
@@ -67,7 +67,7 @@ def test_seed() -> None:
         {pcfg},
         validator,
     )
-    pcfg = ConcretePCFG.uniform_from_cfg(ConcreteCFG.from_dsl(dsl, type_req, max_depth))
+    pcfg = ConcretePCFG.uniform(ConcreteCFG.from_dsl(dsl, type_req, max_depth))
     pcfg.init_sampling(0)
     g2 = TaskGenerator(
         LexiconSampler(int_lexicon, seed=0),

@@ -27,14 +27,14 @@ def test_from_cfg() -> None:
     dsl = DSL(syntax)
     for max_depth in [3, 7, 11]:
         cfg = ConcreteCFG.from_dsl(dsl, FunctionType(INT, INT), max_depth)
-        pcfg = ConcretePCFG.uniform_from_cfg(cfg)
+        pcfg = ConcretePCFG.uniform(cfg)
         for rule in pcfg.rules:
             n = len(pcfg.rules[rule])
             for P in pcfg.rules[rule]:
                 _, prob = pcfg.rules[rule][P]
                 assert np.isclose(prob, 1 / n)
 
-        cpy = ConcretePCFG.uniform_from_cfg(cfg)
+        cpy = ConcretePCFG.uniform(cfg)
         assert cpy == pcfg
 
 
@@ -42,7 +42,7 @@ def test_clean() -> None:
     dsl = DSL(syntax)
     for max_depth in [3, 7, 11]:
         cfg = ConcreteCFG.from_dsl(dsl, FunctionType(INT, INT), max_depth)
-        pcfg = ConcretePCFG.uniform_from_cfg(cfg)
+        pcfg = ConcretePCFG.uniform(cfg)
         for rule in pcfg.rules:
             assert rule.depth <= max_depth
             for P in pcfg.rules[rule]:
@@ -50,7 +50,7 @@ def test_clean() -> None:
                     assert P.primitive != "non_reachable"
                     assert P.primitive != "non_productive"
 
-        cpy = ConcretePCFG.uniform_from_cfg(cfg)
+        cpy = ConcretePCFG.uniform(cfg)
         cpy.clean()
         assert pcfg == cpy
 
@@ -59,7 +59,7 @@ def test_ready_for_sampling() -> None:
     dsl = DSL(syntax)
     for max_depth in [3, 7, 11]:
         cfg = ConcreteCFG.from_dsl(dsl, FunctionType(INT, INT), max_depth)
-        pcfg = ConcretePCFG.uniform_from_cfg(cfg)
+        pcfg = ConcretePCFG.uniform(cfg)
         assert not pcfg.ready_for_sampling
         pcfg.init_sampling()
         assert pcfg.ready_for_sampling
@@ -69,10 +69,10 @@ def test_seeding() -> None:
     dsl = DSL(syntax)
     for max_depth in [3, 7, 11]:
         cfg = ConcreteCFG.from_dsl(dsl, FunctionType(INT, INT), max_depth)
-        pcfg = ConcretePCFG.uniform_from_cfg(cfg)
+        pcfg = ConcretePCFG.uniform(cfg)
         pcfg.init_sampling(0)
         g1 = pcfg.sampling()
-        cpy = ConcretePCFG.uniform_from_cfg(cfg)
+        cpy = ConcretePCFG.uniform(cfg)
         cpy.init_sampling(0)
         g2 = cpy.sampling()
         for _ in range(1000):
@@ -84,7 +84,7 @@ def test_depth() -> None:
     dsl = DSL(syntax)
     for max_depth in [3, 7, 11]:
         cfg = ConcreteCFG.from_dsl(dsl, FunctionType(INT, INT), max_depth)
-        pcfg = ConcretePCFG.uniform_from_cfg(cfg)
+        pcfg = ConcretePCFG.uniform(cfg)
         pcfg.init_sampling(0)
         g = pcfg.sampling()
         for _ in range(1000):

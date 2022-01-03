@@ -277,7 +277,7 @@ class ConcretePCFG:
         assert False
 
     @classmethod
-    def from_cfg(
+    def from_weights(
         cls,
         cfg: ConcreteCFG,
         get_weight: Callable[[Context, Union[Primitive, Variable]], float],
@@ -295,5 +295,5 @@ class ConcretePCFG:
         )
 
     @classmethod
-    def uniform_from_cfg(cls, cfg: ConcreteCFG) -> "ConcretePCFG":
-        return cls.from_cfg(cfg, lambda _, __: 1)
+    def uniform(cls, cfg: ConcreteCFG) -> "ConcretePCFG":
+        return cls.from_weights(cfg, lambda _, __: 1)

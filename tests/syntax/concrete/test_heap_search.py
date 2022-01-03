@@ -25,7 +25,7 @@ def test_unicity() -> None:
     dsl = DSL(syntax)
     max_depth = 3
     cfg = ConcreteCFG.from_dsl(dsl, FunctionType(INT, INT), max_depth)
-    pcfg = ConcretePCFG.uniform_from_cfg(cfg)
+    pcfg = ConcretePCFG.uniform(cfg)
     seen = set()
     for program in enumerate_pcfg(pcfg):
         assert program not in seen
@@ -36,7 +36,7 @@ def test_order() -> None:
     dsl = DSL(syntax)
     max_depth = 3
     cfg = ConcreteCFG.from_dsl(dsl, FunctionType(INT, INT), max_depth)
-    pcfg = ConcretePCFG.uniform_from_cfg(cfg)
+    pcfg = ConcretePCFG.uniform(cfg)
     last = 1.0
     for program in enumerate_pcfg(pcfg):
         p = pcfg.probability(program)
