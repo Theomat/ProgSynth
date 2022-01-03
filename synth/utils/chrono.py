@@ -18,8 +18,10 @@ class ClockData:
     min: float = field(default=0)
     mean: float = field(default=0)
     _square_sum: float = field(default=0)
+    autofilled: bool = field(default=True)
 
     def add_data(self, time: float) -> None:
+        self.autofilled = False
         if self.count == 0:
             self.min = time
             self.max = time
@@ -72,7 +74,7 @@ class PrefixTree:
     def autofill(self) -> None:
         for child in self.children:
             child.autofill()
-        if self.data.count == 0:
+        if self.data.autofilled:
             self.data.total = sum(child.data.total for child in self.children)
             self.data.count = sum(child.data.count for child in self.children)
             self.data.max = sum(child.data.max for child in self.children)
