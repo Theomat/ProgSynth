@@ -2,6 +2,8 @@ from heapq import heappush, heappop
 from typing import Dict, Generator, List, Optional, Set
 from dataclasses import dataclass, field
 
+from synth.pruning.syntaxic_pruner import SyntaxicPruner
+
 from synth.syntax.program import Program, Function, Variable
 from synth.syntax.concrete.concrete_cfg import Context
 from synth.syntax.concrete.concrete_pcfg import ConcretePCFG
@@ -13,29 +15,14 @@ class HeapElement:
     program: Program = field(compare=False)
 
 
-def enumerate_pcfg(G: ConcretePCFG) -> Generator[Program, None, None]:
-    H = heap_search_object(G)
-    return H.generator()
-
-
-class heap_search_object:
+class HSEnumerator:
     hash_table_global: Dict[int, Program] = {}
 
-    def return_unique(self, P: Program) -> Program:
-        """
-        ensures that if a program appears in several heaps,
-        it is represented by the same object,
-        so we do not evaluate it several times
-        """
-        hash_P = hash(P)
-        if hash_P in self.hash_table_global:
-            return self.hash_table_global[hash_P]
-        else:
-            self.hash_table_global[hash_P] = P
-            return P
-
-    def __init__(self, G: ConcretePCFG) -> None:
+    def __init__(
+        self, G: ConcretePCFG, pruner: Optional[SyntaxicPruner] = None
+    ) -> None:
         self.current: Optional[Program] = None
+        self.pruner = pruner
 
         self.G = G
         self.start = G.start
@@ -82,14 +69,28 @@ class heap_search_object:
                 self.hash_table_global[hash_program] = program
 
                 # print("adding to the heap", program, program.probability[S])
-                heappush(
-                    self.heaps[S],
-                    HeapElement(-self.probabilities[program][S], program),
-                )
+                if not pruner or pruner.accept((self.G.type_request, program)):
+                    heappush(
+                        self.heaps[S],
+                        HeapElement(-self.probabilities[program][S], program),
+                    )
 
         # 2. call query(S, None) for all non-terminal symbols S, from leaves to root
         for S in reversed(self.rules):
             self.query(S, None)
+
+    def __return_unique__(self, P: Program) -> Program:
+        """
+        ensures that if a program appears in several heaps,
+        it is represented by the same object,
+        so we do not evaluate it several times
+        """
+        hash_P = hash(P)
+        if hash_P in self.hash_table_global:
+            return self.hash_table_global[hash_P]
+        else:
+            self.hash_table_global[hash_P] = P
+            return P
 
     def generator(self) -> Generator[Program, None, None]:
         """
@@ -101,6 +102,9 @@ class heap_search_object:
                 break
             self.current = program
             yield program
+
+    def __iter__(self) -> Generator[Program, None, None]:
+        return self.generator()
 
     def query(self, S: Context, program: Optional[Program]) -> Optional[Program]:
         """
@@ -140,7 +144,7 @@ class heap_search_object:
                     new_arguments[i] = succ_sub_program
 
                     new_program: Program = Function(F, new_arguments)
-                    new_program = self.return_unique(new_program)
+                    new_program = self.__return_unique__(new_program)
                     hash_new_program = hash(new_program)
 
                     if hash_new_program not in self.hash_table_program[S]:
@@ -148,10 +152,21 @@ class heap_search_object:
                         probability = self.G.rules[S][F][1]
                         for arg, S3 in zip(new_arguments, self.G.rules[S][F][0]):
                             probability *= self.probabilities[arg][S3]
-                        heappush(self.heaps[S], HeapElement(-probability, new_program))
+                        if not self.pruner or self.pruner.accept(
+                            (self.G.type_request, new_program)
+                        ):
+                            heappush(
+                                self.heaps[S], HeapElement(-probability, new_program)
+                            )
                         self.probabilities[new_program][S] = probability
 
         if isinstance(succ, Variable):
             return succ  # if succ is a variable, there is no successor so we stop here
 
         return succ
+
+
+def enumerate_pcfg(
+    G: ConcretePCFG, pruner: Optional[SyntaxicPruner] = None
+) -> HSEnumerator:
+    return HSEnumerator(G, pruner)
