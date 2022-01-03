@@ -23,6 +23,9 @@ class DSLEvaluator(Evaluator):
         self.semantics = semantics
         self.use_cache = use_cache
         self._cache: Dict[Any, Dict[Program, Any]] = {}
+        # Statistics
+        self._total_requests = 0
+        self._cache_hits = 0
 
     def eval(self, program: Program, input: List) -> Any:
         key = __tuplify__(input)
@@ -30,7 +33,9 @@ class DSLEvaluator(Evaluator):
             self._cache[key] = {}
         evaluations: Dict[Program, Any] = self._cache[key] if self.use_cache else {}
         for sub_prog in program.depth_first_iter():
+            self._total_requests += 1
             if sub_prog in evaluations:
+                self._cache_hits += 1
                 continue
             if isinstance(sub_prog, Primitive):
                 evaluations[sub_prog] = self.semantics[sub_prog.primitive]
@@ -46,3 +51,7 @@ class DSLEvaluator(Evaluator):
 
     def clear_cache(self) -> None:
         self._cache.clear()
+
+    @property
+    def cache_hit_rate(self) -> float:
+        return self._cache_hits / self._total_requests
