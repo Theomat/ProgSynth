@@ -1,14 +1,24 @@
-from typing import Set
+from typing import Dict, Generator, List, TypeVar
+import copy
 
 import numpy as np
 
 from synth import Dataset, PBE
 from synth.pbe import reproduce_dataset
-from synth.pruning import UseAllVariablesPruner
-from synth.syntax import ConcreteCFG, ConcretePCFG, enumerate_pcfg
-from synth.syntax.dsl import DSL
-from synth.syntax.program import Function, Primitive, Program, Variable
-from synth.syntax.type_system import Arrow
+from synth.pruning import UseAllVariablesPruner, SetPruner
+from synth.syntax import (
+    ConcreteCFG,
+    ConcretePCFG,
+    enumerate_pcfg,
+    DSL,
+    Function,
+    Primitive,
+    Program,
+    Variable,
+    Arrow,
+    Type,
+)
+from synth.syntax.type_system import FunctionType
 from synth.utils import chrono
 
 # ================================
@@ -59,13 +69,120 @@ simpler_pruner = UseAllVariablesPruner()
 sampled_inputs = {}
 
 syntaxic_restrictions = []
-semantic_restrictions = []
+specific_restrictions = set()
+specific_pruner = SetPruner(specific_restrictions)
 
-total_identity_candidates = 0
-total_identity_candidates_kept = 0
+stats = {s: {"total": 0, "syntaxic": 0} for s in ["identity", "symmetry", "invariant"]}
 
-total_redundant_candidates = 0
-total_redundant_candidates_kept = 0
+
+T = TypeVar("T")
+
+
+def produce_all_variants(possibles: List[List[T]]) -> Generator[List[T], None, None]:
+    # Enumerate all combinations
+    n = len(possibles)
+    maxi = [len(possibles[i]) for i in range(n)]
+    current = [0 for _ in range(n)]
+    while current[0] < maxi[0]:
+        yield [possibles[i][j] for i, j in enumerate(current)]
+        # Next combination
+        i = n - 1
+        current[i] += 1
+        while i > 0 and current[i] >= maxi[i]:
+            current[i] = 0
+            i -= 1
+            current[i] += 1
+
+
+def vars(program: Program) -> List[Variable]:
+    variables = []
+    for p in program.depth_first_iter():
+        if isinstance(p, Variable):
+            variables.append(p)
+    return variables
+
+
+def add_syntaxic(program: Program):
+    pattern = []
+    # Find all variables
+    for p in program.depth_first_iter():
+        if isinstance(p, Primitive):
+            pattern.append(p.primitive)
+    syntaxic_restrictions.append(pattern)
+
+
+def program_analysis(program: Program, solutions, category: str):
+    prog_vars = vars(program)
+    max_vars = len(prog_vars)
+    stats[category]["total"] += 1
+    # Now more variables have been used
+    type_request = FunctionType(*[var.type for var in prog_vars], program.type)
+    assert isinstance(type_request, Arrow)
+    arguments = type_request.arguments()
+    # If only one variable used, this is easy
+    if max_vars == 1:
+        add_syntaxic(program)
+        stats[category]["syntaxic"] += 1
+        return
+
+    # Consider all possibilities
+    arguments_per_type: Dict[Type, List[Variable]] = {}
+    for i, arg_type in enumerate(arguments):
+        if arg_type not in arguments_per_type:
+            arguments_per_type[arg_type] = []
+        arguments_per_type[arg_type].append(Variable(i, arg_type))
+    # Enumerate all combinations
+    invariant = set()
+    identity = set()
+    total: int = 0
+
+    # Get inputs
+    with chrono.clock("search.input_sampling"):
+        if type_request not in sampled_inputs:
+            sampled_inputs[type_request] = [
+                [input_sampler.sample(type=arg) for arg in arguments]
+                for _ in range(input_checks)
+            ]
+        inputs = sampled_inputs[type_request]
+
+    original = program
+    program = copy.deepcopy(original)
+    prog_vars = vars(program)
+    for i, var in enumerate(prog_vars):
+        var.variable = i
+    for args in produce_all_variants([arguments_per_type[t] for t in arguments]):
+        total += 1
+        # Modify program
+        for var, arg in zip(prog_vars, args):
+            var.variable = arg.variable
+        # Init booleans
+        is_invariant = original != program
+        varno = args[0].variable
+        is_identity = all(args[i].variable == varno for i in range(len(arguments)))
+        # Check
+        for inp, sol in zip(inputs, solutions):
+            with chrono.clock("eval"):
+                out = evaluator.eval(program, inp)
+            if is_invariant and out != sol:
+                is_invariant = False
+            if is_identity and out != inp[varno]:
+                is_identity = False
+            if not is_identity and not is_invariant:
+                break
+        if is_invariant:
+            invariant.add(copy.deepcopy(program))
+        if is_identity:
+            identity.add(copy.deepcopy(program))
+
+    if len(invariant) == total:
+        # Then this instead can be thought of as a syntaxic restriction
+        add_syntaxic(original)
+        stats[category]["syntaxic"] += 1
+    else:
+        global specific_restrictions
+        specific_restrictions |= invariant
+        specific_restrictions |= identity
+
 
 with chrono.clock("search"):
     for primitive in dsl.list_primitives:
@@ -80,7 +197,7 @@ with chrono.clock("search"):
         cfg.rules[cfg.start] = {
             P: d for P, d in cfg.rules[cfg.start].items() if P == primitive
         }
-        pcfg = ConcretePCFG.uniform_from_cfg(cfg)
+        pcfg = ConcretePCFG.uniform(cfg)
 
         with chrono.clock("search.input_sampling"):
             if primitive.type not in sampled_inputs:
@@ -89,111 +206,92 @@ with chrono.clock("search"):
                     for _ in range(input_checks)
                 ]
             inputs = sampled_inputs[primitive.type]
-        # ========================
-        # Identity part
-        # ========================
-        if len(arguments) == 1:
-            identity_candidates: Set[Program] = set()
-            with chrono.clock("search.identity.enumeration"):
-                for program in enumerate_pcfg(pcfg):
-                    with chrono.clock("search.identity.enumeration.pruning"):
-                        if not simpler_pruner.accept((primitive.type, program)):
-                            continue
-                    is_identity = True
-                    for inp in inputs:
-                        with chrono.clock("search.identity.enumeration.eval"):
-                            out = evaluator.eval(program, inp)
-                        if out != inp[0]:
-                            is_identity = False
-                            break
-                    if is_identity:
-                        identity_candidates.add(program)
 
-            total_identity_candidates += len(identity_candidates)
-            with chrono.clock("search.identity.validation"):
-                for candidate in identity_candidates:
-                    variables = []
-                    pattern = []
-                    # Find all variables
-                    for p in candidate.depth_first_iter():
-                        if isinstance(p, Variable):
-                            variables.append(p)
-                        elif isinstance(p, Primitive):
-                            pattern.append(p.primitive)
-                    # If only one variable was used, we can add a syntaxic restriction
-                    if len(variables) == 1:
-                        total_identity_candidates_kept += 1
-                        syntaxic_restrictions.append(pattern)
-                    else:
-                        semantic_restrictions.append(candidate)
-
-        # ========================
-        # Redundant part
-        # ========================
-        with chrono.clock("search.redundant.compute_solutions"):
-            prog = Function(
+        with chrono.clock("search.solutions"):
+            base_program = Function(
                 primitive,
                 [Variable(i, arg_type) for i, arg_type in enumerate(arguments)],
             )
-            solutions = [evaluator.eval(prog, inp) for inp in inputs]
+            solutions = [evaluator.eval(base_program, inp) for inp in inputs]
 
-        redundant_candidates: Set[Program] = set()
-        with chrono.clock("search.redundant.enumeration"):
-            for program in enumerate_pcfg(pcfg):
-                if prog == program:
+        # ========================
+        # Symmetry+Identity part
+        # ========================
+        # Fill arguments per type
+        arguments_per_type: Dict[Type, List[Variable]] = {}
+        for i, arg_type in enumerate(arguments):
+            if arg_type not in arguments_per_type:
+                arguments_per_type[arg_type] = []
+            arguments_per_type[arg_type].append(Variable(i, arg_type))
+        # Enumerate all combinations
+        with chrono.clock("search.variants.enumeration"):
+            for args in produce_all_variants(
+                [arguments_per_type[t] for t in arguments]
+            ):
+                current_prog = Function(
+                    primitive,
+                    args,
+                )
+                is_symmetric = current_prog != base_program
+                varno = args[0].variable
+                is_identity = all(
+                    args[i].variable == varno for i in range(len(arguments))
+                )
+                for inp, sol in zip(inputs, solutions):
+                    with chrono.clock("search.variants.enumeration.eval"):
+                        out = evaluator.eval(current_prog, inp)
+                    if is_symmetric and out != sol:
+                        is_symmetric = False
+                    if is_identity and out != inp[varno]:
+                        is_identity = False
+                    if not is_identity and not is_symmetric:
+                        break
+                if is_symmetric:
+                    program_analysis(current_prog, solutions, "symmetry")
+                if is_identity:
+                    program_analysis(current_prog, solutions, "identity")
+        # ========================
+        # Invariant part
+        # ========================
+        with chrono.clock("search.invariant.enumeration"):
+            for program in enumerate_pcfg(pcfg, specific_pruner):
+                if base_program == program:
                     continue
-                with chrono.clock("search.redundant.enumeration.pruning"):
+                with chrono.clock("search.invariant.enumeration.pruning"):
                     if not simpler_pruner.accept((primitive.type, program)):
                         continue
-                is_redundant = True
+                is_invariant = True
+                is_identity = len(arguments) == 1
                 for inp, sol in zip(inputs, solutions):
-                    with chrono.clock("search.redundant.enumeration.eval"):
+                    with chrono.clock("search.invariant.enumeration.eval"):
                         out = evaluator.eval(program, inp)
-                    if out != sol:
-                        is_redundant = False
+                    if is_invariant and out != sol:
+                        is_invariant = False
+                    if is_identity and out != inp[0]:
+                        is_identity = False
+                    if not is_identity and not is_invariant:
                         break
-                    is_redundant &= out == sol
 
-                if is_redundant:
-                    redundant_candidates.add(program)
-        total_redundant_candidates += len(redundant_candidates)
-        with chrono.clock("search.redundant.validation"):
-            for candidate in redundant_candidates:
-                variables = []
-                pattern = []
-                # Find all variables
-                for p in candidate.depth_first_iter():
-                    if isinstance(p, Variable):
-                        variables.append(p)
-                    elif isinstance(p, Primitive):
-                        pattern.append(p.primitive)
-                # If only one variable was used, we can add a syntaxic restriction
-                if len(variables) == 1:
-                    total_redundant_candidates_kept += 1
-                    syntaxic_restrictions.append(pattern)
-                else:
-                    semantic_restrictions.append(candidate)
+                if is_invariant:
+                    program_analysis(program, solutions, "invariant")
+                if is_identity:
+                    program_analysis(program, solutions, "identity")
+
 print(
     "Done",
     chrono.summary(
         time_formatter=lambda t: f"{int(t*1000)}ms" if not np.isnan(t) else "nan"
     ),
 )
+print(f"Cache hit rate: {evaluator.cache_hit_rate*100:.1f}%")
 print()
-print(
-    "Total identity candidates:",
-    total_identity_candidates,
-    "kept:",
-    total_identity_candidates_kept,
-    f"({100 * total_identity_candidates_kept / total_identity_candidates:.1f}%)",
-)
-print(
-    "Total redundant candidates:",
-    total_redundant_candidates,
-    "kept:",
-    total_redundant_candidates_kept,
-    f"({100 * total_redundant_candidates_kept / total_redundant_candidates:.1f}%)",
-)
+print("[=== Report ===]")
+for stat_name in stats:
+    total = max(1, stats[stat_name]["total"])
+    percent = stats[stat_name]["syntaxic"] / total * 100
+    print("Found", total, stat_name, f"with {percent:.1f}% syntaxic")
+
+print("[=== Results ===]")
 print(f"Found {len(syntaxic_restrictions)} syntaxic restricions.")
 copied_dsl = DSL(
     {p.primitive: p.type for p in dsl.list_primitives}, syntaxic_restrictions
@@ -214,3 +312,6 @@ print(
     f"This gives an average reduction of CFG size of {ratio * 100:.1f}% from {mean_ori:.0f} to {mean_red:.0f}"
 )
 print(syntaxic_restrictions)
+print()
+print(f"Found {len(specific_restrictions)} specific restricions, impact not computed.")
+print(specific_restrictions)
