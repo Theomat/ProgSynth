@@ -1,4 +1,14 @@
-from typing import Callable, Dict, Generator, List, Optional, Set, Tuple, Union
+from typing import (
+    Callable,
+    Dict,
+    Generator,
+    Iterable,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    Union,
+)
 from collections import defaultdict
 
 import numpy as np
@@ -290,6 +300,48 @@ class ConcretePCFG:
         return ConcretePCFG(
             start=cfg.start,
             rules=augmented_rules,
+            max_program_depth=cfg.max_program_depth,
+            clean=True,
+        )
+
+    @classmethod
+    def from_samples(
+        cls,
+        cfg: ConcreteCFG,
+        samples: Iterable[Program],
+    ) -> "ConcretePCFG":
+        rules_cnt: Dict[Context, Dict[Program, int]] = {}
+        for S in cfg.rules:
+            rules_cnt[S] = {}
+            for P in cfg.rules[S]:
+                rules_cnt[S][P] = 0
+
+        def add_count(S: Context, P: Program) -> None:
+            if isinstance(P, Function):
+                F = P.function
+                args_P = P.arguments
+                add_count(S, F)
+
+                for i, arg in enumerate(args_P):
+                    add_count(cfg.rules[S][F][i], arg)  # type: ignore
+            else:
+                rules_cnt[S][P] += 1
+
+        for sample in samples:
+            add_count(cfg.start, sample)
+
+        # Remove null derivations to avoid divide by zero exceptions when normalizing later
+        for S in cfg.rules:
+            total = sum(rules_cnt[S][P] for P in cfg.rules[S])
+            if total == 0:
+                del rules_cnt[S]
+
+        return ConcretePCFG(
+            start=cfg.start,
+            rules={
+                S: {P: (cfg.rules[S][P], rules_cnt[S][P]) for P in rules_cnt[S]}  # type: ignore
+                for S in rules_cnt
+            },
             max_program_depth=cfg.max_program_depth,
             clean=True,
         )
