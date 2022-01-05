@@ -72,7 +72,10 @@ syntaxic_restrictions = []
 specific_restrictions = set()
 specific_pruner = SetPruner(specific_restrictions)
 
-stats = {s: {"total": 0, "syntaxic": 0} for s in ["identity", "symmetry", "invariant"]}
+stats = {
+    s: {"total": 0, "syntaxic": 0}
+    for s in ["identity", "symmetry", "invariant", "constant"]
+}
 
 
 T = TypeVar("T")
@@ -100,6 +103,14 @@ def vars(program: Program) -> List[Variable]:
         if isinstance(p, Variable):
             variables.append(p)
     return variables
+
+
+def constants(program: Program) -> List[Variable]:
+    consts = []
+    for p in program.depth_first_iter():
+        if isinstance(p, Primitive) and not isinstance(p.type, Arrow):
+            consts.append(p)
+    return consts
 
 
 def add_syntaxic(program: Program):
@@ -182,6 +193,23 @@ def program_analysis(program: Program, solutions, category: str):
         global specific_restrictions
         specific_restrictions |= invariant
         specific_restrictions |= identity
+
+
+def constant_program_analysis(program: Program):
+    category = "constant"
+    prog_consts = constants(program)
+    max_consts = len(prog_consts)
+    stats[category]["total"] += 1
+
+    # If only one constant used, this is easy
+    if max_consts == 1:
+        add_syntaxic(program)
+        stats[category]["syntaxic"] += 1
+        return
+    else:
+        # TODO: this may be done better
+        global specific_restrictions
+        specific_restrictions.add(program)
 
 
 with chrono.clock("search"):
@@ -277,6 +305,28 @@ with chrono.clock("search"):
                 if is_identity:
                     program_analysis(program, solutions, "identity")
 
+with chrono.clock("constants"):
+    types = set(
+        primitive.type
+        for primitive in dsl.list_primitives
+        if not isinstance(primitive.type, Arrow)
+    )
+    for ty in types:
+        all_evals = {
+            evaluator.eval(p, []) for p in dsl.list_primitives if primitive.type == ty
+        }
+        # Remove forbidden patterns to speed up search
+        dsl.forbidden_patterns = syntaxic_restrictions[:]
+        cfg = ConcreteCFG.from_dsl(dsl, primitive.type, max_depth + 1)
+        pcfg = ConcretePCFG.uniform(cfg)
+        with chrono.clock("constants.enumeration"):
+            for program in enumerate_pcfg(pcfg, specific_pruner):
+                with chrono.clock("constants.enumeration.eval"):
+                    out = evaluator.eval(program, [])
+                if out in all_evals:
+                    constant_program_analysis(program)
+
+
 print(
     "Done",
     chrono.summary(
@@ -287,7 +337,10 @@ print(f"Cache hit rate: {evaluator.cache_hit_rate*100:.1f}%")
 print()
 print("[=== Report ===]")
 for stat_name in stats:
-    total = max(1, stats[stat_name]["total"])
+    total = stats[stat_name]["total"]
+    if total == 0:
+        print(f"Found no {stat_name} simplification")
+        continue
     percent = stats[stat_name]["syntaxic"] / total * 100
     print("Found", total, stat_name, f"with {percent:.1f}% syntaxic")
 
