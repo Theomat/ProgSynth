@@ -209,7 +209,7 @@ if __name__ == "__main__":
                 print("\tLoaded", len(trace), "/", len(full_dataset))
         try:
             enumerative_search(pcfgs, trace, method)
-        except KeyboardInterrupt:
+        except:
             should_exit = True
         with open(file, "w") as fd:
             writer = csv.writer(fd)
