@@ -2,9 +2,9 @@
 Module that contains anything relevant to pruning
 """
 from synth.pruning.pruner import Pruner, UnionPruner
-from synth.pruning.syntaxic_pruner import (
+from synth.pruning.syntactic_pruner import (
     UseAllVariablesPruner,
     FunctionPruner,
-    SyntaxicPruner,
+    SyntacticPruner,
     SetPruner,
 )

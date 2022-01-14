@@ -2,7 +2,7 @@ from heapq import heappush, heappop
 from typing import Dict, Generator, List, Optional, Set
 from dataclasses import dataclass, field
 
-from synth.pruning.syntaxic_pruner import SyntaxicPruner
+from synth.pruning.syntactic_pruner import SyntacticPruner
 
 from synth.syntax.program import Program, Function, Variable
 from synth.syntax.concrete.concrete_cfg import Context
@@ -19,7 +19,7 @@ class HSEnumerator:
     hash_table_global: Dict[int, Program] = {}
 
     def __init__(
-        self, G: ConcretePCFG, pruner: Optional[SyntaxicPruner] = None
+        self, G: ConcretePCFG, pruner: Optional[SyntacticPruner] = None
     ) -> None:
         self.current: Optional[Program] = None
         self.pruner = pruner
@@ -166,6 +166,6 @@ class HSEnumerator:
 
 
 def enumerate_pcfg(
-    G: ConcretePCFG, pruner: Optional[SyntaxicPruner] = None
+    G: ConcretePCFG, pruner: Optional[SyntacticPruner] = None
 ) -> HSEnumerator:
     return HSEnumerator(G, pruner)

@@ -1,14 +1,16 @@
-from typing import Callable, Dict, Set, Tuple
+from typing import Any, Callable, Dict, List, Literal, Set, Tuple, Union
+from dataclasses import dataclass, field
 
 from synth.pruning.pruner import Pruner
-from synth.syntax.program import Function, Primitive, Program
+from synth.syntax.dsl import DSL
+from synth.syntax.program import Function, Primitive, Program, Variable
 from synth.syntax.type_system import Arrow, Type
 
 
-SyntaxicPruner = Pruner[Tuple[Type, Program]]
+SyntacticPruner = Pruner[Tuple[Type, Program]]
 
 
-class UseAllVariablesPruner(SyntaxicPruner):
+class UseAllVariablesPruner(SyntacticPruner):
     def __init__(self) -> None:
         super().__init__()
         self._cached_variables_set: Dict[Type, Set[int]] = {}
@@ -28,7 +30,7 @@ class UseAllVariablesPruner(SyntaxicPruner):
         return prog.used_variables() == target
 
 
-class FunctionPruner(SyntaxicPruner):
+class FunctionPruner(SyntacticPruner):
     def __init__(self, is_useless: Dict[str, Callable]) -> None:
         super().__init__()
         self.is_useless = is_useless
@@ -48,7 +50,7 @@ class FunctionPruner(SyntaxicPruner):
         return True
 
 
-class SetPruner(SyntaxicPruner):
+class SetPruner(SyntacticPruner):
     def __init__(self, forbidden: Set[Program]) -> None:
         super().__init__()
         self.forbidden = forbidden
