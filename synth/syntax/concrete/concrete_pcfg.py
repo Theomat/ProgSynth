@@ -316,16 +316,23 @@ class ConcretePCFG:
             for P in cfg.rules[S]:
                 rules_cnt[S][P] = 0
 
-        def add_count(S: Context, P: Program) -> None:
+        def add_count(S: Context, P: Program) -> bool:
             if isinstance(P, Function):
                 F = P.function
                 args_P = P.arguments
-                add_count(S, F)
+                success = add_count(S, F)
 
                 for i, arg in enumerate(args_P):
-                    add_count(cfg.rules[S][F][i], arg)  # type: ignore
+                    add_count(cfg.rules[S][F][i] if success else S, arg)  # type: ignore
             else:
-                rules_cnt[S][P] += 1
+                if P not in rules_cnt[S]:
+                    # This case occurs when a forbidden pattern has been removed from the CFG
+                    # What to do? Ignore for now, but this bias a bit the probabilities
+                    # TODO: perhaps rethink that? or provide a program simplifier
+                    return False
+                else:
+                    rules_cnt[S][P] += 1
+            return True
 
         for sample in samples:
             add_count(cfg.start, sample)
