@@ -196,3 +196,4 @@ __forbidden_patterns = [
 
 dsl = DSL(__primitive_types, __forbidden_patterns)
 evaluator = DSLEvaluator(__semantics)
+lexicon = list(range(-256, 256 + 1))
