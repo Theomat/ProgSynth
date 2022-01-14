@@ -1,4 +1,5 @@
 import os
+from glob import glob
 from typing import Callable, List, Optional, Tuple
 import csv
 import pickle
@@ -243,33 +244,31 @@ if __name__ == "__main__":
     plt.ylabel("Tasks Completed")
 
     max_time, max_programs = 0, 0
-    for name, method in methods:
-        file = os.path.join(output_folder, f"{dataset}_{name}.csv")
+    for file in glob(os.path.join(output_folder, "*.csv")):
+        name = file[len(output_folder) + len(dataset) : -4]
+        name = name[name.index("_") + 1 :]
         trace = []
 
-        if os.path.exists(file):
-            with open(file, "r") as fd:
-                reader = csv.reader(fd)
-                trace = [tuple(row) for row in reader]
-                trace.pop(0)
-                trace = [
-                    (row[0] == "True", float(row[1]), int(row[2])) for row in trace
-                ]
-            # Plot tasks wrt time
-            trace_time = sorted(trace, key=lambda x: x[1])
-            cum_sol1, cum_time = np.cumsum([row[0] for row in trace_time]), np.cumsum(
-                [row[1] for row in trace_time]
-            )
-            max_time = max(max_time, cum_time[-1])
-            ax1.plot(cum_time, cum_sol1, label=name.capitalize())
-            # Plot tasks wrt programs
-            trace_programs = sorted(trace, key=lambda x: x[2])
-            cum_sol2, cum_programs = np.cumsum(
-                [row[0] for row in trace_programs]
-            ), np.cumsum([row[2] for row in trace_programs])
-            max_programs = max(max_programs, cum_programs[-1])
-            ax2.plot(cum_programs, cum_sol2, label=name.capitalize())
-            print(name, "solved", cum_sol2[-1], "/", len(trace))
+        with open(file, "r") as fd:
+            reader = csv.reader(fd)
+            trace = [tuple(row) for row in reader]
+            trace.pop(0)
+            trace = [(row[0] == "True", float(row[1]), int(row[2])) for row in trace]
+        # Plot tasks wrt time
+        trace_time = sorted(trace, key=lambda x: x[1])
+        cum_sol1, cum_time = np.cumsum([row[0] for row in trace_time]), np.cumsum(
+            [row[1] for row in trace_time]
+        )
+        max_time = max(max_time, cum_time[-1])
+        ax1.plot(cum_time, cum_sol1, label=name.capitalize())
+        # Plot tasks wrt programs
+        trace_programs = sorted(trace, key=lambda x: x[2])
+        cum_sol2, cum_programs = np.cumsum(
+            [row[0] for row in trace_programs]
+        ), np.cumsum([row[2] for row in trace_programs])
+        max_programs = max(max_programs, cum_programs[-1])
+        ax2.plot(cum_programs, cum_sol2, label=name.capitalize())
+        print(name, "solved", cum_sol2[-1], "/", len(trace))
     ax1.hlines(
         [len(full_dataset)],
         xmin=0,
