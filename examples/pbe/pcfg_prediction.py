@@ -238,4 +238,5 @@ atexit.register(on_exit)
 
 
 train()
+torch.save(predictor.state_dict(), f"./{dataset}_model.pt")
 test()
