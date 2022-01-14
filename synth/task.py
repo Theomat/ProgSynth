@@ -9,6 +9,7 @@ from typing import (
     SupportsIndex,
     TypeVar,
     overload,
+    Set,
 )
 import _pickle as cPickle  # type: ignore
 import bz2
@@ -76,6 +77,9 @@ class Dataset(Generic[T]):
             if task.solution and (not filter or cfg.type_request == task.type_request)
         ]
         return ConcretePCFG.from_samples(cfg, samples)
+
+    def type_requests(self) -> Set[Type]:
+        return set([task.type_request for task in self.tasks])
 
     def save(self, path: str) -> None:
         """
