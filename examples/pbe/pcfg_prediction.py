@@ -1,5 +1,6 @@
 from typing import List
 import atexit
+import os
 
 import tqdm
 
@@ -31,6 +32,7 @@ dataset = DEEPCODER
 # ================================
 # Tunable parameters
 # ================================
+model_folder = "."
 # Model parameters
 variable_probability = 0.2
 
@@ -238,5 +240,5 @@ atexit.register(on_exit)
 
 
 train()
-torch.save(predictor.state_dict(), f"./{dataset}_model.pt")
+torch.save(predictor.state_dict(), os.path.join(model_folder, f"{dataset}_model.pt"))
 test()
