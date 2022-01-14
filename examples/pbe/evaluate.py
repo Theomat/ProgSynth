@@ -269,6 +269,8 @@ if __name__ == "__main__":
         color="k",
         linestyles="dashed",
     )
+    ax1.set_xlim(0, max_time)
+    ax1.set_ylim(0, len(full_dataset) + 10)
     ax2.hlines(
         [len(full_dataset)],
         xmin=0,
@@ -277,6 +279,8 @@ if __name__ == "__main__":
         color="k",
         linestyles="dashed",
     )
+    ax2.set_xlim(0, max_programs)
+    ax2.set_ylim(0, len(full_dataset) + 10)
     ax1.legend()
     ax2.legend()
     plt.show()
