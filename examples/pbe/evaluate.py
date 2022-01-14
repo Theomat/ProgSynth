@@ -1,6 +1,5 @@
 import os
-from typing import Callable, Dict, List, Optional, Tuple
-import copy
+from typing import Callable, List, Optional, Tuple
 import csv
 import pickle
 
@@ -20,8 +19,7 @@ from synth.nn import (
 )
 from synth.pbe import IOEncoder
 from synth.syntax import ConcreteCFG, ConcretePCFG, enumerate_pcfg
-from synth.syntax.concrete.concrete_cfg import Context
-from synth.syntax.program import Function, Program
+from synth.syntax.program import Program
 from synth.utils import chrono
 
 # ================================
@@ -34,6 +32,8 @@ dataset = DEEPCODER
 # ================================
 # Tunable parameters
 # ================================
+model_folder = "."
+output_folder = "."
 # Model parameters
 variable_probability = 0.2
 
@@ -73,7 +73,7 @@ def produce_pcfgs() -> List[ConcreteCFG]:
     # ================================
     # Load already done PCFGs
     # ================================
-    file = f"./{dataset}_pcfgs.pickle"
+    file = os.path.join(model_folder, f"{dataset}_pcfgs.pickle")
     pcfgs: List[ConcretePCFG] = []
     if os.path.exists(file):
         with open(file, "rb") as fd:
@@ -121,7 +121,9 @@ def produce_pcfgs() -> List[ConcreteCFG]:
             return self.bigram_layer(self.end(y))
 
     predictor = MyPredictor(512)
-    predictor.load_state_dict(torch.load(f"./{dataset}_model.pt"))
+    predictor.load_state_dict(
+        torch.load(os.path.join(model_folder, f"{dataset}_model.pt"))
+    )
     predictor = predictor.to(device)
     predictor.eval()
     # ================================
@@ -195,7 +197,7 @@ if __name__ == "__main__":
     should_exit = False
 
     for name, method in methods:
-        file = f"./{dataset}_{name}.csv"
+        file = os.path.join(output_folder, f"{dataset}_{name}.csv")
         trace = []
         print("Working on:", name)
         if os.path.exists(file):
@@ -242,7 +244,7 @@ if __name__ == "__main__":
 
     max_time, max_programs = 0, 0
     for name, method in methods:
-        file = f"./{dataset}_{name}.csv"
+        file = os.path.join(output_folder, f"{dataset}_{name}.csv")
         trace = []
 
         if os.path.exists(file):
