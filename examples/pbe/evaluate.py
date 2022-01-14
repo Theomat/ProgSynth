@@ -65,53 +65,14 @@ print(f"Loading {dataset_file}...", end="")
 with chrono.clock("dataset.load") as c:
     full_dataset: Dataset[PBE] = Dataset.load(dataset_file)
     print("done in", c.elapsed_time(), "s")
-# ================================
-# Misc init
-# ================================
-# Get device
-device = "cuda" if torch.cuda.is_available() else "cpu"
-print("Using device:", device)
-# ================================
-# Neural Network creation
-# ================================
-# Generate the CFG dictionnary
-all_type_requests = full_dataset.type_requests()
-if dataset == DEEPCODER:
-    max_depth = max(task.solution.depth() for task in full_dataset)
-elif dataset == DREAMCODER:
-    max_depth = 5
-cfgs = [ConcreteCFG.from_dsl(dsl, t, max_depth) for t in all_type_requests]
 
 
-class MyPredictor(nn.Module):
-    def __init__(self, size: int) -> None:
-        super().__init__()
-        self.bigram_layer = BigramsPredictorLayer(size, dsl, cfgs, variable_probability)
-        encoder = IOEncoder(512, lexicon)
-        self.packer = Task2Tensor(
-            encoder, nn.Embedding(len(encoder.lexicon), size), size, device=device
-        )
-        self.rnn = nn.LSTM(size, size, 1)
-        self.end = nn.Sequential(
-            nn.Linear(size, size),
-        )
-
-    def forward(self, x: List[Task[PBE]]) -> Tensor:
-        seq: PackedSequence = self.packer(x)
-        y0, _ = self.rnn(seq)
-        y = y0.data
-        return self.bigram_layer(self.end(y))
-
-
-predictor = MyPredictor(512)
-predictor.load_state_dict(torch.load(f"./{dataset}_model.pt"))
-predictor = predictor.to(device)
-predictor.eval()
-
-
-# Produce PCFGS
+# Produce PCFGS ==========================================================
 @torch.no_grad()
 def produce_pcfgs() -> List[ConcreteCFG]:
+    # ================================
+    # Load already done PCFGs
+    # ================================
     file = f"./{dataset}_pcfgs.pickle"
     pcfgs: List[ConcretePCFG] = []
     if os.path.exists(file):
@@ -119,6 +80,54 @@ def produce_pcfgs() -> List[ConcreteCFG]:
             pcfgs = pickle.load(fd)
     tasks = full_dataset.tasks
     done = len(pcfgs)
+    # ================================
+    # Skip if possible
+    # ================================
+    if done >= len(tasks):
+        return pcfgs
+    # Get device
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    print("Using device:", device)
+    # ================================
+    # Neural Network creation
+    # ================================
+    # Generate the CFG dictionnary
+    all_type_requests = full_dataset.type_requests()
+    if dataset == DEEPCODER:
+        max_depth = max(task.solution.depth() for task in full_dataset)
+    elif dataset == DREAMCODER:
+        max_depth = 5
+    cfgs = [ConcreteCFG.from_dsl(dsl, t, max_depth) for t in all_type_requests]
+
+    class MyPredictor(nn.Module):
+        def __init__(self, size: int) -> None:
+            super().__init__()
+            self.bigram_layer = BigramsPredictorLayer(
+                size, dsl, cfgs, variable_probability
+            )
+            encoder = IOEncoder(512, lexicon)
+            self.packer = Task2Tensor(
+                encoder, nn.Embedding(len(encoder.lexicon), size), size, device=device
+            )
+            self.rnn = nn.LSTM(size, size, 1)
+            self.end = nn.Sequential(
+                nn.Linear(size, size),
+            )
+
+        def forward(self, x: List[Task[PBE]]) -> Tensor:
+            seq: PackedSequence = self.packer(x)
+            y0, _ = self.rnn(seq)
+            y = y0.data
+            return self.bigram_layer(self.end(y))
+
+    predictor = MyPredictor(512)
+    predictor.load_state_dict(torch.load(f"./{dataset}_model.pt"))
+    predictor = predictor.to(device)
+    predictor.eval()
+    # ================================
+    # Predict PCFG
+    # ================================
+
     pbar = tqdm.tqdm(total=len(tasks) - done, desc="PCFG prediction")
     while done < len(tasks):
         end = min(len(tasks), done + batch_size)
@@ -183,8 +192,6 @@ if __name__ == "__main__":
     ]
 
     pcfgs = produce_pcfgs()
-    # Cleanup model
-    del predictor
     should_exit = False
 
     for name, method in methods:
