@@ -196,4 +196,5 @@ __forbidden_patterns = [
 
 dsl = DSL(__primitive_types, __forbidden_patterns)
 evaluator = DSLEvaluator(__semantics)
+evaluator.skip_exceptions.add(OverflowError)
 lexicon = list(range(-256, 256 + 1))
