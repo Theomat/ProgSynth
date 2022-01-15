@@ -80,8 +80,14 @@ class PrefixTree:
             self.data.max = sum(child.data.max for child in self.children)
             self.data.min = sum(child.data.min for child in self.children)
             self.data.mean = sum(child.data.mean for child in self.children)
-            self.data._square_sum = sum(
-                child.data._square_sum for child in self.children
+            # Multiplicative factor to get total variance = sum variances
+            self.data._square_sum = (
+                sum(child.data._square_sum for child in self.children)
+                * (self.data.count - 1)
+                / (
+                    self.data.count
+                    - sum(1 for child in self.children if child.data.total > 1)
+                )
             )
 
     def to_string(
