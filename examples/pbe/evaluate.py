@@ -238,10 +238,12 @@ if __name__ == "__main__":
     ax1 = plt.subplot(1, 2, 1)
     plt.xlabel("Time (in s)")
     plt.ylabel("Tasks Completed")
+    plt.grid()
 
     ax2 = plt.subplot(1, 2, 2)
     plt.xlabel("# Programs")
     plt.ylabel("Tasks Completed")
+    plt.grid()
 
     max_time, max_programs = 0, 0
     for file in glob(os.path.join(output_folder, "*.csv")):
