@@ -22,26 +22,89 @@ from synth.pbe import reproduce_dataset, IOEncoder
 from synth.syntax import ConcreteCFG
 from synth.utils import chrono, gen_take
 
-# ================================
-# Change dataset
-# ================================
 DREAMCODER = "dreamcoder"
 DEEPCODER = "deepcoder"
 
-dataset = DEEPCODER
-# ================================
-# Tunable parameters
-# ================================
-model_folder = "."
-# Model parameters
-variable_probability = 0.2
 
-# Training parameters
-epochs = 2
-batch_size = 16
+import argparse
 
-lr = 1e-3
-weight_decay = 1e-4
+parser = argparse.ArgumentParser(description="Evaluate model prediction")
+parser.add_argument(
+    "-d", "--dataset", type=str, default=DEEPCODER, help="dataset (default: deepcoder)"
+)
+parser.add_argument(
+    "-o",
+    "--output",
+    type=str,
+    default="model.pt",
+    help="output file (default: model.pt)",
+)
+gg = parser.add_argument_group("model parameters")
+gg.add_argument(
+    "-v",
+    "--var-prob",
+    type=float,
+    default=0.2,
+    help="variable probability (default: .2)",
+)
+gg.add_argument(
+    "-ed",
+    "--encoding-dimension",
+    type=int,
+    default=512,
+    help="encoding dimension (default: 512)",
+)
+gg.add_argument(
+    "-hd",
+    "--hidden-size",
+    type=int,
+    default=512,
+    help="hidden layer size (default: 512)",
+)
+g = parser.add_argument_group("training parameters")
+parser.add_argument(
+    "-b",
+    "--batch-size",
+    type=int,
+    default=16,
+    help="batch size to compute PCFGs (default: 16)",
+)
+g.add_argument(
+    "-e",
+    "--epochs",
+    type=int,
+    default=2,
+    help="number of epochs (default: 2)",
+)
+g.add_argument(
+    "-lr",
+    "--learning-rate",
+    type=float,
+    default=1e-3,
+    help="learning rate (default: 1e-3)",
+)
+g.add_argument(
+    "-wd",
+    "--weight-decay",
+    type=float,
+    default=1e-4,
+    help="weight decay (default: 1e-4)",
+)
+g.add_argument("-s", "--seed", type=int, default=0, help="seed (default: 0)")
+
+parameters = parser.parse_args()
+dataset: str = parameters.dataset
+output_file: str = parameters.output
+variable_probability: float = parameters.var_prob
+batch_size: int = parameters.batch_size
+epochs: int = parameters.epochs
+lr: float = parameters.learning_rate
+weight_decay: float = parameters.weight_decay
+seed: int = parameters.seed
+encoding_dimension: int = parameters.encoding_dimension
+hidden_size: int = parameters.hidden_size
+
+torch.manual_seed(seed)
 # ================================
 # Load constants specific to dataset
 # ================================
@@ -50,11 +113,9 @@ dataset_file = f"{dataset}.pickle"
 if dataset == DEEPCODER:
     from deepcoder.deepcoder import dsl, evaluator
 
-    uniform_pcfg = False
 elif dataset == DREAMCODER:
     from dreamcoder.dreamcoder import dsl, evaluator
 
-    uniform_pcfg = True
 
 # ================================
 # Load dataset & Task Generator
@@ -67,9 +128,7 @@ with chrono.clock("dataset.load") as c:
 # Reproduce dataset distribution
 print("Reproducing dataset...", end="")
 with chrono.clock("dataset.reproduce") as c:
-    task_generator, lexicon = reproduce_dataset(
-        full_dataset, dsl, evaluator, 0, uniform_pcfg=uniform_pcfg
-    )
+    task_generator, lexicon = reproduce_dataset(full_dataset, dsl, evaluator, seed)
     print("done in", c.elapsed_time(), "s")
 # Add some exceptions that are ignored during task generation
 task_generator.skip_exceptions.add(TypeError)
@@ -97,7 +156,7 @@ class MyPredictor(nn.Module):
     def __init__(self, size: int) -> None:
         super().__init__()
         self.bigram_layer = BigramsPredictorLayer(size, dsl, cfgs, variable_probability)
-        encoder = IOEncoder(512, lexicon)
+        encoder = IOEncoder(encoding_dimension, lexicon)
         self.packer = Task2Tensor(
             encoder, nn.Embedding(len(encoder.lexicon), size), size, device=device
         )
@@ -113,7 +172,7 @@ class MyPredictor(nn.Module):
         return self.bigram_layer(self.end(y))
 
 
-predictor = MyPredictor(512).to(device)
+predictor = MyPredictor(hidden_size).to(device)
 print("Model:", predictor)
 optim = torch.optim.Adam(predictor.parameters(), lr, weight_decay=weight_decay)
 
@@ -175,8 +234,9 @@ def do_epoch(j: int) -> int:
 
 def train() -> None:
     j = 0
-    for _ in tqdm.trange(epochs, desc="epochs"):
+    for ep in tqdm.trange(epochs, desc="epochs"):
         j = do_epoch(j)
+        torch.save(predictor.state_dict(), os.path.join(output_file, f"epoch{ep}"))
 
 
 def test() -> None:
@@ -240,5 +300,5 @@ atexit.register(on_exit)
 
 
 train()
-torch.save(predictor.state_dict(), os.path.join(model_folder, f"{dataset}_model.pt"))
+torch.save(predictor.state_dict(), output_file)
 test()
