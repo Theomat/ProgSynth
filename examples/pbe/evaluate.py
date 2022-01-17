@@ -23,26 +23,48 @@ from synth.syntax import ConcreteCFG, ConcretePCFG, enumerate_pcfg
 from synth.syntax.program import Program
 from synth.utils import chrono
 
-# ================================
-# Change dataset
-# ================================
+
 DREAMCODER = "dreamcoder"
 DEEPCODER = "deepcoder"
 
-dataset = DEEPCODER
-# ================================
-# Tunable parameters
-# ================================
-model_folder = "."
-output_folder = "."
-# Model parameters
-variable_probability = 0.2
+import argparse
 
-# Memory parameters
-batch_size = 16
+parser = argparse.ArgumentParser(description="Evaluate model prediction")
+parser.add_argument(dest="model", type=str, help="model file")
+parser.add_argument(
+    "-d", "--dataset", type=str, default=DEEPCODER, help="dataset (default: deepcoder)"
+)
+parser.add_argument(
+    "-o", "--output", type=str, default=".", help="output folder (default: .)"
+)
+parser.add_argument(
+    "-v",
+    "--var-prob",
+    type=float,
+    default=0.2,
+    help="variable probability (default: .2)",
+)
+parser.add_argument(
+    "-t", "--timeout", type=float, default=300, help="task timeout in s (default: 300)"
+)
+parser.add_argument(
+    "-b",
+    "--batch-size",
+    type=int,
+    default=16,
+    help="batch size to compute PCFGs (default: 16)",
+)
 
-# In seconds
-task_timeout = 300
+
+parameters = parser.parse_args()
+dataset: str = parameters.dataset
+output_folder: str = parameters.output
+model_file: str = parameters.model
+variable_probability: float = parameters.var_prob
+task_timeout: float = parameters.timeout
+batch_size: int = parameters.batch_size
+
+
 # ================================
 # Load constants specific to dataset
 # ================================
@@ -50,8 +72,6 @@ dataset_file = f"{dataset}.pickle"
 
 if dataset == DEEPCODER:
     from deepcoder.deepcoder import dsl, evaluator, lexicon
-
-    uniform_pcfg = False
 elif dataset == DREAMCODER:
     from dreamcoder.dreamcoder import dsl, evaluator
 
@@ -74,7 +94,9 @@ def produce_pcfgs() -> List[ConcreteCFG]:
     # ================================
     # Load already done PCFGs
     # ================================
-    file = os.path.join(model_folder, f"{dataset}_pcfgs.pickle")
+    dir = os.path.dirname(model_file)
+    model_name = model_file[len(dir) : model_file.index(".", len(dir))]
+    file = os.path.join(dir, f"{model_name}_pcfgs.pickle")
     pcfgs: List[ConcretePCFG] = []
     if os.path.exists(file):
         with open(file, "rb") as fd:
@@ -122,9 +144,7 @@ def produce_pcfgs() -> List[ConcreteCFG]:
             return self.bigram_layer(self.end(y))
 
     predictor = MyPredictor(512)
-    predictor.load_state_dict(
-        torch.load(os.path.join(model_folder, f"{dataset}_model.pt"))
-    )
+    predictor.load_state_dict(torch.load(model_file))
     predictor = predictor.to(device)
     predictor.eval()
     # ================================
@@ -206,7 +226,15 @@ if __name__ == "__main__":
                 reader = csv.reader(fd)
                 trace = [tuple(row) for row in reader]
                 trace.pop(0)
-                print("\tLoaded", len(trace), "/", len(full_dataset))
+                print(
+                    "\tLoaded",
+                    len(trace),
+                    "/",
+                    len(full_dataset),
+                    "(",
+                    int(len(trace) * 100 / len(full_dataset)),
+                    "%)",
+                )
         try:
             enumerative_search(pcfgs, trace, method)
         except:
