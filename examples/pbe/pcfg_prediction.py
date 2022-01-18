@@ -236,7 +236,7 @@ def train() -> None:
     j = 0
     for ep in tqdm.trange(epochs, desc="epochs"):
         j = do_epoch(j)
-        torch.save(predictor.state_dict(), os.path.join(output_file, f"epoch{ep}"))
+        torch.save(predictor.state_dict(), f"{output_file}_epoch{ep}.tmp")
 
 
 def test() -> None:
