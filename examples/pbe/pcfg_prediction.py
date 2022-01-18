@@ -62,7 +62,7 @@ gg.add_argument(
     help="hidden layer size (default: 512)",
 )
 g = parser.add_argument_group("training parameters")
-parser.add_argument(
+g.add_argument(
     "-b",
     "--batch-size",
     type=int,
