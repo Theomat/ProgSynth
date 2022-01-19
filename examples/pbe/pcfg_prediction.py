@@ -112,13 +112,14 @@ torch.manual_seed(seed)
 # Load constants specific to dataset
 # ================================
 dataset_file = f"{dataset}.pickle"
-
+max_list_length = None
 if dataset == DEEPCODER:
     from deepcoder.deepcoder import dsl, evaluator
 
 elif dataset == DREAMCODER:
     from dreamcoder.dreamcoder import dsl, evaluator
 
+    max_list_length = 10
 
 # ================================
 # Load dataset & Task Generator
@@ -131,7 +132,9 @@ with chrono.clock("dataset.load") as c:
 # Reproduce dataset distribution
 print("Reproducing dataset...", end="", flush=True)
 with chrono.clock("dataset.reproduce") as c:
-    task_generator, lexicon = reproduce_dataset(full_dataset, dsl, evaluator, seed)
+    task_generator, lexicon = reproduce_dataset(
+        full_dataset, dsl, evaluator, seed, max_list_length=max_list_length
+    )
     print("done in", c.elapsed_time(), "s")
 # Add some exceptions that are ignored during task generation
 task_generator.skip_exceptions.add(TypeError)
