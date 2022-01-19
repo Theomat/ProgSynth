@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Any, List
 
-from synth.syntax.type_system import FunctionType, Type, guess_type
+from synth.syntax.type_system import FunctionType, EmptyList, Type, guess_type
 
 
 class TaskSpecification:
@@ -31,4 +31,9 @@ class PBE(TaskSpecification):
     examples: List[Example]
 
     def guess_type(self) -> Type:
-        return self.examples[0].guess_type()
+        i = 0
+        t = self.examples[i].guess_type()
+        while EmptyList in t and i + 1 < len(self.examples):
+            i += 1
+            t = self.examples[i].guess_type()
+        return t
