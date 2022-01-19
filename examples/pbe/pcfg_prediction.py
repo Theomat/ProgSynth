@@ -126,7 +126,7 @@ with chrono.clock("dataset.load") as c:
     full_dataset: Dataset[PBE] = Dataset.load(dataset_file)
     print("done in", c.elapsed_time(), "s")
 # Reproduce dataset distribution
-print("Reproducing dataset...", end="")
+print("Reproducing dataset...", end="", flush=True)
 with chrono.clock("dataset.reproduce") as c:
     task_generator, lexicon = reproduce_dataset(full_dataset, dsl, evaluator, seed)
     print("done in", c.elapsed_time(), "s")
