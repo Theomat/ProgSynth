@@ -1,6 +1,5 @@
 from typing import List
 import atexit
-import os
 
 import tqdm
 
@@ -69,13 +68,13 @@ g.add_argument(
     default=16,
     help="batch size to compute PCFGs (default: 16)",
 )
-g.add_argument(
-    "-e",
-    "--epochs",
-    type=int,
-    default=2,
-    help="number of epochs (default: 2)",
-)
+# g.add_argument(
+#     "-e",
+#     "--epochs",
+#     type=int,
+#     default=1,
+#     help="number of epochs (default: 1)",
+# )
 g.add_argument(
     "-lr",
     "--learning-rate",
@@ -91,18 +90,22 @@ g.add_argument(
     help="weight decay (default: 1e-4)",
 )
 g.add_argument("-s", "--seed", type=int, default=0, help="seed (default: 0)")
+g.add_argument(
+    "--size", type=int, default=1000, help="generated datset size (default: 1000)"
+)
 
 parameters = parser.parse_args()
 dataset: str = parameters.dataset
 output_file: str = parameters.output
 variable_probability: float = parameters.var_prob
 batch_size: int = parameters.batch_size
-epochs: int = parameters.epochs
+epochs: int = 1  # parameters.epochs
 lr: float = parameters.learning_rate
 weight_decay: float = parameters.weight_decay
 seed: int = parameters.seed
 encoding_dimension: int = parameters.encoding_dimension
 hidden_size: int = parameters.hidden_size
+gen_dataset_size: int = parameters.size
 
 torch.manual_seed(seed)
 # ================================
@@ -226,7 +229,7 @@ def do_batch(iter_number: int) -> None:
 
 
 def do_epoch(j: int) -> int:
-    nb_batch_per_epoch = int(len(full_dataset) / batch_size + 0.5)
+    nb_batch_per_epoch = int(gen_dataset_size / batch_size + 0.5)
     i = j
     for _ in tqdm.trange(nb_batch_per_epoch, desc="batchs"):
         do_batch(i)
