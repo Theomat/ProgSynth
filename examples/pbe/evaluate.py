@@ -41,22 +41,38 @@ parser.add_argument(
 parser.add_argument(
     "-o", "--output", type=str, default=".", help="output folder (default: .)"
 )
-parser.add_argument(
+gg = parser.add_argument_group("model parameters")
+gg.add_argument(
     "-v",
     "--var-prob",
     type=float,
     default=0.2,
     help="variable probability (default: .2)",
 )
-parser.add_argument(
-    "-t", "--timeout", type=float, default=300, help="task timeout in s (default: 300)"
+gg.add_argument(
+    "-ed",
+    "--encoding-dimension",
+    type=int,
+    default=512,
+    help="encoding dimension (default: 512)",
 )
-parser.add_argument(
+gg.add_argument(
+    "-hd",
+    "--hidden-size",
+    type=int,
+    default=512,
+    help="hidden layer size (default: 512)",
+)
+g = parser.add_argument_group("pcfg prediction parameter")
+g.add_argument(
     "-b",
     "--batch-size",
     type=int,
     default=16,
     help="batch size to compute PCFGs (default: 16)",
+)
+parser.add_argument(
+    "-t", "--timeout", type=float, default=300, help="task timeout in s (default: 300)"
 )
 
 
@@ -65,6 +81,8 @@ dataset: str = parameters.dataset
 output_folder: str = parameters.output
 model_file: str = parameters.model
 variable_probability: float = parameters.var_prob
+encoding_dimension: int = parameters.encoding_dimension
+hidden_size: int = parameters.hidden_size
 task_timeout: float = parameters.timeout
 batch_size: int = parameters.batch_size
 plot_only: bool = parameters.plot
@@ -137,7 +155,7 @@ def produce_pcfgs(
             self.bigram_layer = BigramsPredictorLayer(
                 size, dsl, cfgs, variable_probability
             )
-            encoder = IOEncoder(512, lexicon)
+            encoder = IOEncoder(encoding_dimension, lexicon)
             self.packer = Task2Tensor(
                 encoder, nn.Embedding(len(encoder.lexicon), size), size, device=device
             )
@@ -152,7 +170,7 @@ def produce_pcfgs(
             y = y0.data
             return self.bigram_layer(self.end(y))
 
-    predictor = MyPredictor(512)
+    predictor = MyPredictor(hidden_size)
     predictor.load_state_dict(torch.load(model_file))
     predictor = predictor.to(device)
     predictor.eval()
