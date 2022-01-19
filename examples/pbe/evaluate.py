@@ -1,5 +1,6 @@
 import os
 from glob import glob
+import sys
 from typing import Callable, List, Optional, Tuple
 import csv
 import pickle
@@ -19,8 +20,8 @@ from synth.nn import (
     Task2Tensor,
 )
 from synth.pbe import IOEncoder
-from synth.syntax import ConcreteCFG, ConcretePCFG, enumerate_pcfg
-from synth.syntax.program import Program
+from synth.semantic import DSLEvaluator
+from synth.syntax import ConcreteCFG, ConcretePCFG, enumerate_pcfg, DSL, Program
 from synth.utils import chrono
 
 
@@ -30,7 +31,10 @@ DEEPCODER = "deepcoder"
 import argparse
 
 parser = argparse.ArgumentParser(description="Evaluate model prediction")
-parser.add_argument(dest="model", type=str, help="model file")
+parser.add_argument("-m", "--model", default="", type=str, help="model file")
+parser.add_argument(
+    "-p", "--plot", default=False, action="store_true", help="only plot results"
+)
 parser.add_argument(
     "-d", "--dataset", type=str, default=DEEPCODER, help="dataset (default: deepcoder)"
 )
@@ -63,34 +67,42 @@ model_file: str = parameters.model
 variable_probability: float = parameters.var_prob
 task_timeout: float = parameters.timeout
 batch_size: int = parameters.batch_size
+plot_only: bool = parameters.plot
 
+if not plot_only and (not os.path.exists(model_file) or not os.path.isfile(model_file)):
+    print("Model must be a valid model file!", file=sys.stderr)
+    sys.exit(0)
 
 # ================================
 # Load constants specific to dataset
 # ================================
 dataset_file = f"{dataset}.pickle"
 
-if dataset == DEEPCODER:
-    from deepcoder.deepcoder import dsl, evaluator, lexicon
-elif dataset == DREAMCODER:
-    from dreamcoder.dreamcoder import dsl, evaluator
 
-    lexicon = []  # TODO
+def load_dataset() -> Tuple[Dataset[PBE], DSL, DSLEvaluator, List[int]]:
+    if dataset == DEEPCODER:
+        from deepcoder.deepcoder import dsl, evaluator, lexicon
+    elif dataset == DREAMCODER:
+        from dreamcoder.dreamcoder import dsl, evaluator
 
+        lexicon = []  # TODO
 
-# ================================
-# Load dataset
-# ================================
-# Load dataset
-print(f"Loading {dataset_file}...", end="")
-with chrono.clock("dataset.load") as c:
-    full_dataset: Dataset[PBE] = Dataset.load(dataset_file)
-    print("done in", c.elapsed_time(), "s")
+    # ================================
+    # Load dataset
+    # ================================
+    # Load dataset
+    print(f"Loading {dataset_file}...", end="")
+    with chrono.clock("dataset.load") as c:
+        full_dataset: Dataset[PBE] = Dataset.load(dataset_file)
+        print("done in", c.elapsed_time(), "s")
+    return full_dataset, dsl, evaluator, lexicon
 
 
 # Produce PCFGS ==========================================================
 @torch.no_grad()
-def produce_pcfgs() -> List[ConcreteCFG]:
+def produce_pcfgs(
+    dataset: Dataset[PBE], dsl: DSL, lexicon: List[int]
+) -> List[ConcreteCFG]:
     # ================================
     # Load already done PCFGs
     # ================================
@@ -101,7 +113,7 @@ def produce_pcfgs() -> List[ConcreteCFG]:
     if os.path.exists(file):
         with open(file, "rb") as fd:
             pcfgs = pickle.load(fd)
-    tasks = full_dataset.tasks
+    tasks = dataset.tasks
     done = len(pcfgs)
     # ================================
     # Skip if possible
@@ -115,9 +127,9 @@ def produce_pcfgs() -> List[ConcreteCFG]:
     # Neural Network creation
     # ================================
     # Generate the CFG dictionnary
-    all_type_requests = full_dataset.type_requests()
+    all_type_requests = dataset.type_requests()
     if dataset == DEEPCODER:
-        max_depth = max(task.solution.depth() for task in full_dataset)
+        max_depth = max(task.solution.depth() for task in dataset)
     elif dataset == DREAMCODER:
         max_depth = 5
     cfgs = [ConcreteCFG.from_dsl(dsl, t, max_depth) for t in all_type_requests]
@@ -171,23 +183,26 @@ def produce_pcfgs() -> List[ConcreteCFG]:
 
 # Enumeration methods =====================================================
 def enumerative_search(
+    dataset: Dataset[PBE],
+    evaluator: DSLEvaluator,
     pcfgs: List[ConcretePCFG],
     trace: List[Tuple[bool, float]],
     method: Callable[
-        [Task[PBE], ConcretePCFG], Tuple[bool, float, int, Optional[Program]]
+        [DSLEvaluator, Task[PBE], ConcretePCFG],
+        Tuple[bool, float, int, Optional[Program]],
     ],
 ) -> None:
     start = len(trace)
     pbar = tqdm.tqdm(total=len(pcfgs) - start, desc="Tasks")
-    for task, pcfg in zip(full_dataset.tasks[start:], pcfgs[start:]):
-        trace.append(method(task, pcfg))
+    for task, pcfg in zip(dataset.tasks[start:], pcfgs[start:]):
+        trace.append(method(evaluator, task, pcfg))
         pbar.update(1)
         evaluator.clear_cache()
     pbar.close()
 
 
 def base(
-    task: Task[PBE], pcfg: ConcretePCFG
+    evaluator: DSLEvaluator, task: Task[PBE], pcfg: ConcretePCFG
 ) -> Tuple[bool, float, int, Optional[Program]]:
     time = 0.0
     programs = 0
@@ -214,40 +229,42 @@ if __name__ == "__main__":
         ("base", base),
     ]
 
-    pcfgs = produce_pcfgs()
-    should_exit = False
+    full_dataset, dsl, evaluator, lexicon = load_dataset()
+    if not plot_only:
+        pcfgs = produce_pcfgs(full_dataset, dsl, lexicon)
+        should_exit = False
 
-    for name, method in methods:
-        file = os.path.join(output_folder, f"{dataset}_{name}.csv")
-        trace = []
-        print("Working on:", name)
-        if os.path.exists(file):
-            with open(file, "r") as fd:
-                reader = csv.reader(fd)
-                trace = [tuple(row) for row in reader]
-                trace.pop(0)
-                print(
-                    "\tLoaded",
-                    len(trace),
-                    "/",
-                    len(full_dataset),
-                    "(",
-                    int(len(trace) * 100 / len(full_dataset)),
-                    "%)",
+        for name, method in methods:
+            file = os.path.join(output_folder, f"{dataset}_{name}.csv")
+            trace = []
+            print("Working on:", name)
+            if os.path.exists(file):
+                with open(file, "r") as fd:
+                    reader = csv.reader(fd)
+                    trace = [tuple(row) for row in reader]
+                    trace.pop(0)
+                    print(
+                        "\tLoaded",
+                        len(trace),
+                        "/",
+                        len(full_dataset),
+                        "(",
+                        int(len(trace) * 100 / len(full_dataset)),
+                        "%)",
+                    )
+            try:
+                enumerative_search(full_dataset, evaluator, pcfgs, trace, method)
+            except:
+                should_exit = True
+            with open(file, "w") as fd:
+                writer = csv.writer(fd)
+                writer.writerow(
+                    ["Solved", "Time (in s)", "Programs Generated", "Solution found"]
                 )
-        try:
-            enumerative_search(pcfgs, trace, method)
-        except:
-            should_exit = True
-        with open(file, "w") as fd:
-            writer = csv.writer(fd)
-            writer.writerow(
-                ["Solved", "Time (in s)", "Programs Generated", "Solution found"]
-            )
-            writer.writerows(trace)
+                writer.writerows(trace)
 
-        if should_exit:
-            break
+            if should_exit:
+                break
 
     import matplotlib.pyplot as plt
     import matplotlib
