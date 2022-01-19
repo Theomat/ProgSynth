@@ -83,10 +83,7 @@ def load_dataset() -> Tuple[Dataset[PBE], DSL, DSLEvaluator, List[int]]:
     if dataset == DEEPCODER:
         from deepcoder.deepcoder import dsl, evaluator, lexicon
     elif dataset == DREAMCODER:
-        from dreamcoder.dreamcoder import dsl, evaluator
-
-        lexicon = []  # TODO
-
+        from dreamcoder.dreamcoder import dsl, evaluator, lexicon
     # ================================
     # Load dataset
     # ================================

@@ -350,3 +350,4 @@ __primitive_types__ = {
 dsl = DSL(__primitive_types__)
 evaluator = DSLEvaluator(__semantics__)
 evaluator.skip_exceptions.add(ValueError)
+lexicon = list(range(-1000, 980 + 1))
