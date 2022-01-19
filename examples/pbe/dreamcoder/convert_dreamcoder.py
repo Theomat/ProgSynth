@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Callable
 import tqdm
 
 from synth import Task, Dataset, PBE, Example
+from synth.syntax.type_system import EmptyList
 
 
 def __convert__(load: Callable[[], Dataset[PBE]], name: str) -> None:
@@ -29,10 +30,12 @@ def convert_dreamcoder(
                     Example([dico["i"]], dico["o"]) for dico in task_dict["examples"]
                 ]
                 spec = PBE(examples)
+                type_req = spec.guess_type()
+                # Skip []-only output tasks
+                if EmptyList in type_req:
+                    continue
                 tasks.append(
-                    Task[PBE](
-                        spec.guess_type(), spec, metadata={"name": task_dict["name"]}
-                    )
+                    Task[PBE](type_req, spec, metadata={"name": task_dict["name"]})
                 )
         return Dataset(tasks, metadata={"dataset": "dreamcoder", "source:": file})
 
