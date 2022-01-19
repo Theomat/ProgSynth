@@ -83,10 +83,11 @@ class PrefixTree:
             # Multiplicative factor to get total variance = sum variances
             self.data._square_sum = (
                 sum(child.data._square_sum for child in self.children)
-                * (self.data.count - 1)
-                / (
+                * max(1, self.data.count - 1)
+                / max(
+                    1,
                     self.data.count
-                    - sum(1 for child in self.children if child.data.total > 1)
+                    - sum(1 for child in self.children if child.data.total > 1),
                 )
             )
 
