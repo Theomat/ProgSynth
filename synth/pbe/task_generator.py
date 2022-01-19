@@ -159,6 +159,7 @@ def reproduce_dataset(
     uniform_pcfg: bool = True,
     max_tries: int = 100,
     int_bound: int = 1000,
+    default_max_depth: int = 5,
 ) -> Tuple[TaskGenerator, TList[int]]:
 
     max_depth = -1
@@ -220,7 +221,8 @@ def reproduce_dataset(
     no_samples_gen = __multi_discrete_to_gen__(no_samples, seed=seed)
 
     int_lexicon = list(range(int_range[0], int_range[1] + 1))
-
+    if max_depth == -1:
+        max_depth = default_max_depth
     if uniform_pcfg:
         pcfgs = {
             ConcretePCFG.uniform(ConcreteCFG.from_dsl(dsl, t, max_depth))
