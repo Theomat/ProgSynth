@@ -38,6 +38,12 @@ parser.add_argument(
     default="model.pt",
     help="output file (default: model.pt)",
 )
+parser.add_argument(
+    "--cpu",
+    action="store_true",
+    default=False,
+    help="do not try to run things on cuda",
+)
 gg = parser.add_argument_group("model parameters")
 gg.add_argument(
     "-v",
@@ -106,6 +112,7 @@ seed: int = parameters.seed
 encoding_dimension: int = parameters.encoding_dimension
 hidden_size: int = parameters.hidden_size
 gen_dataset_size: int = parameters.size
+cpu_only: bool = parameters.cpu
 
 torch.manual_seed(seed)
 # ================================
@@ -142,7 +149,7 @@ task_generator.skip_exceptions.add(TypeError)
 # Misc init
 # ================================
 # Get device
-device = "cuda" if torch.cuda.is_available() else "cpu"
+device = "cuda" if not cpu_only and torch.cuda.is_available() else "cpu"
 print("Using device:", device)
 # Logging
 writer = SummaryWriter()
