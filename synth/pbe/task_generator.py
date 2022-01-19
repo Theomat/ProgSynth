@@ -160,6 +160,7 @@ def reproduce_dataset(
     max_tries: int = 100,
     int_bound: int = 1000,
     default_max_depth: int = 5,
+    max_list_length: Optional[int] = None,
 ) -> Tuple[TaskGenerator, TList[int]]:
 
     max_depth = -1
@@ -217,7 +218,9 @@ def reproduce_dataset(
     types_probs = np.array(types_probs_list, dtype=float) / len(dataset)
     type_sampler = LexiconSampler(allowed_types, types_probs, seed)
 
-    list_length_gen = __multi_discrete_to_gen__(list_length, seed=seed)
+    list_length_gen = __multi_discrete_to_gen__(
+        list_length, seed=seed, maxi=max_list_length
+    )
     no_samples_gen = __multi_discrete_to_gen__(no_samples, seed=seed)
 
     int_lexicon = list(range(int_range[0], int_range[1] + 1))
@@ -256,7 +259,8 @@ def reproduce_dataset(
             no_samples_gen,
             pcfgs,
             basic_output_validator(
-                int_lexicon, max(max(l.keys()) for l in list_length.values())
+                int_lexicon,
+                max_list_length or max(max(l.keys()) for l in list_length.values()),
             ),
             max_tries,
         ),
@@ -275,15 +279,32 @@ def __multi_discrete_distribution__(
 
 
 def __multi_discrete_to_gen__(
-    distr: Dict[Type, Dict[int, int]], seed: Optional[int] = None
+    distr: Dict[Type, Dict[int, int]],
+    seed: Optional[int] = None,
+    maxi: Optional[int] = None,
 ) -> RequestSampler[int]:
 
     choice_map: Dict[Type, TList[int]] = {k: list(v.keys()) for k, v in distr.items()}
     probs_map: Dict[Type, np.ndarray] = {
         k: np.array(list(v.values()), dtype=float) for k, v in distr.items()
     }
-    for k, v in probs_map.items():
-        probs_map[k] /= np.sum(v)
+    if maxi:
+        for k, v in distr.items():
+            changed = False
+            added = 0
+            for length, qty in v.items():
+                if length > maxi:
+                    added = qty
+                    choice_map[k].remove(length)
+                    changed = True
+            if changed:
+                if maxi not in choice_map[k]:
+                    choice_map[k].append(maxi)
+                probs_map[k] = np.array(
+                    [distr[k].get(z, added) for z in choice_map[k]], dtype=float
+                )
+    for k, val in probs_map.items():
+        probs_map[k] /= np.sum(val)
 
     samplers: Dict[Type, Sampler] = {
         k: LexiconSampler(choice_map[k], probs_map[k], seed=seed)
