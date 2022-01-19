@@ -150,6 +150,8 @@ if dataset == DEEPCODER:
 elif dataset == DREAMCODER:
     max_depth = 5
 cfgs = [ConcreteCFG.from_dsl(dsl, t, max_depth) for t in all_type_requests]
+print(f"{len(all_type_requests)} type requests supported.")
+print(f"Lexicon: [{min(lexicon)};{max(lexicon)}]")
 
 
 class MyPredictor(nn.Module):
