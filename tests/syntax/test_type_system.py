@@ -11,6 +11,7 @@ from synth.syntax.type_system import (
     UnknownType,
     match,
     guess_type,
+    EmptyList,
 )
 from typing import List as TList, Set, Tuple
 import random
@@ -126,3 +127,14 @@ def test_FunctionType() -> None:
     assert FunctionType(INT, BOOL, STRING, List(INT)) == Arrow(
         INT, Arrow(BOOL, Arrow(STRING, List(INT)))
     )
+
+
+def test_contains() -> None:
+    t = Arrow(
+        Arrow(INT, EmptyList),
+        List(Arrow(PolymorphicType("b"), PolymorphicType("a"))),
+    )
+    assert EmptyList in t
+    assert BOOL not in t
+    assert PolymorphicType("b") in t
+    assert Arrow(INT, EmptyList) in t

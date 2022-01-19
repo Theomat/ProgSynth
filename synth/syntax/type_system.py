@@ -22,6 +22,9 @@ class Type(ABC):
     def __repr__(self) -> str:
         return self.__str__()
 
+    def __contains__(self, t: "Type") -> bool:
+        return self == t
+
     def is_polymorphic(self) -> bool:
         return False
 
@@ -162,6 +165,9 @@ class Arrow(Type):
         rep_out = format(self.type_out)
         return "({} -> {})".format(rep_in, rep_out)
 
+    def __contains__(self, t: Type) -> bool:
+        return super().__contains__(t) or t in self.type_in or t in self.type_out
+
     def __eq__(self, o: object) -> bool:
         return (
             isinstance(o, Arrow)
@@ -222,6 +228,9 @@ class List(Type):
         else:
             return "list({})".format(self.element_type)
 
+    def __contains__(self, t: Type) -> bool:
+        return super().__contains__(t) or t in self.element_type
+
     def __eq__(self, o: object) -> bool:
         return isinstance(o, List) and o.element_type == self.element_type
 
@@ -277,6 +286,8 @@ INT = PrimitiveType("int")
 BOOL = PrimitiveType("bool")
 STRING = PrimitiveType("str")
 
+EmptyList = List(PolymorphicType("empty"))
+
 
 def FunctionType(*args: Type) -> Type:
     """
@@ -296,7 +307,7 @@ def guess_type(element: Any) -> Type:
     """
     if isinstance(element, TList):
         if len(element) == 0:
-            return List(PolymorphicType("empty"))
+            return EmptyList
         return List(guess_type(element[0]))
     if isinstance(element, bool):
         return BOOL
