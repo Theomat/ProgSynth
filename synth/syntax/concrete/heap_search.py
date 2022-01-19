@@ -2,8 +2,6 @@ from heapq import heappush, heappop
 from typing import Dict, Generator, List, Optional, Set
 from dataclasses import dataclass, field
 
-from synth.pruning.syntactic_pruner import SyntacticPruner
-
 from synth.syntax.program import Program, Function, Variable
 from synth.syntax.concrete.concrete_cfg import Context
 from synth.syntax.concrete.concrete_pcfg import ConcretePCFG
@@ -18,11 +16,8 @@ class HeapElement:
 class HSEnumerator:
     hash_table_global: Dict[int, Program] = {}
 
-    def __init__(
-        self, G: ConcretePCFG, pruner: Optional[SyntacticPruner] = None
-    ) -> None:
+    def __init__(self, G: ConcretePCFG) -> None:
         self.current: Optional[Program] = None
-        self.pruner = pruner
 
         self.G = G
         self.start = G.start
@@ -69,11 +64,10 @@ class HSEnumerator:
                 self.hash_table_global[hash_program] = program
 
                 # print("adding to the heap", program, program.probability[S])
-                if not pruner or pruner.accept((self.G.type_request, program)):
-                    heappush(
-                        self.heaps[S],
-                        HeapElement(-self.probabilities[program][S], program),
-                    )
+                heappush(
+                    self.heaps[S],
+                    HeapElement(-self.probabilities[program][S], program),
+                )
 
         # 2. call query(S, None) for all non-terminal symbols S, from leaves to root
         for S in reversed(self.rules):
@@ -151,12 +145,7 @@ class HSEnumerator:
                         probability = self.G.rules[S][F][1]
                         for arg, S3 in zip(new_arguments, self.G.rules[S][F][0]):
                             probability *= self.probabilities[arg][S3]
-                        if not self.pruner or self.pruner.accept(
-                            (self.G.type_request, new_program)
-                        ):
-                            heappush(
-                                self.heaps[S], HeapElement(-probability, new_program)
-                            )
+                        heappush(self.heaps[S], HeapElement(-probability, new_program))
                         self.probabilities[new_program][S] = probability
 
         if isinstance(succ, Variable):
@@ -165,7 +154,5 @@ class HSEnumerator:
         return succ
 
 
-def enumerate_pcfg(
-    G: ConcretePCFG, pruner: Optional[SyntacticPruner] = None
-) -> HSEnumerator:
-    return HSEnumerator(G, pruner)
+def enumerate_pcfg(G: ConcretePCFG) -> HSEnumerator:
+    return HSEnumerator(G)
