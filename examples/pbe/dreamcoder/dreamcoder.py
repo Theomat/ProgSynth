@@ -300,6 +300,12 @@ __semantics__ = {
     "is-prime": _isPrime,
     "is-square": _isSquare,
     "filter": lambda f: lambda l: [x for x in l if f(x)],
+    "0": 0,
+    "1": 1,
+    "2": 2,
+    "3": 3,
+    "4": 4,
+    "5": 5,
 }
 
 __primitive_types__ = {
@@ -332,6 +338,12 @@ __primitive_types__ = {
     "is-prime": Arrow(INT, BOOL),
     "is-square": Arrow(INT, BOOL),
     "filter": Arrow(Arrow(t0, BOOL), Arrow(List(t0), List(t0))),
+    "0": INT,
+    "1": INT,
+    "2": INT,
+    "3": INT,
+    "4": INT,
+    "5": INT,
 }
 
 
