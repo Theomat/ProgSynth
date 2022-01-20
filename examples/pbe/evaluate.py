@@ -1,3 +1,4 @@
+import atexit
 import os
 from glob import glob
 import sys
@@ -177,6 +178,11 @@ def produce_pcfgs(
     # ================================
     # Predict PCFG
     # ================================
+    def save_pcfgs() -> None:
+        with open(file, "wb") as fd:
+            pickle.dump(pcfgs, fd)
+
+    atexit.register(save_pcfgs)
 
     pbar = tqdm.tqdm(total=len(tasks) - done, desc="PCFG prediction")
     while done < len(tasks):
@@ -193,6 +199,7 @@ def produce_pcfgs(
     pbar.close()
     with open(file, "wb") as fd:
         pickle.dump(pcfgs, fd)
+    atexit.unregister(save_pcfgs)
     return pcfgs
 
 
