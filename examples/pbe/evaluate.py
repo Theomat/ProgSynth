@@ -116,7 +116,7 @@ def load_dataset() -> Tuple[Dataset[PBE], DSL, DSLEvaluator, List[int]]:
 # Produce PCFGS ==========================================================
 @torch.no_grad()
 def produce_pcfgs(
-    dataset: Dataset[PBE], dsl: DSL, lexicon: List[int]
+    full_dataset: Dataset[PBE], dsl: DSL, lexicon: List[int]
 ) -> List[ConcreteCFG]:
     # ================================
     # Load already done PCFGs
@@ -128,7 +128,7 @@ def produce_pcfgs(
     if os.path.exists(file):
         with open(file, "rb") as fd:
             pcfgs = pickle.load(fd)
-    tasks = dataset.tasks
+    tasks = full_dataset.tasks
     done = len(pcfgs)
     # ================================
     # Skip if possible
@@ -142,9 +142,9 @@ def produce_pcfgs(
     # Neural Network creation
     # ================================
     # Generate the CFG dictionnary
-    all_type_requests = dataset.type_requests()
+    all_type_requests = full_dataset.type_requests()
     if dataset == DEEPCODER:
-        max_depth = max(task.solution.depth() for task in dataset)
+        max_depth = max(task.solution.depth() for task in full_dataset)
     elif dataset == DREAMCODER:
         max_depth = 5
     cfgs = [ConcreteCFG.from_dsl(dsl, t, max_depth) for t in all_type_requests]
