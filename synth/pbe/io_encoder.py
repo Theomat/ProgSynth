@@ -9,7 +9,9 @@ from synth.task import Task
 
 
 class IOEncoder(SpecificationEncoder[PBE, Tensor]):
-    def __init__(self, output_dimension: int, lexicon: List[Any]) -> None:
+    def __init__(
+        self, output_dimension: int, lexicon: List[Any], undefined: bool = True
+    ) -> None:
         self.output_dimension = output_dimension
 
         self.special_symbols = [
@@ -21,9 +23,12 @@ class IOEncoder(SpecificationEncoder[PBE, Tensor]):
             "STARTOFLIST",
             "ENDOFLIST",
         ]
+        if undefined:
+            self.special_symbols.append("UNDEFINED")
         self.lexicon = lexicon + self.special_symbols
         self.non_special_lexicon_size = len(lexicon)
         self.symbol2index = {symbol: index for index, symbol in enumerate(self.lexicon)}
+        self._default = self.symbol2index["UNDEFINED"] if undefined else None
         self.starting_index = self.symbol2index["STARTING"]
         self.end_of_input_index = self.symbol2index["ENDOFINPUT"]
         self.start_of_output_index = self.symbol2index["STARTOFOUTPUT"]
@@ -39,7 +44,7 @@ class IOEncoder(SpecificationEncoder[PBE, Tensor]):
                 self.__encode_element__(el, encoding)
             encoding.append(self.end_list_index)
         else:
-            encoding.append(self.symbol2index[x])
+            encoding.append(self.symbol2index.get(x, self._default))  # type: ignore
 
     def encode_IO(self, IO: Tuple[List, Any], device: Optional[str] = None) -> Tensor:
         """
