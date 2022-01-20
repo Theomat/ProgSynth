@@ -10,7 +10,9 @@ from synth.syntax.type_system import Arrow, Type
 @dataclass(frozen=True)
 class Context:
     type: Type
-    predecessors: List[Tuple[Primitive, int]] = field(default_factory=lambda: [])
+    predecessors: List[Tuple[Union[Primitive, Variable], int]] = field(
+        default_factory=lambda: []
+    )
     depth: int = field(default=0)
 
     def __hash__(self) -> int:
@@ -220,6 +222,7 @@ class ConcreteCFG:
                 forbidden = forbidden_sets.get(
                     non_terminal.predecessors[0][0].primitive
                     if len(non_terminal.predecessors) > 0
+                    and isinstance(non_terminal.predecessors[0][0], Primitive)
                     else "",
                     set(),
                 )
@@ -231,7 +234,10 @@ class ConcreteCFG:
                     if arguments_P is not None:
                         decorated_arguments_P = []
                         for i, arg in enumerate(arguments_P):
-                            new_predecessors = [(P, i)] + non_terminal.predecessors
+                            addition: List[Tuple[Union[Primitive, Variable], int]] = [
+                                (P, i)
+                            ]
+                            new_predecessors = addition + non_terminal.predecessors
                             if len(new_predecessors) > n_gram - 1:
                                 new_predecessors.pop()
                             new_context = Context(arg, new_predecessors, depth + 1)
@@ -240,6 +246,24 @@ class ConcreteCFG:
                                 list_to_be_treated.appendleft(new_context)
 
                         rules[non_terminal][P] = decorated_arguments_P
+
+                # Try to use variable as if there were functions
+                for vi, varg in enumerate(args):
+                    arguments_V = varg.ends_with(current_type)
+                    if arguments_V is not None:
+                        V = Variable(vi, varg)
+                        decorated_arguments_V = []
+                        for i, arg in enumerate(arguments_V):
+                            addition = [(V, i)]
+                            new_predecessors = addition + non_terminal.predecessors
+                            if len(new_predecessors) > n_gram - 1:
+                                new_predecessors.pop()
+                            new_context = Context(arg, new_predecessors, depth + 1)
+                            decorated_arguments_V.append(new_context)
+                            if new_context not in list_to_be_treated:
+                                list_to_be_treated.appendleft(new_context)
+
+                        rules[non_terminal][V] = decorated_arguments_V
 
         return ConcreteCFG(
             start=Context(return_type, [], 0),

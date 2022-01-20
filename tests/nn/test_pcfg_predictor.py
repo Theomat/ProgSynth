@@ -20,6 +20,7 @@ syntax = {
 
 dsl = DSL(syntax)
 cfg = ConcreteCFG.from_dsl(dsl, FunctionType(INT, INT), 4)
+cfg2 = ConcreteCFG.from_dsl(dsl, FunctionType(FunctionType(INT, INT), INT, INT), 5)
 
 
 def test_forward() -> None:
@@ -68,3 +69,22 @@ def test_logpcfg2pcfg() -> None:
             prob = pcfg.probability(P)
             exp_logprob = np.exp(log_pcfg.log_probability(P).item())
             assert np.isclose(prob, exp_logprob)
+
+
+def test_var_as_function() -> None:
+    layer = BigramsPredictorLayer(50, dsl, {cfg2, cfg})
+    generator = torch.manual_seed(0)
+    for _ in range(5):
+        for c in [cfg, cfg2]:
+            x = torch.randn((5, 50), generator=generator)
+            y = layer(x)
+            for i in range(y.shape[0]):
+                log_pcfg = layer.tensor2pcfg(
+                    y[i], c.type_request, total_variable_order=False
+                )
+                pcfg = log_pcfg.to_pcfg()
+                pcfg.init_sampling(0)
+                P = pcfg.sample_program()
+                prob = pcfg.probability(P)
+                exp_logprob = np.exp(log_pcfg.log_probability(P).item())
+                assert np.isclose(prob, exp_logprob)

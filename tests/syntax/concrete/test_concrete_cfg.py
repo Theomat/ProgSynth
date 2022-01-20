@@ -4,6 +4,7 @@ from synth.syntax.program import Primitive
 from synth.syntax.type_system import (
     INT,
     STRING,
+    Arrow,
     FunctionType,
     List,
     PolymorphicType,
@@ -31,6 +32,13 @@ def test_from_dsl() -> None:
                     assert P.primitive != "non_reachable"
                 else:
                     assert P.type == INT
+
+
+def test_function_as_variable() -> None:
+    dsl = DSL(syntax)
+    max_depth = 5
+    cfg = ConcreteCFG.from_dsl(dsl, FunctionType(Arrow(INT, INT), INT), max_depth)
+    assert cfg.size() > 0
 
 
 def test_clean() -> None:

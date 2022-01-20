@@ -1,4 +1,4 @@
-from typing import Callable, Dict, Iterable, List, Tuple, Optional
+from typing import Callable, Dict, Iterable, List, Tuple, Optional, Union
 
 import numpy as np
 
@@ -111,9 +111,17 @@ class BigramsPredictorLayer(nn.Module):
         self.symbol2index = {
             symbol: index for index, symbol in enumerate(self.dsl.list_primitives)
         }
-        func_primitives = [
+        func_primitives: List[Union[Primitive, Variable]] = [
             p for p in self.dsl.list_primitives if isinstance(p.type, Arrow)
         ]
+        variables_used_as_arguments = set(
+            S.predecessors[0][0]
+            for cfg in cfgs
+            for S in cfg.rules.keys()
+            if len(S.predecessors) > 0 and isinstance(S.predecessors[0][0], Variable)
+        )
+        func_primitives += list(variables_used_as_arguments)
+
         self.parent2index = {
             symbol: index for index, symbol in enumerate(func_primitives)
         }
