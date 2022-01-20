@@ -166,6 +166,7 @@ class ConcreteCFG:
         upper_bound_type_size: int = 10,
         min_variable_depth: int = 1,
         n_gram: int = 2,
+        recursive: bool = False,
     ) -> "ConcreteCFG":
         """
         Constructs a CFG from a DSL imposing bounds on size of the types
@@ -264,6 +265,23 @@ class ConcreteCFG:
                                 list_to_be_treated.appendleft(new_context)
 
                         rules[non_terminal][V] = decorated_arguments_V
+
+                if recursive:
+                    arguments_self = type_request.ends_with(current_type)
+                    if arguments_self is not None:
+                        P = Primitive("@self", type_request)
+                        decorated_arguments_self = []
+                        for i, arg in enumerate(arguments_self):
+                            addition = [(P, i)]
+                            new_predecessors = addition + non_terminal.predecessors
+                            if len(new_predecessors) > n_gram - 1:
+                                new_predecessors.pop()
+                            new_context = Context(arg, new_predecessors, depth + 1)
+                            decorated_arguments_self.append(new_context)
+                            if new_context not in list_to_be_treated:
+                                list_to_be_treated.appendleft(new_context)
+
+                        rules[non_terminal][P] = decorated_arguments_self
 
         return ConcreteCFG(
             start=Context(return_type, [], 0),
