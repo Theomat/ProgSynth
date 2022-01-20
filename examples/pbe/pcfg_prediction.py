@@ -1,5 +1,6 @@
 from typing import List
 import atexit
+import sys
 
 import tqdm
 
@@ -127,7 +128,9 @@ elif dataset == DREAMCODER:
     from dreamcoder.dreamcoder import dsl, evaluator
 
     max_list_length = 10
-
+else:
+    print("Unknown dataset:", dataset, file=sys.stderr)
+    sys.exit(0)
 # ================================
 # Load dataset & Task Generator
 # ================================
