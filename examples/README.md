@@ -48,5 +48,5 @@ The `convert_dreamcoder.py` is a runnable python script which enables you to con
 
 #### Downloading Dreamcoder
 
-The dataset can be downloaded at <https://raw.githubusercontent.com/ellisk42/ec/master/data/list_tasks2.json>.
+The dataset can be downloaded at <https://raw.githubusercontent.com/ellisk42/ec/master/data/list_tasks.json>.
 This JSON file is now convertible with the `convert_dreamcoder.py` script.
