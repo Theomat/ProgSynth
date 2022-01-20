@@ -206,82 +206,83 @@ class ConcreteCFG:
             if non_terminal not in rules:
                 rules[non_terminal] = {}
 
-            # Try to add variables rules
-            if depth < max_depth and depth >= min_variable_depth:
-                for i in range(len(args)):
-                    if current_type == args[i]:
-                        var = Variable(i, current_type)
-                        rules[non_terminal][var] = []
-            # Try to add constants from the DSL
-            if depth == max_depth - 1:
+            if depth < max_depth:
+                # Try to add variables rules
+                if depth >= min_variable_depth:
+                    for i in range(len(args)):
+                        if current_type == args[i]:
+                            var = Variable(i, current_type)
+                            rules[non_terminal][var] = []
+                # Try to add constants from the DSL
                 for P in dsl.list_primitives:
                     type_P = P.type
                     if not isinstance(type_P, Arrow) and type_P == current_type:
                         rules[non_terminal][P] = []
-            # Add functions from the DSL
-            elif depth < max_depth:
-                forbidden = forbidden_sets.get(
-                    non_terminal.predecessors[0][0].primitive
-                    if len(non_terminal.predecessors) > 0
-                    and isinstance(non_terminal.predecessors[0][0], Primitive)
-                    else "",
-                    set(),
-                )
-                for P in dsl.list_primitives:
-                    if P.primitive in forbidden:
-                        continue
-                    type_P = P.type
-                    arguments_P = type_P.ends_with(current_type)
-                    if arguments_P is not None:
-                        decorated_arguments_P = []
-                        for i, arg in enumerate(arguments_P):
-                            addition: List[Tuple[Union[Primitive, Variable], int]] = [
-                                (P, i)
-                            ]
-                            new_predecessors = addition + non_terminal.predecessors
-                            if len(new_predecessors) > n_gram - 1:
-                                new_predecessors.pop()
-                            new_context = Context(arg, new_predecessors, depth + 1)
-                            decorated_arguments_P.append(new_context)
-                            if new_context not in list_to_be_treated:
-                                list_to_be_treated.appendleft(new_context)
+                # Function call
+                if depth < max_depth - 1:
+                    forbidden = forbidden_sets.get(
+                        non_terminal.predecessors[0][0].primitive
+                        if len(non_terminal.predecessors) > 0
+                        and isinstance(non_terminal.predecessors[0][0], Primitive)
+                        else "",
+                        set(),
+                    )
+                    # DSL Primitives
+                    for P in dsl.list_primitives:
+                        if P.primitive in forbidden:
+                            continue
+                        type_P = P.type
+                        arguments_P = type_P.ends_with(current_type)
+                        if arguments_P is not None:
+                            decorated_arguments_P = []
+                            for i, arg in enumerate(arguments_P):
+                                addition: List[
+                                    Tuple[Union[Primitive, Variable], int]
+                                ] = [(P, i)]
+                                new_predecessors = addition + non_terminal.predecessors
+                                if len(new_predecessors) > n_gram - 1:
+                                    new_predecessors.pop()
+                                new_context = Context(arg, new_predecessors, depth + 1)
+                                decorated_arguments_P.append(new_context)
+                                if new_context not in list_to_be_treated:
+                                    list_to_be_treated.appendleft(new_context)
 
-                        rules[non_terminal][P] = decorated_arguments_P
+                            rules[non_terminal][P] = decorated_arguments_P
 
-                # Try to use variable as if there were functions
-                for vi, varg in enumerate(args):
-                    arguments_V = varg.ends_with(current_type)
-                    if arguments_V is not None:
-                        V = Variable(vi, varg)
-                        decorated_arguments_V = []
-                        for i, arg in enumerate(arguments_V):
-                            addition = [(V, i)]
-                            new_predecessors = addition + non_terminal.predecessors
-                            if len(new_predecessors) > n_gram - 1:
-                                new_predecessors.pop()
-                            new_context = Context(arg, new_predecessors, depth + 1)
-                            decorated_arguments_V.append(new_context)
-                            if new_context not in list_to_be_treated:
-                                list_to_be_treated.appendleft(new_context)
+                    # Try to use variable as if there were functions
+                    for vi, varg in enumerate(args):
+                        arguments_V = varg.ends_with(current_type)
+                        if arguments_V is not None:
+                            V = Variable(vi, varg)
+                            decorated_arguments_V = []
+                            for i, arg in enumerate(arguments_V):
+                                addition = [(V, i)]
+                                new_predecessors = addition + non_terminal.predecessors
+                                if len(new_predecessors) > n_gram - 1:
+                                    new_predecessors.pop()
+                                new_context = Context(arg, new_predecessors, depth + 1)
+                                decorated_arguments_V.append(new_context)
+                                if new_context not in list_to_be_treated:
+                                    list_to_be_treated.appendleft(new_context)
 
-                        rules[non_terminal][V] = decorated_arguments_V
+                            rules[non_terminal][V] = decorated_arguments_V
+                    # Try to call self
+                    if recursive:
+                        arguments_self = type_request.ends_with(current_type)
+                        if arguments_self is not None:
+                            P = Primitive("@self", type_request)
+                            decorated_arguments_self = []
+                            for i, arg in enumerate(arguments_self):
+                                addition = [(P, i)]
+                                new_predecessors = addition + non_terminal.predecessors
+                                if len(new_predecessors) > n_gram - 1:
+                                    new_predecessors.pop()
+                                new_context = Context(arg, new_predecessors, depth + 1)
+                                decorated_arguments_self.append(new_context)
+                                if new_context not in list_to_be_treated:
+                                    list_to_be_treated.appendleft(new_context)
 
-                if recursive:
-                    arguments_self = type_request.ends_with(current_type)
-                    if arguments_self is not None:
-                        P = Primitive("@self", type_request)
-                        decorated_arguments_self = []
-                        for i, arg in enumerate(arguments_self):
-                            addition = [(P, i)]
-                            new_predecessors = addition + non_terminal.predecessors
-                            if len(new_predecessors) > n_gram - 1:
-                                new_predecessors.pop()
-                            new_context = Context(arg, new_predecessors, depth + 1)
-                            decorated_arguments_self.append(new_context)
-                            if new_context not in list_to_be_treated:
-                                list_to_be_treated.appendleft(new_context)
-
-                        rules[non_terminal][P] = decorated_arguments_self
+                            rules[non_terminal][P] = decorated_arguments_self
 
         return ConcreteCFG(
             start=Context(return_type, [], 0),
