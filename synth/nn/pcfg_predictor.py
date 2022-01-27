@@ -114,7 +114,10 @@ class BigramsPredictorLayer(nn.Module):
         )
         # map primitives_list => int
         self.symbol2index = {
-            symbol: index for index, symbol in enumerate(primitives_list)
+            symbol: index
+            for index, symbol in enumerate(
+                prim for prim in primitives_list if not isinstance(prim, Variable)
+            )
         }
         # list all primitives and variables that are functions
         func_primitives: List[Union[Primitive, Variable]] = [
