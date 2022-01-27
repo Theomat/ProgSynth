@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.9, 3.8]
+        python-version: [3.9]
 
     steps:
       - uses: actions/checkout@v2
@@ -42,9 +42,6 @@ jobs:
       - name: Install dependencies
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
         continue-on-error: true
-        run: poetry install --no-interaction --no-root
-      - name: Install dependencies (install torch-scatter)
-        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
         run: poetry install --no-interaction --no-root
       #----------------------------------------------
       # install your root project, if required
