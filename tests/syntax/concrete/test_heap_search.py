@@ -30,6 +30,7 @@ def test_unicity() -> None:
     for program in enumerate_pcfg(pcfg):
         assert program not in seen
         seen.add(program)
+    assert len(seen) == cfg.size()
 
 
 def test_order() -> None:
