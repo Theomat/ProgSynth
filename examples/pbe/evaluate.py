@@ -156,9 +156,7 @@ def produce_pcfgs(
     class MyPredictor(nn.Module):
         def __init__(self, size: int) -> None:
             super().__init__()
-            self.bigram_layer = BigramsPredictorLayer(
-                size, dsl, cfgs, variable_probability
-            )
+            self.bigram_layer = BigramsPredictorLayer(size, cfgs, variable_probability)
             encoder = IOEncoder(encoding_dimension, lexicon)
             self.packer = Task2Tensor(
                 encoder, nn.Embedding(len(encoder.lexicon), size), size, device=device
