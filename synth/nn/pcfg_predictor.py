@@ -106,26 +106,20 @@ class BigramsPredictorLayer(nn.Module):
         self.cfg_dictionary = {cfg.type_request: cfg for cfg in cfgs}
         self.variable_probability = variable_probability
 
+        # List all primitives and variables used in our CFGs
         primitives_list: Set[Union[Primitive, Variable]] = reduce(
             lambda acc, el: acc | el,
             [set(v.keys()) for cfg in cfgs for v in cfg.rules.values()],
             set(),
         )
-
+        # map primitives_list => int
         self.symbol2index = {
             symbol: index for index, symbol in enumerate(primitives_list)
         }
+        # list all primitives and variables that are functions
         func_primitives: List[Union[Primitive, Variable]] = [
             p for p in primitives_list if isinstance(p.type, Arrow)
         ]
-        variables_used_as_arguments = set(
-            S.predecessors[0][0]
-            for cfg in cfgs
-            for S in cfg.rules.keys()
-            if len(S.predecessors) > 0 and isinstance(S.predecessors[0][0], Variable)
-        )
-        func_primitives += list(variables_used_as_arguments)
-
         self.parent2index = {
             symbol: index for index, symbol in enumerate(func_primitives)
         }
@@ -135,7 +129,7 @@ class BigramsPredictorLayer(nn.Module):
         self.number_of_parents = len(self.parent2index) + 1  # could be None
         self.maximum_arguments = max(
             len(p.type.arguments()) if isinstance(p.type, Arrow) else 0
-            for p in primitives_list
+            for p in func_primitives
         )
         self.log_probs_predictor = nn.Linear(
             input_size,
