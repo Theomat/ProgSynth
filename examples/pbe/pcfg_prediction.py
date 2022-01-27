@@ -210,7 +210,9 @@ def do_batch(iter_number: int) -> None:
         batch_outputs: Tensor = predictor(batch)
     with chrono.clock("train.do_batch.tensor2pcfg"):
         batch_log_pcfg = [
-            predictor.bigram_layer.tensor2pcfg(batch_outputs[i], task.type_request)
+            predictor.bigram_layer.tensor2pcfg(
+                batch_outputs[i], task.type_request, device=device
+            )
             for i, task in enumerate(batch)
         ]
     # Gradient descent
