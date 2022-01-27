@@ -160,7 +160,11 @@ class BigramsPredictorLayer(nn.Module):
         return z
 
     def tensor2pcfg(
-        self, x: Tensor, type_request: Type, total_variable_order: bool = True
+        self,
+        x: Tensor,
+        type_request: Type,
+        total_variable_order: bool = True,
+        device: str = "cpu",
     ) -> ConcreteLogPCFG:
         """
 
@@ -217,7 +221,7 @@ class BigramsPredictorLayer(nn.Module):
                 for P in variables:
                     rules[S][P] = cfg.rules[S][P], torch.tensor(
                         normalised_variable_logprob
-                    )
+                    ).to(device)
                     # Trick to allow a total ordering on variables
                     if total_variable_order:
                         normalised_variable_logprob = np.log(
