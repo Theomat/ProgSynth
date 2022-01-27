@@ -70,7 +70,6 @@ sampled_inputs = {}
 
 syntaxic_restrictions = []
 specific_restrictions = set()
-specific_pruner = SetPruner(specific_restrictions)
 
 stats = {
     s: {"total": 0, "syntaxic": 0}
@@ -282,7 +281,7 @@ with chrono.clock("search"):
         # Invariant part
         # ========================
         with chrono.clock("search.invariant.enumeration"):
-            for program in enumerate_pcfg(pcfg, specific_pruner):
+            for program in enumerate_pcfg(pcfg):
                 if base_program == program:
                     continue
                 with chrono.clock("search.invariant.enumeration.pruning"):
@@ -320,7 +319,7 @@ with chrono.clock("constants"):
         cfg = ConcreteCFG.from_dsl(dsl, primitive.type, max_depth + 1)
         pcfg = ConcretePCFG.uniform(cfg)
         with chrono.clock("constants.enumeration"):
-            for program in enumerate_pcfg(pcfg, specific_pruner):
+            for program in enumerate_pcfg(pcfg):
                 with chrono.clock("constants.enumeration.eval"):
                     out = evaluator.eval(program, [])
                 if out in all_evals:
