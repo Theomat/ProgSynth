@@ -162,7 +162,6 @@ class BigramsPredictorLayer(nn.Module):
         x: Tensor,
         type_request: Type,
         total_variable_order: bool = True,
-        device: str = "cpu",
     ) -> ConcreteLogPCFG:
         """
 
@@ -173,6 +172,7 @@ class BigramsPredictorLayer(nn.Module):
         - total_variable_order: bool = True - reduce very slighlty (1e-7) some variable probabilities to ensure they are totally ordered in terms of probablities
 
         """
+        device = x.device
         cfg = self.cfg_dictionary[type_request]
         rules: LogPRules = {}
         for S in cfg.rules:
