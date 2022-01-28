@@ -195,6 +195,21 @@ print("Model:", predictor)
 optim = torch.optim.Adam(predictor.parameters(), lr, weight_decay=weight_decay)
 
 
+def loss_expected_samples(
+    programs,
+    log_pcfgs,
+    reduce=torch.mean,
+) -> Tensor:
+    expected_samples = [
+        1 / torch.exp(log_pcfg.log_probability(p))
+        for p, log_pcfg in zip(programs, log_pcfgs)
+    ]
+    out = torch.stack(expected_samples)
+    if reduce:
+        out = reduce(out)
+    return out
+
+
 @chrono.clock(prefix="train")
 def do_batch(iter_number: int) -> None:
     with chrono.clock("train.do_batch.task_generation"):
@@ -218,6 +233,7 @@ def do_batch(iter_number: int) -> None:
         optim.zero_grad()
         with chrono.clock("train.do_batch.loss.compute"):
             loss = loss_negative_log_prob(batch_programs, batch_log_pcfg)
+            # loss = loss_expected_samples(batch_programs, batch_log_pcfg)
         with chrono.clock("train.do_batch.loss.backprop"):
             loss.backward()
             optim.step()
@@ -257,42 +273,6 @@ def train() -> None:
         torch.save(predictor.state_dict(), f"{output_file}_epoch{ep}.tmp")
 
 
-def test() -> None:
-    with torch.no_grad():
-        taken = 0
-        tasks = full_dataset.tasks
-        total_loss = None
-        iter_number = 0
-        while taken < len(tasks):
-            batch_end = min(taken + batch_size, len(tasks))
-            batch = tasks[taken:batch_end]
-
-            batch_programs = [task.solution for task in batch]
-            batch_outputs: Tensor = predictor(batch)
-
-            batch_log_pcfg = [
-                predictor.bigram_layer.tensor2pcfg(batch_outputs[i], task.type_request)
-                for i, task in enumerate(batch)
-            ]
-            loss = loss_negative_log_prob(batch_programs, batch_log_pcfg, torch.sum)
-            total_loss = total_loss + loss if total_loss else loss
-            # Logging
-            iter_number += 1
-            writer.add_scalar(
-                "loss/test", loss.item() / (batch_end - taken + 1), iter_number
-            )
-            mean_length = np.mean([p.length() for p in batch_programs])
-            writer.add_scalar(
-                "length normed probability/test",
-                np.exp(-loss.item()) / mean_length,
-                iter_number,
-            )
-            # Update taken
-            taken = batch_end
-        total_loss /= taken
-        print("Test loss:", total_loss.item())
-
-
 # Save on exit
 def on_exit():
     writer.add_hparams(
@@ -319,4 +299,3 @@ atexit.register(on_exit)
 
 train()
 torch.save(predictor.state_dict(), output_file)
-test()
