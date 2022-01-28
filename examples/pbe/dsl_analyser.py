@@ -1,11 +1,12 @@
 from typing import Dict, Generator, List, TypeVar
 import copy
 
+import tqdm
 import numpy as np
 
 from synth import Dataset, PBE
 from synth.pbe import reproduce_dataset
-from synth.pruning import UseAllVariablesPruner, SetPruner
+from synth.pruning import UseAllVariablesPruner
 from synth.syntax import (
     ConcreteCFG,
     ConcretePCFG,
@@ -33,6 +34,7 @@ dataset = DEEPCODER
 # ================================
 max_depth = 2
 input_checks = 100
+progress = True
 # ================================
 # Initialisation
 # ================================
@@ -212,7 +214,8 @@ def constant_program_analysis(program: Program):
 
 
 with chrono.clock("search"):
-    for primitive in dsl.list_primitives:
+    iterable = tqdm.tqdm(dsl.list_primitives) if progress else dsl.list_primitives
+    for primitive in iterable:
         arguments = (
             [] if not isinstance(primitive.type, Arrow) else primitive.type.arguments()
         )
