@@ -231,7 +231,6 @@ class BigramsPredictorLayer(nn.Module):
             else:
                 # We still need to normalise probabilities
                 # Since all derivations aren't possible
-                total = sum(np.exp(rules[S][P][1].item()) for P in rules[S])
                 to_add = np.log(1 / total)
                 for O in rules[S]:
                     rules[S][O] = rules[S][O][0], rules[S][O][1] + to_add
