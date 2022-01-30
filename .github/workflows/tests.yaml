@@ -57,6 +57,3 @@ jobs:
       - name: MyPy
         run: |
           poetry run mypy synth
-      - name: Run tests
-        run: |
-          poetry run pytest -v
