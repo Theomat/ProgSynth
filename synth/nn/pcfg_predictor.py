@@ -238,6 +238,152 @@ class BigramsPredictorLayer(nn.Module):
         return grammar
 
 
+class ExactBigramsPredictorLayer(nn.Module):
+    """
+    Needs a lot less parameters than BigramsPredictorLayer but seems to have worse performance.
+
+    Parameters:
+    ------------
+    - input_size: int - the input size of the tensor to this layer
+    - cfgs: Iterable[ConcreteCFG] - the set of all supported CFG
+    - variable_probability: float = 0.2 - the probability mass of all variable at any given derivation level
+    """
+
+    def __init__(
+        self,
+        input_size: int,
+        cfgs: Iterable[ConcreteCFG],
+        variable_probability: float = 0.2,
+    ):
+        super(ExactBigramsPredictorLayer, self).__init__()
+
+        self.cfg_dictionary = {cfg.type_request: cfg for cfg in cfgs}
+        self.variable_probability = variable_probability
+
+        # Compute all pairs (S, P) where S has lost depth information
+        self.all_pairs: Dict[
+            Optional[Tuple[Union[Primitive, Variable], int]], Set[Primitive]
+        ] = {}
+        for cfg in cfgs:
+            for S in cfg.rules:
+                key = S.predecessors[0] if S.predecessors else None
+                if not key in self.all_pairs:
+                    self.all_pairs[key] = set()
+                for P in cfg.rules[S]:
+                    if not isinstance(P, Variable):
+                        self.all_pairs[key].add(P)
+
+        output_size = sum(len(self.all_pairs[S]) for S in self.all_pairs)
+
+        self.s2index: Dict[
+            Optional[Tuple[Union[Primitive, Variable], int]],
+            Tuple[int, int, Dict[Primitive, int]],
+        ] = {}
+        current_index = 0
+        for key, set_for_key in self.all_pairs.items():
+            self.s2index[key] = (
+                current_index,
+                len(set_for_key),
+                {P: i for i, P in enumerate(self.all_pairs[key])},
+            )
+            current_index += len(set_for_key)
+
+        self.log_probs_predictor = nn.Linear(
+            input_size,
+            output_size,
+        )
+
+    def forward(self, x: Tensor) -> Tensor:
+        """
+        batch_IOs is a tensor of size
+        (batch_size, input_size)
+
+        returns: (batch_size, self.number_of_parents, self.maximum_arguments, self.number_of_primitives)
+        """
+        y: Tensor = self.log_probs_predictor(x)
+        z = torch.ones_like(y)
+        for _, (start, length, _) in self.s2index.items():
+            z[:, start : start + length] = F.log_softmax(
+                y[:, start : start + length], dim=-1
+            )
+
+        return z
+
+    def tensor2pcfg(
+        self,
+        x: Tensor,
+        type_request: Type,
+        total_variable_order: bool = True,
+    ) -> ConcreteLogPCFG:
+        """
+
+        Parameters:
+        ------------
+        - x: Tensor - the tensor to be transformed into a PCFG
+        - type_request: Type - the type request of the PCFG
+        - total_variable_order: bool = True - reduce very slighlty (1e-7) some variable probabilities to ensure they are totally ordered in terms of probablities
+
+        """
+        device = x.device
+        cfg = self.cfg_dictionary[type_request]
+        rules: LogPRules = {}
+        for S in cfg.rules:
+            rules[S] = {}
+            key = S.predecessors[0] if S.predecessors else None
+            start, length, symbol2index = self.s2index[key]
+            y = x[start : start + length]
+
+            # List of all variables derivable from S
+            variables: List[Variable] = []
+            # For each derivation parse probabilities
+            for P in cfg.rules[S]:
+                cpy_P = P
+                if isinstance(P, Primitive):
+                    primitive_index = symbol2index[P]
+                    rules[S][cpy_P] = (
+                        cfg.rules[S][P],
+                        y[primitive_index],
+                    )
+                else:
+                    V: Variable = P  # ensure typing
+                    variables.append(V)
+                    # All variables together have probability mass self.variable_probability
+                    # then the probability of selecting a variable is uniform
+            # If there are variables we need to normalise
+            total = sum(np.exp(rules[S][P][1].item()) for P in rules[S])
+            if variables:
+                var_probability = self.variable_probability
+                if total > 0:
+                    # Normalise rest
+                    to_add: float = np.log((1 - self.variable_probability) / total)
+                    for O in rules[S]:
+                        rules[S][O] = rules[S][O][0], rules[S][O][1] + to_add
+                else:
+                    # There are no other choices than variables
+                    var_probability = 1
+                # Normalise variable probability
+                normalised_variable_logprob: float = np.log(
+                    var_probability / len(variables)
+                )
+                for P in variables:
+                    rules[S][P] = cfg.rules[S][P], torch.tensor(
+                        normalised_variable_logprob
+                    ).to(device)
+                    # Trick to allow a total ordering on variables
+                    if total_variable_order:
+                        normalised_variable_logprob = np.log(
+                            np.exp(normalised_variable_logprob) - 1e-7
+                        )
+            else:
+                # We still need to normalise probabilities
+                # Since all derivations aren't possible
+                to_add = np.log(1 / total)
+                for O in rules[S]:
+                    rules[S][O] = rules[S][O][0], rules[S][O][1] + to_add
+        grammar = ConcreteLogPCFG(cfg.start, rules, cfg.max_program_depth, type_request)
+        return grammar
+
+
 def loss_negative_log_prob(
     programs: Iterable[Program],
     log_pcfgs: Iterable[ConcreteLogPCFG],
