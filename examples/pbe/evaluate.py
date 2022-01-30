@@ -40,7 +40,7 @@ parser.add_argument(
     "-d", "--dataset", type=str, default=DEEPCODER, help="dataset (default: deepcoder)"
 )
 parser.add_argument(
-    "-o", "--output", type=str, default=".", help="output folder (default: .)"
+    "-o", "--output", type=str, default="./", help="output folder (default: './')"
 )
 gg = parser.add_argument_group("model parameters")
 gg.add_argument(
@@ -317,8 +317,11 @@ if __name__ == "__main__":
 
     max_time, max_programs = 0, 0
     for file in glob(os.path.join(output_folder, "*.csv")):
-        name = file[len(output_folder) + len(dataset) : -4]
-        name = name[name.index("_") + 1 :]
+        file = os.path.relpath(file, output_folder)
+        if not file.startswith(dataset):
+            continue
+        name = file[len(dataset) : -4]
+        name = name[name.index("_") + 1 :].replace("_", " ")
         trace = []
 
         with open(file, "r") as fd:
