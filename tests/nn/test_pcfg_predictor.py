@@ -3,9 +3,14 @@ import torch
 import numpy as np
 from torch.functional import Tensor
 
-from synth.nn.pcfg_predictor import BigramsPredictorLayer
+from synth.nn.pcfg_predictor import (
+    BigramsPredictorLayer,
+    ExactBigramsPredictorLayer,
+    loss_negative_log_prob,
+)
 from synth.syntax.concrete.concrete_cfg import ConcreteCFG
 from synth.syntax.dsl import DSL
+from synth.syntax.program import Function, Primitive, Variable
 from synth.syntax.type_system import (
     INT,
     FunctionType,
@@ -88,3 +93,46 @@ def test_var_as_function() -> None:
                 prob = pcfg.probability(P)
                 exp_logprob = np.exp(log_pcfg.log_probability(P).item())
                 assert np.isclose(prob, exp_logprob)
+
+
+def test_learning() -> None:
+    layer = BigramsPredictorLayer(10, {cfg})
+    layer2 = ExactBigramsPredictorLayer(10, {cfg})
+    opti = torch.optim.AdamW(layer.parameters(), lr=1e-1)
+    opti2 = torch.optim.AdamW(layer2.parameters(), lr=1e-1)
+    steps = 10
+    mean_log_prob = []
+    batch_size = 10
+    programs = [
+        Function(
+            Primitive("+", FunctionType(INT, INT, INT)),
+            [Variable(0, INT), Primitive("1", INT)],
+        )
+    ] * batch_size
+    for step in range(steps):
+        inputs = torch.ones((batch_size, 10))
+        y = layer(inputs)
+        pcfgs = [layer.tensor2pcfg(y[i], cfg.type_request) for i in range(batch_size)]
+        opti.zero_grad()
+        loss = loss_negative_log_prob(programs, pcfgs)
+        mean_log_prob.append(-loss.item())
+        loss.backward()
+        opti.step()
+
+        inputs2 = torch.ones_like(inputs)
+        y2 = layer2(inputs2)
+        pcfgs2 = [
+            layer2.tensor2pcfg(y2[i], cfg.type_request) for i in range(batch_size)
+        ]
+        opti2.zero_grad()
+        loss2 = loss_negative_log_prob(programs, pcfgs2)
+        if step == steps - 1:
+            assert np.isclose(-loss2.item(), mean_log_prob[-1], atol=1e-4, rtol=1e-2)
+        loss2.backward()
+        opti2.step()
+
+    for i in range(1, len(mean_log_prob)):
+        assert mean_log_prob[i - 1] < mean_log_prob[i]
+
+    assert np.exp(mean_log_prob[-1]) > 0.5
+    # It never raises over 0.5
