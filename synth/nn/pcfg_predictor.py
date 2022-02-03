@@ -388,10 +388,17 @@ def loss_negative_log_prob(
     programs: Iterable[Program],
     log_pcfgs: Iterable[ConcreteLogPCFG],
     reduce: Optional[Callable[[Tensor], Tensor]] = torch.mean,
+    length_normed: bool = True,
 ) -> Tensor:
-    log_prob_list = [
-        log_pcfg.log_probability(p) for p, log_pcfg in zip(programs, log_pcfgs)
-    ]
+    if length_normed:
+        log_prob_list = [
+            log_pcfg.log_probability(p) / p.length()
+            for p, log_pcfg in zip(programs, log_pcfgs)
+        ]
+    else:
+        log_prob_list = [
+            log_pcfg.log_probability(p) for p, log_pcfg in zip(programs, log_pcfgs)
+        ]
     out = -torch.stack(log_prob_list)
     if reduce:
         out = reduce(out)
