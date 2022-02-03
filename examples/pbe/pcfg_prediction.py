@@ -191,8 +191,7 @@ class MyPredictor(nn.Module):
 
 
 predictor = MyPredictor(hidden_size).to(device)
-print("Model:", predictor)
-optim = torch.optim.Adam(predictor.parameters(), lr, weight_decay=weight_decay)
+optim = torch.optim.AdamW(predictor.parameters(), lr, weight_decay=weight_decay)
 
 
 @chrono.clock(prefix="train.do_batch")
