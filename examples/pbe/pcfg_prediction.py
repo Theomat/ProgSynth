@@ -195,25 +195,13 @@ print("Model:", predictor)
 optim = torch.optim.Adam(predictor.parameters(), lr, weight_decay=weight_decay)
 
 
-def loss_expected_samples(
-    programs,
-    log_pcfgs,
-    reduce=torch.mean,
-) -> Tensor:
-    expected_samples = [
-        1 / torch.exp(log_pcfg.log_probability(p))
-        for p, log_pcfg in zip(programs, log_pcfgs)
-    ]
-    out = torch.stack(expected_samples)
-    if reduce:
-        out = reduce(out)
-    return out
+@chrono.clock(prefix="train.do_batch")
+def get_batch_of_tasks() -> List[Task[PBE]]:
+    return gen_take(task_generator.generator(), batch_size)
 
 
-@chrono.clock(prefix="train")
 def do_batch(iter_number: int) -> None:
-    with chrono.clock("train.do_batch.task_generation"):
-        batch = gen_take(task_generator.generator(), batch_size)
+    batch = get_batch_of_tasks()
     batch_programs = [task.solution for task in batch]
     # Logging
     writer.add_scalar(
@@ -233,17 +221,11 @@ def do_batch(iter_number: int) -> None:
         optim.zero_grad()
         with chrono.clock("train.do_batch.loss.compute"):
             loss = loss_negative_log_prob(batch_programs, batch_log_pcfg)
-            # loss = loss_expected_samples(batch_programs, batch_log_pcfg)
         with chrono.clock("train.do_batch.loss.backprop"):
             loss.backward()
             optim.step()
     # Logging
     writer.add_scalar("loss/train", loss.item(), iter_number)
-    writer.add_scalar(
-        "length normed probability/train",
-        np.exp(-loss.item()) / mean_length,
-        iter_number,
-    )
 
     total = sum(task_generator.generated_types.values())
     for t, v in task_generator.difficulty.items():
