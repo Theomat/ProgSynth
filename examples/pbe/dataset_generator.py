@@ -78,10 +78,14 @@ with chrono.clock("dataset.reproduce") as c:
     print("done in", c.elapsed_time(), "s")
 # Add some exceptions that are ignored during task generation
 task_generator.skip_exceptions.add(TypeError)
+print("Generating dataset...", end="", flush=True)
 with chrono.clock("dataset.generate") as c:
     gen_dataset = Dataset(gen_take(task_generator.generator(), gen_dataset_size))
+    print("done in", c.elapsed_time(), "s")
+print("Saving dataset...", end="", flush=True)
 with chrono.clock("dataset.save") as c:
-    gen_dataset.save("./train_dataset.pickle")
+    gen_dataset.save(output_file)
+    print("done in", c.elapsed_time(), "s")
 
 # ================================
 # Print some stats
