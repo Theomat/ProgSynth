@@ -157,7 +157,7 @@ def test_learning() -> None:
     opti = torch.optim.AdamW(layer.parameters(), lr=1e-1)
     opti2 = torch.optim.AdamW(layer2.parameters(), lr=1e-1)
     steps = 10
-    mean_log_prob = []
+    mean_prob = []
     batch_size = 10
     programs = [
         Function(
@@ -171,9 +171,14 @@ def test_learning() -> None:
         pcfgs = [layer.tensor2pcfg(y[i], cfg.type_request) for i in range(batch_size)]
         opti.zero_grad()
         loss = loss_negative_log_prob(programs, pcfgs)
-        mean_log_prob.append(-loss.item())
         loss.backward()
         opti.step()
+
+        with torch.no_grad():
+            logprob = -loss_negative_log_prob(
+                programs, pcfgs, length_normed=False
+            ).item()
+            mean_prob.append(np.exp(logprob))
 
         inputs2 = torch.ones_like(inputs)
         y2 = layer2(inputs2)
@@ -182,13 +187,17 @@ def test_learning() -> None:
         ]
         opti2.zero_grad()
         loss2 = loss_negative_log_prob(programs, pcfgs2)
-        if step == steps - 1:
-            assert np.isclose(-loss2.item(), mean_log_prob[-1], atol=1e-4, rtol=1e-2)
         loss2.backward()
         opti2.step()
 
-    for i in range(1, len(mean_log_prob)):
-        assert mean_log_prob[i - 1] < mean_log_prob[i]
+        if step == steps - 1:
+            with torch.no_grad():
+                logprob = -loss_negative_log_prob(
+                    programs, pcfgs2, length_normed=False
+                ).item()
+                assert np.isclose(np.exp(logprob), mean_prob[-1], atol=1e-4, rtol=1e-2)
 
-    assert np.exp(mean_log_prob[-1]) > 0.5
-    # It never raises over 0.5
+    for i in range(1, len(mean_prob)):
+        assert mean_prob[i - 1] < mean_prob[i], f"{mean_prob}"
+
+    assert mean_prob[-1] > 0.12
