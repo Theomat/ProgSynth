@@ -32,7 +32,14 @@ import argparse
 
 parser = argparse.ArgumentParser(description="Evaluate model prediction")
 parser.add_argument(
-    "-d", "--dataset", type=str, default=DEEPCODER, help="dataset (default: deepcoder)"
+    "-d", "--dataset", type=str, default="none", help="dataset (default: none)"
+)
+parser.add_argument(
+    "--dsl",
+    type=str,
+    default=DEEPCODER,
+    help="dsl (default: deepcoder)",
+    choices=[DEEPCODER, DREAMCODER],
 )
 parser.add_argument(
     "-o",
@@ -116,7 +123,8 @@ g.add_argument(
 )
 
 parameters = parser.parse_args()
-dataset: str = parameters.dataset
+dataset_file: str = parameters.dataset
+dsl_name: str = parameters.dsl
 output_file: str = parameters.output
 variable_probability: float = parameters.var_prob
 batch_size: int = parameters.batch_size
@@ -130,41 +138,53 @@ gen_dataset_size: int = parameters.size
 cpu_only: bool = parameters.cpu
 no_clean: bool = parameters.no_clean
 no_shuffle: bool = parameters.no_shuffle
+should_generate_dataset: bool = False
 
 random.seed(seed)
 torch.manual_seed(seed)
 # ================================
-# Load constants specific to dataset
+# Load constants specific to DSL
 # ================================
-dataset_file = f"{dataset}.pickle"
 max_list_length = None
-if dataset == DEEPCODER:
-    from deepcoder.deepcoder import dsl, evaluator
+if dsl_name == DEEPCODER:
+    from deepcoder.deepcoder import dsl, evaluator, lexicon
 
-elif dataset == DREAMCODER:
-    from dreamcoder.dreamcoder import dsl, evaluator
+elif dsl_name == DREAMCODER:
+    from dreamcoder.dreamcoder import dsl, evaluator, lexicon
 
     max_list_length = 10
 else:
-    print("Unknown dataset:", dataset, file=sys.stderr)
-    sys.exit(0)
+    print("Unknown dsl:", dsl_name, file=sys.stderr)
+    sys.exit(1)
 # ================================
 # Load dataset & Task Generator
 # ================================
 # Load dataset
+if dataset_file.lower() == "none":
+    dataset_file = f"{dsl_name}.pickle"
+    should_generate_dataset = True
 print(f"Loading {dataset_file}...", end="")
 with chrono.clock("dataset.load") as c:
     full_dataset: Dataset[PBE] = Dataset.load(dataset_file)
     print("done in", c.elapsed_time(), "s")
-# Reproduce dataset distribution
-print("Reproducing dataset...", end="", flush=True)
-with chrono.clock("dataset.reproduce") as c:
-    task_generator, lexicon = reproduce_dataset(
-        full_dataset, dsl, evaluator, seed, max_list_length=max_list_length
-    )
-    print("done in", c.elapsed_time(), "s")
-# Add some exceptions that are ignored during task generation
-task_generator.skip_exceptions.add(TypeError)
+if should_generate_dataset:
+    # Reproduce dataset distribution
+    print("Reproducing dataset...", end="", flush=True)
+    with chrono.clock("dataset.reproduce") as c:
+        task_generator, lexicon = reproduce_dataset(
+            full_dataset, dsl, evaluator, seed, max_list_length=max_list_length
+        )
+        print("done in", c.elapsed_time(), "s")
+    # Add some exceptions that are ignored during task generation
+    task_generator.skip_exceptions.add(TypeError)
+    with chrono.clock("dataset.generate") as c:
+        gen_dataset = Dataset(gen_take(task_generator.generator(), gen_dataset_size))
+    with chrono.clock("dataset.save") as c:
+        gen_dataset.save("./train_dataset.pickle")
+else:
+    gen_dataset = full_dataset
+    gen_dataset_size = min(len(full_dataset), gen_dataset_size)
+
 # ================================
 # Misc init
 # ================================
@@ -177,11 +197,11 @@ writer = SummaryWriter()
 # Neural Network creation
 # ================================
 # Generate the CFG dictionnary
-all_type_requests = set(task_generator.type2pcfg.keys())
-if dataset == DEEPCODER:
-    max_depth = max(task.solution.depth() for task in full_dataset)
-elif dataset == DREAMCODER:
-    max_depth = 5
+all_type_requests = gen_dataset.type_requests()
+if all(task.solution is not None for task in gen_dataset):
+    max_depth = max(task.solution.depth() for task in gen_dataset)
+else:
+    max_depth = 5  # TODO: set as parameter
 cfgs = [ConcreteCFG.from_dsl(dsl, t, max_depth) for t in all_type_requests]
 print(f"{len(all_type_requests)} type requests supported.")
 print(f"Lexicon: [{min(lexicon)};{max(lexicon)}]")
@@ -211,8 +231,6 @@ predictor = MyPredictor(hidden_size).to(device)
 optim = torch.optim.AdamW(predictor.parameters(), lr, weight_decay=weight_decay)
 
 
-gen_dataset = Dataset(gen_take(task_generator.generator(), gen_dataset_size))
-gen_dataset.save("./train_dataset.pickle")
 dataset_index = 0
 
 
