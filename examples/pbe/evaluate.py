@@ -119,7 +119,7 @@ dataset_name = dataset_file[start_index : dataset_file.index(".", start_index)]
 # ================================
 
 
-def load_dataset() -> Tuple[Dataset[PBE], DSL, DSLEvaluator, List[int]]:
+def load_dataset() -> Tuple[Dataset[PBE], DSL, DSLEvaluator, List[int], str]:
     if dsl_name == DEEPCODER:
         from deepcoder.deepcoder import dsl, evaluator, lexicon
     elif dsl_name == DREAMCODER:
@@ -133,16 +133,16 @@ def load_dataset() -> Tuple[Dataset[PBE], DSL, DSLEvaluator, List[int]]:
     # Load dataset
     print(f"Loading {dataset_file}...", end="")
     with chrono.clock("dataset.load") as c:
-        full_dataset: Dataset[PBE] = Dataset.load(dataset_file)
+        full_dataset, model_name = Dataset.load(dataset_file)
         print("done in", c.elapsed_time(), "s")
-    return full_dataset, dsl, evaluator, lexicon
+    return full_dataset, dsl, evaluator, lexicon, model_name
 
 
 # Produce PCFGS ==========================================================
 @torch.no_grad()
 def produce_pcfgs(
     full_dataset: Dataset[PBE], dsl: DSL, lexicon: List[int]
-) -> List[ConcreteCFG]:
+) -> Tuple[List[ConcreteCFG], str]:
     # ================================
     # Load already done PCFGs
     # ================================
@@ -164,7 +164,7 @@ def produce_pcfgs(
     # Skip if possible
     # ================================
     if done >= len(tasks):
-        return pcfgs
+        return pcfgs, model_name
     # Get device
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print("Using device:", device)
@@ -230,7 +230,7 @@ def produce_pcfgs(
     with open(file, "wb") as fd:
         pickle.dump(pcfgs, fd)
     atexit.unregister(save_pcfgs)
-    return pcfgs
+    return pcfgs, model_name
 
 
 # Enumeration methods =====================================================
@@ -281,13 +281,15 @@ if __name__ == "__main__":
         ("base", base),
     ]
 
-    full_dataset, dsl, evaluator, lexicon = load_dataset()
+    full_dataset, dsl, evaluator, lexicon, model_name = load_dataset()
     if not plot_only:
         pcfgs = produce_pcfgs(full_dataset, dsl, lexicon)
         should_exit = False
 
         for name, method in methods:
-            file = os.path.join(output_folder, f"{dataset_name}_{name}.csv")
+            file = os.path.join(
+                output_folder, f"{dataset_name}_{model_name}_{name}.csv"
+            )
             trace = []
             print("Working on:", name)
             if os.path.exists(file):
