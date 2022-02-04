@@ -15,9 +15,9 @@ import _pickle as cPickle  # type: ignore
 import bz2
 
 from synth.specification import TaskSpecification
-from synth.syntax.program import Function, Program
+from synth.syntax.program import Program
 from synth.syntax.type_system import Type
-from synth.syntax.concrete.concrete_cfg import ConcreteCFG, Context
+from synth.syntax.concrete.concrete_cfg import ConcreteCFG
 from synth.syntax.concrete.concrete_pcfg import ConcretePCFG
 
 
