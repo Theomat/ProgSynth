@@ -16,10 +16,7 @@ from torch.nn.utils.rnn import PackedSequence
 import numpy as np
 
 from synth import Dataset, PBE, Task
-from synth.nn import (
-    BigramsPredictorLayer,
-    Task2Tensor,
-)
+from synth.nn import BigramsPredictorLayer, Task2Tensor, free_pytorch_memory
 from synth.pbe import IOEncoder
 from synth.semantic import DSLEvaluator
 from synth.syntax import ConcreteCFG, ConcretePCFG, enumerate_pcfg, DSL, Program
@@ -149,7 +146,7 @@ def load_dataset() -> Tuple[Dataset[PBE], DSL, DSLEvaluator, List[int], str]:
 @torch.no_grad()
 def produce_pcfgs(
     full_dataset: Dataset[PBE], dsl: DSL, lexicon: List[int]
-) -> Tuple[List[ConcreteCFG], str]:
+) -> List[ConcreteCFG]:
     # ================================
     # Load already done PCFGs
     # ================================
@@ -171,7 +168,7 @@ def produce_pcfgs(
     # Skip if possible
     # ================================
     if done >= len(tasks):
-        return pcfgs, model_name
+        return pcfgs
     # Get device
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print("Using device:", device)
@@ -237,7 +234,9 @@ def produce_pcfgs(
     with open(file, "wb") as fd:
         pickle.dump(pcfgs, fd)
     atexit.unregister(save_pcfgs)
-    return pcfgs, model_name
+    del predictor
+    free_pytorch_memory()
+    return pcfgs
 
 
 # Enumeration methods =====================================================
@@ -292,7 +291,6 @@ if __name__ == "__main__":
     if not plot_only:
         pcfgs = produce_pcfgs(full_dataset, dsl, lexicon)
         should_exit = False
-
         for name, method in methods:
             file = os.path.join(
                 output_folder, f"{dataset_name}_{model_name}_{name}.csv"
@@ -357,6 +355,8 @@ if __name__ == "__main__":
         if not file.startswith(dataset_name):
             continue
         name = file[len(dataset_name) : -4]
+        if "_" not in name:
+            continue
         name = name[name.index("_") + 1 :].replace("_", " ")
         trace = []
 
