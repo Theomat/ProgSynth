@@ -10,7 +10,9 @@ DEEPCODER = "deepcoder"
 
 import argparse
 
-parser = argparse.ArgumentParser(description="Evaluate model prediction")
+parser = argparse.ArgumentParser(
+    description="Generate a dataset copying the original distribution of another dataset"
+)
 parser.add_argument(
     "--dsl",
     type=str,
