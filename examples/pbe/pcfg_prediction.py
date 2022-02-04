@@ -2,6 +2,7 @@ from typing import List
 import atexit
 import sys
 import os
+import random
 
 import tqdm
 
@@ -90,6 +91,13 @@ g.add_argument(
     help="number of epochs (default: 1)",
 )
 g.add_argument(
+    "--no-shuffle",
+    type=bool,
+    action="store_true",
+    default=False,
+    help="do not shuffle dataset between epochs",
+)
+g.add_argument(
     "-lr",
     "--learning-rate",
     type=float,
@@ -122,7 +130,9 @@ hidden_size: int = parameters.hidden_size
 gen_dataset_size: int = parameters.size
 cpu_only: bool = parameters.cpu
 no_clean: bool = parameters.no_clean
+no_shuffle: bool = parameters.no_shuffle
 
+random.seed(seed)
 torch.manual_seed(seed)
 # ================================
 # Load constants specific to dataset
@@ -257,6 +267,8 @@ def do_batch(iter_number: int) -> None:
 def do_epoch(j: int) -> int:
     global dataset_index
     dataset_index = 0
+    if not no_shuffle:
+        random.shuffle(gen_dataset.tasks)
     nb_batch_per_epoch = int(gen_dataset_size / batch_size + 0.5)
     i = j
     for _ in tqdm.trange(nb_batch_per_epoch, desc="batchs"):
