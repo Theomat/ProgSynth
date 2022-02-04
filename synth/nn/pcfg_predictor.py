@@ -68,7 +68,9 @@ class ConcreteLogPCFG:
             probability = self.rules[S][F][1]
 
             for i, arg in enumerate(args_P):
-                probability += self.log_probability(arg, self.rules[S][F][0][i])
+                probability = probability + self.log_probability(
+                    arg, self.rules[S][F][0][i]
+                )
             return probability
 
         elif isinstance(P, (Variable, Primitive)):
