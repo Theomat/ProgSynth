@@ -115,6 +115,42 @@ def test_var_as_function(
                 assert np.isclose(prob, exp_logprob)
 
 
+@pytest.mark.parametrize("layer_class", layers)
+def test_varprob(
+    layer_class: Union[ExactBigramsPredictorLayer, BigramsPredictorLayer]
+) -> None:
+    layer = layer_class(10, {cfg})
+    opti = torch.optim.AdamW(layer.parameters(), lr=1e-1)
+    steps = 10
+    batch_size = 10
+    programs = [
+        Function(
+            Primitive("+", FunctionType(INT, INT, INT)),
+            [Variable(0, INT), Primitive("1", INT)],
+        )
+    ] * batch_size
+    for _ in range(steps):
+        inputs = torch.ones((batch_size, 10))
+        y = layer(inputs)
+        pcfgs = [
+            layer.tensor2pcfg(y[i], cfg.type_request, total_variable_order=False)
+            for i in range(batch_size)
+        ]
+        opti.zero_grad()
+        loss = loss_negative_log_prob(programs, pcfgs)
+        loss.backward()
+        opti.step()
+
+        for pcfg in pcfgs:
+            for S in pcfg.rules:
+                for P in pcfg.rules[S]:
+                    if isinstance(P, Variable):
+                        prob = np.exp(pcfg.rules[S][P][1].item())
+                        assert np.isclose(
+                            prob, layer.variable_probability
+                        ), f"S:{S}, P:{P} prob:{prob} target:{layer.variable_probability}"
+
+
 def test_learning() -> None:
     layer = BigramsPredictorLayer(10, {cfg})
     layer2 = ExactBigramsPredictorLayer(10, {cfg})
