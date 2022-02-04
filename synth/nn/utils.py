@@ -1,4 +1,5 @@
 from typing import Generic, List, Optional, TypeVar
+import gc
 
 import torch
 from torch import Tensor
@@ -123,3 +124,19 @@ def print_model_summary(model: nn.Module) -> None:
     s = "Total Params"
     t = str(total_params)
     print(f"{s:<70}{t:>10}")
+
+
+def free_pytorch_memory(gpu_only: bool = False) -> None:
+    for obj in gc.get_objects():
+        try:
+            if torch.is_tensor(obj):
+                if not gpu_only or obj.is_cuda:
+                    del obj
+                    gc.collect()
+            elif hasattr(obj, "data") and torch.is_tensor(obj.data):
+                if not gpu_only or obj.is_cuda:
+                    del obj
+                    gc.collect()
+        except:
+            pass
+    torch.cuda.empty_cache()
