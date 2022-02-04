@@ -125,10 +125,11 @@ def produce_pcfgs(
     # ================================
     # Load already done PCFGs
     # ================================
-    dir = os.path.dirname(model_file) + "/"
-    if len(dir) == 1:
-        dir = "."
-    model_name = model_file[len(dir) : model_file.index(".", len(dir) - 1)]
+    dir = os.path.realpath(os.path.dirname(model_file))
+    start_index = (
+        0 if not os.path.pathsep in model_file else model_file.index(os.path.pathsep)
+    )
+    model_name = model_file[start_index : model_file.index(".", start_index)]
     file = os.path.join(dir, f"{model_name}_pcfgs.pickle")
     pcfgs: List[ConcretePCFG] = []
     if os.path.exists(file):
