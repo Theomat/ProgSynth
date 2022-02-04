@@ -82,13 +82,13 @@ g.add_argument(
     default=16,
     help="batch size to compute PCFGs (default: 16)",
 )
-# g.add_argument(
-#     "-e",
-#     "--epochs",
-#     type=int,
-#     default=1,
-#     help="number of epochs (default: 1)",
-# )
+g.add_argument(
+    "-e",
+    "--epochs",
+    type=int,
+    default=1,
+    help="number of epochs (default: 1)",
+)
 g.add_argument(
     "-lr",
     "--learning-rate",
@@ -113,7 +113,7 @@ dataset: str = parameters.dataset
 output_file: str = parameters.output
 variable_probability: float = parameters.var_prob
 batch_size: int = parameters.batch_size
-epochs: int = 1  # parameters.epochs
+epochs: int = parameters.epochs
 lr: float = parameters.learning_rate
 weight_decay: float = parameters.weight_decay
 seed: int = parameters.seed
@@ -202,9 +202,17 @@ predictor = MyPredictor(hidden_size).to(device)
 optim = torch.optim.AdamW(predictor.parameters(), lr, weight_decay=weight_decay)
 
 
+gen_dataset = Dataset(gen_take(task_generator.generator(), gen_dataset_size))
+gen_dataset.save("./train_dataset.pickle")
+dataset_index = 0
+
+
 @chrono.clock(prefix="train.do_batch")
 def get_batch_of_tasks() -> List[Task[PBE]]:
-    return gen_take(task_generator.generator(), batch_size)
+    global dataset_index
+    batch = gen_dataset[dataset_index : dataset_index + batch_size]
+    dataset_index += batch_size
+    return batch
 
 
 def do_batch(iter_number: int) -> None:
@@ -247,6 +255,8 @@ def do_batch(iter_number: int) -> None:
 
 
 def do_epoch(j: int) -> int:
+    global dataset_index
+    dataset_index = 0
     nb_batch_per_epoch = int(gen_dataset_size / batch_size + 0.5)
     i = j
     for _ in tqdm.trange(nb_batch_per_epoch, desc="batchs"):
