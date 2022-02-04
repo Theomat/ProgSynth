@@ -37,7 +37,18 @@ parser.add_argument(
     "-p", "--plot", default=False, action="store_true", help="only plot results"
 )
 parser.add_argument(
-    "-d", "--dataset", type=str, default=DEEPCODER, help="dataset (default: deepcoder)"
+    "-d",
+    "--dataset",
+    type=str,
+    default=DEEPCODER + ".pickle",
+    help="dataset (default: deepcoder.pickle)",
+)
+parser.add_argument(
+    "--dsl",
+    type=str,
+    default=DEEPCODER,
+    choices=[DEEPCODER, DREAMCODER],
+    help="dsl (default: deepcoder)",
 )
 parser.add_argument(
     "-o", "--output", type=str, default="./", help="output folder (default: './')"
@@ -78,7 +89,8 @@ parser.add_argument(
 
 
 parameters = parser.parse_args()
-dataset: str = parameters.dataset
+dataset_file: str = parameters.dataset
+dsl_name: str = parameters.dsl
 output_folder: str = parameters.output
 model_file: str = parameters.model
 variable_probability: float = parameters.var_prob
@@ -90,21 +102,29 @@ plot_only: bool = parameters.plot
 
 if not plot_only and (not os.path.exists(model_file) or not os.path.isfile(model_file)):
     print("Model must be a valid model file!", file=sys.stderr)
-    sys.exit(0)
+    sys.exit(1)
+elif not os.path.exists(dataset_file) or not os.path.isfile(dataset_file):
+    print("Dataset must be a valid dataset file!", file=sys.stderr)
+    sys.exit(1)
+
+dir = os.path.realpath(os.path.dirname(dataset_file))
+start_index = (
+    0 if not os.path.pathsep in dataset_file else dataset_file.index(os.path.pathsep)
+)
+dataset_name = dataset_file[start_index : dataset_file.index(".", start_index)]
 
 # ================================
 # Load constants specific to dataset
 # ================================
-dataset_file = f"{dataset}.pickle"
 
 
 def load_dataset() -> Tuple[Dataset[PBE], DSL, DSLEvaluator, List[int]]:
-    if dataset == DEEPCODER:
+    if dsl_name == DEEPCODER:
         from deepcoder.deepcoder import dsl, evaluator, lexicon
-    elif dataset == DREAMCODER:
+    elif dsl_name == DREAMCODER:
         from dreamcoder.dreamcoder import dsl, evaluator, lexicon
     else:
-        print("Unknown dataset:", dataset, file=sys.stderr)
+        print("Unknown dsl:", dsl_name, file=sys.stderr)
         sys.exit(0)
     # ================================
     # Load dataset
@@ -130,7 +150,7 @@ def produce_pcfgs(
         0 if not os.path.pathsep in model_file else model_file.index(os.path.pathsep)
     )
     model_name = model_file[start_index : model_file.index(".", start_index)]
-    file = os.path.join(dir, f"{model_name}_pcfgs.pickle")
+    file = os.path.join(dir, f"pcfgs_{dataset_name}_{model_name}.pickle")
     pcfgs: List[ConcretePCFG] = []
     if os.path.exists(file):
         with open(file, "rb") as fd:
@@ -150,10 +170,10 @@ def produce_pcfgs(
     # ================================
     # Generate the CFG dictionnary
     all_type_requests = full_dataset.type_requests()
-    if dataset == DEEPCODER:
+    if all(task.solution is not None for task in full_dataset):
         max_depth = max(task.solution.depth() for task in full_dataset)
-    elif dataset == DREAMCODER:
-        max_depth = 5
+    else:
+        max_depth = 5  # TODO: set as parameter
     cfgs = [ConcreteCFG.from_dsl(dsl, t, max_depth) for t in all_type_requests]
 
     class MyPredictor(nn.Module):
@@ -261,7 +281,7 @@ if __name__ == "__main__":
         should_exit = False
 
         for name, method in methods:
-            file = os.path.join(output_folder, f"{dataset}_{name}.csv")
+            file = os.path.join(output_folder, f"{dataset_name}_{name}.csv")
             trace = []
             print("Working on:", name)
             if os.path.exists(file):
@@ -319,9 +339,9 @@ if __name__ == "__main__":
     max_time, max_programs = 0, 0
     for file in glob(os.path.join(output_folder, "*.csv")):
         file = os.path.relpath(file, output_folder)
-        if not file.startswith(dataset):
+        if not file.startswith(dataset_name):
             continue
-        name = file[len(dataset) : -4]
+        name = file[len(dataset_name) : -4]
         name = name[name.index("_") + 1 :].replace("_", " ")
         trace = []
 
