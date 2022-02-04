@@ -249,18 +249,8 @@ def do_batch(iter_number: int) -> None:
             loss.backward()
             optim.step()
     # Logging
-    writer.add_scalar("loss/train", loss.item(), iter_number)
-
-    total = sum(task_generator.generated_types.values())
-    for t, v in task_generator.difficulty.items():
-        writer.add_scalar(
-            f"input sampling success/{t}", v[1] / max(1, (v[0] + v[1])), iter_number
-        )
-        writer.add_scalar(
-            f"task type distribution/{t}",
-            task_generator.generated_types[t] / total,
-            iter_number,
-        )
+    writer.add_scalar("train/loss", loss.item(), iter_number)
+    writer.add_scalar("train/probability", np.exp(-loss.item()), iter_number)
 
 
 def do_epoch(j: int) -> int:
@@ -295,6 +285,16 @@ def on_exit():
         },
         {},
     )
+    total = sum(task_generator.generated_types.values())
+    for t, v in task_generator.difficulty.items():
+        writer.add_scalar(
+            f"input sampling success/{t}", v[1] / max(1, (v[0] + v[1])), 0
+        )
+        writer.add_scalar(
+            f"task type distribution/{t}",
+            task_generator.generated_types[t] / total,
+            0,
+        )
     writer.flush()
     writer.close()
     print(
