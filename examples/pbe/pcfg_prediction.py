@@ -309,16 +309,6 @@ def on_exit():
         },
         {},
     )
-    total = sum(task_generator.generated_types.values())
-    for t, v in task_generator.difficulty.items():
-        writer.add_scalar(
-            f"input sampling success/{t}", v[1] / max(1, (v[0] + v[1])), 0
-        )
-        writer.add_scalar(
-            f"task type distribution/{t}",
-            task_generator.generated_types[t] / total,
-            0,
-        )
     writer.flush()
     writer.close()
     print(
