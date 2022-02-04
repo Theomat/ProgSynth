@@ -268,7 +268,6 @@ def do_batch(iter_number: int) -> None:
             optim.step()
     # Logging
     writer.add_scalar("train/loss", loss.item(), iter_number)
-    writer.add_scalar("train/derivation_probability", np.exp(-loss.item()), iter_number)
     with torch.no_grad():
         loss = loss_negative_log_prob(
             batch_programs, batch_log_pcfg, length_normed=False
