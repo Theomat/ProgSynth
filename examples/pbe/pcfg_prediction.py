@@ -16,13 +16,15 @@ import numpy as np
 
 from synth import Dataset, PBE, Task
 from synth.nn import (
+    ExactBigramsPredictorLayer,
     BigramsPredictorLayer,
     loss_negative_log_prob,
     Task2Tensor,
+    print_model_summary,
 )
-from synth.pbe import reproduce_dataset, IOEncoder
+from synth.pbe import IOEncoder
 from synth.syntax import ConcreteCFG
-from synth.utils import chrono, gen_take
+from synth.utils import chrono
 
 DREAMCODER = "dreamcoder"
 DEEPCODER = "deepcoder"
@@ -208,8 +210,8 @@ class MyPredictor(nn.Module):
 
 
 predictor = MyPredictor(hidden_size).to(device)
+print_model_summary(predictor)
 optim = torch.optim.AdamW(predictor.parameters(), lr, weight_decay=weight_decay)
-
 
 dataset_index = 0
 
