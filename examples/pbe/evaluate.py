@@ -107,9 +107,10 @@ elif not os.path.exists(dataset_file) or not os.path.isfile(dataset_file):
     print("Dataset must be a valid dataset file!", file=sys.stderr)
     sys.exit(1)
 
-dir = os.path.realpath(os.path.dirname(dataset_file))
 start_index = (
-    0 if not os.path.pathsep in dataset_file else dataset_file.index(os.path.pathsep)
+    0
+    if not os.path.sep in dataset_file
+    else (len(dataset_file) - dataset_file[::-1].index(os.path.sep))
 )
 dataset_name = dataset_file[start_index : dataset_file.index(".", start_index)]
 
@@ -147,7 +148,9 @@ def produce_pcfgs(
     # ================================
     dir = os.path.realpath(os.path.dirname(model_file))
     start_index = (
-        0 if not os.path.pathsep in model_file else model_file.index(os.path.pathsep)
+        0
+        if not os.path.sep in model_file
+        else (len(model_file) - model_file[::-1].index(os.path.sep))
     )
     model_name = model_file[start_index : model_file.index(".", start_index)]
     file = os.path.join(dir, f"pcfgs_{dataset_name}_{model_name}.pickle")
