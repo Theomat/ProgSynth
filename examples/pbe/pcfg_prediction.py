@@ -1,6 +1,7 @@
 from typing import List
 import atexit
 import sys
+import os
 
 import tqdm
 
@@ -44,6 +45,12 @@ parser.add_argument(
     action="store_true",
     default=False,
     help="do not try to run things on cuda",
+)
+parser.add_argument(
+    "--no-clean",
+    action="store_true",
+    default=False,
+    help="do not delete intermediary model files",
 )
 gg = parser.add_argument_group("model parameters")
 gg.add_argument(
@@ -114,6 +121,7 @@ encoding_dimension: int = parameters.encoding_dimension
 hidden_size: int = parameters.hidden_size
 gen_dataset_size: int = parameters.size
 cpu_only: bool = parameters.cpu
+no_clean: bool = parameters.no_clean
 
 torch.manual_seed(seed)
 # ================================
@@ -280,3 +288,6 @@ atexit.register(on_exit)
 
 train()
 torch.save(predictor.state_dict(), output_file)
+if not no_clean:
+    for ep in range(epochs):
+        os.remove(f"{output_file}_epoch{ep}.tmp")
