@@ -90,3 +90,36 @@ class Task2Tensor(nn.Module, Generic[T]):
         ]
         packed: PackedSequence = self.packer(batch_embed)
         return packed
+
+
+def print_model_summary(model: nn.Module) -> None:
+    s = "Layer"
+    t = "#Parameters"
+    print(f"{s:<70}{t:>10}")
+    print("=" * 80)
+    model_parameters = [layer for layer in model.parameters() if layer.requires_grad]
+    layer_name = [child for child in model.children()]
+    j = 0
+    total_params = 0
+    for i in layer_name:
+        print()
+        param = 0
+        try:
+            bias = i.bias is not None
+        except:
+            bias = False
+        if not bias:
+            param = model_parameters[j].numel() + model_parameters[j + 1].numel()
+            j = j + 2
+        else:
+            param = model_parameters[j].numel()
+            j = j + 1
+        s = str(i)
+        first_line = s if "\n" not in s else s[: s.index("\n")]
+        t = str(param)
+        print(f"{s[:len(first_line)]:<70}{t:>10}{s[len(first_line):]}")
+        total_params += param
+    print("=" * 80)
+    s = "Total Params"
+    t = str(total_params)
+    print(f"{s:<70}{t:>10}")
