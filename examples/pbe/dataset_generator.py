@@ -80,7 +80,15 @@ with chrono.clock("dataset.reproduce") as c:
 task_generator.skip_exceptions.add(TypeError)
 print("Generating dataset...", end="", flush=True)
 with chrono.clock("dataset.generate") as c:
-    gen_dataset = Dataset(gen_take(task_generator.generator(), gen_dataset_size))
+    gen_dataset = Dataset(
+        gen_take(task_generator.generator(), gen_dataset_size),
+        {
+            "seed": seed,
+            "max_depth": max_depth,
+            "dsl": dsl_name,
+            "max_list_length": max_list_length,
+        },
+    )
     print("done in", c.elapsed_time(), "s")
 print("Saving dataset...", end="", flush=True)
 with chrono.clock("dataset.save") as c:
