@@ -83,9 +83,14 @@ def test_logpcfg2pcfg(
             pcfg = log_pcfg.to_pcfg()
             pcfg.init_sampling(0)
             P = pcfg.sample_program()
-            prob = pcfg.probability(P)
-            exp_logprob = np.exp(log_pcfg.log_probability(P).item())
-            assert np.isclose(prob, exp_logprob)
+            # This line is important because it checks that a call to log_probability does not affect the probabilities
+            log_pcfg.log_probability(P).item()
+            for S in pcfg.rules:
+                for P in pcfg.rules[S]:
+                    target = np.exp(log_pcfg.rules[S][P][1].item())
+                    assert np.isclose(
+                        pcfg.rules[S][P][1], target
+                    ), f"S:{S}, P:{P} pcfg_prob:{pcfg.rules[S][P][1]} log_pcfg_prob:{target}"
 
 
 @pytest.mark.parametrize("layer_class", layers)
