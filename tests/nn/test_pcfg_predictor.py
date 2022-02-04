@@ -1,7 +1,10 @@
-import torch
+from typing import Union
 
 import numpy as np
+import torch
 from torch.functional import Tensor
+
+import pytest
 
 from synth.nn.pcfg_predictor import (
     BigramsPredictorLayer,
@@ -28,6 +31,9 @@ cfg = ConcreteCFG.from_dsl(dsl, FunctionType(INT, INT), 4)
 cfg2 = ConcreteCFG.from_dsl(dsl, FunctionType(FunctionType(INT, INT), INT, INT), 5)
 
 
+layers = [BigramsPredictorLayer, ExactBigramsPredictorLayer]
+
+
 def test_forward() -> None:
     layer = BigramsPredictorLayer(50, {cfg})
     generator = torch.manual_seed(0)
@@ -41,8 +47,11 @@ def test_forward() -> None:
         assert torch.allclose(ones, torch.ones_like(ones))
 
 
-def test_to_logpcfg() -> None:
-    layer = BigramsPredictorLayer(50, {cfg})
+@pytest.mark.parametrize("layer_class", layers)
+def test_to_logpcfg(
+    layer_class: Union[ExactBigramsPredictorLayer, BigramsPredictorLayer]
+) -> None:
+    layer = layer_class(50, {cfg})
     generator = torch.manual_seed(0)
     for _ in range(20):
         x = torch.randn((5, 50), generator=generator)
@@ -58,8 +67,11 @@ def test_to_logpcfg() -> None:
                 assert np.isclose(1, total)
 
 
-def test_logpcfg2pcfg() -> None:
-    layer = BigramsPredictorLayer(50, {cfg})
+@pytest.mark.parametrize("layer_class", layers)
+def test_logpcfg2pcfg(
+    layer_class: Union[ExactBigramsPredictorLayer, BigramsPredictorLayer]
+) -> None:
+    layer = layer_class(50, {cfg})
     generator = torch.manual_seed(0)
     for _ in range(20):
         x = torch.randn((5, 50), generator=generator)
@@ -76,8 +88,11 @@ def test_logpcfg2pcfg() -> None:
             assert np.isclose(prob, exp_logprob)
 
 
-def test_var_as_function() -> None:
-    layer = BigramsPredictorLayer(50, {cfg2, cfg})
+@pytest.mark.parametrize("layer_class", layers)
+def test_var_as_function(
+    layer_class: Union[ExactBigramsPredictorLayer, BigramsPredictorLayer]
+) -> None:
+    layer = layer_class(50, {cfg2, cfg})
     generator = torch.manual_seed(0)
     for _ in range(5):
         for c in [cfg, cfg2]:
