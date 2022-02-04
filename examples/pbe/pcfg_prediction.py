@@ -92,7 +92,6 @@ g.add_argument(
 )
 g.add_argument(
     "--no-shuffle",
-    type=bool,
     action="store_true",
     default=False,
     help="do not shuffle dataset between epochs",
