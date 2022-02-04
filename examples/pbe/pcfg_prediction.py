@@ -283,7 +283,7 @@ def do_epoch(j: int) -> int:
     dataset_index = 0
     if not no_shuffle:
         random.shuffle(gen_dataset.tasks)
-    nb_batch_per_epoch = int(gen_dataset_size / batch_size + 0.5)
+    nb_batch_per_epoch = int(np.ceil(gen_dataset_size / batch_size))
     i = j
     for _ in tqdm.trange(nb_batch_per_epoch, desc="batchs"):
         do_batch(i)
