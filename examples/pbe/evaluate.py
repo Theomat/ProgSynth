@@ -190,6 +190,9 @@ def produce_pcfgs(
             self.rnn = nn.LSTM(size, size, 1)
             self.end = nn.Sequential(
                 nn.Linear(size, size),
+                nn.ReLU(),
+                nn.Linear(size, size),
+                nn.ReLU(),
             )
 
         def forward(self, x: List[Task[PBE]]) -> Tensor:
