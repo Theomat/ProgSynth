@@ -31,9 +31,7 @@ DEEPCODER = "deepcoder"
 import argparse
 
 parser = argparse.ArgumentParser(description="Evaluate model prediction")
-parser.add_argument(
-    "-d", "--dataset", type=str, default="none", help="dataset (default: none)"
-)
+parser.add_argument("--dataset", type=str, help="dataset (default: none)")
 parser.add_argument(
     "--dsl",
     type=str,
@@ -118,9 +116,6 @@ g.add_argument(
     help="weight decay (default: 1e-4)",
 )
 g.add_argument("-s", "--seed", type=int, default=0, help="seed (default: 0)")
-g.add_argument(
-    "--size", type=int, default=1000, help="generated datset size (default: 1000)"
-)
 
 parameters = parser.parse_args()
 dataset_file: str = parameters.dataset
@@ -134,7 +129,6 @@ weight_decay: float = parameters.weight_decay
 seed: int = parameters.seed
 encoding_dimension: int = parameters.encoding_dimension
 hidden_size: int = parameters.hidden_size
-gen_dataset_size: int = parameters.size
 cpu_only: bool = parameters.cpu
 no_clean: bool = parameters.no_clean
 no_shuffle: bool = parameters.no_shuffle
@@ -159,31 +153,17 @@ else:
 # ================================
 # Load dataset & Task Generator
 # ================================
+
+if not os.path.exists(dataset_file) or not os.path.isfile(dataset_file):
+    print("Dataset must be a valid dataset file!", file=sys.stderr)
+    sys.exit(1)
 # Load dataset
-if dataset_file.lower() == "none":
-    dataset_file = f"{dsl_name}.pickle"
-    should_generate_dataset = True
+
 print(f"Loading {dataset_file}...", end="")
 with chrono.clock("dataset.load") as c:
     full_dataset: Dataset[PBE] = Dataset.load(dataset_file)
     print("done in", c.elapsed_time(), "s")
-if should_generate_dataset:
-    # Reproduce dataset distribution
-    print("Reproducing dataset...", end="", flush=True)
-    with chrono.clock("dataset.reproduce") as c:
-        task_generator, lexicon = reproduce_dataset(
-            full_dataset, dsl, evaluator, seed, max_list_length=max_list_length
-        )
-        print("done in", c.elapsed_time(), "s")
-    # Add some exceptions that are ignored during task generation
-    task_generator.skip_exceptions.add(TypeError)
-    with chrono.clock("dataset.generate") as c:
-        gen_dataset = Dataset(gen_take(task_generator.generator(), gen_dataset_size))
-    with chrono.clock("dataset.save") as c:
-        gen_dataset.save("./train_dataset.pickle")
-else:
-    gen_dataset = full_dataset
-    gen_dataset_size = min(len(full_dataset), gen_dataset_size)
+
 
 # ================================
 # Misc init
@@ -197,9 +177,9 @@ writer = SummaryWriter()
 # Neural Network creation
 # ================================
 # Generate the CFG dictionnary
-all_type_requests = gen_dataset.type_requests()
-if all(task.solution is not None for task in gen_dataset):
-    max_depth = max(task.solution.depth() for task in gen_dataset)
+all_type_requests = full_dataset.type_requests()
+if all(task.solution is not None for task in full_dataset):
+    max_depth = max(task.solution.depth() for task in full_dataset)
 else:
     max_depth = 5  # TODO: set as parameter
 cfgs = [ConcreteCFG.from_dsl(dsl, t, max_depth) for t in all_type_requests]
@@ -237,7 +217,7 @@ dataset_index = 0
 @chrono.clock(prefix="train.do_batch")
 def get_batch_of_tasks() -> List[Task[PBE]]:
     global dataset_index
-    batch = gen_dataset[dataset_index : dataset_index + batch_size]
+    batch = full_dataset[dataset_index : dataset_index + batch_size]
     dataset_index += batch_size
     return batch
 
@@ -281,8 +261,8 @@ def do_epoch(j: int) -> int:
     global dataset_index
     dataset_index = 0
     if not no_shuffle:
-        random.shuffle(gen_dataset.tasks)
-    nb_batch_per_epoch = int(np.ceil(gen_dataset_size / batch_size))
+        random.shuffle(full_dataset.tasks)
+    nb_batch_per_epoch = int(np.ceil(len(full_dataset) / batch_size))
     i = j
     for _ in tqdm.trange(nb_batch_per_epoch, desc="batchs"):
         do_batch(i)
