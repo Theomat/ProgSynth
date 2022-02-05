@@ -16,7 +16,6 @@ import numpy as np
 
 from synth import Dataset, PBE, Task
 from synth.nn import (
-    ExactBigramsPredictorLayer,
     BigramsPredictorLayer,
     loss_negative_log_prob,
     Task2Tensor,

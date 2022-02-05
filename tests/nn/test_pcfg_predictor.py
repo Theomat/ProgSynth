@@ -1,5 +1,3 @@
-from typing import Union
-
 import numpy as np
 import torch
 from torch.functional import Tensor
@@ -8,7 +6,6 @@ import pytest
 
 from synth.nn.pcfg_predictor import (
     BigramsPredictorLayer,
-    ExactBigramsPredictorLayer,
     loss_negative_log_prob,
 )
 from synth.syntax.concrete.concrete_cfg import ConcreteCFG
@@ -31,7 +28,7 @@ cfg = ConcreteCFG.from_dsl(dsl, FunctionType(INT, INT), 4)
 cfg2 = ConcreteCFG.from_dsl(dsl, FunctionType(FunctionType(INT, INT), INT, INT), 5)
 
 
-layers = [BigramsPredictorLayer, ExactBigramsPredictorLayer]
+layers = [BigramsPredictorLayer]
 
 
 def test_forward() -> None:
@@ -42,15 +39,11 @@ def test_forward() -> None:
     for _ in range(20):
         x = torch.randn((100, 50), generator=generator)
         y: Tensor = layer(x)
-        assert y.shape == torch.Size([x.shape[0], nb_parents, max_args, len(syntax)])
-        ones = y.exp().sum(-1)
-        assert torch.allclose(ones, torch.ones_like(ones))
+        assert y.shape == torch.Size([x.shape[0], 15])
 
 
 @pytest.mark.parametrize("layer_class", layers)
-def test_to_logpcfg(
-    layer_class: Union[ExactBigramsPredictorLayer, BigramsPredictorLayer]
-) -> None:
+def test_to_logpcfg(layer_class: BigramsPredictorLayer) -> None:
     layer = layer_class(50, {cfg})
     generator = torch.manual_seed(0)
     for _ in range(20):
@@ -68,9 +61,7 @@ def test_to_logpcfg(
 
 
 @pytest.mark.parametrize("layer_class", layers)
-def test_logpcfg2pcfg(
-    layer_class: Union[ExactBigramsPredictorLayer, BigramsPredictorLayer]
-) -> None:
+def test_logpcfg2pcfg(layer_class: BigramsPredictorLayer) -> None:
     layer = layer_class(50, {cfg})
     generator = torch.manual_seed(0)
     for _ in range(20):
@@ -94,9 +85,7 @@ def test_logpcfg2pcfg(
 
 
 @pytest.mark.parametrize("layer_class", layers)
-def test_var_as_function(
-    layer_class: Union[ExactBigramsPredictorLayer, BigramsPredictorLayer]
-) -> None:
+def test_var_as_function(layer_class: BigramsPredictorLayer) -> None:
     layer = layer_class(50, {cfg2, cfg})
     generator = torch.manual_seed(0)
     for _ in range(5):
@@ -116,9 +105,7 @@ def test_var_as_function(
 
 
 @pytest.mark.parametrize("layer_class", layers)
-def test_varprob(
-    layer_class: Union[ExactBigramsPredictorLayer, BigramsPredictorLayer]
-) -> None:
+def test_varprob(layer_class: BigramsPredictorLayer) -> None:
     layer = layer_class(10, {cfg})
     opti = torch.optim.AdamW(layer.parameters(), lr=1e-1)
     steps = 10
@@ -153,9 +140,7 @@ def test_varprob(
 
 def test_learning() -> None:
     layer = BigramsPredictorLayer(10, {cfg})
-    layer2 = ExactBigramsPredictorLayer(10, {cfg})
     opti = torch.optim.AdamW(layer.parameters(), lr=1e-1)
-    opti2 = torch.optim.AdamW(layer2.parameters(), lr=1e-1)
     steps = 10
     mean_prob = []
     batch_size = 10
@@ -179,23 +164,6 @@ def test_learning() -> None:
                 programs, pcfgs, length_normed=False
             ).item()
             mean_prob.append(np.exp(logprob))
-
-        inputs2 = torch.ones_like(inputs)
-        y2 = layer2(inputs2)
-        pcfgs2 = [
-            layer2.tensor2pcfg(y2[i], cfg.type_request) for i in range(batch_size)
-        ]
-        opti2.zero_grad()
-        loss2 = loss_negative_log_prob(programs, pcfgs2)
-        loss2.backward()
-        opti2.step()
-
-        if step == steps - 1:
-            with torch.no_grad():
-                logprob = -loss_negative_log_prob(
-                    programs, pcfgs2, length_normed=False
-                ).item()
-                assert np.isclose(np.exp(logprob), mean_prob[-1], atol=1e-4, rtol=1e-2)
 
     for i in range(1, len(mean_prob)):
         assert mean_prob[i - 1] < mean_prob[i], f"{mean_prob}"
