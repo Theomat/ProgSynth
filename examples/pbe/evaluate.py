@@ -133,12 +133,15 @@ def load_dataset() -> Tuple[Dataset[PBE], DSL, DSLEvaluator, List[int], str]:
         full_dataset = Dataset.load(dataset_file)
         print("done in", c.elapsed_time(), "s")
 
-    start_index = (
-        0
-        if not os.path.sep in model_file
-        else (len(model_file) - model_file[::-1].index(os.path.sep))
-    )
-    model_name = model_file[start_index : model_file.index(".", start_index)]
+    if plot_only:
+        model_name = ""
+    else:
+        start_index = (
+            0
+            if not os.path.sep in model_file
+            else (len(model_file) - model_file[::-1].index(os.path.sep))
+        )
+        model_name = model_file[start_index : model_file.index(".", start_index)]
     return full_dataset, dsl, evaluator, lexicon, model_name
 
 
