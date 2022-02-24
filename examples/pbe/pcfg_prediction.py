@@ -27,6 +27,7 @@ from synth.utils import chrono
 
 DREAMCODER = "dreamcoder"
 DEEPCODER = "deepcoder"
+REGEXP = "regexp"
 
 
 import argparse
@@ -38,7 +39,7 @@ parser.add_argument(
     type=str,
     default=DEEPCODER,
     help="dsl (default: deepcoder)",
-    choices=[DEEPCODER, DREAMCODER],
+    choices=[DEEPCODER, DREAMCODER, REGEXP],
 )
 parser.add_argument(
     "-o",
@@ -148,6 +149,9 @@ elif dsl_name == DREAMCODER:
     from dreamcoder.dreamcoder import dsl, evaluator, lexicon
 
     max_list_length = 10
+
+elif dsl_name == REGEXP:
+    from regexp.regexp import dsl, evaluator, lexicon
 else:
     print("Unknown dsl:", dsl_name, file=sys.stderr)
     sys.exit(1)
@@ -182,7 +186,7 @@ all_type_requests = full_dataset.type_requests()
 if all(task.solution is not None for task in full_dataset):
     max_depth = max(task.solution.depth() for task in full_dataset)
 else:
-    max_depth = 5  # TODO: set as parameter
+    max_depth = 9  # TODO: set as parameter
 cfgs = [ConcreteCFG.from_dsl(dsl, t, max_depth) for t in all_type_requests]
 print(f"{len(all_type_requests)} type requests supported.")
 print(f"Lexicon: [{min(lexicon)};{max(lexicon)}]")

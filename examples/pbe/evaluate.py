@@ -25,6 +25,7 @@ from synth.utils import chrono
 
 DREAMCODER = "dreamcoder"
 DEEPCODER = "deepcoder"
+REGEXP = "regexp"
 
 import argparse
 
@@ -44,7 +45,7 @@ parser.add_argument(
     "--dsl",
     type=str,
     default=DEEPCODER,
-    choices=[DEEPCODER, DREAMCODER],
+    choices=[DEEPCODER, DREAMCODER, REGEXP],
     help="dsl (default: deepcoder)",
 )
 parser.add_argument(
@@ -121,6 +122,8 @@ def load_dataset() -> Tuple[Dataset[PBE], DSL, DSLEvaluator, List[int], str]:
         from deepcoder.deepcoder import dsl, evaluator, lexicon
     elif dsl_name == DREAMCODER:
         from dreamcoder.dreamcoder import dsl, evaluator, lexicon
+    elif dsl_name == REGEXP:
+        from regexp.regexp import dsl, evaluator, lexicon
     else:
         print("Unknown dsl:", dsl_name, file=sys.stderr)
         sys.exit(0)
@@ -269,6 +272,7 @@ def base(
     programs = 0
     with chrono.clock("search.base") as c:
         for program in enumerate_pcfg(pcfg):
+            #print(program)
             time = c.elapsed_time()
             if time >= task_timeout:
                 return (False, time, programs, None)
@@ -317,6 +321,7 @@ if __name__ == "__main__":
             try:
                 enumerative_search(full_dataset, evaluator, pcfgs, trace, method)
             except:
+                print(f"should_exit: {trace}")
                 should_exit = True
             with open(file, "w") as fd:
                 writer = csv.writer(fd)
@@ -362,7 +367,6 @@ if __name__ == "__main__":
             continue
         name = name[name.index("_") + 1 :].replace("_", " ")
         trace = []
-
         with open(file, "r") as fd:
             reader = csv.reader(fd)
             trace = [tuple(row) for row in reader]
