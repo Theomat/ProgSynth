@@ -143,7 +143,7 @@ def basic_output_validator(
         elif isinstance(output, int):
             return output in int_lexicon
         elif isinstance(output, list):
-            return len(output) <= max_list_length and all(
+            return (max_list_length < 0 or len(output) <= max_list_length) and all(
                 validate_output(x) for x in output
             )
         return False
@@ -260,7 +260,10 @@ def reproduce_dataset(
             pcfgs,
             basic_output_validator(
                 int_lexicon,
-                max_list_length or max(max(l.keys()) for l in list_length.values()),
+                max_list_length
+                or max(
+                    (max(l.keys()) for l in list_length.values()), default=-1
+                ),  # type:ignore
             ),
             max_tries,
         ),
