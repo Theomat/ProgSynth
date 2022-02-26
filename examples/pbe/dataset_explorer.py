@@ -56,7 +56,7 @@ with chrono.clock("dataset.load") as c:
 def summary(*args: str) -> None:
     all_type_requests = full_dataset.type_requests()
     print(
-        f"{len(full_dataset)} tasks, {len([task for task in full_dataset if task.solution]) / len(full_dataset) * 100:.1f}% of which have solutions."
+        f"{len(full_dataset)} tasks, {len([task for task in full_dataset if task.solution]) / len(full_dataset) * 100:.1%} of which have solutions."
     )
     print(f"{len(all_type_requests)} type requests supported.")
     print(f"Lexicon: [{min(lexicon)};{max(lexicon)}]")
