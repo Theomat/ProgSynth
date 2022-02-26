@@ -1,6 +1,8 @@
 import sys
 from typing import Optional
 
+from colorama import Fore as F
+
 from synth import Dataset, PBE
 from synth.syntax import ConcreteCFG
 from synth.task import Task
@@ -41,25 +43,31 @@ if dsl_name == DEEPCODER:
 elif dsl_name == DREAMCODER:
     from dreamcoder.dreamcoder import dsl, lexicon
 else:
-    print("Unknown dsl:", dsl_name, file=sys.stderr)
+    print(F.LIGHTRED_EX + "Unknown dsl:", dsl_name + F.RESET, file=sys.stderr)
     sys.exit(1)
 # ================================
 # Load dataset & Task Generator
 # ================================
 # Load dataset
-print(f"Loading {dataset_file}...", end="")
+print(f"Loading {F.LIGHTCYAN_EX}{dataset_file}{F.RESET}...", end="")
 with chrono.clock("dataset.load") as c:
     full_dataset: Dataset[PBE] = Dataset.load(dataset_file)
-    print("done in", c.elapsed_time(), "s")
+    print(f"done in{F.LIGHTYELLOW_EX}", c.elapsed_time(), f"s{F.RESET}")
+
+
+def print_value(name: str, value: str) -> None:
+    print(f"{F.GREEN}{name}{F.RESET}: {F.LIGHTYELLOW_EX}{value}{F.RESET}")
 
 
 def summary(*args: str) -> None:
     all_type_requests = full_dataset.type_requests()
     print(
-        f"{len(full_dataset)} tasks, {len([task for task in full_dataset if task.solution]) / len(full_dataset) * 100:.1%} of which have solutions."
+        f"{F.LIGHTYELLOW_EX}{len(full_dataset)} {F.GREEN}tasks{F.RESET}, {F.LIGHTYELLOW_EX}{len([task for task in full_dataset if task.solution]) / len(full_dataset):.1%}{F.RESET} of which have {F.GREEN}solutions{F.RESET}."
     )
-    print(f"{len(all_type_requests)} type requests supported.")
-    print(f"Lexicon: [{min(lexicon)};{max(lexicon)}]")
+    print(
+        f"{F.LIGHTYELLOW_EX}{len(all_type_requests)} {F.GREEN}type requests{F.RESET} supported."
+    )
+    print_value("Lexicon", f"[{min(lexicon)};{max(lexicon)}]")
 
 
 def types(*args: str) -> None:
@@ -69,7 +77,7 @@ def types(*args: str) -> None:
     for type_req in all_type_requests:
         n = len([task for task in full_dataset if task.type_request == type_req])
         percent = f"{n / total:.1%}"
-        print(f"{type_req!s:<{max_len}}: ({percent:>5}) {n}")
+        print_value(f"{type_req!s:<{max_len}}", f"({percent:>5}) {n}")
 
 
 def cfg(*args: str) -> None:
@@ -80,26 +88,26 @@ def cfg(*args: str) -> None:
         except:
             pass
     all_type_requests = full_dataset.type_requests()
-    print("Max Depth:", max_depth)
+    print_value("Max Depth", max_depth)
     max_len = max([len(str(t)) for t in all_type_requests])
     programs_no = {
         t: f"{ConcreteCFG.from_dsl(dsl, t, max_depth).size():,}"
         for t in all_type_requests
     }
     max_len_programs_no = max(len(s) for s in programs_no.values())
-    print(
-        "{0:<{max_len}}: {1:>{max_len_programs_no}}   {2}".format(
-            "<type>",
+    print_value(
+        "{0:<{max_len}}".format("<type>", max_len=max_len),
+        "{0:>{max_len_programs_no}}   {1}".format(
             "<programs>",
             "<rules>",
-            max_len=max_len,
             max_len_programs_no=max_len_programs_no,
-        )
+        ),
     )
     for type_req in all_type_requests:
         cfg = ConcreteCFG.from_dsl(dsl, type_req, max_depth)
-        print(
-            f"{type_req!s:<{max_len}}: {programs_no[type_req]:>{max_len_programs_no}}   {len(cfg.rules)}"
+        print_value(
+            f"{type_req!s:<{max_len}}",
+            f"{programs_no[type_req]:>{max_len_programs_no}}   {len(cfg.rules)}",
         )
 
 
@@ -107,41 +115,49 @@ def task(*args: str) -> None:
     try:
         task_no = int(args[0])
     except:
-        print("You must specify a task number!")
+        print(
+            f"{F.LIGHTRED_EX}You must specify a task number in the range[0;{len(full_dataset) - 1}]!{F.RESET}"
+        )
         return
     if task_no < 0 or task_no >= len(full_dataset):
         print(
-            f"{task_no} is an invalid task number, it must be in the range [0;{len(full_dataset) - 1}]!"
+            f"{F.LIGHTRED_EX}{task_no} is an invalid task number, it must be in the range [0;{len(full_dataset) - 1}]!{F.RESET}"
         )
         return
     task: Task[PBE] = full_dataset[task_no]
-    print("Name:", task.metadata.get("name", "None"))
-    print("Type:", task.type_request)
-    print("Solution:", task.solution)
-    print("Examples:")
+    print_value(f"Name", task.metadata.get("name", "None"))
+    print_value("Type", task.type_request)
+    print_value("Solution", task.solution)
+    print_value("Examples", "")
     for example in task.specification.examples:
-        print(
-            "\tInput:", ", ".join([f"var{i}={x}" for i, x in enumerate(example.inputs)])
+        print_value(
+            "\tInput", ", ".join([f"var{i}={x}" for i, x in enumerate(example.inputs)])
         )
-        print("\tOutput:", example.output)
+        print_value("\tOutput", example.output)
         print()
-    print("Metadata:", task.metadata)
+    print_value("Metadata", task.metadata)
 
 
 def filter_tasks(*args: str) -> None:
     if not args:
         print(
-            "Invalid syntax: you must give a valid boolean python expression that only depend on a task parameter."
+            F.LIGHTRED_EX
+            + "Invalid syntax: you must give a valid boolean python expression that only depend on a task parameter."
+            + F.RESET
         )
         return
     code = "[i for i, task in enumerate(full_dataset) if " + " ".join(args) + "]"
     queried_tasks = eval(code)
     if len(queried_tasks) == 0:
-        print("No task matched your query!")
+        print(f"{F.LIGHTYELLOW_EX}No {F.GREEN}task{F.RESET} matched your query!")
     elif len(queried_tasks) == 1:
-        print(f"Task n°{queried_tasks[0]} matched your query!")
+        print(
+            f"{F.GREEN}Task {F.LIGHTYELLOW_EX}n°{queried_tasks[0]}{F.RESET} matched your query!"
+        )
     else:
-        print(f"{len(queried_tasks)} tasks matched your query:")
+        print(
+            f"{F.LIGHTYELLOW_EX}{len(queried_tasks)} {F.GREEN}tasks{F.RESET} matched your query:"
+        )
         print(queried_tasks)
 
 
@@ -173,12 +189,19 @@ def try_execute_command(cmd: str) -> None:
     if real_cmd:
         COMMANDS[real_cmd](*words)
     else:
-        print("Available commands are:", ", ".join(COMMANDS.keys()))
+        print(
+            "Available commands are:",
+            ", ".join([F.GREEN + x + F.RESET for x in COMMANDS.keys()]) + ".",
+        )
 
 
+print(f'Type "{F.GREEN}help{F.RESET}" for help.')
+print(
+    f'Unambigous commands prefixes work (e.g: "{F.LIGHTGREEN_EX}h{F.RESET}" for "{F.GREEN}help{F.RESET}").'
+)
 while True:
     try:
-        cmd = input("What would you like to know?\n>").lower().strip()
+        cmd = input(">").lower().strip()
     except EOFError:
         break
     try_execute_command(cmd)
