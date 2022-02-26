@@ -35,14 +35,11 @@ dataset_file: str = parameters.dataset.format(dsl_name=dsl_name)
 # ================================
 # Load constants specific to DSL
 # ================================
-max_list_length = None
 if dsl_name == DEEPCODER:
     from deepcoder.deepcoder import dsl, lexicon
 
 elif dsl_name == DREAMCODER:
     from dreamcoder.dreamcoder import dsl, lexicon
-
-    max_list_length = 10
 else:
     print("Unknown dsl:", dsl_name, file=sys.stderr)
     sys.exit(1)
@@ -68,12 +65,14 @@ def summary(*args: str) -> None:
 def types(*args: str) -> None:
     all_type_requests = full_dataset.type_requests()
     total = len(full_dataset)
+    max_len = max([len(str(t)) for t in all_type_requests])
     for type_req in all_type_requests:
         n = len([task for task in full_dataset if task.type_request == type_req])
-        print(type_req, ":", n, f"({n * 100 / total:.1f}%)")
+        percent = f"{n / total:.1%}"
+        print(f"{type_req!s:<{max_len}}: ({percent:>5}) {n}")
 
 
-def pcfg(*args: str) -> None:
+def cfg(*args: str) -> None:
     max_depth = 4
     if args:
         try:
@@ -81,17 +80,26 @@ def pcfg(*args: str) -> None:
         except:
             pass
     all_type_requests = full_dataset.type_requests()
+    print("Max Depth:", max_depth)
+    max_len = max([len(str(t)) for t in all_type_requests])
+    programs_no = {
+        t: f"{ConcreteCFG.from_dsl(dsl, t, max_depth).size():,}"
+        for t in all_type_requests
+    }
+    max_len_programs_no = max(len(s) for s in programs_no.values())
+    print(
+        "{0:<{max_len}}: {1:>{max_len_programs_no}}   {2}".format(
+            "<type>",
+            "<programs>",
+            "<rules>",
+            max_len=max_len,
+            max_len_programs_no=max_len_programs_no,
+        )
+    )
     for type_req in all_type_requests:
         cfg = ConcreteCFG.from_dsl(dsl, type_req, max_depth)
         print(
-            type_req,
-            ": at depth",
-            max_depth,
-            "the CFG contains",
-            cfg.size(),
-            "programs with",
-            len(cfg.rules),
-            "contexts",
+            f"{type_req!s:<{max_len}}: {programs_no[type_req]:>{max_len_programs_no}}   {len(cfg.rules)}"
         )
 
 
@@ -103,7 +111,7 @@ def task(*args: str) -> None:
         return
     if task_no < 0 or task_no >= len(full_dataset):
         print(
-            f"{task_no} is an invalid task number, it must be in the range [0;{len(full_dataset)}]!"
+            f"{task_no} is an invalid task number, it must be in the range [0;{len(full_dataset) - 1}]!"
         )
         return
     task: Task[PBE] = full_dataset[task_no]
@@ -124,7 +132,7 @@ COMMANDS = {
     "summary": summary,
     "types": types,
     "task": task,
-    "pcfg": pcfg,
+    "cfg": cfg,
     "lexicon": lambda *args: print(lexicon),
 }
 
