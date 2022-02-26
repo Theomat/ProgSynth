@@ -128,12 +128,30 @@ def task(*args: str) -> None:
     print("Metadata:", task.metadata)
 
 
+def filter_tasks(*args: str) -> None:
+    if not args:
+        print(
+            "Invalid syntax: you must give a valid boolean python expression that only depend on a task parameter."
+        )
+        return
+    code = "[i for i, task in enumerate(full_dataset) if " + " ".join(args) + "]"
+    queried_tasks = eval(code)
+    if len(queried_tasks) == 0:
+        print("No task matched your query!")
+    elif len(queried_tasks) == 1:
+        print(f"Task n°{queried_tasks[0]} matched your query!")
+    else:
+        print(f"{len(queried_tasks)} tasks matched your query:")
+        print(queried_tasks)
+
+
 COMMANDS = {
     "summary": summary,
     "types": types,
     "task": task,
     "cfg": cfg,
     "lexicon": lambda *args: print(lexicon),
+    "filter": filter_tasks,
 }
 
 
