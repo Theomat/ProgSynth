@@ -174,7 +174,6 @@ def reproduce_dataset(
 
     int_range: TList[int] = [999999999, 0]
     int_range[1] = -int_range[0]
-    is_string = [False]
 
     def analyze(element: Any, type: Type, depth: int = 1) -> None:
         if depth > max_list_depth[0]:
@@ -186,13 +185,8 @@ def reproduce_dataset(
                 for el in element:
                     analyze(el, elt_type, depth + 1)
         elif element:
-            if isinstance(element, str):
-                is_string[0] = True
-                for x in element:
-                    analyze(ord(x), type, depth)
-            else:
-                int_range[0] = min(int_range[0], max(-int_bound, element))
-                int_range[1] = max(int_range[1], min(int_bound, element))
+            int_range[0] = min(int_range[0], max(-int_bound, element))
+            int_range[1] = max(int_range[1], min(int_bound, element))
 
     # Capture all information in one dataset pass
     for task in dataset:
@@ -246,13 +240,10 @@ def reproduce_dataset(
     for pcfg in pcfgs:
         pcfg.init_sampling(seed)
 
-    lexicon_type = STRING if is_string[0] else INT
-    if is_string[0]:
-        int_lexicon = [chr(x) for x in int_lexicon]
     input_sampler = ListSampler(
         UnionSampler(
             {
-                lexicon_type: LexiconSampler(int_lexicon, seed=seed),
+                INT: LexiconSampler(int_lexicon, seed=seed),
                 BOOL: LexiconSampler([True, False], seed=seed),
             }
         ),
