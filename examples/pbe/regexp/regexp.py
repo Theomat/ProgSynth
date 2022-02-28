@@ -9,7 +9,7 @@ from synth.syntax import DSL, PrimitiveType, Arrow, List, INT, STRING
 
 import string
 import re
-from regexp.type_regex import regex_match, Raw, REGEXP
+from regexp import regex_match, Raw, REGEXP
 
 from synth.syntax.type_system import BOOL
 
@@ -147,7 +147,22 @@ __primitive_types = {
     ### généralisées (ex: tous les caractères minuscules)
 }
 
-dsl = DSL(__primitive_types)
+__forbidden_patterns = [
+    ["*", "?"],
+    ["*", "+"],
+    ["*", "*"],
+    ["?", "?"],
+    ["?", "+"],
+    ["?", "*"],
+    ["+", "?"],
+    ["+", "+"],
+    ["+", "*"],
+    ["W", "?"],
+    ["W", "+"],
+    ["W", "*"],
+]
+
+dsl = DSL(__primitive_types, __forbidden_patterns)
 evaluator = DSLEvaluator(__semantics)
 evaluator.skip_exceptions.add(re.error)
 lexicon = list([chr(i) for i in range(32, 126)])
