@@ -13,8 +13,6 @@ from torch import Tensor
 import torch.nn as nn
 from torch.nn.utils.rnn import PackedSequence
 
-import numpy as np
-
 from synth import Dataset, PBE, Task
 from synth.nn import BigramsPredictorLayer, Task2Tensor, free_pytorch_memory
 from synth.pbe import IOEncoder
@@ -333,19 +331,12 @@ if __name__ == "__main__":
             if should_exit:
                 break
 
-    import matplotlib.pyplot as plt
-    import matplotlib
-
-    matplotlib.rcParams.update({"font.size": 14})
-    matplotlib.rcParams["mathtext.fontset"] = "custom"
-    matplotlib.rcParams["mathtext.rm"] = "Bitstream Vera Sans"
-    matplotlib.rcParams["mathtext.it"] = "Bitstream Vera Sans:italic"
-    matplotlib.rcParams["mathtext.bf"] = "Bitstream Vera Sans:bold"
-    matplotlib.rcParams["mathtext.fontset"] = "cm"
-    matplotlib.rcParams["font.family"] = "STIXGeneral"
-    plt.style.use("seaborn-colorblind")
-
     import numpy as np
+    import matplotlib.pyplot as plt
+
+    import pltpublish as pub
+
+    pub.setup()
 
     ax1 = plt.subplot(1, 2, 1)
     plt.xlabel("Time (in s)")

@@ -1,8 +1,7 @@
 from collections import deque
+from math import prod
 from typing import Deque, Dict, Set, Tuple, List, Union
 from dataclasses import dataclass, field
-
-import numpy as np
 
 from synth.syntax.dsl import DSL
 from synth.syntax.program import Primitive, Variable
@@ -86,7 +85,7 @@ class ConcreteCFG:
                 if len(args_P) == 0:
                     total += 1
                 else:
-                    total += np.prod([total_programs[C] for C in args_P])
+                    total += prod(total_programs[C] for C in args_P)
             total_programs[S] = total
         return total_programs[self.start]
 

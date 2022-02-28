@@ -22,6 +22,12 @@ parser.add_argument(
     choices=[DEEPCODER, DREAMCODER, REGEXP],
 )
 parser.add_argument(
+    "--dataset",
+    type=str,
+    default="{dsl_name}.pickle",
+    help="dataset file (default: {dsl_name}.pickle)",
+)
+parser.add_argument(
     "-o",
     "--output",
     type=str,
@@ -38,6 +44,7 @@ parser.add_argument(
 
 parameters = parser.parse_args()
 dsl_name: str = parameters.dsl
+dataset_file: str = parameters.dataset.format(dsl_name=dsl_name)
 output_file: str = parameters.output
 seed: int = parameters.seed
 max_depth: int = parameters.max_depth
@@ -64,7 +71,6 @@ else:
 # Load dataset & Task Generator
 # ================================
 # Load dataset
-dataset_file = f"{dsl_name}.pickle"
 print(f"Loading {dataset_file}...", end="")
 with chrono.clock("dataset.load") as c:
     full_dataset: Dataset[PBE] = Dataset.load(dataset_file)

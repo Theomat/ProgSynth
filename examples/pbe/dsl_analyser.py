@@ -335,7 +335,7 @@ print(
         time_formatter=lambda t: f"{int(t*1000)}ms" if not np.isnan(t) else "nan"
     ),
 )
-print(f"Cache hit rate: {evaluator.cache_hit_rate*100:.1f}%")
+print(f"Cache hit rate: {evaluator.cache_hit_rate:.1%}")
 print()
 print("[=== Report ===]")
 for stat_name in stats:
@@ -343,8 +343,8 @@ for stat_name in stats:
     if total == 0:
         print(f"Found no {stat_name} simplification")
         continue
-    percent = stats[stat_name]["syntaxic"] / total * 100
-    print("Found", total, stat_name, f"with {percent:.1f}% syntaxic")
+    ratio = stats[stat_name]["syntaxic"] / total
+    print("Found", total, stat_name, f"with {ratio:.1%} syntaxic")
 
 print("[=== Results ===]")
 print(f"Found {len(syntaxic_restrictions)} syntaxic restricions.")
@@ -364,7 +364,7 @@ ratio = np.mean(
 mean_ori = np.mean([original.size() for original in cfgs])
 mean_red = np.mean([red.size() for red in reduced_cfgs])
 print(
-    f"This gives an average reduction of CFG size of {ratio * 100:.1f}% from {mean_ori:.0f} to {mean_red:.0f}"
+    f"This gives an average reduction of CFG size of {ratio * 100:.1%} from {mean_ori:.0f} to {mean_red:.0f}"
 )
 print(syntaxic_restrictions)
 print()

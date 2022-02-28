@@ -24,9 +24,7 @@ def __convert__(load: Callable[[], Dataset[PBE]], name: str) -> None:
     tasks = load()
     tasks.save(name)
     sols = sum(1 for t in tasks if t.solution)
-    print(
-        f"Converted {len(tasks)} tasks {int(100 * sols / len(tasks))}% containing solutions"
-    )
+    print(f"Converted {len(tasks)} tasks {sols / len(tasks):.0%} containing solutions")
     # Integrity check
     for task in tqdm.tqdm(tasks, desc="integrity check"):
         for ex in task.specification.examples:
