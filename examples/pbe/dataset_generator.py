@@ -51,8 +51,9 @@ if dsl_name == DEEPCODER:
 
 elif dsl_name == DREAMCODER:
     from dreamcoder.dreamcoder import dsl, evaluator, lexicon
+
     max_list_length = 10
-    
+
 elif dsl_name == REGEXP:
     from regexp.regexp import dsl, evaluator, lexicon
 

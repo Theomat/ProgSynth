@@ -175,6 +175,7 @@ def reproduce_dataset(
     int_range: TList[int] = [999999999, 0]
     int_range[1] = -int_range[0]
     is_string = [False]
+
     def analyze(element: Any, type: Type, depth: int = 1) -> None:
         if depth > max_list_depth[0]:
             max_list_depth[0] = depth
@@ -244,7 +245,7 @@ def reproduce_dataset(
         }
     for pcfg in pcfgs:
         pcfg.init_sampling(seed)
-    
+
     lexicon_type = STRING if is_string[0] else INT
     if is_string[0]:
         int_lexicon = [chr(x) for x in int_lexicon]
@@ -269,7 +270,8 @@ def reproduce_dataset(
             pcfgs,
             basic_output_validator(
                 int_lexicon,
-                max_list_length or max((max(l.keys()) for l in list_length.values()), default=-1),
+                max_list_length
+                or max((max(l.keys()) for l in list_length.values()), default=-1),
             ),
             max_tries,
         ),

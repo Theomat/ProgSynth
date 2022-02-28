@@ -64,6 +64,8 @@ def convert_regexp(
         return Dataset(tasks, metadata={"dataset": "regexp", "source:": file})
 
     __convert__(load, output_file)
+
+
 """
 def __regexp_str2prog(s: str) -> Tuple[Program, Type]:
     parts = s.split("|")
@@ -92,13 +94,15 @@ def __regexp_str2prog(s: str) -> Tuple[Program, Type]:
     return stack[-1], type_request
 
 """
+
+
 def __regexp_str2prog(s: str) -> Tuple[Program, Type]:
     parts = s.split("|")
     stack: TList[Program] = []
     var: int = 0
     type_stack: TList[Type] = []
     for part in parts:
-        subparts = part.split(',')
+        subparts = part.split(",")
         name = subparts.pop(0)
         # composition of methods
         if name == "eval":

@@ -272,7 +272,7 @@ def base(
     programs = 0
     with chrono.clock("search.base") as c:
         for program in enumerate_pcfg(pcfg):
-            #print(program)
+            # print(program)
             time = c.elapsed_time()
             if time >= task_timeout:
                 return (False, time, programs, None)
