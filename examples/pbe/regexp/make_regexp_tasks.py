@@ -16,7 +16,7 @@ from synth.syntax import (
 )
 
 from type_regex import REGEXP
-from regexp import dsl, evaluator
+from regexp_dsl import dsl, evaluator
 from synth.syntax.program import Constant, Lambda
 
 

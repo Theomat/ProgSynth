@@ -10,6 +10,7 @@ from synth.utils import chrono
 
 DREAMCODER = "dreamcoder"
 DEEPCODER = "deepcoder"
+REGEXP = "regexp"
 
 
 import argparse
@@ -22,7 +23,7 @@ parser.add_argument(
     type=str,
     default=DEEPCODER,
     help="dsl (default: deepcoder)",
-    choices=[DEEPCODER, DREAMCODER],
+    choices=[DEEPCODER, DREAMCODER, REGEXP],
 )
 parser.add_argument(
     "--dataset",
@@ -42,6 +43,8 @@ if dsl_name == DEEPCODER:
 
 elif dsl_name == DREAMCODER:
     from dreamcoder.dreamcoder import dsl, lexicon
+elif dsl_name == REGEXP:
+    from regexp.regexp_dsl import dsl, lexicon
 else:
     print(F.LIGHTRED_EX + "Unknown dsl:", dsl_name + F.RESET, file=sys.stderr)
     sys.exit(1)

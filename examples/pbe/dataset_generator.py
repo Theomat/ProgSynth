@@ -1,7 +1,6 @@
 import sys
 
 from synth import Dataset, PBE
-from synth.pbe import reproduce_dataset
 from synth.utils import chrono, gen_take
 
 DREAMCODER = "dreamcoder"
@@ -55,14 +54,19 @@ gen_dataset_size: int = parameters.size
 max_list_length = None
 if dsl_name == DEEPCODER:
     from deepcoder.deepcoder import dsl, evaluator, lexicon
+    from synth.pbe import reproduce_dataset
 
 elif dsl_name == DREAMCODER:
     from dreamcoder.dreamcoder import dsl, evaluator, lexicon
+    from synth.pbe import reproduce_dataset
 
     max_list_length = 10
 
 elif dsl_name == REGEXP:
-    from regexp.regexp import dsl, evaluator, lexicon
+    from regexp.task_generator_regexp import reproduce_dataset
+    from regexp.regexp_dsl import dsl, evaluator, lexicon
+
+    # max_list_length = 10
 
 else:
     print("Unknown dsl:", dsl_name, file=sys.stderr)

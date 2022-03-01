@@ -9,7 +9,7 @@ from synth.syntax import DSL, PrimitiveType, Arrow, List, INT, STRING
 
 import string
 import re
-from regexp import regex_match, Raw, REGEXP
+from .type_regex import regex_match, Raw, REGEXP
 
 from synth.syntax.type_system import BOOL
 
@@ -18,8 +18,8 @@ generalized_to_re = {
     "U": "[A-Z]",
     "L": "[a-z]",
     "N": "[0-9]",
-    "O": "^[\d\A\a]",
-    "W": " ",
+    "O": "[^A-Za-z0-9]",
+    "W": "\s",
     "begin": "",
 }
 
@@ -87,7 +87,7 @@ def __eval__(x, reg):
         else:
             modified += char
     x = "".join(x)
-    result = regex_match(Raw(modified), x)
+    result = regex_match(Raw(modified), x, flags=re.ASCII)
     # print(f"{result.match.group() if result else None} vs {x} => {result.string == x if result != None else False}")
     if result is None:
         return False
@@ -166,3 +166,8 @@ dsl = DSL(__primitive_types, __forbidden_patterns)
 evaluator = DSLEvaluator(__semantics)
 evaluator.skip_exceptions.add(re.error)
 lexicon = list([chr(i) for i in range(32, 126)])
+# Pour les primitives NULO: loi uniforme sur leur lexique
+# Pour ?: loi uniforme sur [True, False] (0.5 quoi)
+# Pour +: C'est proba d'avoir le caractère une fois (uniforme NULO) + proba de *
+# Pour *: Loi géométrique, probabilité décroissante exponentiellement plus on avance
+# On prend la regexp, et on calcule la proba de tomber sur le mot passé en input

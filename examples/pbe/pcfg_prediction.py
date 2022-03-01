@@ -151,7 +151,9 @@ elif dsl_name == DREAMCODER:
     max_list_length = 10
 
 elif dsl_name == REGEXP:
-    from regexp.regexp import dsl, evaluator, lexicon
+    from regexp.regexp_dsl import dsl, evaluator, lexicon
+
+    max_list_length = 10
 else:
     print("Unknown dsl:", dsl_name, file=sys.stderr)
     sys.exit(1)

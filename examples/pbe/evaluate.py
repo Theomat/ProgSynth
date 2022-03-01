@@ -121,7 +121,7 @@ def load_dataset() -> Tuple[Dataset[PBE], DSL, DSLEvaluator, List[int], str]:
     elif dsl_name == DREAMCODER:
         from dreamcoder.dreamcoder import dsl, evaluator, lexicon
     elif dsl_name == REGEXP:
-        from regexp.regexp import dsl, evaluator, lexicon
+        from regexp.regexp_dsl import dsl, evaluator, lexicon
     else:
         print("Unknown dsl:", dsl_name, file=sys.stderr)
         sys.exit(0)
@@ -184,7 +184,7 @@ def produce_pcfgs(
     if all(task.solution is not None for task in full_dataset):
         max_depth = max(task.solution.depth() for task in full_dataset)
     else:
-        max_depth = 5  # TODO: set as parameter
+        max_depth = 10  # TODO: set as parameter
     cfgs = [ConcreteCFG.from_dsl(dsl, t, max_depth) for t in all_type_requests]
 
     class MyPredictor(nn.Module):
@@ -319,7 +319,7 @@ if __name__ == "__main__":
             try:
                 enumerative_search(full_dataset, evaluator, pcfgs, trace, method)
             except:
-                print(f"should_exit: {trace}")
+                # print(f"should_exit: {trace}")
                 should_exit = True
             with open(file, "w") as fd:
                 writer = csv.writer(fd)
@@ -327,7 +327,7 @@ if __name__ == "__main__":
                     ["Solved", "Time (in s)", "Programs Generated", "Solution found"]
                 )
                 writer.writerows(trace)
-
+            print("csv file is saved.")
             if should_exit:
                 break
 

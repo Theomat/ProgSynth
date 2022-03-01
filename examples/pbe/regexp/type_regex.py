@@ -36,7 +36,7 @@ def unescape(s: str) -> str:
 
 class RegexFlag(enum.IntFlag):
     # split character (whitespace)
-    SPLIT: int = 2 ** 21
+    SPLIT: int = 2**21
 
 
 class _RepeatState:
@@ -202,11 +202,11 @@ class Struct(AbsPattern):
 
     def __compile__(self, flags: RegexFlag, state: State) -> "Raw":
         with state.struct:
-            r = fr"(\[{_compile(self._type, flags=flags, state=state)}(?:,[a-zA-Z0-9-_.]+=[^,\]]+)*"
+            r = rf"(\[{_compile(self._type, flags=flags, state=state)}(?:,[a-zA-Z0-9-_.]+=[^,\]]+)*"
             kwargs = sorted(self._kwargs.items())
             for key, value in kwargs:
                 r += (
-                    fr",{_compile(key, flags=flags, state=state)}={_compile(value, flags=flags, state=state)}"
+                    rf",{_compile(key, flags=flags, state=state)}={_compile(value, flags=flags, state=state)}"
                     r"(?:,[a-zA-Z0-9-_.]+=[^,\]]+)*"
                 )
             r += r",?\])"
@@ -227,7 +227,7 @@ class Require(AbsPattern):
         self._post = post
 
     def __construct__(self, p: Raw) -> "Raw":
-        return Raw(fr"(?P<{self._name}>{p}")
+        return Raw(rf"(?P<{self._name}>{p}")
 
     def __compile__(self, flags: RegexFlag, state: State) -> "Raw":
         state.repeat.add(self._name)
