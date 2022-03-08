@@ -33,7 +33,6 @@ def __convert__(load: Callable[[], Dataset[PBE]], name: str) -> None:
     # Integrity check
     for task in tqdm.tqdm(tasks, desc="integrity check"):
         for ex in task.specification.examples:
-            print(task.solution)
             assert evaluator.eval(task.solution, ex.inputs) == ex.output
 
 
@@ -64,36 +63,6 @@ def convert_regexp(
         return Dataset(tasks, metadata={"dataset": "regexp", "source:": file})
 
     __convert__(load, output_file)
-
-
-"""
-def __regexp_str2prog(s: str) -> Tuple[Program, Type]:
-    parts = s.split("|")
-    stack: TList[Program] = []
-    var: int = 0
-    type_stack: TList[Type] = []
-    for part in parts:
-        subparts = part.split(",")
-        name = subparts.pop(0)
-        if name == "begin":
-            stack.append(Primitive(name, name2type[name]))
-            continue
-        if name == "STRING":
-            stack.append(Variable(var, STRING))
-            var += 1
-            type_stack.append(STRING)
-            continue
-        if name not in name2type.keys():
-            name = name + "[" + subparts.pop(0) + "]"
-        primitive = Primitive(name, name2type[name])
-        targets = [int(x) for x in subparts]
-        arguments = [stack[x] for x in targets]
-        stack.append(Function(primitive, arguments))
-    type_stack.append(stack[-1].type)
-    type_request = FunctionType(*type_stack)
-    return stack[-1], type_request
-
-"""
 
 
 def __regexp_str2prog(s: str) -> Tuple[Program, Type]:

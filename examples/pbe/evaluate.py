@@ -270,10 +270,9 @@ def base(
     programs = 0
     with chrono.clock("search.base") as c:
         for program in enumerate_pcfg(pcfg):
-            # print(program)
             time = c.elapsed_time()
             if time >= task_timeout:
-                return (False, time, programs, None)
+                return (False, time, programs, None, None)
             programs += 1
             failed = False
             for ex in task.specification.examples:
@@ -281,8 +280,14 @@ def base(
                     failed = True
                     break
             if not failed:
-                return (True, c.elapsed_time(), programs, program)
-    return (False, time, programs, None)
+                return (
+                    True,
+                    c.elapsed_time(),
+                    programs,
+                    program,
+                    pcfg.probability(program),
+                )
+    return (False, time, programs, None, None)
 
 
 # Main ====================================================================
@@ -324,7 +329,13 @@ if __name__ == "__main__":
             with open(file, "w") as fd:
                 writer = csv.writer(fd)
                 writer.writerow(
-                    ["Solved", "Time (in s)", "Programs Generated", "Solution found"]
+                    [
+                        "Solved",
+                        "Time (in s)",
+                        "Programs Generated",
+                        "Solution found",
+                        "Program probability",
+                    ]
                 )
                 writer.writerows(trace)
             print("csv file is saved.")

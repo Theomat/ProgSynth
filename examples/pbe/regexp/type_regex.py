@@ -36,7 +36,7 @@ def unescape(s: str) -> str:
 
 class RegexFlag(enum.IntFlag):
     # split character (whitespace)
-    SPLIT: int = 2**21
+    SPLIT: int = 2 ** 21
 
 
 class _RepeatState:
@@ -317,7 +317,7 @@ class Plus(Repeat):
 
 class Match:
     def __init__(
-        self, match: Match, pattern: CompiledPattern, flags: RegexFlag
+        self, match: Match[str], pattern: CompiledPattern, flags: RegexFlag
     ) -> None:
         super().__init__()
         self._match = match
@@ -432,16 +432,13 @@ class Match:
     def __repr__(self) -> str:
         return self.__str__()
 
-
-"""
-This method avoids backreference. 
-Not vital, but avoids wasting memory (we don't use catched groups)
-"""
+    def groups(self, index: int = 0) -> Tuple:
+        return self._match.groups()[index]
 
 
 def _enclose(s: str):
     # return f"(?:{s})"
-    return s
+    return "(" + s + ")"
 
 
 def _escape(s: str, code=True, comma=True):

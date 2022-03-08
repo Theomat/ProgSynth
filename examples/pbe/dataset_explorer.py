@@ -41,10 +41,22 @@ dataset_file: str = parameters.dataset.format(dsl_name=dsl_name)
 if dsl_name == DEEPCODER:
     from deepcoder.deepcoder import dsl, lexicon
 
+    def pretty_print_solution(str: str):
+        return str
+
 elif dsl_name == DREAMCODER:
     from dreamcoder.dreamcoder import dsl, lexicon
+
+    def pretty_print_solution(str: str):
+        return str
+
 elif dsl_name == REGEXP:
-    from regexp.regexp_dsl import dsl, lexicon
+    from regexp.regexp_dsl import (
+        dsl,
+        lexicon,
+        pretty_print_solution,
+        pretty_print_inputs,
+    )
 else:
     print(F.LIGHTRED_EX + "Unknown dsl:", dsl_name + F.RESET, file=sys.stderr)
     sys.exit(1)
@@ -130,11 +142,17 @@ def task(*args: str) -> None:
     task: Task[PBE] = full_dataset[task_no]
     print_value(f"Name", task.metadata.get("name", "None"))
     print_value("Type", task.type_request)
-    print_value("Solution", task.solution)
+    print_value("Solution", pretty_print_solution(task.solution))
     print_value("Examples", "")
     for example in task.specification.examples:
         print_value(
-            "\tInput", ", ".join([f"var{i}={x}" for i, x in enumerate(example.inputs)])
+            "\tInput",
+            ", ".join(
+                [
+                    f"var{i}={pretty_print_inputs(x)}"
+                    for i, x in enumerate(example.inputs)
+                ]
+            ),
         )
         print_value("\tOutput", example.output)
         print()

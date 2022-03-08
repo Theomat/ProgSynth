@@ -97,14 +97,12 @@ class TaskGenerator:
         # Generate correct program that makes use of all variables
         solution = self.__generate_program__(type_request)
         regexp = "".join(solution.__str__().split("(")[2:]).split(" ")
-        # print(regexp)
         # Try to generate the required number of samples
         samples = self.gen_random_sample_number.sample(type=type_request)
         inputs: TList = []
         outputs = []
         tries = 0
         successful_tries = 0
-        # print(regexp[::-1])
         # has_enough_tries_to_reach_desired_no_of_samples and has_remaining_tries
         while (self.max_tries - tries) + len(
             inputs
