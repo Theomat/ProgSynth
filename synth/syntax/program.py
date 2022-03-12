@@ -1,5 +1,5 @@
 from abc import ABC, abstractstaticmethod
-from typing import Generator, List as TList, Any, Set, Tuple
+from typing import Generator, List as TList, Any, Optional, Set, Tuple
 
 from synth.syntax.type_system import Arrow, FunctionType, Type, UnknownType
 
@@ -71,16 +71,30 @@ class Variable(Program):
 class Constant(Program):
     __hash__ = Program.__hash__
 
-    def __init__(self, value: Any, type: Type = UnknownType()):
+    def __init__(self, type: Type, value: Any = None, has_value: Optional[bool] = None):
         super().__init__(type)
         self.value = value
-        self.hash = hash((str(self.value), self.type))
+        self._has_value = has_value or value is not None
+        self.hash = hash((str(self.value), self._has_value, self.type))
+
+    def has_value(self) -> bool:
+        return self._has_value
 
     def __str__(self) -> str:
-        return format(self.value)
+        if self.has_value():
+            return format(self.value)
+        return f"<{self.type}>"
 
     def is_constant(self) -> bool:
         return True
+
+    def assign(self, value: Any) -> None:
+        self._has_value = True
+        self.value = value
+
+    def reset(self) -> None:
+        self._has_value = False
+        self.value = None
 
     def __eq__(self, other: Any) -> bool:
         return (
@@ -90,7 +104,7 @@ class Constant(Program):
         )
 
     def __pickle__(o: Program) -> Tuple:
-        return Constant, (o.value, o.type)  # type: ignore
+        return Constant, (o.type, o.value, o._has_value)  # type: ignore
 
 
 class Function(Program):
