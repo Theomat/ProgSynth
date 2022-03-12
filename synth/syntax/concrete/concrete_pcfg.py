@@ -16,7 +16,7 @@ import numpy as np
 import vose
 
 from synth.syntax.concrete.concrete_cfg import ConcreteCFG, Context
-from synth.syntax.program import Function, Primitive, Program, Variable
+from synth.syntax.program import Constant, Function, Primitive, Program, Variable
 from synth.syntax.type_system import Arrow
 
 PRules = Dict[Context, Dict[Program, Tuple[List[Context], float]]]
@@ -290,7 +290,7 @@ class ConcretePCFG:
     def from_weights(
         cls,
         cfg: ConcreteCFG,
-        get_weight: Callable[[Context, Union[Primitive, Variable]], float],
+        get_weight: Callable[[Context, Union[Primitive, Variable, Constant]], float],
     ) -> "ConcretePCFG":
         augmented_rules: PRules = {}
         for S in cfg.rules:
