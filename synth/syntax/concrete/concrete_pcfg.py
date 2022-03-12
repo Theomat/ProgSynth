@@ -112,7 +112,7 @@ class ConcretePCFG:
         self.vose_samplers = {}
         self.list_derivations = {}
 
-        for S in self.rules:
+        for i, S in enumerate(self.rules):
             self.list_derivations[S] = sorted(
                 self.rules[S], key=lambda P: self.rules[S][P][1]
             )
@@ -120,7 +120,7 @@ class ConcretePCFG:
                 np.array(
                     [self.rules[S][P][1] for P in self.list_derivations[S]], dtype=float
                 ),
-                seed=seed,
+                seed=seed + i if seed else None,
             )
 
     def __sort__(self) -> None:
