@@ -9,8 +9,8 @@ from synth.syntax import DSL, PrimitiveType, Arrow, List, INT, STRING
 
 import string
 import re
-from type_regex import regex_match, Raw, REGEXP
-from evaluator_regexp import RegexpEvaluator, get_regexp
+from examples.pbe.regexp.type_regex import regex_match, Raw, REGEXP
+from examples.pbe.regexp.evaluator_regexp import RegexpEvaluator, get_regexp
 
 
 from synth.syntax.type_system import BOOL
@@ -72,6 +72,27 @@ def __eval__(x, reg):
         return False
     return result.match.group() == x
 
+def __concat__(x, y):
+    return '' + x + y
+
+def __lower__(x: str):
+    return x.lower
+
+def __upper__(x: str):
+    return x.upper
+
+def __plus_operator__(x):
+    return x+1
+
+"""
+either this (poor design in my opinion, not using regexp), or with regexp. 
+The second case requires a very deep depth program however
+"""
+def __substr__(x, i, j):
+    return x[i:j]
+
+def __split__(x: str, chr: str, i: int):
+    return x.split(chr)[i]
 
 """
 def __alt__(x, y): pass # x|y (one of the two)
@@ -94,10 +115,19 @@ __semantics = {
     "O": __other__,
     "W": __whitespace__,
     "eval": lambda x: lambda reg: __eval__(x, reg),
+    #"concat": lambda x: lambda y:__concat__(x, y),
+    #"lower": __lower__,
+    #"upper": __upper__,
+    #"0": 0,
+    #"+": __plus_operator__,
+    #"sbstr": lambda x: lambda i: lambda j: __substr__(x, i, j),
+    #"split": lambda x: lambda chr: lambda i: __split__(x, chr, i),
+
 }
 
 __primitive_types = {
     "begin": REGEXP,
+    "0": INT,
     "?": Arrow(REGEXP, REGEXP),
     "*": Arrow(REGEXP, REGEXP),
     "+": Arrow(REGEXP, REGEXP),
@@ -107,6 +137,12 @@ __primitive_types = {
     "O": Arrow(REGEXP, REGEXP),
     "W": Arrow(REGEXP, REGEXP),
     "eval": Arrow(List(STRING), Arrow(REGEXP, BOOL)),
+    #"concat": Arrow(STRING, Arrow(STRING, STRING)),
+    #"lower": Arrow(STRING, STRING),
+    #"upper": Arrow(STRING, STRING),
+    #"+": Arrow(INT, INT),
+    #"sbstr": Arrow(STRING, Arrow(INT, Arrow(INT, STRING))),
+    #"split": Arrow(STRING, Arrow(STRING, Arrow(INT, STRING))),
 }
 
 __forbidden_patterns = [
@@ -129,4 +165,3 @@ evaluator = DSLEvaluator(__semantics)
 evaluator.skip_exceptions.add(re.error)
 lexicon = list([chr(i) for i in range(32, 126)])
 regexp_evaluator = RegexpEvaluator(__semantics)
-print(regexp_evaluator.eval("UN+", ["W", "4", "5"]))

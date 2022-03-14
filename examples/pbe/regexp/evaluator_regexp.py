@@ -1,5 +1,5 @@
 from typing import Any, Dict, List, Set
-from type_regex import regex_match, Raw
+from examples.pbe.regexp.type_regex import regex_match, Raw
 from synth.syntax.program import Function, Primitive, Program, Variable
 from synth.semantic.evaluator import Evaluator
 
