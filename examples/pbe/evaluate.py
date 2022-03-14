@@ -23,6 +23,7 @@ from synth.utils import chrono
 
 DREAMCODER = "dreamcoder"
 DEEPCODER = "deepcoder"
+CALCULATOR = "calculator"
 
 import argparse
 
@@ -42,7 +43,7 @@ parser.add_argument(
     "--dsl",
     type=str,
     default=DEEPCODER,
-    choices=[DEEPCODER, DREAMCODER],
+    choices=[DEEPCODER, DREAMCODER, CALCULATOR],
     help="dsl (default: deepcoder)",
 )
 parser.add_argument(
@@ -119,6 +120,8 @@ def load_dataset() -> Tuple[Dataset[PBE], DSL, DSLEvaluator, List[int], str]:
         from deepcoder.deepcoder import dsl, evaluator, lexicon
     elif dsl_name == DREAMCODER:
         from dreamcoder.dreamcoder import dsl, evaluator, lexicon
+    elif dsl_name == CALCULATOR:
+        from calculator.calculator import dsl, evaluator, lexicon
     else:
         print("Unknown dsl:", dsl_name, file=sys.stderr)
         sys.exit(0)

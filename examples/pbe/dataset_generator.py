@@ -1,11 +1,11 @@
 import sys
 
 from synth import Dataset, PBE
-from synth.pbe import reproduce_dataset
 from synth.utils import chrono, gen_take
 
 DREAMCODER = "dreamcoder"
 DEEPCODER = "deepcoder"
+CALCULATOR = "calculator"
 
 
 import argparse
@@ -18,7 +18,7 @@ parser.add_argument(
     type=str,
     default=DEEPCODER,
     help="dsl (default: deepcoder)",
-    choices=[DEEPCODER, DREAMCODER],
+    choices=[DEEPCODER, DREAMCODER, CALCULATOR],
 )
 parser.add_argument(
     "--dataset",
@@ -53,12 +53,17 @@ gen_dataset_size: int = parameters.size
 # ================================
 max_list_length = None
 if dsl_name == DEEPCODER:
+    from synth.pbe import reproduce_dataset
     from deepcoder.deepcoder import dsl, evaluator, lexicon
 
 elif dsl_name == DREAMCODER:
+    from synth.pbe import reproduce_dataset
     from dreamcoder.dreamcoder import dsl, evaluator, lexicon
 
     max_list_length = 10
+elif dsl_name == CALCULATOR:
+    from calculator.calculator_task_generator import reproduce_dataset
+    from calculator.calculator import dsl, evaluator, lexicon
 else:
     print("Unknown dsl:", dsl_name, file=sys.stderr)
     sys.exit(1)
@@ -79,7 +84,7 @@ with chrono.clock("dataset.reproduce") as c:
         evaluator,
         seed,
         max_list_length=max_list_length,
-        default_max_depth=max_depth,
+        default_max_depth=max_depth
     )
     print("done in", c.elapsed_time(), "s")
 # Add some exceptions that are ignored during task generation
