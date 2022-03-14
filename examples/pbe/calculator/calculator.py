@@ -28,7 +28,12 @@ __primitive_types = {
     "3": INT,
 }
 
+#Short example of a forbidden patterns (if add1 and sub1 are defined in _semantics and _primitive_types)
+_forbidden_patterns = [
+#    ["add1", "sub1"],
+#    ["sub1", "add1"]
+]
 
-dsl = DSL(__primitive_types)
+dsl = DSL(__primitive_types, forbidden_patterns=_forbidden_patterns)
 evaluator = DSLEvaluator(__semantics)
 lexicon = [round(x,1) for x in np.arange(-256, 256+1, 0.1)]
