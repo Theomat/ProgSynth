@@ -13,6 +13,7 @@ ProgSynth is a high-level framework that enables to leverage program synthesis f
 - [Installation](#installation)
   - [From Source](#from-source)
     - [Install ProgSynth](#install-progsynth)
+- [Documentation](#documentation)
 - [Examples](./examples)
 - [The Team](#the-team)
 - [License](#license)
@@ -62,6 +63,20 @@ ProgSynth can be installed from source with `pip`, `conda` or `poetry`.
 
 ```bash
 pip install .
+```
+## Documentation
+
+You might want to generate html pages of the documentation locally, where usage, contribution guidelines and more can be found.
+In which case, you will need to use [Sphinx](https://www.sphinx-doc.org/en/master/). 
+
+```bash
+pip install sphinx
+```
+
+If Sphinx installation was successful, then use the following command line to generate html pages that you can view by opening the file `docs/build/html/index.html` in your favorite web browser.
+
+```bash
+sphinx-build -b html docs/source docs/build/html
 ```
 
 ## The Team

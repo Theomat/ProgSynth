@@ -33,6 +33,7 @@ class AutoPack(nn.Module):
         )
         padded_tensors = []
         lengths = torch.zeros((len(x)))
+        device = x[0].device
         for i, t in enumerate(x):
             missing: int = max_seq_len - t.shape[0]
             if missing == 0:
@@ -44,7 +45,7 @@ class AutoPack(nn.Module):
                             t,
                             torch.fill_(
                                 torch.zeros((missing, t.shape[1])), self.pad_symbol
-                            ),
+                            ).to(device),
                         ]
                     )
                 )
