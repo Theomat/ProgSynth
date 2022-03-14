@@ -109,7 +109,7 @@ class TaskGenerator:
                 else:
                     raise e
             if self.output_validator(output):
-                #print(f"input = {new_input}, output = {output}, solution = {solution}")
+                # print(f"input = {new_input}, output = {output}, solution = {solution}")
                 inputs.append(new_input)
                 outputs.append(output)
                 if len(inputs) >= samples:
@@ -197,7 +197,6 @@ def reproduce_dataset(
         elif isinstance(element, float):
             float_range[0] = min(float_range[0], max(-float_bound, element))
             float_range[1] = max(float_range[1], min(float_bound, element))
-        
 
     # Capture all information in one dataset pass
     for task in dataset:
@@ -236,7 +235,9 @@ def reproduce_dataset(
     no_samples_gen = __multi_discrete_to_gen__(no_samples, seed=seed)
 
     int_lexicon = list(range(int_range[0], int_range[1] + 1))
-    float_lexicon = [round(x,1) for x in np.arange(float_range[0], float_range[1] + 1, 0.1)]
+    float_lexicon = [
+        round(x, 1) for x in np.arange(float_range[0], float_range[1] + 1, 0.1)
+    ]
     if max_depth == -1:
         max_depth = default_max_depth
     if uniform_pcfg:

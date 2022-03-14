@@ -22,9 +22,10 @@ Code Formatting
 We use `Black <https://black.readthedocs.io/en/stable/>`_ for code formatting. Th exact  version used can be found in our `pyproject.toml`.
 You can run the following to format all files:
 
-```bash
-black .
-```
+.. code:: bash
+
+    black .
+
 
 Typing
 -------
@@ -32,9 +33,10 @@ Typing
 We use `mypy <http://mypy-lang.org/>`_ to check typing. We require you to use type hints at all times. That means for all function signatures and all places where `mypy` can't deduce the full type, type hints should be placed.
 You can check if there are no typing errors with:
 
-```bash
-mypy synth
-```
+.. code:: bash
+
+    mypy synth
+
 
 Testing
 --------
@@ -48,6 +50,7 @@ Please ensure a few things:
 
 Finally, you can run the tests with:
 
-```bash
-pytest .
-```
+.. code:: bash
+
+    pytest .
+

@@ -15,7 +15,7 @@ from synth.syntax import (
     Program,
     Variable,
     PrimitiveType,
-    PolymorphicType
+    PolymorphicType,
 )
 
 from calculator import dsl, evaluator, FLOAT
@@ -31,6 +31,7 @@ for p in dsl.list_primitives:
     else:
         name = p.primitive
     name2fulltype[name] = p.type
+
 
 def __convert__(load: Callable[[], Dataset[PBE]], name: str) -> None:
     tasks = load()
@@ -72,6 +73,7 @@ def convert_calculator(
 
     __convert__(load, output_file)
 
+
 def __calculator_str2prog(s: str) -> Tuple[Program, Type]:
     parts = s.split("|")
     stack: TList[Program] = []
@@ -95,7 +97,7 @@ def __calculator_str2prog(s: str) -> Tuple[Program, Type]:
         if name in ["1", "2", "3"]:
             primitive = Primitive(name, name2fulltype[name])
             stack.append(primitive)
-        else: # other primitives are functions, we want to add their type
+        else:  # other primitives are functions, we want to add their type
             targets = [int(x) for x in subparts]
             arguments = [stack[x] for x in targets]
             longname = name + str(arguments[-1].type)

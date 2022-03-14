@@ -84,7 +84,7 @@ with chrono.clock("dataset.reproduce") as c:
         evaluator,
         seed,
         max_list_length=max_list_length,
-        default_max_depth=max_depth
+        default_max_depth=max_depth,
     )
     print("done in", c.elapsed_time(), "s")
 # Add some exceptions that are ignored during task generation
