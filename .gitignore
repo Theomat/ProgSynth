@@ -10,3 +10,6 @@ __pycache__
 
 # Tensorboard runs
 runs
+
+# documentation build
+docs/build
