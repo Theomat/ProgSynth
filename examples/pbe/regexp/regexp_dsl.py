@@ -89,12 +89,6 @@ def __plus_operator__(x):
     return x + 1
 
 
-"""
-either this (poor design in my opinion, not using regexp), or with regexp. 
-The second case requires a very deep depth program however
-"""
-
-
 def __substr__(x, i, j):
     return x[i:j]
 
@@ -103,16 +97,6 @@ def __split__(x: str, chr: str, i: int):
     return x.split(chr)[i]
 
 
-"""
-def __alt__(x, y): pass # x|y (one of the two)
-
-def __min__(x, mi): pass #x{mi,} (repeated at least mi times)
-
-def __max__(x, ma): pass #x{,ma} (repeated up to ma times)
-
-def __borned__(x, mi, ma): pass #x{mi,ma} (repeated between mi and ma times)
-"""
-# list to be taken from re (https://docs.python.org/3/library/re.html), used here as reference
 __semantics = {
     "begin": init.type_name,
     "?": __qmark__,
@@ -124,13 +108,6 @@ __semantics = {
     "O": __other__,
     "W": __whitespace__,
     "eval": lambda x: lambda reg: __eval__(x, reg),
-    # "concat": lambda x: lambda y:__concat__(x, y),
-    # "lower": __lower__,
-    # "upper": __upper__,
-    # "0": 0,
-    # "+": __plus_operator__,
-    # "sbstr": lambda x: lambda i: lambda j: __substr__(x, i, j),
-    # "split": lambda x: lambda chr: lambda i: __split__(x, chr, i),
 }
 
 __primitive_types = {
@@ -145,12 +122,6 @@ __primitive_types = {
     "O": Arrow(REGEXP, REGEXP),
     "W": Arrow(REGEXP, REGEXP),
     "eval": Arrow(List(STRING), Arrow(REGEXP, BOOL)),
-    # "concat": Arrow(STRING, Arrow(STRING, STRING)),
-    # "lower": Arrow(STRING, STRING),
-    # "upper": Arrow(STRING, STRING),
-    # "+": Arrow(INT, INT),
-    # "sbstr": Arrow(STRING, Arrow(INT, Arrow(INT, STRING))),
-    # "split": Arrow(STRING, Arrow(STRING, Arrow(INT, STRING))),
 }
 
 __forbidden_patterns = [
