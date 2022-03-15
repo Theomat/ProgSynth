@@ -67,7 +67,7 @@ elif dsl_name == DREAMCODER:
 
 elif dsl_name == REGEXP:
     from regexp.task_generator_regexp import reproduce_dataset
-    from regexp.regexp_dsl import dsl, evaluator, lexicon
+    from regexp.regexp import dsl, evaluator, lexicon
 
     # max_list_length = 10
 

@@ -122,7 +122,7 @@ def load_dataset() -> Tuple[Dataset[PBE], DSL, DSLEvaluator, List[int], str]:
     elif dsl_name == DREAMCODER:
         from dreamcoder.dreamcoder import dsl, evaluator, lexicon
     elif dsl_name == REGEXP:
-        from regexp.regexp_dsl import dsl, evaluator, lexicon
+        from regexp.regexp import dsl, evaluator, lexicon
     elif dsl_name == CALCULATOR:
         from calculator.calculator import dsl, evaluator, lexicon
     else:

@@ -52,7 +52,7 @@ elif dsl_name == DREAMCODER:
         return str
 
 elif dsl_name == REGEXP:
-    from regexp.regexp_dsl import (
+    from regexp.regexp import (
         dsl,
         lexicon,
         pretty_print_solution,

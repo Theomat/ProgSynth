@@ -15,9 +15,8 @@ from synth.syntax import (
     Variable,
 )
 
-from type_regex import REGEXP
-from regexp_dsl import dsl, evaluator
-from synth.syntax.program import Constant, Lambda
+from examples.pbe.regexp.type_regex import REGEXP
+from examples.pbe.regexp.regexp import dsl, evaluator
 
 
 name2type = {p.primitive: p.type for p in dsl.list_primitives}

@@ -284,7 +284,7 @@ class UnknownType(Type):
 
 INT = PrimitiveType("int")
 BOOL = PrimitiveType("bool")
-STRING = PrimitiveType("char")
+STRING = PrimitiveType("string")
 UNIT = PrimitiveType("unit")
 
 EmptyList = List(PolymorphicType("empty"))
