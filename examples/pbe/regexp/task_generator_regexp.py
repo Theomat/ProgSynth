@@ -23,13 +23,14 @@ from synth.syntax.program import Program
 from synth.syntax.type_system import BOOL, Arrow, List, Type, STRING, PrimitiveType
 from synth.syntax.concrete.concrete_cfg import ConcreteCFG
 from synth.syntax.concrete.concrete_pcfg import ConcretePCFG
-from .sampler_regexp import (
+from synth.generation.sampler import (
     LexiconSampler,
     ListSampler,
     RequestSampler,
     Sampler,
     UnionSampler,
 )
+
 
 N = PrimitiveType("N")
 U = PrimitiveType("U")

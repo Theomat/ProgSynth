@@ -215,7 +215,6 @@ class Struct(AbsPattern):
     def __repr__(self) -> str:
         return f"{type(self).__name__}({self._type!r}, **{self._kwargs!r})"
 
-
 class Match:
     def __init__(
         self, match: Match[str], pattern: CompiledPattern, flags: RegexFlag
@@ -396,7 +395,6 @@ def compile(
         if not isinstance(default_require_post, Tuple):
             default_require_post = (default_require_post, default_require_post)
         state.require[_REQUIRE_DEFAULT_KEY] = default_require_post
-
     return _compile(pattern, flags=flags, state=state, raw=False)
 
 
@@ -427,5 +425,4 @@ def regex_match_rawstring(pattern, string: str, flags: RegexFlag = 0) -> "Match"
 def regex_findall(pattern, message: str, flags: RegexFlag = 0, **kwargs) -> "Match":
     if not isinstance(pattern, CompiledPattern):
         pattern = compile(pattern, flags=flags, **kwargs)
-    print(pattern)
     return pattern.findall(message, flags=flags)
