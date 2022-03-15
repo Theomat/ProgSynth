@@ -60,8 +60,10 @@ elif dsl_name == REGEXP:
     )
 elif dsl_name == CALCULATOR:
     from calculator.calculator import dsl, lexicon
+
     def pretty_print_solution(str: str):
         return str
+
 else:
     print(F.LIGHTRED_EX + "Unknown dsl:", dsl_name + F.RESET, file=sys.stderr)
     sys.exit(1)
