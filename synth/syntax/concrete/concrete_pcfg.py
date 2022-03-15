@@ -16,7 +16,7 @@ import numpy as np
 import vose
 
 from synth.syntax.concrete.concrete_cfg import ConcreteCFG, Context
-from synth.syntax.program import Function, Primitive, Program, Variable
+from synth.syntax.program import Constant, Function, Primitive, Program, Variable
 from synth.syntax.type_system import Arrow
 
 PRules = Dict[Context, Dict[Program, Tuple[List[Context], float]]]
@@ -112,7 +112,7 @@ class ConcretePCFG:
         self.vose_samplers = {}
         self.list_derivations = {}
 
-        for S in self.rules:
+        for i, S in enumerate(self.rules):
             self.list_derivations[S] = sorted(
                 self.rules[S], key=lambda P: self.rules[S][P][1]
             )
@@ -120,7 +120,7 @@ class ConcretePCFG:
                 np.array(
                     [self.rules[S][P][1] for P in self.list_derivations[S]], dtype=float
                 ),
-                seed=seed,
+                seed=seed + i if seed else None,
             )
 
     def __sort__(self) -> None:
@@ -290,7 +290,7 @@ class ConcretePCFG:
     def from_weights(
         cls,
         cfg: ConcreteCFG,
-        get_weight: Callable[[Context, Union[Primitive, Variable]], float],
+        get_weight: Callable[[Context, Union[Primitive, Variable, Constant]], float],
     ) -> "ConcretePCFG":
         augmented_rules: PRules = {}
         for S in cfg.rules:

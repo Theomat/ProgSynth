@@ -1,4 +1,3 @@
-from functools import reduce
 from typing import Callable, Dict, Iterable, List, Set, Tuple, Optional, Union
 
 import numpy as np
@@ -10,9 +9,8 @@ from torch import Tensor
 
 from synth.syntax.concrete.concrete_cfg import ConcreteCFG, Context
 from synth.syntax.concrete.concrete_pcfg import ConcretePCFG
-from synth.syntax.dsl import DSL
-from synth.syntax.program import Function, Primitive, Program, Variable
-from synth.syntax.type_system import Arrow, Type
+from synth.syntax.program import Constant, Function, Primitive, Program, Variable
+from synth.syntax.type_system import Type
 
 
 LogPRules = Dict[Context, Dict[Program, Tuple[List[Context], Tensor]]]
@@ -119,7 +117,7 @@ class BigramsPredictorLayer(nn.Module):
                 if not key in self.all_pairs:
                     self.all_pairs[key] = set()
                 for P in cfg.rules[S]:
-                    if not isinstance(P, Variable):
+                    if not isinstance(P, (Variable, Constant)):
                         self.all_pairs[key].add(P)
 
         output_size = sum(len(self.all_pairs[S]) for S in self.all_pairs)
@@ -193,11 +191,13 @@ class BigramsPredictorLayer(nn.Module):
                         cfg.rules[S][P],
                         y[primitive_index],
                     )
-                else:
+                elif isinstance(P, Variable):
                     V: Variable = P  # ensure typing
                     variables.append(V)
                     # All variables together have probability mass self.variable_probability
                     # then the probability of selecting a variable is uniform
+                else:
+                    continue
             # If there are variables we need to normalise
             total = sum(np.exp(rules[S][P][1].item()) for P in rules[S])
             if variables:

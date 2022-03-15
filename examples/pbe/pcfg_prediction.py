@@ -28,6 +28,7 @@ from synth.utils import chrono
 DREAMCODER = "dreamcoder"
 DEEPCODER = "deepcoder"
 REGEXP = "regexp"
+CALCULATOR = "calculator"
 
 
 import argparse
@@ -39,7 +40,7 @@ parser.add_argument(
     type=str,
     default=DEEPCODER,
     help="dsl (default: deepcoder)",
-    choices=[DEEPCODER, DREAMCODER, REGEXP],
+    choices=[DEEPCODER, DREAMCODER, REGEXP, CALCULATOR],
 )
 parser.add_argument(
     "-o",
@@ -154,6 +155,8 @@ elif dsl_name == REGEXP:
     from regexp.regexp_dsl import dsl, evaluator, lexicon
 
     max_list_length = 10
+elif dsl_name == CALCULATOR:
+    from calculator.calculator import dsl, lexicon
 else:
     print("Unknown dsl:", dsl_name, file=sys.stderr)
     sys.exit(1)

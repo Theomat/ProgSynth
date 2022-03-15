@@ -4,7 +4,7 @@ from typing import Deque, Dict, Set, Tuple, List, Union
 from dataclasses import dataclass, field
 
 from synth.syntax.dsl import DSL
-from synth.syntax.program import Primitive, Variable
+from synth.syntax.program import Constant, Primitive, Variable
 from synth.syntax.type_system import Arrow, Type
 
 
@@ -46,7 +46,7 @@ class ConcreteCFG:
     def __init__(
         self,
         start: Context,
-        rules: Dict[Context, Dict[Union[Primitive, Variable], List[Context]]],
+        rules: Dict[Context, Dict[Union[Primitive, Variable, Constant], List[Context]]],
         max_program_depth: int,
         clean: bool = True,
     ):
@@ -101,7 +101,9 @@ class ConcreteCFG:
         """
         remove non-terminals which do not produce programs
         """
-        new_rules: Dict[Context, Dict[Union[Primitive, Variable], List[Context]]] = {}
+        new_rules: Dict[
+            Context, Dict[Union[Primitive, Variable, Constant], List[Context]]
+        ] = {}
         for S in reversed(self.rules):
             for P in self.rules[S]:
                 args_P = self.rules[S][P]
@@ -168,10 +170,18 @@ class ConcreteCFG:
         min_variable_depth: int = 1,
         n_gram: int = 2,
         recursive: bool = False,
+        constant_types: Set[Type] = set(),
     ) -> "ConcreteCFG":
         """
         Constructs a CFG from a DSL imposing bounds on size of the types
-        and on the maximum program depth
+        and on the maximum program depth.
+
+        max_depth: int - is the maxium depth of programs allowed
+        uppder_bound_size_type: int - is the maximum size type allowed for polymorphic type instanciations
+        min_variable_depth: int - min depth at which variables and constants are allowed
+        n_gram: int - the context, a bigram depends only in the parent node
+        recursvie: bool - allows the generated programs to call themselves
+        constant_types: Set[Type] - the set of of types allowed for constant objects
         """
         dsl.instantiate_polymorphic_types(upper_bound_type_size)
 
@@ -191,7 +201,7 @@ class ConcreteCFG:
             return_type = type_request
             args = []
 
-        rules: Dict[Context, Dict[Union[Variable, Primitive], List]] = {}
+        rules: Dict[Context, Dict[Union[Variable, Primitive, Constant], List]] = {}
 
         list_to_be_treated: Deque[Context] = deque()
         list_to_be_treated.append(Context(return_type, [], 0))
@@ -214,6 +224,9 @@ class ConcreteCFG:
                         if current_type == args[i]:
                             var = Variable(i, current_type)
                             rules[non_terminal][var] = []
+                    if current_type in constant_types:
+                        cst = Constant(current_type)
+                        rules[non_terminal][cst] = []
                 # Try to add constants from the DSL
                 for P in dsl.list_primitives:
                     type_P = P.type

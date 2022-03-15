@@ -24,6 +24,7 @@ from synth.utils import chrono
 DREAMCODER = "dreamcoder"
 DEEPCODER = "deepcoder"
 REGEXP = "regexp"
+CALCULATOR = "calculator"
 
 import argparse
 
@@ -43,7 +44,7 @@ parser.add_argument(
     "--dsl",
     type=str,
     default=DEEPCODER,
-    choices=[DEEPCODER, DREAMCODER, REGEXP],
+    choices=[DEEPCODER, DREAMCODER, REGEXP, CALCULATOR],
     help="dsl (default: deepcoder)",
 )
 parser.add_argument(
@@ -122,6 +123,8 @@ def load_dataset() -> Tuple[Dataset[PBE], DSL, DSLEvaluator, List[int], str]:
         from dreamcoder.dreamcoder import dsl, evaluator, lexicon
     elif dsl_name == REGEXP:
         from regexp.regexp_dsl import dsl, evaluator, lexicon
+    elif dsl_name == CALCULATOR:
+        from calculator.calculator import dsl, evaluator, lexicon
     else:
         print("Unknown dsl:", dsl_name, file=sys.stderr)
         sys.exit(0)

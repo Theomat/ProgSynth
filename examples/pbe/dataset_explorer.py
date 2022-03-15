@@ -11,6 +11,7 @@ from synth.utils import chrono
 DREAMCODER = "dreamcoder"
 DEEPCODER = "deepcoder"
 REGEXP = "regexp"
+CALCULATOR = "calculator"
 
 
 import argparse
@@ -23,7 +24,7 @@ parser.add_argument(
     type=str,
     default=DEEPCODER,
     help="dsl (default: deepcoder)",
-    choices=[DEEPCODER, DREAMCODER, REGEXP],
+    choices=[DEEPCODER, DREAMCODER, REGEXP, CALCULATOR],
 )
 parser.add_argument(
     "--dataset",
@@ -57,6 +58,10 @@ elif dsl_name == REGEXP:
         pretty_print_solution,
         pretty_print_inputs,
     )
+elif dsl_name == CALCULATOR:
+    from calculator.calculator import dsl, lexicon
+    def pretty_print_solution(str: str):
+        return str
 else:
     print(F.LIGHTRED_EX + "Unknown dsl:", dsl_name + F.RESET, file=sys.stderr)
     sys.exit(1)
