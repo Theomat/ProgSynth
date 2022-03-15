@@ -11,10 +11,14 @@ __pycache__
 # Tensorboard runs
 runs
 
-<<<<<<< HEAD
 # venv
 py3
-=======
+
 # documentation build
 docs/build
->>>>>>> fbc070499bebd0858cedc386c1fc5a6686cfda1e
+
+# dataset files
+*.pickle
+
+# csv files
+*.csv
