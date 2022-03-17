@@ -24,7 +24,7 @@ This is a dataset of::
     *M. Balog, A. L. Gaunt, M. Brockschmidt, S. Nowozin, and D. Tarlow.* Deep-coder: Learning to write programs. In International Conference on Learning Representations, ICLR, 2017. URL https://openreview.net/forum?id=ByldLrqlx.
 
 This folder contains two files.
-The :code:`deepcoder.py` file contains an impelementation of the DSL along with a default evaluator.
+The :code:`deepcoder.py` file contains an implementation of the DSL along with a default evaluator.
 The :code:`convert_deepcoder.py` is a runnable python script which enables you to convert the original deepcoder dataset files to the ProgSynth format.
 
 Downloading Deepcoder
