@@ -7,6 +7,7 @@ DREAMCODER = "dreamcoder"
 DEEPCODER = "deepcoder"
 REGEXP = "regexp"
 CALCULATOR = "calculator"
+TRANSDUCTION = "transduction"
 
 
 import argparse
@@ -19,7 +20,7 @@ parser.add_argument(
     type=str,
     default=DEEPCODER,
     help="dsl (default: deepcoder)",
-    choices=[DEEPCODER, DREAMCODER, REGEXP, CALCULATOR],
+    choices=[DEEPCODER, DREAMCODER, REGEXP, CALCULATOR, TRANSDUCTION],
 )
 parser.add_argument(
     "--dataset",
@@ -74,9 +75,13 @@ elif dsl_name == REGEXP:
 elif dsl_name == CALCULATOR:
     from calculator.calculator_task_generator import reproduce_dataset
     from calculator.calculator import dsl, evaluator, lexicon
+elif dsl_name == TRANSDUCTION:
+    from transduction.transduction_task_generator import reproduce_dataset
+    from transduction.transduction import dsl, evaluator, lexicon
 else:
     print("Unknown dsl:", dsl_name, file=sys.stderr)
     sys.exit(1)
+
 # ================================
 # Load dataset & Task Generator
 # ================================

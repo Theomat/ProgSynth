@@ -12,6 +12,7 @@ DREAMCODER = "dreamcoder"
 DEEPCODER = "deepcoder"
 REGEXP = "regexp"
 CALCULATOR = "calculator"
+TRANSDUCTION = "transduction"
 
 
 import argparse
@@ -24,7 +25,7 @@ parser.add_argument(
     type=str,
     default=DEEPCODER,
     help="dsl (default: deepcoder)",
-    choices=[DEEPCODER, DREAMCODER, REGEXP, CALCULATOR],
+    choices=[DEEPCODER, DREAMCODER, REGEXP, CALCULATOR, TRANSDUCTION],
 )
 parser.add_argument(
     "--dataset",
@@ -39,17 +40,16 @@ dataset_file: str = parameters.dataset.format(dsl_name=dsl_name)
 # ================================
 # Load constants specific to DSL
 # ================================
+def pretty_print_solution(str: str):
+    return str
+
+def pretty_print_inputs(str: str):
+    return str
 if dsl_name == DEEPCODER:
     from deepcoder.deepcoder import dsl, lexicon
 
-    def pretty_print_solution(str: str):
-        return str
-
 elif dsl_name == DREAMCODER:
     from dreamcoder.dreamcoder import dsl, lexicon
-
-    def pretty_print_solution(str: str):
-        return str
 
 elif dsl_name == REGEXP:
     from regexp.regexp import (
@@ -61,8 +61,8 @@ elif dsl_name == REGEXP:
 elif dsl_name == CALCULATOR:
     from calculator.calculator import dsl, lexicon
 
-    def pretty_print_solution(str: str):
-        return str
+elif dsl_name == TRANSDUCTION:
+    from transduction.transduction import dsl, lexicon
 
 else:
     print(F.LIGHTRED_EX + "Unknown dsl:", dsl_name + F.RESET, file=sys.stderr)

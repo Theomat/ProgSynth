@@ -29,6 +29,7 @@ DREAMCODER = "dreamcoder"
 DEEPCODER = "deepcoder"
 REGEXP = "regexp"
 CALCULATOR = "calculator"
+TRANSDUCTION = "transduction"
 
 
 import argparse
@@ -40,7 +41,7 @@ parser.add_argument(
     type=str,
     default=DEEPCODER,
     help="dsl (default: deepcoder)",
-    choices=[DEEPCODER, DREAMCODER, REGEXP, CALCULATOR],
+    choices=[DEEPCODER, DREAMCODER, REGEXP, CALCULATOR, TRANSDUCTION],
 )
 parser.add_argument(
     "-o",
@@ -143,6 +144,7 @@ torch.manual_seed(seed)
 # Load constants specific to DSL
 # ================================
 max_list_length = None
+upper_bound_type_size = 10
 if dsl_name == DEEPCODER:
     from deepcoder.deepcoder import dsl, evaluator, lexicon
 
@@ -157,6 +159,10 @@ elif dsl_name == REGEXP:
     max_list_length = 10
 elif dsl_name == CALCULATOR:
     from calculator.calculator import dsl, lexicon
+    upper_bound_type_size = 5
+elif dsl_name == TRANSDUCTION:
+    from transduction.transduction import dsl, lexicon
+    upper_bound_type_size = 5
 else:
     print("Unknown dsl:", dsl_name, file=sys.stderr)
     sys.exit(1)
@@ -191,10 +197,11 @@ all_type_requests = full_dataset.type_requests()
 if all(task.solution is not None for task in full_dataset):
     max_depth = max(task.solution.depth() for task in full_dataset)
 else:
-    max_depth = 9  # TODO: set as parameter
-cfgs = [ConcreteCFG.from_dsl(dsl, t, max_depth) for t in all_type_requests]
+    max_depth = 12  # TODO: set as parameter
+cfgs = [ConcreteCFG.from_dsl(dsl, t, max_depth, upper_bound_type_size=upper_bound_type_size) for t in all_type_requests]
 print(f"{len(all_type_requests)} type requests supported.")
 print(f"Lexicon: [{min(lexicon)};{max(lexicon)}]")
+
 
 
 class MyPredictor(nn.Module):
