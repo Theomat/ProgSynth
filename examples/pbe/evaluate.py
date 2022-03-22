@@ -25,6 +25,7 @@ DREAMCODER = "dreamcoder"
 DEEPCODER = "deepcoder"
 REGEXP = "regexp"
 CALCULATOR = "calculator"
+TRANSDUCTION = "transduction"
 
 import argparse
 
@@ -44,7 +45,7 @@ parser.add_argument(
     "--dsl",
     type=str,
     default=DEEPCODER,
-    choices=[DEEPCODER, DREAMCODER, REGEXP, CALCULATOR],
+    choices=[DEEPCODER, DREAMCODER, REGEXP, CALCULATOR, TRANSDUCTION],
     help="dsl (default: deepcoder)",
 )
 parser.add_argument(
@@ -125,6 +126,8 @@ def load_dataset() -> Tuple[Dataset[PBE], DSL, DSLEvaluator, List[int], str]:
         from regexp.regexp import dsl, evaluator, lexicon
     elif dsl_name == CALCULATOR:
         from calculator.calculator import dsl, evaluator, lexicon
+    elif dsl_name == TRANSDUCTION:
+        from transduction.transduction import dsl, evaluator, lexicon
     else:
         print("Unknown dsl:", dsl_name, file=sys.stderr)
         sys.exit(0)
@@ -194,6 +197,7 @@ def produce_pcfgs(
         def __init__(self, size: int) -> None:
             super().__init__()
             self.bigram_layer = BigramsPredictorLayer(size, cfgs, variable_probability)
+            
             encoder = IOEncoder(encoding_dimension, lexicon)
             self.packer = Task2Tensor(
                 encoder, nn.Embedding(len(encoder.lexicon), size), size, device=device

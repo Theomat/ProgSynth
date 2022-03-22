@@ -10,28 +10,14 @@ from synth.syntax import DSL, PrimitiveType, Arrow, List, INT, STRING
 
 import string
 import re
-from examples.pbe.regexp.type_regex import regex_match, Raw, REGEXP, regex_search
+from examples.pbe.regexp.type_regex import regex_findall, regex_match, Raw, REGEXP, regex_search
 
 from synth.syntax.type_system import BOOL, PolymorphicType
 
 STREGEXP = PolymorphicType("str/regexp")
 
-
-def pretty_print_solution(regexp: str) -> str:
-    result = (
-        "".join("".join(regexp.__str__().split("(")[2:]).split(" ")[::-1])
-        .replace(")", "")
-        .replace("begin", "")
-    )
-    return f"(eval var0 {result})"
-
-
-def pretty_print_inputs(str: List) -> str:
-    return "'" + "".join(str) + "'"
-
-
 def __concat__(x, y):
-    return "" + x + y
+    return "" + x + " " + y
 
 
 def __lower__(x: str):
@@ -44,8 +30,14 @@ def __upper__(x: str):
 def __split__(x: str, regexp: str):
     sbstr = regex_search(Raw(get_regexp(regexp)), x, flags=re.ASCII)
     if sbstr == None:
-        return ["", ""]
+        return ["", "", ""]
     return x.split(sbstr.match.group(), 1)
+
+def __separate__(x: str, regexp: str):
+    match = regex_findall(Raw(get_regexp(regexp, False)), x, flags=re.ASCII)
+    if match == None:
+        return ""
+    return ' '.join(match.match)
 
 def __head__(x):
     return x[0]
@@ -53,6 +45,8 @@ def __head__(x):
 def __tail__(x):
     return x[1]
 
+def __compose__(x, y):
+    return x + y
 
 __semantics = {
     "concat": lambda x: lambda y: __concat__(x, y),
@@ -61,17 +55,27 @@ __semantics = {
     "split": lambda x: lambda regexp: __split__(x, regexp),
     "head": __head__,
     "tail": __tail__,
+    "separate": lambda x: lambda regexp: __separate__(x, regexp),
+    "compose": lambda x: lambda y: __compose__(x, y),
+    "U": "U",
+    "L": "L",
+    "N": "N",
     "O": "O",
-    "W": " ",
+    "W": "W",
 }
 
 __primitive_types = {
-    "concat": Arrow(STRING, Arrow(STREGEXP, STRING)),
+    "concat": Arrow(STRING, Arrow(STRING, STRING)),
     "lower": Arrow(STRING, STRING),
     "upper": Arrow(STRING, STRING),
     "split": Arrow(STRING, Arrow(REGEXP, List(STRING))),
     "head": Arrow(List(STRING), STRING),
     "tail": Arrow(List(STRING), STRING),
+    "separate": Arrow(STRING, Arrow(REGEXP, STRING)),
+    "compose": Arrow(REGEXP, Arrow(REGEXP, REGEXP)),
+    "U": REGEXP,
+    "L": REGEXP,
+    "N": REGEXP,
     "O": REGEXP,
     "W": REGEXP,
 }

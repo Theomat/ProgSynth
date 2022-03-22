@@ -61,7 +61,7 @@ def convert_transduction(
 
                 prog, type_request = __transduction_str2prog(name)
                 examples = [
-                    Example(inp, out)
+                    Example([inp], out)
                     for inp, out in zip(inputs, outputs)
                     if out is not None
                 ]
@@ -89,7 +89,6 @@ def __transduction_str2prog(s: str) -> Tuple[Program, Type]:
             type_stack.append(STRING)
         elif name2type[name] == REGEXP:
             stack.append(Primitive(name, name2type[name]))
-            type_stack.append(REGEXP)
         else:
             targets = [int(x) for x in subparts]
             arguments = [stack[x] for x in targets]

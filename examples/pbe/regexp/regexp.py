@@ -72,31 +72,6 @@ def __eval__(x, reg):
         return False
     return result.match.group() == x
 
-
-def __concat__(x, y):
-    return "" + x + y
-
-
-def __lower__(x: str):
-    return x.lower
-
-
-def __upper__(x: str):
-    return x.upper
-
-
-def __plus_operator__(x):
-    return x + 1
-
-
-def __substr__(x, i, j):
-    return x[i:j]
-
-
-def __split__(x: str, chr: str, i: int):
-    return x.split(chr)[i]
-
-
 __semantics = {
     "begin": init.type_name,
     "?": __qmark__,
@@ -112,7 +87,6 @@ __semantics = {
 
 __primitive_types = {
     "begin": REGEXP,
-    "0": INT,
     "?": Arrow(REGEXP, REGEXP),
     "*": Arrow(REGEXP, REGEXP),
     "+": Arrow(REGEXP, REGEXP),
