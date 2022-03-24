@@ -46,7 +46,7 @@ This is the list dataset of:
 > *K. Ellis, C. Wong, M. I. Nye, M. Sabl ́e-Meyer, L. Morales, L. B. Hewitt, L. Cary, A. Solar-Lezama, and J. B. Tenenbaum.* Dreamcoder: bootstrapping inductive program synthesis with wake-sleep library learning. In International Conference on Programming Language Design and Implementation, PLDI, 2021. URL <https://doi.org/10.1145/3453483.3454080>.
 
 This folder contains two files.
-The `dreamcoder.py` file contains an impelementation of the DSL along with a default evaluator.
+The `dreamcoder.py` file contains an implementation of the DSL along with a default evaluator.
 The `convert_dreamcoder.py` is a runnable python script which enables you to convert the original dreamcoder dataset files to the ProgSynth format.
 
 #### Downloading Dreamcoder

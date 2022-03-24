@@ -6,7 +6,7 @@ Combining Deep Learning with Theoretical Guarantees
 
 The advantage of "classic" algorithms are their theoretical guarantees.
 But many new deep learning based methods have emerged, they provide a tremendous efficiency but lose almost all theoretical guarantees.
-ProgSynth provides already implemented algorithms that combine both approaches to get he best of both worlds: speed and guarantees!
+ProgSynth provides already implemented algorithms that combine both approaches to get the best of both worlds: speed and guarantees!
 
 A Scalable Framework
 --------------------
