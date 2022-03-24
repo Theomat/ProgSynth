@@ -74,6 +74,12 @@ def convert_calculator(
     __convert__(load, output_file)
 
 
+
+"""
+Parser of program stored in the json file, for a given task.
+s: program attribute represented as a string
+returns: Tuple[Program, Type] where program is the solution of type Type to the task
+"""
 def __calculator_str2prog(s: str) -> Tuple[Program, Type]:
     parts = s.split("|")
     stack: TList[Program] = []
