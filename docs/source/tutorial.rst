@@ -26,6 +26,8 @@ For instance, as we want to solve tasks made of additions and substractions betw
 
 Here, we consider that an integer is a sub-type of float. Thus, we only need in this case to convert integers to float numbers using int2float.
 
+.. _Types of the DSL:
+
 Types of the DSL
 ~~~~~~~~~~~~~~~~
 A DSL has to be strongly typed in order to properly work. The addition and substraction primtives should accept either 2 ints or 2 floats as parameters, we wish to define a custom type that can represent both.
@@ -76,6 +78,17 @@ An important point to note is that we need to develop the :code:`PolymorphicType
 It is done automatically by calling the method :code:`dsl.instantiate_polymorphic_types()` or when the DSL icompiled into a context free grammar.
 As we only want to develop :code:`+` and :code:`-` as methods with a size of 5 (INT -> INT -> INT or FLOAT -> FLOAT -> FLOAT, as we consider each arrow in the size), we define its upper bound type size to 5.
 
+
+Structures used
+~~~~~~~~~~~~~~~
+
+If you want to adapt the code of :code:`calculator/convert_calculator` for your own custom DSL, the part that will need to be changed is stored inside :code:`__calculator_str2prog()`, that returns the final program and its type (inputs and outputs).
+
+To do so, useful structures defined by the file :code:`synth/syntax/program.py` are available. At the moment, please refrain from using classes :code:`Lambda` and :code:`Constant`, as they are not fully implemented in the framework yet.
+
+In order to properly construct the returned type, it is important to add to :code:`type_stack` only the methods and the inputs of the program, as hinted in the section :ref:`Types of the DSL`.
+
+
 Usage
 ~~~~~
 We can simply use this file by command line, from the folder :code:`./examples/pbe/calculator`.
@@ -111,6 +124,7 @@ The dataset generated can be explored using :code:`dataset_explorer.py`.
 .. code:: bash
     
     python dataset_explorer.py --dsl calculator --dataset dataset.pickle
+
 
 Conclusion
 ----------

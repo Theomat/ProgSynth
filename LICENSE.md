@@ -1,5 +1,3 @@
-License
-=====================
 MIT License
 
 Copyright (c) 2022 Nathanaël FIJALKOW & Théo MATRICON
