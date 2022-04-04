@@ -1,11 +1,8 @@
 import argparse
 import csv
 import sys
-import typing
 
 from synth import Dataset, PBE
-from synth.syntax.program import Function, Program, Variable
-from synth.syntax.type_system import Arrow, Type
 from synth.utils import chrono
 
 DREAMCODER = "dreamcoder"
@@ -75,37 +72,6 @@ with chrono.clock("solutions.load") as c:
         solutions = [row[-1] if row[0] == "True" else None for row in trace]
     print("done in", c.elapsed_time(), "s")
 
-
-def parse(program: str, type_request: Type) -> Program:
-    if " " in program:
-        parts = list(map(lambda p: parse(p, type_request), program.split(" ")))
-
-        def parse_stack(l: typing.List[Program]) -> Program:
-            if len(l) == 1:
-                return l[0]
-            current = l.pop(0)
-            if isinstance(current.type, Arrow):
-                args = [parse_stack(l) for arg in current.type.arguments()]
-                return Function(current, args)
-            return current
-
-        sol = parse_stack(parts)
-        assert str(sol) == program
-        return sol
-    else:
-        program = program.strip("()")
-        for P in dsl.list_primitives:
-            if P.primitive == program:
-                return P
-        if program.startswith("var"):
-            varno = int(program[3:])
-            vart = type_request
-            if isinstance(type_request, Arrow):
-                vart = type_request.arguments()[varno]
-            return Variable(varno, vart)
-        assert False, f"can't parse: {program}"
-
-
 replaced = 0
 saved = 0
 print("Merging solutions and dataset...", end="", flush=True)
@@ -114,12 +80,12 @@ with chrono.clock("merge") as c:
         if new_sol is None:
             continue
         if task.solution is None:
-            task.solution = parse(new_sol, task.type_request)
+            task.solution = dsl.parse_program(new_sol, task.type_request)
             continue
         size = new_sol.count(" ") + 1
         if size < task.solution.length():
             saved += task.solution.length() - size
-            task.solution = parse(new_sol, task.type_request)
+            task.solution = dsl.parse_program(new_sol, task.type_request)
             replaced += 1
 
     print("done in", c.elapsed_time(), "s")

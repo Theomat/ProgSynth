@@ -2,7 +2,7 @@ import copy
 from typing import Mapping, Optional, List as TList, Set
 
 from synth.syntax.type_system import Type, Arrow, List
-from synth.syntax.program import Primitive
+from synth.syntax.program import Function, Primitive, Program, Variable
 
 
 class DSL:
@@ -74,3 +74,37 @@ class DSL:
         return isinstance(o, DSL) and set(self.list_primitives) == set(
             o.list_primitives
         )
+
+    def parse_program(self, program: str, type_request: Type) -> Program:
+        """
+        Parse a program from its string representation given the type request.
+        """
+        if " " in program:
+            parts = list(
+                map(lambda p: self.parse_program(p, type_request), program.split(" "))
+            )
+
+            def parse_stack(l: TList[Program]) -> Program:
+                if len(l) == 1:
+                    return l[0]
+                current = l.pop(0)
+                if isinstance(current.type, Arrow):
+                    args = [parse_stack(l) for _ in current.type.arguments()]
+                    return Function(current, args)
+                return current
+
+            sol = parse_stack(parts)
+            assert str(sol) == program
+            return sol
+        else:
+            program = program.strip("()")
+            for P in self.list_primitives:
+                if P.primitive == program:
+                    return P
+            if program.startswith("var"):
+                varno = int(program[3:])
+                vart = type_request
+                if isinstance(type_request, Arrow):
+                    vart = type_request.arguments()[varno]
+                return Variable(varno, vart)
+            assert False, f"can't parse: {program}"
