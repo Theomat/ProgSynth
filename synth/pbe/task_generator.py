@@ -40,6 +40,7 @@ class TaskGenerator:
         pcfgs: Iterable[ConcretePCFG],
         output_validator: Callable[[Any], bool],
         max_tries: int = 100,
+        uniques: bool = False,
         skip_exceptions: Optional[Set[PythonType]] = None,
     ) -> None:
         self.input_generator = input_generator
@@ -50,6 +51,8 @@ class TaskGenerator:
         self.max_tries = max_tries
         self.output_validator = output_validator
         self.skip_exceptions = skip_exceptions or set()
+        self.uniques = uniques
+        self.seen: Set[Program] = set()
 
         self._failed_types: Set[Type] = set()
         # For statistics
@@ -61,11 +64,16 @@ class TaskGenerator:
             0 if not isinstance(type_request, Arrow) else len(type_request.arguments())
         )
         solution: Program = self.type2pcfg[type_request].sample_program()
+        while solution in self.seen:
+            solution = self.type2pcfg[type_request].sample_program()
         tries: int = 0
         var_used = len(solution.used_variables())
         best = solution
         while var_used < nargs and tries < self.max_tries:
             solution = self.type2pcfg[type_request].sample_program()
+            while solution in self.seen:
+                solution = self.type2pcfg[type_request].sample_program()
+
             tries += 1
             n = len(solution.used_variables())
             if n > var_used:
@@ -107,7 +115,7 @@ class TaskGenerator:
                     continue
                 else:
                     raise e
-            if self.output_validator(output):
+            if self.output_validator(output) and output not in outputs:
                 inputs.append(new_input)
                 outputs.append(output)
                 if len(inputs) >= samples:
@@ -122,6 +130,8 @@ class TaskGenerator:
             return self.generate_task()
         self._failed_types = set()
         self.generated_types[type_request] += 1
+        if self.uniques:
+            self.seen.add(solution)
         return Task(
             type_request,
             PBE([Example(inp, out) for inp, out in zip(inputs, outputs)]),
