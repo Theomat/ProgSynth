@@ -83,18 +83,40 @@ class DSL:
             parts = list(
                 map(lambda p: self.parse_program(p, type_request), program.split(" "))
             )
+            function_calls: TList[int] = []
+            level = 0
+            levels: TList[int] = []
+            elements = program.split(" ")
+            for element in elements:
+                if level > 0:
+                    function_calls[levels[-1]] += 1
+                function_calls.append(0)
+                if element.startswith("("):
+                    level += 1
+                    levels.append(len(function_calls) - 1)
+                end = 1
+                while element[-end] == ")":
+                    level -= 1
+                    end += 1
+                    levels.pop()
 
-            def parse_stack(l: TList[Program]) -> Program:
+            def parse_stack(l: TList[Program], function_calls: TList[int]) -> Program:
                 if len(l) == 1:
                     return l[0]
                 current = l.pop(0)
-                if isinstance(current.type, Arrow):
-                    args = [parse_stack(l) for _ in current.type.arguments()]
+                f_call = function_calls.pop(0)
+                if isinstance(current.type, Arrow) and f_call > 0:
+                    args = [
+                        parse_stack(l, function_calls)
+                        for _ in current.type.arguments()[:f_call]
+                    ]
                     return Function(current, args)
                 return current
 
-            sol = parse_stack(parts)
-            assert str(sol) == program
+            sol = parse_stack(parts, function_calls)
+            assert (
+                str(sol) == program
+            ), f"Failed parsing:{program} got:{sol} type request:{type_request} obtained:{sol.type}"
             return sol
         else:
             program = program.strip("()")
