@@ -11,6 +11,7 @@ generalized_to_re = {
     "O": "[^A-Za-z0-9]",
     "W": "\s",
     "begin": "",
+    ".": "."
 }
 
 

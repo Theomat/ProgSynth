@@ -145,6 +145,7 @@ torch.manual_seed(seed)
 # ================================
 max_list_length = None
 upper_bound_type_size = 10
+dsl_constant_types = set()
 if dsl_name == DEEPCODER:
     from deepcoder.deepcoder import dsl, evaluator, lexicon
 
@@ -161,8 +162,9 @@ elif dsl_name == CALCULATOR:
     from calculator.calculator import dsl, lexicon
     upper_bound_type_size = 5
 elif dsl_name == TRANSDUCTION:
-    from transduction.transduction import dsl, lexicon
+    from transduction.transduction import dsl, lexicon, constant_types
     upper_bound_type_size = 5
+    dsl_constant_types = constant_types 
 else:
     print("Unknown dsl:", dsl_name, file=sys.stderr)
     sys.exit(1)
@@ -197,8 +199,8 @@ all_type_requests = full_dataset.type_requests()
 if all(task.solution is not None for task in full_dataset):
     max_depth = max(task.solution.depth() for task in full_dataset)
 else:
-    max_depth = 12  # TODO: set as parameter
-cfgs = [ConcreteCFG.from_dsl(dsl, t, max_depth, upper_bound_type_size=upper_bound_type_size) for t in all_type_requests]
+    max_depth = 15  # TODO: set as parameter
+cfgs = [ConcreteCFG.from_dsl(dsl, t, max_depth, upper_bound_type_size=upper_bound_type_size, constant_types=dsl_constant_types) for t in all_type_requests]
 print(f"{len(all_type_requests)} type requests supported.")
 print(f"Lexicon: [{min(lexicon)};{max(lexicon)}]")
 
@@ -239,18 +241,23 @@ def get_batch_of_tasks() -> List[Task[PBE]]:
     global dataset_index
     batch = full_dataset[dataset_index : dataset_index + batch_size]
     dataset_index += batch_size
-    return batch
+    copy = []
+    for task in batch:
+        if task.solution is not None:
+            copy.append(task)
+    return copy
 
 
 def do_batch(iter_number: int) -> None:
     batch = get_batch_of_tasks()
     batch_programs = [task.solution for task in batch]
     # Logging
-    writer.add_scalar(
-        "program/depth", np.mean([p.depth() for p in batch_programs]), iter_number
-    )
-    mean_length = np.mean([p.length() for p in batch_programs])
-    writer.add_scalar("program/length", mean_length, iter_number)
+    if all([p is not None for p in batch_programs]):
+        writer.add_scalar(
+            "program/depth", np.mean([p.depth() for p in batch_programs]), iter_number
+        )
+        mean_length = np.mean([p.length() for p in batch_programs])
+        writer.add_scalar("program/length", mean_length, iter_number)
     with chrono.clock("train.do_batch.inference"):
         batch_outputs: Tensor = predictor(batch)
     with chrono.clock("train.do_batch.tensor2pcfg"):

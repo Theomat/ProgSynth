@@ -1,0 +1,3304 @@
+[
+    {
+        "program": "STRING|O|tail,0,1",
+        "examples": [
+            {
+                "inputs": [
+                    "Ducati125.+108.Rudolf"
+                ],
+                "output": "+108.Rudolf"
+            },
+            {
+                "inputs": [
+                    "Mackenzie.MA.R.673"
+                ],
+                "output": "MA.R.673"
+            },
+            {
+                "inputs": [
+                    "University.Andrew"
+                ],
+                "output": "Andrew"
+            },
+            {
+                "inputs": [
+                    "35.206.Nancy.334"
+                ],
+                "output": "206.Nancy.334"
+            }
+        ],
+        "constants": [
+            "."
+        ]
+    },
+    {
+        "program": "STRING|O|head,0,1",
+        "examples": [
+            {
+                "inputs": [
+                    "199.+115.+52"
+                ],
+                "output": "199"
+            },
+            {
+                "inputs": [
+                    "O.066"
+                ],
+                "output": "O"
+            },
+            {
+                "inputs": [
+                    "197.200"
+                ],
+                "output": "197"
+            },
+            {
+                "inputs": [
+                    "102.+132"
+                ],
+                "output": "102"
+            }
+        ],
+        "constants": [
+            "."
+        ]
+    },
+    {
+        "program": "STRING|O|cste|concat_cste,0,2|tail,3,1|head,4,1",
+        "examples": [
+            {
+                "inputs": [
+                    "Bobo.Marquess.21.119"
+                ],
+                "output": "Marquess"
+            },
+            {
+                "inputs": [
+                    "83.Ramthun.+195"
+                ],
+                "output": "Ramthun"
+            },
+            {
+                "inputs": [
+                    "UIUC.Lakenya"
+                ],
+                "output": "Lakenya"
+            },
+            {
+                "inputs": [
+                    "Lakenya.Maryland.+138"
+                ],
+                "output": "Maryland"
+            }
+        ],
+        "constants": [
+            "."
+        ]
+    },
+    {
+        "program": "NO SOLUTION|nth (n=-1) word delimited by '.' [VAR LIST SIZE]",
+        "examples": [
+            {
+                "inputs": [
+                    "California.E"
+                ],
+                "output": "E"
+            },
+            {
+                "inputs": [
+                    "FreeHafer.+188"
+                ],
+                "output": "+188"
+            },
+            {
+                "inputs": [
+                    "684.Cruz.+197"
+                ],
+                "output": "+197"
+            },
+            {
+                "inputs": [
+                    "620.Lara"
+                ],
+                "output": "Lara"
+            }
+        ],
+        "constants": [
+            "."
+        ]
+    },
+    {
+        "program": "STRING|O|tail,0,1",
+        "examples": [
+            {
+                "inputs": [
+                    "Dr,Alida,Acura100,Brescia"
+                ],
+                "output": "Alida,Acura100,Brescia"
+            },
+            {
+                "inputs": [
+                    "Malissa,+130"
+                ],
+                "output": "+130"
+            },
+            {
+                "inputs": [
+                    "F,18,401"
+                ],
+                "output": "18,401"
+            },
+            {
+                "inputs": [
+                    "MI,Akiyama,Edison"
+                ],
+                "output": "Akiyama,Edison"
+            }
+        ],
+        "constants": [
+            ","
+        ]
+    },
+    {
+        "program": "STRING|O|head,0,1",
+        "examples": [
+            {
+                "inputs": [
+                    "358,Alida"
+                ],
+                "output": "358"
+            },
+            {
+                "inputs": [
+                    "245,200"
+                ],
+                "output": "245"
+            },
+            {
+                "inputs": [
+                    "Madelaine,Spagnoli,Ducati"
+                ],
+                "output": "Madelaine"
+            },
+            {
+                "inputs": [
+                    "701,+197,980,Hage"
+                ],
+                "output": "701"
+            }
+        ],
+        "constants": [
+            ","
+        ]
+    },
+    {
+        "program": "STRING|O|$|cste|compose,1,2|concat_cste,0,3|tail,5,4|head,6,1",
+        "examples": [
+            {
+                "inputs": [
+                    "TX,T"
+                ],
+                "output": "T"
+            },
+            {
+                "inputs": [
+                    "Latimore,Rice,Temple,+196"
+                ],
+                "output": "Rice"
+            },
+            {
+                "inputs": [
+                    "10,Annalisa,+151"
+                ],
+                "output": "Annalisa"
+            },
+            {
+                "inputs": [
+                    "+144,000,Hornak,Q"
+                ],
+                "output": "000"
+            }
+        ],
+        "constants": [
+            ","
+        ]
+    },
+    {
+        "program": "NO SOLUTION| nth (n=-1) word delimited by ',' [VAR LIST SIZE]",
+        "examples": [
+            {
+                "inputs": [
+                    "Junkin,R"
+                ],
+                "output": "R"
+            },
+            {
+                "inputs": [
+                    "061,52"
+                ],
+                "output": "52"
+            },
+            {
+                "inputs": [
+                    "566,+143,of,10"
+                ],
+                "output": "10"
+            },
+            {
+                "inputs": [
+                    "+130,+141,872,+6"
+                ],
+                "output": "+6"
+            }
+        ],
+        "constants": [
+            ","
+        ]
+    },
+    {
+        "program": "STRING|W|tail,0,1",
+        "examples": [
+            {
+                "inputs": [
+                    "E Edison +163 52"
+                ],
+                "output": "Edison +163 52"
+            },
+            {
+                "inputs": [
+                    "Penn Hornak"
+                ],
+                "output": "Hornak"
+            },
+            {
+                "inputs": [
+                    "Maryann +9 Rowden Reily"
+                ],
+                "output": "+9 Rowden Reily"
+            },
+            {
+                "inputs": [
+                    "I Honda550 Babiarz"
+                ],
+                "output": "Honda550 Babiarz"
+            }
+        ],
+        "constants": [
+            " ",
+            "on ",
+            "on"
+        ]
+    },
+    {
+        "program": "STRING|W|head,0,1",
+        "examples": [
+            {
+                "inputs": [
+                    "Cornell Phillip Barbara J"
+                ],
+                "output": "Cornell"
+            },
+            {
+                "inputs": [
+                    "Nancy Houston"
+                ],
+                "output": "Nancy"
+            },
+            {
+                "inputs": [
+                    "377 209 +118"
+                ],
+                "output": "377"
+            },
+            {
+                "inputs": [
+                    "Acura Urbana"
+                ],
+                "output": "Acura"
+            }
+        ],
+        "constants": [
+            " "
+        ]
+    },
+    {
+        "program": "STRING|W|cste|concat_cste,0,2|tail,3,1|head,4,1",
+        "examples": [
+            {
+                "inputs": [
+                    "598 849 854 Kimberley"
+                ],
+                "output": "849"
+            },
+            {
+                "inputs": [
+                    "Angeles +115 +140"
+                ],
+                "output": "+115"
+            },
+            {
+                "inputs": [
+                    "Jenee 21 80 Soderstrom"
+                ],
+                "output": "21"
+            },
+            {
+                "inputs": [
+                    "505 +46"
+                ],
+                "output": "+46"
+            }
+        ],
+        "constants": [
+            " "
+        ]
+    },
+    {
+        "program": "STRING|W|N|tail,0,2|tail,3,1",
+        "examples": [
+            {
+                "inputs": [
+                    "B 25 Jeanice"
+                ],
+                "output": "Jeanice"
+            },
+            {
+                "inputs": [
+                    "Bradford 971 +180"
+                ],
+                "output": "+180"
+            },
+            {
+                "inputs": [
+                    "Maryann 705 Barbara"
+                ],
+                "output": "Barbara"
+            },
+            {
+                "inputs": [
+                    "Karrie Covelli 882 +129"
+                ],
+                "output": "+129"
+            }
+        ],
+        "constants": [
+            " "
+        ]
+    },
+    {
+        "program": "STRING|O|tail,0,1",
+        "examples": [
+            {
+                "inputs": [
+                    "Bogle(Jani"
+                ],
+                "output": "Jani"
+            },
+            {
+                "inputs": [
+                    "H(+7(Cortes(+169"
+                ],
+                "output": "+7(Cortes(+169"
+            },
+            {
+                "inputs": [
+                    "Ducati125(of(588(843"
+                ],
+                "output": "of(588(843"
+            },
+            {
+                "inputs": [
+                    "N(Annalisa(Houston"
+                ],
+                "output": "Annalisa(Houston"
+            }
+        ],
+        "constants": [
+            "("
+        ]
+    },
+    {
+        "program": "STRING|O|$|cste|compose,1,2|concat_cste,0,3|head,5,4",
+        "examples": [
+            {
+                "inputs": [
+                    "Latimore(Joaquin(Bobo(G"
+                ],
+                "output": "Latimore"
+            },
+            {
+                "inputs": [
+                    "197(58"
+                ],
+                "output": "197"
+            },
+            {
+                "inputs": [
+                    "+118(Mulloy(56"
+                ],
+                "output": "+118"
+            },
+            {
+                "inputs": [
+                    "943(65(216(CA"
+                ],
+                "output": "943"
+            }
+        ],
+        "constants": [
+            "("
+        ]
+    },
+    {
+        "program": "STRING|O|$|cste|compose,1,2|concat_cste,0,3|tail,5,4|head,6,1",
+        "examples": [
+            {
+                "inputs": [
+                    "+6(Micha(167"
+                ],
+                "output": "Micha"
+            },
+            {
+                "inputs": [
+                    "Nancy(Beata(512(864"
+                ],
+                "output": "Beata"
+            },
+            {
+                "inputs": [
+                    "Rice(Partida(894(40"
+                ],
+                "output": "Partida"
+            },
+            {
+                "inputs": [
+                    "R(Miah(Arbor"
+                ],
+                "output": "Miah"
+            }
+        ],
+        "constants": [
+            "a(",
+            "("
+        ]
+    },
+    {
+        "program": "NO SOLUTION| nth (n=-1) word delimited by '(' [VAR LIST SIZE]",
+        "examples": [
+            {
+                "inputs": [
+                    "Neil(Heintz(Malissa(Berkeley"
+                ],
+                "output": "Berkeley"
+            },
+            {
+                "inputs": [
+                    "+115(+106"
+                ],
+                "output": "+106"
+            },
+            {
+                "inputs": [
+                    "MA(B(+95"
+                ],
+                "output": "+95"
+            },
+            {
+                "inputs": [
+                    "Arbor(Scalia(Seamons(847"
+                ],
+                "output": "847"
+            }
+        ],
+        "constants": [
+            "("
+        ]
+    },
+    {
+        "program": "STRING|O|tail,0,1",
+
+        "examples": [
+            {
+                "inputs": [
+                    "Sergienko)009)Jacquiline)Sergienko"
+                ],
+                "output": "009)Jacquiline)Sergienko"
+            },
+            {
+                "inputs": [
+                    "Tobias)986)FreeHafer)+9"
+                ],
+                "output": "986)FreeHafer)+9"
+            },
+            {
+                "inputs": [
+                    "473)Phialdelphia"
+                ],
+                "output": "Phialdelphia"
+            },
+            {
+                "inputs": [
+                    "144)Honda550)Hopkins"
+                ],
+                "output": "Honda550)Hopkins"
+            }
+        ],
+        "constants": [
+            ")"
+        ]
+    },
+    {
+        "program": "STRING|O|$|cste|compose,1,2|concat_cste,0,3|head,5,4",
+        "examples": [
+            {
+                "inputs": [
+                    "468)376"
+                ],
+                "output": "468"
+            },
+            {
+                "inputs": [
+                    "+194)Scalia)Montiel)Ghoston"
+                ],
+                "output": "+194"
+            },
+            {
+                "inputs": [
+                    "50)+9"
+                ],
+                "output": "50"
+            },
+            {
+                "inputs": [
+                    "386)Georgina)720)141"
+                ],
+                "output": "386"
+            }
+        ],
+        "constants": [
+            ")"
+        ]
+    },
+    {
+        "program": "STRING|O|cste|concat_cste,0,2|tail,3,1|head,4,1",
+        "examples": [
+            {
+                "inputs": [
+                    "141)Lashanda"
+                ],
+                "output": "Lashanda"
+            },
+            {
+                "inputs": [
+                    "Bess)Berkeley"
+                ],
+                "output": "Berkeley"
+            },
+            {
+                "inputs": [
+                    "S)2)86)178"
+                ],
+                "output": "2"
+            },
+            {
+                "inputs": [
+                    "42)597)J"
+                ],
+                "output": "597"
+            }
+        ],
+        "constants": [
+            ")"
+        ]
+    },
+    {
+        "program": "NO SOLUTION| nth (n=-1) word delimited by ')' [VAR LIST SIZE]",
+        "examples": [
+            {
+                "inputs": [
+                    "268)14)+104"
+                ],
+                "output": "+104"
+            },
+            {
+                "inputs": [
+                    "Q)+108)Desiree"
+                ],
+                "output": "Desiree"
+            },
+            {
+                "inputs": [
+                    "Brescia)A)56"
+                ],
+                "output": "56"
+            },
+            {
+                "inputs": [
+                    "+132)Annalisa)Mcgaughey)Ferrari"
+                ],
+                "output": "Ferrari"
+            }
+        ],
+        "constants": [
+            ")"
+        ]
+    },
+    {
+        "program": "STRING|O|tail,0,1",
+        "examples": [
+            {
+                "inputs": [
+                    "University-Sergienko"
+                ],
+                "output": "Sergienko"
+            },
+            {
+                "inputs": [
+                    "29-Ferrari250"
+                ],
+                "output": "Ferrari250"
+            },
+            {
+                "inputs": [
+                    "Soderstrom-Scalia"
+                ],
+                "output": "Scalia"
+            },
+            {
+                "inputs": [
+                    "K-358-Jacquiline-Columbia"
+                ],
+                "output": "358-Jacquiline-Columbia"
+            }
+        ],
+        "constants": [
+            "-",
+            "ie"
+        ]
+    },
+    {
+        "program": "STRING|O|$|cste|compose,1,2|concat_cste,0,3|head,5,4",
+        "examples": [
+            {
+                "inputs": [
+                    "Park-+183-186"
+                ],
+                "output": "Park"
+            },
+            {
+                "inputs": [
+                    "CA-Vena-23-Hopkins"
+                ],
+                "output": "CA"
+            },
+            {
+                "inputs": [
+                    "Edison-29-938-W"
+                ],
+                "output": "Edison"
+            },
+            {
+                "inputs": [
+                    "+9-Urbana"
+                ],
+                "output": "+9"
+            }
+        ],
+        "constants": [
+            "-"
+        ]
+    },
+    {
+        "program": "STRING|O|cste|concat_cste,0,2|tail,3,1|head,4,1",
+        "examples": [
+            {
+                "inputs": [
+                    "Ducati-969-+144-Olague"
+                ],
+                "output": "969"
+            },
+            {
+                "inputs": [
+                    "75-Rice"
+                ],
+                "output": "Rice"
+            },
+            {
+                "inputs": [
+                    "Barbara-Temple-Samuel"
+                ],
+                "output": "Temple"
+            },
+            {
+                "inputs": [
+                    "C-98"
+                ],
+                "output": "98"
+            }
+        ],
+        "constants": [
+            "-"
+        ]
+    },
+    {
+        "program": "NO SOLUTION| nth (n=-1) word delimited by '-' [VAR LIST SIZE]",
+        "examples": [
+            {
+                "inputs": [
+                    "B-23"
+                ],
+                "output": "23"
+            },
+            {
+                "inputs": [
+                    "Lango-Desiree"
+                ],
+                "output": "Desiree"
+            },
+            {
+                "inputs": [
+                    "Pennsylvania-Marquess"
+                ],
+                "output": "Marquess"
+            },
+            {
+                "inputs": [
+                    "W-517-+199"
+                ],
+                "output": "+199"
+            }
+        ],
+        "constants": [
+            "-"
+        ]
+    },
+    {
+        "program": "STRING|STRING|cste|concat_cste,0,2|concat,3,1",
+        "examples": [
+            {
+                "inputs": [
+                    "+198",
+                    "736"
+                ],
+                "output": "+198.736"
+            },
+            {
+                "inputs": [
+                    "654",
+                    "+138"
+                ],
+                "output": "654.+138"
+            },
+            {
+                "inputs": [
+                    "176",
+                    "716"
+                ],
+                "output": "176.716"
+            },
+            {
+                "inputs": [
+                    "+176",
+                    "741"
+                ],
+                "output": "+176.741"
+            }
+        ],
+        "constants": [
+            "."
+        ]
+    },
+    {
+        "program": "STRING|STRING|cste|concat_cste,0,2|concat,3,1",
+        "examples": [
+            {
+                "inputs": [
+                    "Ducati250",
+                    "611"
+                ],
+                "output": "Ducati250,611"
+            },
+            {
+                "inputs": [
+                    "P",
+                    "+188"
+                ],
+                "output": "P,+188"
+            },
+            {
+                "inputs": [
+                    "45",
+                    "+9"
+                ],
+                "output": "45,+9"
+            },
+            {
+                "inputs": [
+                    "399",
+                    "+138"
+                ],
+                "output": "399,+138"
+            }
+        ],
+        "constants": [
+            ","
+        ]
+    },
+    {
+        "program": "STRING|STRING|cste|concat_cste,0,2|concat,3,1",
+        "examples": [
+            {
+                "inputs": [
+                    "140",
+                    "+180"
+                ],
+                "output": "140 +180"
+            },
+            {
+                "inputs": [
+                    "684",
+                    "Ghoston"
+                ],
+                "output": "684 Ghoston"
+            },
+            {
+                "inputs": [
+                    "+144",
+                    "N"
+                ],
+                "output": "+144 N"
+            },
+            {
+                "inputs": [
+                    "Spell",
+                    "Babiarz"
+                ],
+                "output": "Spell Babiarz"
+            }
+        ],
+        "constants": [
+            " "
+        ]
+    },
+    {
+        "program": "STRING|STRING|cste|concat_cste,0,2|concat,3,1",
+        "examples": [
+            {
+                "inputs": [
+                    "MD",
+                    "Nancy"
+                ],
+                "output": "MD(Nancy"
+            },
+            {
+                "inputs": [
+                    "+196",
+                    "Spell"
+                ],
+                "output": "+196(Spell"
+            },
+            {
+                "inputs": [
+                    "Berkeley",
+                    "557"
+                ],
+                "output": "Berkeley(557"
+            },
+            {
+                "inputs": [
+                    "29",
+                    "548"
+                ],
+                "output": "29(548"
+            }
+        ],
+        "constants": [
+            "("
+        ]
+    },
+    {
+        "program": "STRING|STRING|cste|concat_cste,0,2|concat,3,1",
+        "examples": [
+            {
+                "inputs": [
+                    "075",
+                    "+80"
+                ],
+                "output": "075)+80"
+            },
+            {
+                "inputs": [
+                    "Heintz",
+                    "Babiarz"
+                ],
+                "output": "Heintz)Babiarz"
+            },
+            {
+                "inputs": [
+                    "University",
+                    "PA"
+                ],
+                "output": "University)PA"
+            },
+            {
+                "inputs": [
+                    "Jeanice",
+                    "+194"
+                ],
+                "output": "Jeanice)+194"
+            }
+        ],
+        "constants": [
+            ")"
+        ]
+    },
+    {
+        "program": "STRING|STRING|cste|concat_cste,0,2|concat,3,1",
+        "examples": [
+            {
+                "inputs": [
+                    "+189",
+                    "491"
+                ],
+                "output": "+189-491"
+            },
+            {
+                "inputs": [
+                    "048",
+                    "244"
+                ],
+                "output": "048-244"
+            },
+            {
+                "inputs": [
+                    "Jenee",
+                    "Jenee"
+                ],
+                "output": "Jenee-Jenee"
+            },
+            {
+                "inputs": [
+                    "151",
+                    "UC"
+                ],
+                "output": "151-UC"
+            }
+        ],
+        "constants": [
+            "-"
+        ]
+    },
+    {
+        "program": "STRING|.|$|compose,1,2|head,0,3",
+        "examples": [
+            {
+                "inputs": [
+                    "+129"
+                ],
+                "output": "+12"
+            },
+            {
+                "inputs": [
+                    "CA"
+                ],
+                "output": "C"
+            },
+            {
+                "inputs": [
+                    "Mariel"
+                ],
+                "output": "Marie"
+            },
+            {
+                "inputs": [
+                    "+195"
+                ],
+                "output": "+19"
+            }
+        ],
+        "constants": []
+    },
+    {
+        "program": "STRING|.|$|compose,1,1|compose,3,2|head,0,4",
+        "examples": [
+            {
+                "inputs": [
+                    "+180"
+                ],
+                "output": "+1"
+            },
+            {
+                "inputs": [
+                    "Marquess"
+                ],
+                "output": "Marque"
+            },
+            {
+                "inputs": [
+                    "280"
+                ],
+                "output": "2"
+            },
+            {
+                "inputs": [
+                    "732"
+                ],
+                "output": "7"
+            }
+        ],
+        "constants": []
+    },
+    {
+        "program": "STRING|.|compose,1,1|match,0,2",
+        "examples": [
+            {
+                "inputs": [
+                    "Bess"
+                ],
+                "output": "Be"
+            },
+            {
+                "inputs": [
+                    "Montiel"
+                ],
+                "output": "Mo"
+            },
+            {
+                "inputs": [
+                    "+104"
+                ],
+                "output": "+1"
+            },
+            {
+                "inputs": [
+                    "+167"
+                ],
+                "output": "+1"
+            }
+        ],
+        "constants": []
+    },
+    {
+        "program": "STRING|.|$|compose,1,1|compose,3,1|compose,4,2|head,0,5",
+        "examples": [
+            {
+                "inputs": [
+                    "Rowden"
+                ],
+                "output": "Row"
+            },
+            {
+                "inputs": [
+                    "+188"
+                ],
+                "output": "+"
+            },
+            {
+                "inputs": [
+                    "Desiree"
+                ],
+                "output": "Desi"
+            },
+            {
+                "inputs": [
+                    "Launa"
+                ],
+                "output": "La"
+            }
+        ],
+        "constants": []
+    },
+    {
+        "program": "STRING|.|compose,1,1|compose,2,1|match,0,3",
+        "examples": [
+            {
+                "inputs": [
+                    "847"
+                ],
+                "output": "847"
+            },
+            {
+                "inputs": [
+                    "Maryann"
+                ],
+                "output": "Mar"
+            },
+            {
+                "inputs": [
+                    "+183"
+                ],
+                "output": "+18"
+            },
+            {
+                "inputs": [
+                    "655"
+                ],
+                "output": "655"
+            }
+        ],
+        "constants": []
+    },
+    {
+        "program": "STRING|.|$|compose,1,1|compose,3,1|compose,4,1|compose,5,2|head,0,6",
+        "examples": [
+            {
+                "inputs": [
+                    "Mackenzie"
+                ],
+                "output": "Macke"
+            },
+            {
+                "inputs": [
+                    "Ducati"
+                ],
+                "output": "Du"
+            },
+            {
+                "inputs": [
+                    "Maryann"
+                ],
+                "output": "Mar"
+            },
+            {
+                "inputs": [
+                    "Neil"
+                ],
+                "output": ""
+            }
+        ],
+        "constants": []
+    },
+    {
+        "program": "STRING|.|compose,1,1|compose,2,1|compose,3,1|match,0,4",
+        "examples": [
+            {
+                "inputs": [
+                    "Mariya"
+                ],
+                "output": "Mari"
+            },
+            {
+                "inputs": [
+                    "+105"
+                ],
+                "output": "+105"
+            },
+            {
+                "inputs": [
+                    "+185"
+                ],
+                "output": "+185"
+            },
+            {
+                "inputs": [
+                    "Elias"
+                ],
+                "output": "Elia"
+            }
+        ],
+        "constants": []
+    },
+    {
+        "program": "STRING|.|$|compose,1,1|compose,3,1|compose,4,1|compose,5,1|compose,6,2|head,0,7",
+        "examples": [
+            {
+                "inputs": [
+                    "Aylward"
+                ],
+                "output": "Ay"
+            },
+            {
+                "inputs": [
+                    "Drexel"
+                ],
+                "output": "D"
+            },
+            {
+                "inputs": [
+                    "Beata"
+                ],
+                "output": ""
+            },
+            {
+                "inputs": [
+                    "Ghoston"
+                ],
+                "output": "Gh"
+            }
+        ],
+        "constants": []
+    },
+    {
+        "program": "STRING|.|compose,1,1|compose,2,1|compose,3,1|compose,4,1|match,0,5",
+        "examples": [
+            {
+                "inputs": [
+                    "Hornak"
+                ],
+                "output": "Horna"
+            },
+            {
+                "inputs": [
+                    "Acura"
+                ],
+                "output": "Acura"
+            },
+            {
+                "inputs": [
+                    "Ducati100"
+                ],
+                "output": "Ducat"
+            },
+            {
+                "inputs": [
+                    "Rudolf"
+                ],
+                "output": "Rudol"
+            }
+        ],
+        "constants": []
+    },
+    {
+        "program": "NO SOLUTION|First letters of words (I) [VAR LIST SIZE]",
+        "examples": [
+            {
+                "inputs": [
+                    "+174 881"
+                ],
+                "output": "+8"
+            },
+            {
+                "inputs": [
+                    "+143 +144 024"
+                ],
+                "output": "++0"
+            },
+            {
+                "inputs": [
+                    "29 +2 +151 50"
+                ],
+                "output": "2++5"
+            },
+            {
+                "inputs": [
+                    "T +197"
+                ],
+                "output": "T+"
+            }
+        ],
+        "constants": [
+            " ",
+            "+1"
+        ]
+    },
+    {
+        "program": "NO SOLUTION|First letters of words (II) [VAR LIST SIZE]",
+        "examples": [
+            {
+                "inputs": [
+                    "+42 +98 +115 Junkin"
+                ],
+                "output": "+++J"
+            },
+            {
+                "inputs": [
+                    "539 027 42"
+                ],
+                "output": "504"
+            },
+            {
+                "inputs": [
+                    "62 Temple"
+                ],
+                "output": "6T"
+            },
+            {
+                "inputs": [
+                    "Cambridge +7 +140 29"
+                ],
+                "output": "C++2"
+            }
+        ],
+        "constants": [
+            " ",
+            "2 "
+        ]
+    },
+    {
+        "program": "NO SOLUTION|First letters of words (III) [VAR LIST SIZE]",
+        "examples": [
+            {
+                "inputs": [
+                    "Coralee 862"
+                ],
+                "output": "C8"
+            },
+            {
+                "inputs": [
+                    "California +158 Ghoston 82"
+                ],
+                "output": "C+G8"
+            },
+            {
+                "inputs": [
+                    "Jeff Lara Karrie"
+                ],
+                "output": "JLK"
+            },
+            {
+                "inputs": [
+                    "64 836 197 Michigan"
+                ],
+                "output": "681M"
+            }
+        ],
+        "constants": [
+            " "
+        ]
+    },
+    {
+        "program": "NO SOLUTION|First letters of words (IIII) [VAR LIST SIZE]",
+        "examples": [
+            {
+                "inputs": [
+                    "+172 Penn Chilcott E"
+                ],
+                "output": "+PCE"
+            },
+            {
+                "inputs": [
+                    "Olague Bradford +115 N"
+                ],
+                "output": "OB+N"
+            },
+            {
+                "inputs": [
+                    "+155 Covelli Constable 405"
+                ],
+                "output": "+CC4"
+            },
+            {
+                "inputs": [
+                    "Kotas 028"
+                ],
+                "output": "K0"
+            }
+        ],
+        "constants": [
+            " "
+        ]
+    },
+    {
+        "program": "NO SOLUTION|First letters of words (IIIII) [VAR LIST SIZE]",
+        "examples": [
+            {
+                "inputs": [
+                    "Launa Hornak"
+                ],
+                "output": "LH"
+            },
+            {
+                "inputs": [
+                    "504 Jeanice K"
+                ],
+                "output": "5JK"
+            },
+            {
+                "inputs": [
+                    "473 Nancy 980 166"
+                ],
+                "output": "4N91"
+            },
+            {
+                "inputs": [
+                    "Alaina Jacquiline"
+                ],
+                "output": "AJ"
+            }
+        ],
+        "constants": [
+            "na",
+            "na "
+        ]
+    },
+    {
+        "program": "NO SOLUTION|First letters of words (IIIIII) [VAR LIST SIZE]",
+        "examples": [
+            {
+                "inputs": [
+                    "21 of"
+                ],
+                "output": "2o"
+            },
+            {
+                "inputs": [
+                    "+172 University College"
+                ],
+                "output": "+UC"
+            },
+            {
+                "inputs": [
+                    "Beata R Rowden +2"
+                ],
+                "output": "BRR+"
+            },
+            {
+                "inputs": [
+                    "836 UIUC 608"
+                ],
+                "output": "8U6"
+            }
+        ],
+        "constants": [
+            " "
+        ]
+    },
+    {
+        "program": "STRING|W|.|cste|separate,0,2|head,4,1|concat_cste,5,3",
+        "examples": [
+            {
+                "inputs": [
+                    "Garrard"
+                ],
+                "output": "G."
+            },
+            {
+                "inputs": [
+                    "Pennsylvania"
+                ],
+                "output": "P."
+            },
+            {
+                "inputs": [
+                    "+198"
+                ],
+                "output": "+."
+            },
+            {
+                "inputs": [
+                    "Acura100"
+                ],
+                "output": "A."
+            }
+        ],
+        "constants": [
+            "."
+        ]
+    },
+    {
+        "program": "STRING|W|.|cste|separate,0,2|head,4,1|concat_cste,5,3",
+        "examples": [
+            {
+                "inputs": [
+                    "705"
+                ],
+                "output": "7,"
+            },
+            {
+                "inputs": [
+                    "Lain"
+                ],
+                "output": "L,"
+            },
+            {
+                "inputs": [
+                    "Irwin"
+                ],
+                "output": "I,"
+            },
+            {
+                "inputs": [
+                    "Mariel"
+                ],
+                "output": "M,"
+            }
+        ],
+        "constants": [
+            ","
+        ]
+    },
+    {
+        "program": "STRING|W|.|cste|separate,0,2|head,4,1|concat_cste,5,3",
+        "examples": [
+            {
+                "inputs": [
+                    "Harvard"
+                ],
+                "output": "H "
+            },
+            {
+                "inputs": [
+                    "051"
+                ],
+                "output": "0 "
+            },
+            {
+                "inputs": [
+                    "+174"
+                ],
+                "output": "+ "
+            },
+            {
+                "inputs": [
+                    "35"
+                ],
+                "output": "3 "
+            }
+        ],
+        "constants": [
+            " "
+        ]
+    },
+    {
+        "program": "STRING|W|.|cste|separate,0,2|head,4,1|concat_cste,5,3",
+        "examples": [
+            {
+                "inputs": [
+                    "Rowden"
+                ],
+                "output": "R("
+            },
+            {
+                "inputs": [
+                    "PA"
+                ],
+                "output": "P("
+            },
+            {
+                "inputs": [
+                    "Dermody"
+                ],
+                "output": "D("
+            },
+            {
+                "inputs": [
+                    "204"
+                ],
+                "output": "2("
+            }
+        ],
+        "constants": [
+            "("
+        ]
+    },
+    {
+        "program": "STRING|.|cste|match,0,1|concat_cste,3,2",
+        "examples": [
+            {
+                "inputs": [
+                    "Elias"
+                ],
+                "output": "E)"
+            },
+            {
+                "inputs": [
+                    "Q"
+                ],
+                "output": "Q)"
+            },
+            {
+                "inputs": [
+                    "Ducati250"
+                ],
+                "output": "D)"
+            },
+            {
+                "inputs": [
+                    "176"
+                ],
+                "output": "1)"
+            }
+        ],
+        "constants": [
+            ")"
+        ]
+    },
+    {
+        "program": "STRING|W|.|cste|match,0,2|concat_cste,4,3",
+        "examples": [
+            {
+                "inputs": [
+                    "C"
+                ],
+                "output": "C-"
+            },
+            {
+                "inputs": [
+                    "42"
+                ],
+                "output": "4-"
+            },
+            {
+                "inputs": [
+                    "959"
+                ],
+                "output": "9-"
+            },
+            {
+                "inputs": [
+                    "Vena"
+                ],
+                "output": "V-"
+            }
+        ],
+        "constants": [
+            "-"
+        ]
+    },
+    {
+        "program": "STRING|STRING|.|cste|match,0,2|match,1,2|concat_cste,4,3|concat,6,5|concat_cste,7,3",
+        "examples": [
+            {
+                "inputs": [
+                    "Park",
+                    "Eccleston"
+                ],
+                "output": "P.E."
+            },
+            {
+                "inputs": [
+                    "Storrs",
+                    "Hopkins"
+                ],
+                "output": "S.H."
+            },
+            {
+                "inputs": [
+                    "+196",
+                    "Jacquiline"
+                ],
+                "output": "+.J."
+            },
+            {
+                "inputs": [
+                    "119",
+                    "O"
+                ],
+                "output": "1.O."
+            }
+        ],
+        "constants": [
+            "."
+        ]
+    },
+    {
+        "program": "STRING|.|O|cste|head,0,2|tail,0,2|match,4,1|match,5,1|concat_cste,6,3|concat,8,7|concat_cste,9,3",
+        "examples": [
+            {
+                "inputs": [
+                    "47.Harvard"
+                ],
+                "output": "4.H."
+            },
+            {
+                "inputs": [
+                    "Constable.NY"
+                ],
+                "output": "C.N."
+            },
+            {
+                "inputs": [
+                    "856.+197"
+                ],
+                "output": "8.+."
+            },
+            {
+                "inputs": [
+                    "281.+198"
+                ],
+                "output": "2.+."
+            }
+        ],
+        "constants": [
+            "."
+        ]
+    },
+    {
+        "program": "STRING|STRING|.|cste|match,0,2|match,1,2|concat_cste,4,3|concat,6,5|concat_cste,7,3",
+        "examples": [
+            {
+                "inputs": [
+                    "Coralee",
+                    "Mariel"
+                ],
+                "output": "C.M."
+            },
+            {
+                "inputs": [
+                    "419",
+                    "UC"
+                ],
+                "output": "4.U."
+            },
+            {
+                "inputs": [
+                    "Babiarz",
+                    "35"
+                ],
+                "output": "B.3."
+            },
+            {
+                "inputs": [
+                    "Mariel",
+                    "7"
+                ],
+                "output": "M.7."
+            }
+        ],
+        "constants": [
+            "."
+        ]
+    },
+    {
+        "program": "NO SOLUTION|Abbreviate words separated by ',' [DOUBLE CONSTANTE]",
+        "examples": [
+            {
+                "inputs": [
+                    "Constable,+50"
+                ],
+                "output": "C.+."
+            },
+            {
+                "inputs": [
+                    "Philadelphia,Malissa"
+                ],
+                "output": "P.M."
+            },
+            {
+                "inputs": [
+                    "Bobo,+155"
+                ],
+                "output": "B.+."
+            },
+            {
+                "inputs": [
+                    "Vena,Acura"
+                ],
+                "output": "V.A."
+            }
+        ],
+        "constants": [
+            ",",
+            "."
+        ]
+    },
+    {
+        "program": "STRING|STRING|.|cste|match,0,2|match,1,2|concat_cste,4,3|concat,6,5|concat_cste,7,3",
+        "examples": [
+            {
+                "inputs": [
+                    "+151",
+                    "2"
+                ],
+                "output": "+.2."
+            },
+            {
+                "inputs": [
+                    "5",
+                    "771"
+                ],
+                "output": "5.7."
+            },
+            {
+                "inputs": [
+                    "433",
+                    "Philadelphia"
+                ],
+                "output": "4.P."
+            },
+            {
+                "inputs": [
+                    "Mackenzie",
+                    "62"
+                ],
+                "output": "M.6."
+            }
+        ],
+        "constants": [
+            "."
+        ]
+    },
+    {
+        "program": "NO SOLUTION|Abbreviate words separated by ' ' [DOUBLE CONSTANTE]",
+        "examples": [
+            {
+                "inputs": [
+                    "575 Haven"
+                ],
+                "output": "5.H."
+            },
+            {
+                "inputs": [
+                    "18 245"
+                ],
+                "output": "1.2."
+            },
+            {
+                "inputs": [
+                    "+176 Ducati100"
+                ],
+                "output": "+.D."
+            },
+            {
+                "inputs": [
+                    "949 50"
+                ],
+                "output": "9.5."
+            }
+        ],
+        "constants": [
+            " ",
+            "."
+        ]
+    },
+    {
+        "program": "STRING|STRING|.|cste|match,0,2|match,1,2|concat_cste,4,3|concat,6,5|concat_cste,7,3",
+        "examples": [
+            {
+                "inputs": [
+                    "+183",
+                    "Harvard"
+                ],
+                "output": "+.H."
+            },
+            {
+                "inputs": [
+                    "Angeles",
+                    "Ferrari"
+                ],
+                "output": "A.F."
+            },
+            {
+                "inputs": [
+                    "Teddy",
+                    "568"
+                ],
+                "output": "T.5."
+            },
+            {
+                "inputs": [
+                    "50",
+                    "Vena"
+                ],
+                "output": "5.V."
+            }
+        ],
+        "constants": [
+            "."
+        ]
+    },
+    {
+        "program": "NO SOLUTION|Abbreviate words separated by '(' [DOUBLE CONSTANTE]",
+        "examples": [
+            {
+                "inputs": [
+                    "Hornak(Spagnoli"
+                ],
+                "output": "H.S."
+            },
+            {
+                "inputs": [
+                    "Kotas(2"
+                ],
+                "output": "K.2."
+            },
+            {
+                "inputs": [
+                    "29(Salley"
+                ],
+                "output": "2.S."
+            },
+            {
+                "inputs": [
+                    "163(Mackenzie"
+                ],
+                "output": "1.M."
+            }
+        ],
+        "constants": [
+            ".",
+            "("
+        ]
+    },
+    {
+        "program": "STRING|STRING|.|cste|match,0,2|match,1,2|concat_cste,4,3|concat,6,5|concat_cste,7,3",
+        "examples": [
+            {
+                "inputs": [
+                    "6",
+                    "Philadelphia"
+                ],
+                "output": "6.P."
+            },
+            {
+                "inputs": [
+                    "J",
+                    "2"
+                ],
+                "output": "J.2."
+            },
+            {
+                "inputs": [
+                    "Phillip",
+                    "Q"
+                ],
+                "output": "P.Q."
+            },
+            {
+                "inputs": [
+                    "Withers",
+                    "779"
+                ],
+                "output": "W.7."
+            }
+        ],
+        "constants": [
+            "."
+        ]
+    },
+    {
+        "program": "NO SOLUTION|Abbreviate words separated by ')' [DOUBLE CONSTANTE]",
+        "examples": [
+            {
+                "inputs": [
+                    "Andrew)622"
+                ],
+                "output": "A.6."
+            },
+            {
+                "inputs": [
+                    "769)290"
+                ],
+                "output": "7.2."
+            },
+            {
+                "inputs": [
+                    "Latimore)+130"
+                ],
+                "output": "L.+."
+            },
+            {
+                "inputs": [
+                    "+132)Lara"
+                ],
+                "output": "+.L."
+            }
+        ],
+        "constants": [
+            ")",
+            "."
+        ]
+    },
+    {
+        "program": "STRING|STRING|.|cste|match,0,2|match,1,2|concat_cste,4,3|concat,6,5|concat_cste,7,3",
+        "examples": [
+            {
+                "inputs": [
+                    "75",
+                    "167"
+                ],
+                "output": "7.1."
+            },
+            {
+                "inputs": [
+                    "Haven",
+                    "Mackenzie"
+                ],
+                "output": "H.M."
+            },
+            {
+                "inputs": [
+                    "Samuel",
+                    "877"
+                ],
+                "output": "S.8."
+            },
+            {
+                "inputs": [
+                    "Cencici",
+                    "Launa"
+                ],
+                "output": "C.L."
+            }
+        ],
+        "constants": [
+            "."
+        ]
+    },
+    {
+        "program": "NO SOLUTION|Abbreviate words separated by '-' [DOUBLE CONSTANTE]",
+        "examples": [
+            {
+                "inputs": [
+                    "Kotas-Lashanda"
+                ],
+                "output": "K.L."
+            },
+            {
+                "inputs": [
+                    "541-698"
+                ],
+                "output": "5.6."
+            },
+            {
+                "inputs": [
+                    "Ramthun-10"
+                ],
+                "output": "R.1."
+            },
+            {
+                "inputs": [
+                    "E-155"
+                ],
+                "output": "E.1."
+            }
+        ],
+        "constants": [
+            "-",
+            "."
+        ]
+    },
+    {
+        "program": "STRING|STRING|concat,0,1",
+        "examples": [
+            {
+                "inputs": [
+                    "Malissa",
+                    "090"
+                ],
+                "output": "Malissa090"
+            },
+            {
+                "inputs": [
+                    "Ithaca",
+                    "Andria"
+                ],
+                "output": "IthacaAndria"
+            },
+            {
+                "inputs": [
+                    "046",
+                    "860"
+                ],
+                "output": "046860"
+            },
+            {
+                "inputs": [
+                    "Launa",
+                    "275"
+                ],
+                "output": "Launa275"
+            }
+        ],
+        "constants": []
+    },
+    {
+        "program": "STRING|STRING|concat,0,1",
+        "examples": [
+            {
+                "inputs": [
+                    "141",
+                    "2"
+                ],
+                "output": "1412"
+            },
+            {
+                "inputs": [
+                    "35",
+                    "905"
+                ],
+                "output": "35905"
+            },
+            {
+                "inputs": [
+                    "Hornak",
+                    "268"
+                ],
+                "output": "Hornak268"
+            },
+            {
+                "inputs": [
+                    "Gertude",
+                    "Ferrari"
+                ],
+                "output": "GertudeFerrari"
+            }
+        ],
+        "constants": []
+    },
+    {
+        "program": "STRING|STRING|concat,0,1",
+        "examples": [
+            {
+                "inputs": [
+                    "V",
+                    "980"
+                ],
+                "output": "V980"
+            },
+            {
+                "inputs": [
+                    "Pennsylvania",
+                    "Miah"
+                ],
+                "output": "PennsylvaniaMiah"
+            },
+            {
+                "inputs": [
+                    "198",
+                    "Acura"
+                ],
+                "output": "198Acura"
+            },
+            {
+                "inputs": [
+                    "+196",
+                    "Ducati125"
+                ],
+                "output": "+196Ducati125"
+            }
+        ],
+        "constants": []
+    },
+    {
+        "program": "STRING|STRING|concat,0,1",
+        "examples": [
+            {
+                "inputs": [
+                    "Garrard",
+                    "Honda250"
+                ],
+                "output": "GarrardHonda250"
+            },
+            {
+                "inputs": [
+                    "+197",
+                    "242"
+                ],
+                "output": "+197242"
+            },
+            {
+                "inputs": [
+                    "+7",
+                    "13"
+                ],
+                "output": "+713"
+            },
+            {
+                "inputs": [
+                    "+118",
+                    "CT"
+                ],
+                "output": "+118CT"
+            }
+        ],
+        "constants": []
+    },
+    {
+        "program": "STRING|STRING|concat,0,1",
+        "examples": [
+            {
+                "inputs": [
+                    "40",
+                    "Mariel"
+                ],
+                "output": "40Mariel"
+            },
+            {
+                "inputs": [
+                    "Lain",
+                    "426"
+                ],
+                "output": "Lain426"
+            },
+            {
+                "inputs": [
+                    "Honda125",
+                    "45"
+                ],
+                "output": "Honda12545"
+            },
+            {
+                "inputs": [
+                    "566",
+                    "504"
+                ],
+                "output": "566504"
+            }
+        ],
+        "constants": []
+    },
+    {
+        "program": "STRING|STRING|concat,0,1",
+        "examples": [
+            {
+                "inputs": [
+                    "F",
+                    "20"
+                ],
+                "output": "F20"
+            },
+            {
+                "inputs": [
+                    "+183",
+                    "Ducati250"
+                ],
+                "output": "+183Ducati250"
+            },
+            {
+                "inputs": [
+                    "Park",
+                    "Richert"
+                ],
+                "output": "ParkRichert"
+            },
+            {
+                "inputs": [
+                    "Rowden",
+                    "14"
+                ],
+                "output": "Rowden14"
+            }
+        ],
+        "constants": []
+    },
+    {
+        "program": "STRING|cste|U|head,0,2|concat_cste,3,1|concat,4,0",
+        "examples": [
+            {
+                "inputs": [
+                    "Partida"
+                ],
+                "output": "UCLAPartida"
+            },
+            {
+                "inputs": [
+                    "232"
+                ],
+                "output": "UCLA232"
+            },
+            {
+                "inputs": [
+                    "14"
+                ],
+                "output": "UCLA14"
+            },
+            {
+                "inputs": [
+                    "+143"
+                ],
+                "output": "UCLA+143"
+            }
+        ],
+        "constants": [
+            "UCLA"
+        ]
+    },
+    {
+        "program": "STRING|cste|concat_cste,0,1",
+        "examples": [
+            {
+                "inputs": [
+                    "Andria"
+                ],
+                "output": "Andria984"
+            },
+            {
+                "inputs": [
+                    "Honda125"
+                ],
+                "output": "Honda125984"
+            },
+            {
+                "inputs": [
+                    "+75"
+                ],
+                "output": "+75984"
+            },
+            {
+                "inputs": [
+                    "Malissa"
+                ],
+                "output": "Malissa984"
+            }
+        ],
+        "constants": [
+            "984"
+        ]
+    },
+    {
+        "program": "STRING|W|cste|$|separate,0,3|concat_cste,4,2|head,0,1|concat,5,6",
+        "examples": [
+            {
+                "inputs": [
+                    "Scalia Gertude"
+                ],
+                "output": "EliasScalia"
+            },
+            {
+                "inputs": [
+                    "877 Barbara"
+                ],
+                "output": "Elias877"
+            },
+            {
+                "inputs": [
+                    "+86 95"
+                ],
+                "output": "Elias+86"
+            },
+            {
+                "inputs": [
+                    "Urbana +75"
+                ],
+                "output": "EliasUrbana"
+            }
+        ],
+        "constants": [
+            "Elias"
+        ]
+    },
+    {
+        "program": "STRING|cste|U|head,0,2|concat_cste,3,1|concat,4,0",
+        "examples": [
+            {
+                "inputs": [
+                    "FreeHafer"
+                ],
+                "output": "SantaFreeHafer"
+            },
+            {
+                "inputs": [
+                    "861"
+                ],
+                "output": "Santa861"
+            },
+            {
+                "inputs": [
+                    "Babiarz"
+                ],
+                "output": "SantaBabiarz"
+            },
+            {
+                "inputs": [
+                    "7"
+                ],
+                "output": "Santa7"
+            }
+        ],
+        "constants": [
+            "Santa"
+        ]
+    },
+    {
+        "program": "STRING|cste|concat_cste,0,1",
+        "examples": [
+            {
+                "inputs": [
+                    "S"
+                ],
+                "output": "SKimberley"
+            },
+            {
+                "inputs": [
+                    "A"
+                ],
+                "output": "AKimberley"
+            },
+            {
+                "inputs": [
+                    "Cruz"
+                ],
+                "output": "CruzKimberley"
+            },
+            {
+                "inputs": [
+                    "+188"
+                ],
+                "output": "+188Kimberley"
+            }
+        ],
+        "constants": [
+            "Kimberley"
+        ]
+    },
+    {
+        "program": "STRING|W|cste|.|head,0,3|head,0,1|concat_cste,4,2|concat,6,5",
+        "examples": [
+            {
+                "inputs": [
+                    "141 Penn"
+                ],
+                "output": "196141"
+            },
+            {
+                "inputs": [
+                    "Jani Clasen"
+                ],
+                "output": "196Jani"
+            },
+            {
+                "inputs": [
+                    "+144 060"
+                ],
+                "output": "196+144"
+            },
+            {
+                "inputs": [
+                    "Soderstrom 68"
+                ],
+                "output": "196Soderstrom"
+            }
+        ],
+        "constants": [
+            "196"
+        ]
+    },
+    {
+        "program": "STRING|cste|.|head,0,2|concat_cste,3,1|concat,4,0",
+        "examples": [
+            {
+                "inputs": [
+                    "Lain"
+                ],
+                "output": "+65Lain"
+            },
+            {
+                "inputs": [
+                    "Ducati100"
+                ],
+                "output": "+65Ducati100"
+            },
+            {
+                "inputs": [
+                    "Bradford"
+                ],
+                "output": "+65Bradford"
+            },
+            {
+                "inputs": [
+                    "NY"
+                ],
+                "output": "+65NY"
+            }
+        ],
+        "constants": [
+            "+65"
+        ]
+    },
+    {
+        "program": "STRING|cste|concat_cste,0,1",
+        "examples": [
+            {
+                "inputs": [
+                    "Ferrari"
+                ],
+                "output": "FerrariJani"
+            },
+            {
+                "inputs": [
+                    "PA"
+                ],
+                "output": "PAJani"
+            },
+            {
+                "inputs": [
+                    "York"
+                ],
+                "output": "YorkJani"
+            },
+            {
+                "inputs": [
+                    "Mackenzie"
+                ],
+                "output": "MackenzieJani"
+            }
+        ],
+        "constants": [
+            "Jani"
+        ]
+    },
+    {
+        "program": "STRING|W|.|cste|head,0,2|head,0,1|concat_cste,4,3|concat,6,5",
+        "examples": [
+            {
+                "inputs": [
+                    "L T"
+                ],
+                "output": "EdisonL"
+            },
+            {
+                "inputs": [
+                    "188 Brendan"
+                ],
+                "output": "Edison188"
+            },
+            {
+                "inputs": [
+                    "736 155"
+                ],
+                "output": "Edison736"
+            },
+            {
+                "inputs": [
+                    "Reily Haven"
+                ],
+                "output": "EdisonReily"
+            }
+        ],
+        "constants": [
+            "Edison"
+        ]
+    },
+    {
+        "program": "STRING|cste|U|head,0,2|concat_cste,3,1|concat,4,0",
+        "examples": [
+            {
+                "inputs": [
+                    "244"
+                ],
+                "output": "+115244"
+            },
+            {
+                "inputs": [
+                    "Karrie"
+                ],
+                "output": "+115Karrie"
+            },
+            {
+                "inputs": [
+                    "Lashanda"
+                ],
+                "output": "+115Lashanda"
+            },
+            {
+                "inputs": [
+                    "Kimberley"
+                ],
+                "output": "+115Kimberley"
+            }
+        ],
+        "constants": [
+            "+115"
+        ]
+    },
+    {
+        "program": "STRING|cste|concat_cste,0,1",
+        "examples": [
+            {
+                "inputs": [
+                    "757"
+                ],
+                "output": "757Reily"
+            },
+            {
+                "inputs": [
+                    "Pennsylvania"
+                ],
+                "output": "PennsylvaniaReily"
+            },
+            {
+                "inputs": [
+                    "738"
+                ],
+                "output": "738Reily"
+            },
+            {
+                "inputs": [
+                    "Bobo"
+                ],
+                "output": "BoboReily"
+            }
+        ],
+        "constants": [
+            "Reily"
+        ]
+    },
+    {
+        "program": "STRING|W|.|cste|head,0,2|head,0,1|concat_cste,4,3|concat,6,5",
+        "examples": [
+            {
+                "inputs": [
+                    "Storrs 449"
+                ],
+                "output": "BradfordStorrs"
+            },
+            {
+                "inputs": [
+                    "10 963"
+                ],
+                "output": "Bradford10"
+            },
+            {
+                "inputs": [
+                    "Kathlyn Melodi"
+                ],
+                "output": "BradfordKathlyn"
+            },
+            {
+                "inputs": [
+                    "Spagnoli +151"
+                ],
+                "output": "BradfordSpagnoli"
+            }
+        ],
+        "constants": [
+            "Bradford"
+        ]
+    },
+    {
+        "program": "STRING|cste|U|head,0,2|concat_cste,3,1|concat,4,0",
+        "examples": [
+            {
+                "inputs": [
+                    "Chism"
+                ],
+                "output": "+132Chism"
+            },
+            {
+                "inputs": [
+                    "428"
+                ],
+                "output": "+132428"
+            },
+            {
+                "inputs": [
+                    "Acura100"
+                ],
+                "output": "+132Acura100"
+            },
+            {
+                "inputs": [
+                    "65"
+                ],
+                "output": "+13265"
+            }
+        ],
+        "constants": [
+            "+132"
+        ]
+    },
+    {
+        "program": "STRING|cste|concat_cste,0,1",
+        "examples": [
+            {
+                "inputs": [
+                    "95"
+                ],
+                "output": "95843"
+            },
+            {
+                "inputs": [
+                    "Heintz"
+                ],
+                "output": "Heintz843"
+            },
+            {
+                "inputs": [
+                    "Pannell"
+                ],
+                "output": "Pannell843"
+            },
+            {
+                "inputs": [
+                    "+167"
+                ],
+                "output": "+167843"
+            }
+        ],
+        "constants": [
+            "843"
+        ]
+    },
+    {
+        "program": "STRING|W|.|cste|head,0,2|head,0,1|concat_cste,4,3|concat,6,5",
+        "examples": [
+            {
+                "inputs": [
+                    "T Acura100"
+                ],
+                "output": "CornellT"
+            },
+            {
+                "inputs": [
+                    "881 Penn"
+                ],
+                "output": "Cornell881"
+            },
+            {
+                "inputs": [
+                    "98 Quashie"
+                ],
+                "output": "Cornell98"
+            },
+            {
+                "inputs": [
+                    "Houston +140"
+                ],
+                "output": "CornellHouston"
+            }
+        ],
+        "constants": [
+            " ",
+            "Cornell"
+        ]
+    },
+    {
+        "program": "STRING|cste|U|head,0,2|concat_cste,3,1|concat,4,0",
+        "examples": [
+            {
+                "inputs": [
+                    "50"
+                ],
+                "output": "Park50"
+            },
+            {
+                "inputs": [
+                    "Halpern"
+                ],
+                "output": "ParkHalpern"
+            },
+            {
+                "inputs": [
+                    "Covelli"
+                ],
+                "output": "ParkCovelli"
+            },
+            {
+                "inputs": [
+                    "+5"
+                ],
+                "output": "Park+5"
+            }
+        ],
+        "constants": [
+            "Park"
+        ]
+    },
+    {
+        "program": "STRING|cste|concat_cste,0,1",
+        "examples": [
+            {
+                "inputs": [
+                    "963"
+                ],
+                "output": "963Haven"
+            },
+            {
+                "inputs": [
+                    "Clasen"
+                ],
+                "output": "ClasenHaven"
+            },
+            {
+                "inputs": [
+                    "Latimore"
+                ],
+                "output": "LatimoreHaven"
+            },
+            {
+                "inputs": [
+                    "Honda"
+                ],
+                "output": "HondaHaven"
+            }
+        ],
+        "constants": [
+            "Haven"
+        ]
+    },
+    {
+        "program": "STRING|W|.|cste|head,0,2|head,0,1|concat_cste,4,3|concat,6,5",
+        "examples": [
+            {
+                "inputs": [
+                    "20 MA"
+                ],
+                "output": "48720"
+            },
+            {
+                "inputs": [
+                    "FreeHafer 754"
+                ],
+                "output": "487FreeHafer"
+            },
+            {
+                "inputs": [
+                    "Casler 449"
+                ],
+                "output": "487Casler"
+            },
+            {
+                "inputs": [
+                    "6 Kimberley"
+                ],
+                "output": "4876"
+            }
+        ],
+        "constants": [
+            " ",
+            "487"
+        ]
+    },
+    {
+        "program": "NO SOLUTION|parentheses around a single word (I) [DOUBLE CONSTANTE]",
+        "examples": [
+            {
+                "inputs": [
+                    "095"
+                ],
+                "output": "(095)"
+            },
+            {
+                "inputs": [
+                    "Clasen"
+                ],
+                "output": "(Clasen)"
+            },
+            {
+                "inputs": [
+                    "S"
+                ],
+                "output": "(S)"
+            },
+            {
+                "inputs": [
+                    "Jenee"
+                ],
+                "output": "(Jenee)"
+            }
+        ],
+        "constants": [
+            ")",
+            "("
+        ]
+    },
+    {
+        "program": "NO SOLUTION|parentheses around a single word (II) [DOUBLE CONSTANTE]",
+        "examples": [
+            {
+                "inputs": [
+                    "862"
+                ],
+                "output": "(862)"
+            },
+            {
+                "inputs": [
+                    "Hopkins"
+                ],
+                "output": "(Hopkins)"
+            },
+            {
+                "inputs": [
+                    "Lango"
+                ],
+                "output": "(Lango)"
+            },
+            {
+                "inputs": [
+                    "Babiarz"
+                ],
+                "output": "(Babiarz)"
+            }
+        ],
+        "constants": [
+            ")",
+            "("
+        ]
+    },
+    {
+        "program": "NO SOLUTION|parentheses around a single word (III) [DOUBLE CONSTANTE]",
+        "examples": [
+            {
+                "inputs": [
+                    "R"
+                ],
+                "output": "(R)"
+            },
+            {
+                "inputs": [
+                    "Urbana"
+                ],
+                "output": "(Urbana)"
+            },
+            {
+                "inputs": [
+                    "+14"
+                ],
+                "output": "(+14)"
+            },
+            {
+                "inputs": [
+                    "Houston"
+                ],
+                "output": "(Houston)"
+            }
+        ],
+        "constants": [
+            ")",
+            "("
+        ]
+    },
+    {
+        "program": "NO SOLUTION|parentheses around a single word (IIII) [DOUBLE CONSTANTE]",
+        "examples": [
+            {
+                "inputs": [
+                    "Quashie"
+                ],
+                "output": "(Quashie)"
+            },
+            {
+                "inputs": [
+                    "Barbara"
+                ],
+                "output": "(Barbara)"
+            },
+            {
+                "inputs": [
+                    "+189"
+                ],
+                "output": "(+189)"
+            },
+            {
+                "inputs": [
+                    "College"
+                ],
+                "output": "(College)"
+            }
+        ],
+        "constants": [
+            ")",
+            "("
+        ]
+    },
+    {
+        "program": "NO SOLUTION|parentheses around a single word (IIIII) [DOUBLE CONSTANTE]",
+        "examples": [
+            {
+                "inputs": [
+                    "+5"
+                ],
+                "output": "(+5)"
+            },
+            {
+                "inputs": [
+                    "Urbana"
+                ],
+                "output": "(Urbana)"
+            },
+            {
+                "inputs": [
+                    "+176"
+                ],
+                "output": "(+176)"
+            },
+            {
+                "inputs": [
+                    "Spell"
+                ],
+                "output": "(Spell)"
+            }
+        ],
+        "constants": [
+            ")",
+            "("
+        ]
+    },
+    {
+        "program": "NO SOLUTION|parentheses around first word [DOUBLE CONSTANTE]",
+        "examples": [
+            {
+                "inputs": [
+                    "865 Urbana Jeff Malissa Ducati250"
+                ],
+                "output": "(865)"
+            },
+            {
+                "inputs": [
+                    "+185 +5 Jani"
+                ],
+                "output": "(+185)"
+            },
+            {
+                "inputs": [
+                    "FreeHafer 18 Joaquin 340 Lashanda"
+                ],
+                "output": "(FreeHafer)"
+            },
+            {
+                "inputs": [
+                    "64 Karrie Annalisa +180"
+                ],
+                "output": "(64)"
+            }
+        ],
+        "constants": [
+            ")",
+            "("
+        ]
+    },
+    {
+        "program": "NO SOLUTION|parentheses around second word [DOUBLE CONSTANTE]",
+        "examples": [
+            {
+                "inputs": [
+                    "+197 46 439"
+                ],
+                "output": "(46)"
+            },
+            {
+                "inputs": [
+                    "75 L J"
+                ],
+                "output": "(L)"
+            },
+            {
+                "inputs": [
+                    "743 Lango Spagnoli"
+                ],
+                "output": "(Lango)"
+            },
+            {
+                "inputs": [
+                    "Chism 14 +188 174"
+                ],
+                "output": "(14)"
+            }
+        ],
+        "constants": [
+            " ",
+            ")",
+            "("
+        ]
+    },
+    {
+        "program": "NO SOLUTION| ensure suffix [IF CONDITION]",
+        "examples": [
+            {
+                "inputs": [
+                    "867 Lara 827"
+                ],
+                "output": "867 Lara 827Montiel"
+            },
+            {
+                "inputs": [
+                    "A 707 50 UC"
+                ],
+                "output": "A 707 50 UCMontiel"
+            },
+            {
+                "inputs": [
+                    "43 390 PhillipMontiel"
+                ],
+                "output": "43 390 PhillipMontiel"
+            },
+            {
+                "inputs": [
+                    "Ducati125 +115 +189 +46Montiel"
+                ],
+                "output": "Ducati125 +115 +189 +46Montiel"
+            }
+        ],
+        "constants": [
+            " ",
+            "Montiel"
+        ]
+    },
+    {
+        "program": "NO SOLUTION| ensure suffix [IF CONDITION]",
+        "examples": [
+            {
+                "inputs": [
+                    "Penn 167 Withers Brescia421"
+                ],
+                "output": "Penn 167 Withers Brescia421"
+            },
+            {
+                "inputs": [
+                    "Malissa +198 Teddy DPhiladelphia"
+                ],
+                "output": "Malissa +198 Teddy DPhiladelphia421"
+            },
+            {
+                "inputs": [
+                    "83 Chong Scalia"
+                ],
+                "output": "83 Chong Scalia421"
+            },
+            {
+                "inputs": [
+                    "D Dermody421"
+                ],
+                "output": "D Dermody421"
+            }
+        ],
+        "constants": [
+            "421"
+        ]
+    },
+    {
+        "program": "NO SOLUTION| ensure suffix [IF CONDITION]",
+        "examples": [
+            {
+                "inputs": [
+                    "52 EcclestonPhillip"
+                ],
+                "output": "52 EcclestonPhillip"
+            },
+            {
+                "inputs": [
+                    "+141 YalePhillip"
+                ],
+                "output": "+141 YalePhillip"
+            },
+            {
+                "inputs": [
+                    "81 T 6Phillip"
+                ],
+                "output": "81 T 6Phillip"
+            },
+            {
+                "inputs": [
+                    "T Ferrari Hayley Dermody"
+                ],
+                "output": "T Ferrari Hayley DermodyPhillip"
+            }
+        ],
+        "constants": [
+            "Phillip"
+        ]
+    },
+    {
+        "program": "NO SOLUTION| ensure suffix [IF CONDITION]",
+        "examples": [
+            {
+                "inputs": [
+                    "R Park"
+                ],
+                "output": "R ParkSalley"
+            },
+            {
+                "inputs": [
+                    "58 Trinidad 856Salley"
+                ],
+                "output": "58 Trinidad 856Salley"
+            },
+            {
+                "inputs": [
+                    "038 Lain +174"
+                ],
+                "output": "038 Lain +174Salley"
+            },
+            {
+                "inputs": [
+                    "984 Withers AngelesSalley"
+                ],
+                "output": "984 Withers AngelesSalley"
+            }
+        ],
+        "constants": [
+            " ",
+            "Salley"
+        ]
+    },
+    {
+        "program": "NO SOLUTION| ensure suffix [IF CONDITION]",
+        "examples": [
+            {
+                "inputs": [
+                    "038 HayleySanta"
+                ],
+                "output": "038 HayleySanta"
+            },
+            {
+                "inputs": [
+                    "894 72"
+                ],
+                "output": "894 72Santa"
+            },
+            {
+                "inputs": [
+                    "413 145"
+                ],
+                "output": "413 145Santa"
+            },
+            {
+                "inputs": [
+                    "Beata S Acura Jeanice"
+                ],
+                "output": "Beata S Acura JeaniceSanta"
+            }
+        ],
+        "constants": [
+            " ",
+            "Santa"
+        ]
+    },
+    {
+        "program": "NO SOLUTION| ensure suffix [IF CONDITION]",
+        "examples": [
+            {
+                "inputs": [
+                    "P +180Acura125"
+                ],
+                "output": "P +180Acura125"
+            },
+            {
+                "inputs": [
+                    "PA 50 46Acura125"
+                ],
+                "output": "PA 50 46Acura125"
+            },
+            {
+                "inputs": [
+                    "066 014 585 253"
+                ],
+                "output": "066 014 585 253Acura125"
+            },
+            {
+                "inputs": [
+                    "83 RowdenAcura125"
+                ],
+                "output": "83 RowdenAcura125"
+            }
+        ],
+        "constants": [
+            " ",
+            "Acura125"
+        ]
+    },
+    {
+        "program": "NO SOLUTION| ensure suffix [IF CONDITION]",
+        "examples": [
+            {
+                "inputs": [
+                    "62 Lakenya"
+                ],
+                "output": "62 LakenyaMadelaine"
+            },
+            {
+                "inputs": [
+                    "206 25 Beata"
+                ],
+                "output": "206 25 BeataMadelaine"
+            },
+            {
+                "inputs": [
+                    "Cruz K MackenzieMadelaine"
+                ],
+                "output": "Cruz K MackenzieMadelaine"
+            },
+            {
+                "inputs": [
+                    "Georgina 40"
+                ],
+                "output": "Georgina 40Madelaine"
+            }
+        ],
+        "constants": [
+            " ",
+            "Madelaine"
+        ]
+    }
+]

@@ -17,6 +17,7 @@ from synth import Dataset, PBE, Task
 from synth.nn import BigramsPredictorLayer, Task2Tensor, free_pytorch_memory
 from synth.pbe import IOEncoder
 from synth.semantic import DSLEvaluator
+from synth.specification import PBEWithConstants
 from synth.syntax import ConcreteCFG, ConcretePCFG, enumerate_pcfg, DSL, Program
 from synth.utils import chrono
 
@@ -296,12 +297,46 @@ def base(
                 )
     return (False, time, programs, None, None)
 
+def constants_injector(
+    evaluator: DSLEvaluator, task: Task[PBEWithConstants], pcfg: ConcretePCFG
+) -> Tuple[bool, float, int, Optional[Program]]:
+    time = 0.0
+    programs = 0
+    constants = task.specification.constants
+    constants.append("")
+    name = task.metadata["name"]
+    name = name.split("|")
+    if name[0] == "NO SOLUTION":
+        return (False, time, programs, None, None)
+    with chrono.clock("search.constant_injector") as c:
+        for program in enumerate_pcfg(pcfg):
+            time = c.elapsed_time()
+            if time >= task_timeout:
+                print("TIMEOUT\n\n")
+                return (False, time, programs, None, None)
+            programs += 1
+            failed = False
+            for ex in task.specification.examples:
+                for cons in task.specification.constants:
+                    if evaluator.eval_with_constant(program, ex.inputs, cons) != ex.output:
+                        failed = True
+                if failed: break
+            if not failed:
+                return (
+                    True,
+                    c.elapsed_time(),
+                    programs,
+                    program,
+                    pcfg.probability(program),
+                )
+    return (False, time, programs, None, None)
+
 
 # Main ====================================================================
 
 if __name__ == "__main__":
     methods = [
-        ("base", base),
+        ("constants_injector", constants_injector),
     ]
 
     full_dataset, dsl, evaluator, lexicon, model_name = load_dataset()
