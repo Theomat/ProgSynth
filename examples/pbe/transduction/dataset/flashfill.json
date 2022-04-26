@@ -1,6 +1,9 @@
 [
     {
-        "program": "STRING|O|tail,0,1",
+        "program": "STRING|cste_in|tail_cste,0,1",
+        "metadata": {
+            "name": "drop first word delimited by '.'"
+        },
         "examples": [
             {
                 "inputs": [
@@ -27,12 +30,17 @@
                 "output": "206.Nancy.334"
             }
         ],
-        "constants": [
+        "constants_in": [
+            "-",
             "."
-        ]
+        ],
+        "constants_out": []
     },
     {
-        "program": "STRING|O|head,0,1",
+        "program": "STRING|cste_in|head_cste,0,1",
+        "metadata": {
+            "name": "nth (n=0) word delimited by '.'"
+        },
         "examples": [
             {
                 "inputs": [
@@ -59,12 +67,16 @@
                 "output": "102"
             }
         ],
-        "constants": [
+        "constants_in": [
             "."
-        ]
+        ],
+        "constants_out": []
     },
     {
-        "program": "STRING|O|cste|concat_cste,0,2|tail,3,1|head,4,1",
+        "program": "STRING|cste_in|match_cste,0,1|concat,0,2|tail_cste,3,1|head_cste,4,1",
+        "metadata": {
+            "name": "nth (n=1) word delimited by '.'"
+        },
         "examples": [
             {
                 "inputs": [
@@ -91,12 +103,16 @@
                 "output": "Maryland"
             }
         ],
-        "constants": [
+        "constants_in": [
             "."
-        ]
+        ],
+        "constants_out": []
     },
     {
-        "program": "NO SOLUTION|nth (n=-1) word delimited by '.' [VAR LIST SIZE]",
+        "program": "STRING|cste_in|except_end,1|match,0,2",
+        "metadata": {
+            "name": "nth (n=-1) word delimited by '.'"
+        },
         "examples": [
             {
                 "inputs": [
@@ -123,12 +139,16 @@
                 "output": "Lara"
             }
         ],
-        "constants": [
+        "constants_in": [
             "."
-        ]
+        ],
+        "constants_out": []
     },
     {
-        "program": "STRING|O|tail,0,1",
+        "program": "STRING|cste_in|tail_cste,0,1",
+        "metadata": {
+            "name": "drop first word delimited by ','"
+        },
         "examples": [
             {
                 "inputs": [
@@ -155,12 +175,16 @@
                 "output": "Akiyama,Edison"
             }
         ],
-        "constants": [
+        "constants_in": [
             ","
-        ]
+        ],
+        "constants_out": []
     },
     {
-        "program": "STRING|O|head,0,1",
+        "program": "STRING|cste_in|head_cste,0,1",
+        "metadata": {
+            "name": "nth (n=0) word delimited by ','"
+        },
         "examples": [
             {
                 "inputs": [
@@ -187,12 +211,16 @@
                 "output": "701"
             }
         ],
-        "constants": [
+        "constants_in": [
             ","
-        ]
+        ],
+        "constants_out": []
     },
     {
-        "program": "STRING|O|$|cste|compose,1,2|concat_cste,0,3|tail,5,4|head,6,1",
+        "program": "STRING|cste_in|match_cste,0,1|concat,0,2|tail_cste,3,1|head_cste,4,1",
+        "metadata": {
+            "name": "nth (n=1) word delimited by ','"
+        },
         "examples": [
             {
                 "inputs": [
@@ -219,12 +247,16 @@
                 "output": "000"
             }
         ],
-        "constants": [
+        "constants_in": [
             ","
-        ]
+        ],
+        "constants_out": []
     },
     {
-        "program": "NO SOLUTION| nth (n=-1) word delimited by ',' [VAR LIST SIZE]",
+        "program": "STRING|cste_in|except_end,1|match,0,2",
+        "metadata": {
+            "name": "nth (n=-1) word delimited by ','"
+        },
         "examples": [
             {
                 "inputs": [
@@ -251,12 +283,16 @@
                 "output": "+6"
             }
         ],
-        "constants": [
+        "constants_in": [
             ","
-        ]
+        ],
+        "constants_out": []
     },
     {
-        "program": "STRING|W|tail,0,1",
+        "program": "STRING|cste_in|tail_cste,0,1",
+        "metadata": {
+            "name": "drop first word delimited by ' '"
+        },
         "examples": [
             {
                 "inputs": [
@@ -283,14 +319,16 @@
                 "output": "Honda550 Babiarz"
             }
         ],
-        "constants": [
-            " ",
-            "on ",
-            "on"
-        ]
+        "constants_in": [
+            " "
+        ],
+        "constants_out": []
     },
     {
-        "program": "STRING|W|head,0,1",
+        "program": "STRING|cste_in|head_cste,0,1",
+        "metadata": {
+            "name": "nth (n=0) word delimited by ' '"
+        },
         "examples": [
             {
                 "inputs": [
@@ -317,12 +355,16 @@
                 "output": "Acura"
             }
         ],
-        "constants": [
+        "constants_in": [
             " "
-        ]
+        ],
+        "constants_out": []
     },
     {
-        "program": "STRING|W|cste|concat_cste,0,2|tail,3,1|head,4,1",
+        "program": "STRING|cste_in|match_cste,0,1|concat,0,2|tail_cste,3,1|head_cste,4,1",
+        "metadata": {
+            "name": "nth (n=1) word delimited by ' '"
+        },
         "examples": [
             {
                 "inputs": [
@@ -349,12 +391,16 @@
                 "output": "+46"
             }
         ],
-        "constants": [
+        "constants_in": [
             " "
-        ]
+        ],
+        "constants_out": []
     },
     {
-        "program": "STRING|W|N|tail,0,2|tail,3,1",
+        "program": "STRING|cste_in|except_end,1|match,0,2",
+        "metadata": {
+            "name": "nth (n=-1) word delimited by ' '"
+        },
         "examples": [
             {
                 "inputs": [
@@ -381,12 +427,16 @@
                 "output": "+129"
             }
         ],
-        "constants": [
+        "constants_in": [
             " "
-        ]
+        ],
+        "constants_out": []
     },
     {
-        "program": "STRING|O|tail,0,1",
+        "program": "STRING|cste_in|tail_cste,0,1",
+        "metadata": {
+            "name": "drop first word delimited by '('"
+        },
         "examples": [
             {
                 "inputs": [
@@ -413,12 +463,16 @@
                 "output": "Annalisa(Houston"
             }
         ],
-        "constants": [
+        "constants_in": [
             "("
-        ]
+        ],
+        "constants_out": []
     },
     {
-        "program": "STRING|O|$|cste|compose,1,2|concat_cste,0,3|head,5,4",
+        "program": "STRING|cste_in|head_cste,0,1",
+        "metadata": {
+            "name": "nth (n=0) word delimited by '('"
+        },
         "examples": [
             {
                 "inputs": [
@@ -445,12 +499,16 @@
                 "output": "943"
             }
         ],
-        "constants": [
+        "constants_in": [
             "("
-        ]
+        ],
+        "constants_out": []
     },
     {
-        "program": "STRING|O|$|cste|compose,1,2|concat_cste,0,3|tail,5,4|head,6,1",
+        "program": "STRING|cste_in|match_cste,0,1|concat,0,2|tail_cste,3,1|head_cste,4,1",
+        "metadata": {
+            "name": "nth (n=1) word delimited by '('"
+        },
         "examples": [
             {
                 "inputs": [
@@ -477,13 +535,16 @@
                 "output": "Miah"
             }
         ],
-        "constants": [
-            "a(",
+        "constants_in": [
             "("
-        ]
+        ],
+        "constants_out": []
     },
     {
-        "program": "NO SOLUTION| nth (n=-1) word delimited by '(' [VAR LIST SIZE]",
+        "program": "STRING|cste_in|except_end,1|match,0,2",
+        "metadata": {
+            "name": "nth (n=-1) word delimited by '('"
+        },
         "examples": [
             {
                 "inputs": [
@@ -510,13 +571,16 @@
                 "output": "847"
             }
         ],
-        "constants": [
+        "constants_in": [
             "("
-        ]
+        ],
+        "constants_out": []
     },
     {
-        "program": "STRING|O|tail,0,1",
-
+        "program": "STRING|cste_in|tail_cste,0,1",
+        "metadata": {
+            "name": "drop first word delimited by ')'"
+        },
         "examples": [
             {
                 "inputs": [
@@ -543,12 +607,16 @@
                 "output": "Honda550)Hopkins"
             }
         ],
-        "constants": [
+        "constants_in": [
             ")"
-        ]
+        ],
+        "constants_out": []
     },
     {
-        "program": "STRING|O|$|cste|compose,1,2|concat_cste,0,3|head,5,4",
+        "program": "STRING|cste_in|head_cste,0,1",
+        "metadata": {
+            "name": "nth (n=0) word delimited by ')'"
+        },
         "examples": [
             {
                 "inputs": [
@@ -575,12 +643,16 @@
                 "output": "386"
             }
         ],
-        "constants": [
+        "constants_in": [
             ")"
-        ]
+        ],
+        "constants_out": []
     },
     {
-        "program": "STRING|O|cste|concat_cste,0,2|tail,3,1|head,4,1",
+        "program": "STRING|cste_in|match_cste,0,1|concat,0,2|tail_cste,3,1|head_cste,4,1",
+        "metadata": {
+            "name": "nth (n=1) word delimited by ')'"
+        },
         "examples": [
             {
                 "inputs": [
@@ -607,12 +679,16 @@
                 "output": "597"
             }
         ],
-        "constants": [
+        "constants_in": [
             ")"
-        ]
+        ],
+        "constants_out": []
     },
     {
-        "program": "NO SOLUTION| nth (n=-1) word delimited by ')' [VAR LIST SIZE]",
+        "program": "STRING|cste_in|except_end,1|match,0,2",
+        "metadata": {
+            "name": "nth (n=-1) word delimited by ')'"
+        },
         "examples": [
             {
                 "inputs": [
@@ -639,12 +715,16 @@
                 "output": "Ferrari"
             }
         ],
-        "constants": [
+        "constants_in": [
             ")"
-        ]
+        ],
+        "constants_out": []
     },
     {
-        "program": "STRING|O|tail,0,1",
+        "program": "STRING|cste_in|tail_cste,0,1",
+        "metadata": {
+            "name": "drop first word delimited by '-'"
+        },
         "examples": [
             {
                 "inputs": [
@@ -671,13 +751,16 @@
                 "output": "358-Jacquiline-Columbia"
             }
         ],
-        "constants": [
-            "-",
-            "ie"
-        ]
+        "constants_in": [
+            "-"
+        ],
+        "constants_out": []
     },
     {
-        "program": "STRING|O|$|cste|compose,1,2|concat_cste,0,3|head,5,4",
+        "program": "STRING|cste_in|head_cste,0,1",
+        "metadata": {
+            "name": "nth (n=0) word delimited by '-'"
+        },
         "examples": [
             {
                 "inputs": [
@@ -704,12 +787,16 @@
                 "output": "+9"
             }
         ],
-        "constants": [
+        "constants_in": [
             "-"
-        ]
+        ],
+        "constants_out": []
     },
     {
-        "program": "STRING|O|cste|concat_cste,0,2|tail,3,1|head,4,1",
+        "program": "STRING|cste_in|match_cste,0,1|concat,0,2|tail_cste,3,1|head_cste,4,1",
+        "metadata": {
+            "name": "nth (n=1) word delimited by '-'"
+        },
         "examples": [
             {
                 "inputs": [
@@ -736,12 +823,16 @@
                 "output": "98"
             }
         ],
-        "constants": [
+        "constants_in": [
             "-"
-        ]
+        ],
+        "constants_out": []
     },
     {
-        "program": "NO SOLUTION| nth (n=-1) word delimited by '-' [VAR LIST SIZE]",
+        "program": "STRING|cste_in|except_end,1|match,0,2",
+        "metadata": {
+            "name": "nth (n=-1) word delimited by '-'"
+        },
         "examples": [
             {
                 "inputs": [
@@ -768,12 +859,16 @@
                 "output": "+199"
             }
         ],
-        "constants": [
+        "constants_in": [
             "-"
-        ]
+        ],
+        "constants_out": []
     },
     {
-        "program": "STRING|STRING|cste|concat_cste,0,2|concat,3,1",
+        "program": "STRING|STRING|cste_out|concat_cste,0,2|concat,3,1",
+        "metadata": {
+            "name": "Append two words delimited by '.'"
+        },
         "examples": [
             {
                 "inputs": [
@@ -804,12 +899,16 @@
                 "output": "+176.741"
             }
         ],
-        "constants": [
+        "constants_in": [],
+        "constants_out": [
             "."
         ]
     },
     {
-        "program": "STRING|STRING|cste|concat_cste,0,2|concat,3,1",
+        "program": "STRING|STRING|cste_out|concat_cste,0,2|concat,3,1",
+        "metadata": {
+            "name": "Append two words delimited by ','"
+        },
         "examples": [
             {
                 "inputs": [
@@ -840,12 +939,16 @@
                 "output": "399,+138"
             }
         ],
-        "constants": [
+        "constants_in": [],
+        "constants_out": [
             ","
         ]
     },
     {
-        "program": "STRING|STRING|cste|concat_cste,0,2|concat,3,1",
+        "program": "STRING|STRING|cste_out|concat_cste,0,2|concat,3,1",
+        "metadata": {
+            "name": "Append two words delimited by ' '"
+        },
         "examples": [
             {
                 "inputs": [
@@ -876,12 +979,16 @@
                 "output": "Spell Babiarz"
             }
         ],
-        "constants": [
+        "constants_in": [],
+        "constants_out": [
             " "
         ]
     },
     {
-        "program": "STRING|STRING|cste|concat_cste,0,2|concat,3,1",
+        "program": "STRING|STRING|cste_out|concat_cste,0,2|concat,3,1",
+        "metadata": {
+            "name": "Append two words delimited by '('"
+        },
         "examples": [
             {
                 "inputs": [
@@ -912,12 +1019,16 @@
                 "output": "29(548"
             }
         ],
-        "constants": [
+        "constants_in": [],
+        "constants_out": [
             "("
         ]
     },
     {
-        "program": "STRING|STRING|cste|concat_cste,0,2|concat,3,1",
+        "program": "STRING|STRING|cste_out|concat_cste,0,2|concat,3,1",
+        "metadata": {
+            "name": "Append two words delimited by ')'"
+        },
         "examples": [
             {
                 "inputs": [
@@ -948,12 +1059,16 @@
                 "output": "Jeanice)+194"
             }
         ],
-        "constants": [
+        "constants_in": [],
+        "constants_out": [
             ")"
         ]
     },
     {
-        "program": "STRING|STRING|cste|concat_cste,0,2|concat,3,1",
+        "program": "STRING|STRING|cste_out|concat_cste,0,2|concat,3,1",
+        "metadata": {
+            "name": "Append two words delimited by '-'"
+        },
         "examples": [
             {
                 "inputs": [
@@ -984,12 +1099,16 @@
                 "output": "151-UC"
             }
         ],
-        "constants": [
+        "constants_in": [],
+        "constants_out": [
             "-"
         ]
     },
     {
         "program": "STRING|.|$|compose,1,2|head,0,3",
+        "metadata": {
+            "name": "Drop last 1 characters"
+        },
         "examples": [
             {
                 "inputs": [
@@ -1016,10 +1135,14 @@
                 "output": "+19"
             }
         ],
-        "constants": []
+        "constants_in": [],
+        "constants_out": []
     },
     {
         "program": "STRING|.|$|compose,1,1|compose,3,2|head,0,4",
+        "metadata": {
+            "name": "Drop last 2 characters"
+        },
         "examples": [
             {
                 "inputs": [
@@ -1046,10 +1169,14 @@
                 "output": "7"
             }
         ],
-        "constants": []
+        "constants_in": [],
+        "constants_out": []
     },
     {
         "program": "STRING|.|compose,1,1|match,0,2",
+        "metadata": {
+            "name": "Take first 2 characters"
+        },
         "examples": [
             {
                 "inputs": [
@@ -1076,10 +1203,14 @@
                 "output": "+1"
             }
         ],
-        "constants": []
+        "constants_in": [],
+        "constants_out": []
     },
     {
         "program": "STRING|.|$|compose,1,1|compose,3,1|compose,4,2|head,0,5",
+        "metadata": {
+            "name": "Drop last 3 characters"
+        },
         "examples": [
             {
                 "inputs": [
@@ -1106,10 +1237,14 @@
                 "output": "La"
             }
         ],
-        "constants": []
+        "constants_in": [],
+        "constants_out": []
     },
     {
         "program": "STRING|.|compose,1,1|compose,2,1|match,0,3",
+        "metadata": {
+            "name": "Take first 3 characters"
+        },
         "examples": [
             {
                 "inputs": [
@@ -1136,10 +1271,14 @@
                 "output": "655"
             }
         ],
-        "constants": []
+        "constants_in": [],
+        "constants_out": []
     },
     {
         "program": "STRING|.|$|compose,1,1|compose,3,1|compose,4,1|compose,5,2|head,0,6",
+        "metadata": {
+            "name": "Drop last 4 characters"
+        },
         "examples": [
             {
                 "inputs": [
@@ -1166,10 +1305,14 @@
                 "output": ""
             }
         ],
-        "constants": []
+        "constants_in": [],
+        "constants_out": []
     },
     {
         "program": "STRING|.|compose,1,1|compose,2,1|compose,3,1|match,0,4",
+        "metadata": {
+            "name": "Take first 4 characters"
+        },
         "examples": [
             {
                 "inputs": [
@@ -1196,10 +1339,14 @@
                 "output": "Elia"
             }
         ],
-        "constants": []
+        "constants_in": [],
+        "constants_out": []
     },
     {
         "program": "STRING|.|$|compose,1,1|compose,3,1|compose,4,1|compose,5,1|compose,6,2|head,0,7",
+        "metadata": {
+            "name": "Drop last 5 characters"
+        },
         "examples": [
             {
                 "inputs": [
@@ -1226,10 +1373,14 @@
                 "output": "Gh"
             }
         ],
-        "constants": []
+        "constants_in": [],
+        "constants_out": []
     },
     {
         "program": "STRING|.|compose,1,1|compose,2,1|compose,3,1|compose,4,1|match,0,5",
+        "metadata": {
+            "name": "Take first 5 characters"
+         },
         "examples": [
             {
                 "inputs": [
@@ -1256,10 +1407,14 @@
                 "output": "Rudol"
             }
         ],
-        "constants": []
+        "constants_in": [],
+        "constants_out": []
     },
     {
-        "program": "NO SOLUTION|First letters of words (I) [VAR LIST SIZE]",
+        "program": null,
+        "metadata": {
+            "name": "First letters of words (I)"
+        },
         "examples": [
             {
                 "inputs": [
@@ -1286,13 +1441,16 @@
                 "output": "T+"
             }
         ],
-        "constants": [
-            " ",
-            "+1"
-        ]
+        "constants_in": [
+            " "
+        ],
+        "constants_out": []
     },
     {
-        "program": "NO SOLUTION|First letters of words (II) [VAR LIST SIZE]",
+        "program": null,
+        "metadata": {
+            "name": "First letters of words (II)"
+        },
         "examples": [
             {
                 "inputs": [
@@ -1319,13 +1477,16 @@
                 "output": "C++2"
             }
         ],
-        "constants": [
-            " ",
-            "2 "
-        ]
+        "constants_in": [
+            " "
+        ],
+        "constants_out": []
     },
     {
-        "program": "NO SOLUTION|First letters of words (III) [VAR LIST SIZE]",
+        "program": null,
+        "metadata": {
+            "name": "First letters of words (III)"
+        },
         "examples": [
             {
                 "inputs": [
@@ -1352,12 +1513,16 @@
                 "output": "681M"
             }
         ],
-        "constants": [
+        "constants_in": [
             " "
-        ]
+        ],
+        "constants_out": []
     },
     {
-        "program": "NO SOLUTION|First letters of words (IIII) [VAR LIST SIZE]",
+        "program": null,
+        "metadata": {
+            "name": "First letters of words (IIII)"
+        },
         "examples": [
             {
                 "inputs": [
@@ -1384,12 +1549,16 @@
                 "output": "K0"
             }
         ],
-        "constants": [
+        "constants_in": [
             " "
-        ]
+        ],
+        "constants_out": []
     },
     {
-        "program": "NO SOLUTION|First letters of words (IIIII) [VAR LIST SIZE]",
+        "program": null,
+        "metadata": {
+            "name": "First letters of words (IIIII)"
+        },
         "examples": [
             {
                 "inputs": [
@@ -1416,13 +1585,16 @@
                 "output": "AJ"
             }
         ],
-        "constants": [
-            "na",
-            "na "
-        ]
+        "constants_in": [
+            " "
+        ],
+        "constants_out": []
     },
     {
-        "program": "NO SOLUTION|First letters of words (IIIIII) [VAR LIST SIZE]",
+        "program": null,
+        "metadata": {
+            "name": "First letters of words (IIIIII)"
+        },
         "examples": [
             {
                 "inputs": [
@@ -1449,12 +1621,16 @@
                 "output": "8U6"
             }
         ],
-        "constants": [
+        "constants_in": [
             " "
-        ]
+        ],
+        "constants_out": []
     },
     {
-        "program": "STRING|W|.|cste|separate,0,2|head,4,1|concat_cste,5,3",
+        "program": "STRING|.|cste_out|match,0,1|concat_cste,3,2",
+        "metadata": {
+            "name": "Take first character and append '.'"
+        },
         "examples": [
             {
                 "inputs": [
@@ -1481,12 +1657,16 @@
                 "output": "A."
             }
         ],
-        "constants": [
+        "constants_in": [],
+        "constants_out": [
             "."
         ]
     },
     {
-        "program": "STRING|W|.|cste|separate,0,2|head,4,1|concat_cste,5,3",
+        "program": "STRING|.|cste_out|match,0,1|concat_cste,3,2",
+        "metadata": {
+            "name": "Take first character and append ','"
+        },
         "examples": [
             {
                 "inputs": [
@@ -1513,12 +1693,16 @@
                 "output": "M,"
             }
         ],
-        "constants": [
+        "constants_in": [],
+        "constants_out": [
             ","
         ]
     },
     {
-        "program": "STRING|W|.|cste|separate,0,2|head,4,1|concat_cste,5,3",
+        "program": "STRING|.|cste_out|match,0,1|concat_cste,3,2",
+        "metadata": {
+            "name": "Take first character and append ' '"
+        },
         "examples": [
             {
                 "inputs": [
@@ -1545,12 +1729,16 @@
                 "output": "3 "
             }
         ],
-        "constants": [
+        "constants_in": [],
+        "constants_out": [
             " "
         ]
     },
     {
-        "program": "STRING|W|.|cste|separate,0,2|head,4,1|concat_cste,5,3",
+        "program": "STRING|.|cste_out|match,0,1|concat_cste,3,2",
+        "metadata": {
+            "name": "Take first character and append '('"
+        },
         "examples": [
             {
                 "inputs": [
@@ -1577,12 +1765,16 @@
                 "output": "2("
             }
         ],
-        "constants": [
+        "constants_in": [],
+        "constants_out": [
             "("
         ]
     },
     {
-        "program": "STRING|.|cste|match,0,1|concat_cste,3,2",
+        "program": "STRING|.|cste_out|match,0,1|concat_cste,3,2",
+        "metadata": {
+            "name": "Take first character and append ')'"
+        },
         "examples": [
             {
                 "inputs": [
@@ -1609,12 +1801,16 @@
                 "output": "1)"
             }
         ],
-        "constants": [
+        "constants_in": [],
+        "constants_out": [
             ")"
         ]
     },
     {
-        "program": "STRING|W|.|cste|match,0,2|concat_cste,4,3",
+        "program": "STRING|.|cste_out|match,0,1|concat_cste,3,2",
+        "metadata": {
+            "name": "Take first character and append '-'"
+        },
         "examples": [
             {
                 "inputs": [
@@ -1641,12 +1837,16 @@
                 "output": "V-"
             }
         ],
-        "constants": [
+        "constants_in": [],
+        "constants_out": [
             "-"
         ]
     },
     {
-        "program": "STRING|STRING|.|cste|match,0,2|match,1,2|concat_cste,4,3|concat,6,5|concat_cste,7,3",
+        "program": "STRING|STRING|.|cste_out|match,0,2|concat_cste,4,3|match,1,2|concat,5,6|concat_cste,7,3",
+        "metadata": {
+            "name": "Abbreviate separate words (I)"
+        },
         "examples": [
             {
                 "inputs": [
@@ -1677,12 +1877,16 @@
                 "output": "1.O."
             }
         ],
-        "constants": [
+        "constants_in": [],
+        "constants_out": [
             "."
         ]
     },
     {
-        "program": "STRING|.|O|cste|head,0,2|tail,0,2|match,4,1|match,5,1|concat_cste,6,3|concat,8,7|concat_cste,9,3",
+        "program": "STRING|.|cste_in|cste_out|match,0,1|tail_cste,0,2|match,5,1|concat_cste,4,3|concat,7,6|concat_cste,8,3",
+        "metadata": {
+            "name": "Abbreviate words separated by '.'"
+        },
         "examples": [
             {
                 "inputs": [
@@ -1709,12 +1913,18 @@
                 "output": "2.+."
             }
         ],
-        "constants": [
+        "constants_in": [
+            "."
+        ],
+        "constants_out": [
             "."
         ]
     },
     {
-        "program": "STRING|STRING|.|cste|match,0,2|match,1,2|concat_cste,4,3|concat,6,5|concat_cste,7,3",
+        "program": "STRING|STRING|.|cste_out|match,0,2|concat_cste,4,3|match,1,2|concat,5,6|concat_cste,7,3",
+        "metadata": {
+            "name": "Abbreviate separate words (II)"
+        },
         "examples": [
             {
                 "inputs": [
@@ -1745,12 +1955,16 @@
                 "output": "M.7."
             }
         ],
-        "constants": [
+        "constants_in": [],
+        "constants_out": [
             "."
         ]
     },
     {
-        "program": "NO SOLUTION|Abbreviate words separated by ',' [DOUBLE CONSTANTE]",
+        "program": "STRING|.|cste_in|cste_out|match,0,1|tail_cste,0,2|match,5,1|concat_cste,4,3|concat,7,6|concat_cste,8,3",
+        "metadata": {
+            "name": "Abbreviate words separated by ','"
+        },
         "examples": [
             {
                 "inputs": [
@@ -1777,13 +1991,18 @@
                 "output": "V.A."
             }
         ],
-        "constants": [
-            ",",
+        "constants_in": [
+            ","
+        ],
+        "constants_out": [
             "."
         ]
     },
     {
-        "program": "STRING|STRING|.|cste|match,0,2|match,1,2|concat_cste,4,3|concat,6,5|concat_cste,7,3",
+        "program": "STRING|STRING|.|cste_out|match,0,2|concat_cste,4,3|match,1,2|concat,5,6|concat_cste,7,3",
+        "metadata": {
+            "name": "Abbreviate separate words (III)"
+        },
         "examples": [
             {
                 "inputs": [
@@ -1814,12 +2033,16 @@
                 "output": "M.6."
             }
         ],
-        "constants": [
+        "constants_in": [],
+        "constants_out": [
             "."
         ]
     },
     {
-        "program": "NO SOLUTION|Abbreviate words separated by ' ' [DOUBLE CONSTANTE]",
+        "program": "STRING|.|cste_in|cste_out|match,0,1|tail_cste,0,2|match,5,1|concat_cste,4,3|concat,7,6|concat_cste,8,3",
+        "metadata": {
+            "name": "Abbreviate words separated by ' '"
+        },
         "examples": [
             {
                 "inputs": [
@@ -1846,13 +2069,18 @@
                 "output": "9.5."
             }
         ],
-        "constants": [
-            " ",
+        "constants_in": [
+            " "
+        ],
+        "constants_out": [
             "."
         ]
     },
     {
-        "program": "STRING|STRING|.|cste|match,0,2|match,1,2|concat_cste,4,3|concat,6,5|concat_cste,7,3",
+        "program": "STRING|STRING|.|cste_out|match,0,2|concat_cste,4,3|match,1,2|concat,5,6|concat_cste,7,3",
+        "metadata": {
+            "name": "Abbreviate separate words (IIII)"
+        },
         "examples": [
             {
                 "inputs": [
@@ -1883,12 +2111,16 @@
                 "output": "5.V."
             }
         ],
-        "constants": [
+        "constants_in": [],
+        "constants_out": [
             "."
         ]
     },
     {
-        "program": "NO SOLUTION|Abbreviate words separated by '(' [DOUBLE CONSTANTE]",
+        "program": "STRING|.|cste_in|cste_out|match,0,1|tail_cste,0,2|match,5,1|concat_cste,4,3|concat,7,6|concat_cste,8,3",
+        "metadata": {
+            "name": "Abbreviate words separated by '('"
+        },
         "examples": [
             {
                 "inputs": [
@@ -1915,13 +2147,18 @@
                 "output": "1.M."
             }
         ],
-        "constants": [
-            ".",
+        "constants_in": [
             "("
+        ],
+        "constants_out": [
+            "."
         ]
     },
     {
-        "program": "STRING|STRING|.|cste|match,0,2|match,1,2|concat_cste,4,3|concat,6,5|concat_cste,7,3",
+        "program": "STRING|STRING|.|cste_out|match,0,2|concat_cste,4,3|match,1,2|concat,5,6|concat_cste,7,3",
+        "metadata": {
+            "name": "Abbreviate separate words (IIIII)"
+        },
         "examples": [
             {
                 "inputs": [
@@ -1952,12 +2189,16 @@
                 "output": "W.7."
             }
         ],
-        "constants": [
+        "constants_in": [],
+        "constants_out": [
             "."
         ]
     },
     {
-        "program": "NO SOLUTION|Abbreviate words separated by ')' [DOUBLE CONSTANTE]",
+        "program": "STRING|.|cste_in|cste_out|match,0,1|tail_cste,0,2|match,5,1|concat_cste,4,3|concat,7,6|concat_cste,8,3",
+        "metadata": {
+            "name": "Abbreviate words separated by ')'"
+        },
         "examples": [
             {
                 "inputs": [
@@ -1984,13 +2225,18 @@
                 "output": "+.L."
             }
         ],
-        "constants": [
-            ")",
+        "constants_in": [
+            ")"
+        ],
+        "constants_out": [
             "."
         ]
     },
     {
-        "program": "STRING|STRING|.|cste|match,0,2|match,1,2|concat_cste,4,3|concat,6,5|concat_cste,7,3",
+        "program": "STRING|STRING|.|cste_out|match,0,2|concat_cste,4,3|match,1,2|concat,5,6|concat_cste,7,3",
+        "metadata": {
+            "name": "Abbreviate separate words (IIIIII)"
+        },
         "examples": [
             {
                 "inputs": [
@@ -2021,12 +2267,16 @@
                 "output": "C.L."
             }
         ],
-        "constants": [
+        "constants_in": [],
+        "constants_out": [
             "."
         ]
     },
     {
-        "program": "NO SOLUTION|Abbreviate words separated by '-' [DOUBLE CONSTANTE]",
+        "program": "STRING|.|cste_in|cste_out|match,0,1|tail_cste,0,2|match,5,1|concat_cste,4,3|concat,7,6|concat_cste,8,3",
+        "metadata": {
+            "name": "Abbreviate words separated by '-'"
+        },
         "examples": [
             {
                 "inputs": [
@@ -2053,13 +2303,18 @@
                 "output": "E.1."
             }
         ],
-        "constants": [
-            "-",
+        "constants_in": [
+            "-"
+        ],
+        "constants_out": [
             "."
         ]
     },
     {
         "program": "STRING|STRING|concat,0,1",
+        "metadata": {
+            "name": "Append 2 strings (I)"
+        },
         "examples": [
             {
                 "inputs": [
@@ -2090,10 +2345,14 @@
                 "output": "Launa275"
             }
         ],
-        "constants": []
+        "constants_in": [],
+        "constants_out": []
     },
     {
         "program": "STRING|STRING|concat,0,1",
+        "metadata": {
+            "name": "Append 2 strings (II)"
+        },
         "examples": [
             {
                 "inputs": [
@@ -2124,10 +2383,14 @@
                 "output": "GertudeFerrari"
             }
         ],
-        "constants": []
+        "constants_in": [],
+        "constants_out": []
     },
     {
         "program": "STRING|STRING|concat,0,1",
+        "metadata": {
+            "name": "Append 2 strings (III)"
+        },
         "examples": [
             {
                 "inputs": [
@@ -2158,10 +2421,14 @@
                 "output": "+196Ducati125"
             }
         ],
-        "constants": []
+        "constants_in": [],
+        "constants_out": []
     },
     {
         "program": "STRING|STRING|concat,0,1",
+        "metadata": {
+            "name": "Append 2 strings (IIII)"
+        },
         "examples": [
             {
                 "inputs": [
@@ -2192,10 +2459,14 @@
                 "output": "+118CT"
             }
         ],
-        "constants": []
+        "constants_in": [],
+        "constants_out": []
     },
     {
         "program": "STRING|STRING|concat,0,1",
+        "metadata": {
+            "name": "Append 2 strings (IIIII)"
+        },
         "examples": [
             {
                 "inputs": [
@@ -2226,10 +2497,14 @@
                 "output": "566504"
             }
         ],
-        "constants": []
+        "constants_in": [],
+        "constants_out": []
     },
     {
         "program": "STRING|STRING|concat,0,1",
+        "metadata": {
+            "name": "Append 2 strings (IIIIII)"
+        },
         "examples": [
             {
                 "inputs": [
@@ -2260,10 +2535,14 @@
                 "output": "Rowden14"
             }
         ],
-        "constants": []
+        "constants_in": [],
+        "constants_out": []
     },
     {
-        "program": "STRING|cste|U|head,0,2|concat_cste,3,1|concat,4,0",
+        "program": "STRING|.|cste_out|head,0,1|concat_cste,3,2|concat,4,0",
+        "metadata": {
+            "name": "Prepend 'UCLA'"
+        },
         "examples": [
             {
                 "inputs": [
@@ -2290,12 +2569,16 @@
                 "output": "UCLA+143"
             }
         ],
-        "constants": [
+        "constants_in": [],
+        "constants_out": [
             "UCLA"
         ]
     },
     {
-        "program": "STRING|cste|concat_cste,0,1",
+        "program": "STRING|cste_out|concat_cste,0,1",
+        "metadata": {
+            "name": "Append '984'"
+        },
         "examples": [
             {
                 "inputs": [
@@ -2322,12 +2605,16 @@
                 "output": "Malissa984"
             }
         ],
-        "constants": [
+        "constants_in": [],
+        "constants_out": [
             "984"
         ]
     },
     {
-        "program": "STRING|W|cste|$|separate,0,3|concat_cste,4,2|head,0,1|concat,5,6",
+        "program": "STRING|.|cste_in|cste_out|head,0,1|except,2|match,0,5|concat_cste,4,3|concat,7,6",
+        "metadata": {
+            "name": "Prepend 'Elias' to first word"
+        },
         "examples": [
             {
                 "inputs": [
@@ -2354,12 +2641,18 @@
                 "output": "EliasUrbana"
             }
         ],
-        "constants": [
+        "constants_in": [
+            " "
+        ],
+        "constants_out": [
             "Elias"
         ]
     },
     {
-        "program": "STRING|cste|U|head,0,2|concat_cste,3,1|concat,4,0",
+        "program": "STRING|.|cste_out|head,0,1|concat_cste,3,2|concat,4,0",
+        "metadata": {
+            "name": "Prepend 'Santa'"
+        },
         "examples": [
             {
                 "inputs": [
@@ -2386,12 +2679,16 @@
                 "output": "Santa7"
             }
         ],
-        "constants": [
+        "constants_in": [],
+        "constants_out": [
             "Santa"
         ]
     },
     {
-        "program": "STRING|cste|concat_cste,0,1",
+        "program": "STRING|cste_out|concat_cste,0,1",
+        "metadata": {
+            "name": "Append 'Kimberley'"
+        },
         "examples": [
             {
                 "inputs": [
@@ -2418,12 +2715,16 @@
                 "output": "+188Kimberley"
             }
         ],
-        "constants": [
+        "constants_in": [],
+        "constants_out": [
             "Kimberley"
         ]
     },
     {
-        "program": "STRING|W|cste|.|head,0,3|head,0,1|concat_cste,4,2|concat,6,5",
+        "program": "STRING|.|cste_in|cste_out|head,0,1|except,2|match,0,5|concat_cste,4,3|concat,7,6",
+        "metadata": {
+            "name": "Prepend '196' to first word"
+        },
         "examples": [
             {
                 "inputs": [
@@ -2450,12 +2751,18 @@
                 "output": "196Soderstrom"
             }
         ],
-        "constants": [
+        "constants_in": [
+            " "
+        ],
+        "constants_out": [
             "196"
         ]
     },
     {
-        "program": "STRING|cste|.|head,0,2|concat_cste,3,1|concat,4,0",
+        "program": "STRING|.|cste_out|cste_in|head,0,1|concat_cste,3,2|concat,4,0",
+        "metadata": {
+            "name": "Prepend '+65'"
+        },
         "examples": [
             {
                 "inputs": [
@@ -2482,12 +2789,16 @@
                 "output": "+65NY"
             }
         ],
-        "constants": [
+        "constants_in": [],
+        "constants_out": [
             "+65"
         ]
     },
     {
-        "program": "STRING|cste|concat_cste,0,1",
+        "program": "STRING|cste_out|concat_cste,0,1",
+        "metadata": {
+            "name": "Append 'Jani'"
+        },
         "examples": [
             {
                 "inputs": [
@@ -2514,12 +2825,16 @@
                 "output": "MackenzieJani"
             }
         ],
-        "constants": [
+        "constants_in": [],
+        "constants_out": [
             "Jani"
         ]
     },
     {
-        "program": "STRING|W|.|cste|head,0,2|head,0,1|concat_cste,4,3|concat,6,5",
+        "program": "STRING|.|cste_in|cste_out|head,0,1|except,2|match,0,5|concat_cste,4,3|concat,7,6",
+        "metadata": {
+            "name": "Prepend 'Edison' to first word"
+        },
         "examples": [
             {
                 "inputs": [
@@ -2546,12 +2861,18 @@
                 "output": "EdisonReily"
             }
         ],
-        "constants": [
+        "constants_in": [
+            " "
+        ],
+        "constants_out": [
             "Edison"
         ]
     },
     {
-        "program": "STRING|cste|U|head,0,2|concat_cste,3,1|concat,4,0",
+        "program": "STRING|.|cste_out|head,0,1|concat_cste,3,2|concat,4,0",
+        "metadata": {
+            "name": "Prepend '+115'"
+        },
         "examples": [
             {
                 "inputs": [
@@ -2578,12 +2899,16 @@
                 "output": "+115Kimberley"
             }
         ],
-        "constants": [
+        "constants_in": [],
+        "constants_out": [
             "+115"
         ]
     },
     {
-        "program": "STRING|cste|concat_cste,0,1",
+        "program": "STRING|cste_out|concat_cste,0,1",
+        "metadata": {
+            "name": "Append 'Reily'"
+        },
         "examples": [
             {
                 "inputs": [
@@ -2610,12 +2935,16 @@
                 "output": "BoboReily"
             }
         ],
-        "constants": [
+        "constants_in": [],
+        "constants_out": [
             "Reily"
         ]
     },
     {
-        "program": "STRING|W|.|cste|head,0,2|head,0,1|concat_cste,4,3|concat,6,5",
+        "program": "STRING|.|cste_in|cste_out|head,0,1|except,2|match,0,5|concat_cste,4,3|concat,7,6",
+        "metadata": {
+            "name": "Prepend 'Bradford' to first word"
+        },
         "examples": [
             {
                 "inputs": [
@@ -2642,12 +2971,18 @@
                 "output": "BradfordSpagnoli"
             }
         ],
-        "constants": [
+        "constants_in": [
+            " "
+        ],
+        "constants_out": [
             "Bradford"
         ]
     },
     {
-        "program": "STRING|cste|U|head,0,2|concat_cste,3,1|concat,4,0",
+        "program": "STRING|.|cste_out|head,0,1|concat_cste,3,2|concat,4,0",
+        "metadata": {
+            "name": "Prepend '+132'"
+        },
         "examples": [
             {
                 "inputs": [
@@ -2674,12 +3009,16 @@
                 "output": "+13265"
             }
         ],
-        "constants": [
+        "constants_in": [],
+        "constants_out": [
             "+132"
         ]
     },
     {
-        "program": "STRING|cste|concat_cste,0,1",
+        "program": "STRING|cste_out|concat_cste,0,1",
+        "metadata": {
+            "name": "Append '843'"
+        },
         "examples": [
             {
                 "inputs": [
@@ -2706,12 +3045,16 @@
                 "output": "+167843"
             }
         ],
-        "constants": [
+        "constants_in": [],
+        "constants_out": [
             "843"
         ]
     },
     {
-        "program": "STRING|W|.|cste|head,0,2|head,0,1|concat_cste,4,3|concat,6,5",
+        "program": "STRING|.|cste_in|cste_out|head,0,1|except,2|match,0,5|concat_cste,4,3|concat,7,6",
+        "metadata": {
+            "name": "Prepend 'Cornell' to first word"
+        },
         "examples": [
             {
                 "inputs": [
@@ -2738,13 +3081,18 @@
                 "output": "CornellHouston"
             }
         ],
-        "constants": [
-            " ",
+        "constants_in": [
+            " "
+        ],
+        "constants_out": [
             "Cornell"
         ]
     },
     {
-        "program": "STRING|cste|U|head,0,2|concat_cste,3,1|concat,4,0",
+        "program": "STRING|.|cste_out|head,0,1|concat_cste,3,2|concat,4,0",
+        "metadata": {
+            "name": "Prepend 'Park'"
+        },
         "examples": [
             {
                 "inputs": [
@@ -2771,12 +3119,16 @@
                 "output": "Park+5"
             }
         ],
-        "constants": [
+        "constants_in": [],
+        "constants_out": [
             "Park"
         ]
     },
     {
-        "program": "STRING|cste|concat_cste,0,1",
+        "program": "STRING|cste_out|concat_cste,0,1",
+        "metadata": {
+            "name": "Append 'Haven'"
+        },
         "examples": [
             {
                 "inputs": [
@@ -2803,12 +3155,16 @@
                 "output": "HondaHaven"
             }
         ],
-        "constants": [
+        "constants_in": [],
+        "constants_out": [
             "Haven"
         ]
     },
     {
-        "program": "STRING|W|.|cste|head,0,2|head,0,1|concat_cste,4,3|concat,6,5",
+        "program": "STRING|.|cste_in|cste_out|head,0,1|except,2|match,0,5|concat_cste,4,3|concat,7,6",
+        "metadata": {
+            "name": "Prepend '487' to first word"
+        },
         "examples": [
             {
                 "inputs": [
@@ -2835,13 +3191,18 @@
                 "output": "4876"
             }
         ],
-        "constants": [
-            " ",
+        "constants_in": [
+            " "
+        ],
+        "constants_out": [
             "487"
         ]
     },
     {
-        "program": "NO SOLUTION|parentheses around a single word (I) [DOUBLE CONSTANTE]",
+        "program": null,
+        "metadata": {
+            "name": "parentheses around a single word (I)"
+        },
         "examples": [
             {
                 "inputs": [
@@ -2868,13 +3229,17 @@
                 "output": "(Jenee)"
             }
         ],
-        "constants": [
-            ")",
-            "("
+        "constants_in": [],
+        "constants_out": [
+            "(",
+            ")"
         ]
     },
     {
-        "program": "NO SOLUTION|parentheses around a single word (II) [DOUBLE CONSTANTE]",
+        "program": null,
+        "metadata": {
+            "name": "parentheses around a single word (II)"
+        },
         "examples": [
             {
                 "inputs": [
@@ -2901,13 +3266,17 @@
                 "output": "(Babiarz)"
             }
         ],
-        "constants": [
-            ")",
-            "("
+        "constants_in": [],
+        "constants_out": [
+            "(",
+            ")"
         ]
     },
     {
-        "program": "NO SOLUTION|parentheses around a single word (III) [DOUBLE CONSTANTE]",
+        "program": null,
+        "metadata": {
+            "name": "parentheses around a single word (III)"
+        },
         "examples": [
             {
                 "inputs": [
@@ -2934,13 +3303,17 @@
                 "output": "(Houston)"
             }
         ],
-        "constants": [
-            ")",
-            "("
+        "constants_in": [],
+        "constants_out": [
+            "(",
+            ")"
         ]
     },
     {
-        "program": "NO SOLUTION|parentheses around a single word (IIII) [DOUBLE CONSTANTE]",
+        "program": null,
+        "metadata": {
+            "name": "parentheses around a single word (IIII)"
+        },
         "examples": [
             {
                 "inputs": [
@@ -2967,13 +3340,17 @@
                 "output": "(College)"
             }
         ],
-        "constants": [
-            ")",
-            "("
+        "constants_in": [],
+        "constants_out": [
+            "(",
+            ")"
         ]
     },
     {
-        "program": "NO SOLUTION|parentheses around a single word (IIIII) [DOUBLE CONSTANTE]",
+        "program": null,
+        "metadata": {
+            "name": "parentheses around a single word (IIIII)"
+        },
         "examples": [
             {
                 "inputs": [
@@ -3000,13 +3377,17 @@
                 "output": "(Spell)"
             }
         ],
-        "constants": [
-            ")",
-            "("
+        "constants_in": [],
+        "constants_out": [
+            "(",
+            ")"
         ]
     },
     {
-        "program": "NO SOLUTION|parentheses around first word [DOUBLE CONSTANTE]",
+        "program": null,
+        "metadata": {
+            "name": "parentheses around first word"
+        },
         "examples": [
             {
                 "inputs": [
@@ -3033,13 +3414,19 @@
                 "output": "(64)"
             }
         ],
-        "constants": [
-            ")",
-            "("
+        "constants_in": [
+            " "
+        ],
+        "constants_out": [
+            "(",
+            ")"
         ]
     },
     {
-        "program": "NO SOLUTION|parentheses around second word [DOUBLE CONSTANTE]",
+        "program": null,
+        "metadata": {
+            "name": "parentheses around second word"
+        },
         "examples": [
             {
                 "inputs": [
@@ -3066,14 +3453,19 @@
                 "output": "(14)"
             }
         ],
-        "constants": [
-            " ",
-            ")",
-            "("
+        "constants_in": [
+            " "
+        ],
+        "constants_out": [
+            "(",
+            ")"
         ]
     },
     {
-        "program": "NO SOLUTION| ensure suffix [IF CONDITION]",
+        "program": "STRING|cste_out|concat_if,0,1",
+        "metadata": {
+            "name": "ensure suffix `Montiel`"
+            },
         "examples": [
             {
                 "inputs": [
@@ -3100,13 +3492,19 @@
                 "output": "Ducati125 +115 +189 +46Montiel"
             }
         ],
-        "constants": [
+        "constants_in": [
+            " "
+        ],
+        "constants_out": [
             " ",
             "Montiel"
         ]
     },
     {
-        "program": "NO SOLUTION| ensure suffix [IF CONDITION]",
+        "program": "STRING|cste_out|concat_if,0,1",
+        "metadata": {
+            "name": "ensure suffix `421`"
+            },
         "examples": [
             {
                 "inputs": [
@@ -3133,12 +3531,19 @@
                 "output": "D Dermody421"
             }
         ],
-        "constants": [
-            "421"
+        "constants_in": [
+            " "
+        ],
+        "constants_out": [
+            "421",
+            " "
         ]
     },
     {
-        "program": "NO SOLUTION| ensure suffix [IF CONDITION]",
+        "program": "STRING|cste_out|concat_if,0,1",
+        "metadata": {
+            "name": "ensure suffix `Phillip`"
+            },
         "examples": [
             {
                 "inputs": [
@@ -3165,12 +3570,19 @@
                 "output": "T Ferrari Hayley DermodyPhillip"
             }
         ],
-        "constants": [
+        "constants_in": [
+            " "
+        ],
+        "constants_out": [
+            " ",
             "Phillip"
         ]
     },
     {
-        "program": "NO SOLUTION| ensure suffix [IF CONDITION]",
+        "program": "STRING|cste_out|concat_if,0,1",
+        "metadata": {
+            "name": "ensure suffix `Salley`"
+        },
         "examples": [
             {
                 "inputs": [
@@ -3197,13 +3609,19 @@
                 "output": "984 Withers AngelesSalley"
             }
         ],
-        "constants": [
+        "constants_in": [
+            " "
+        ],
+        "constants_out": [
             " ",
             "Salley"
         ]
     },
     {
-        "program": "NO SOLUTION| ensure suffix [IF CONDITION]",
+        "program": "STRING|cste_out|concat_if,0,1",
+        "metadata": {
+            "name": "ensure suffix `Santa`"
+        },
         "examples": [
             {
                 "inputs": [
@@ -3230,13 +3648,19 @@
                 "output": "Beata S Acura JeaniceSanta"
             }
         ],
-        "constants": [
-            " ",
-            "Santa"
+        "constants_in": [
+            " "
+        ],
+        "constants_out": [
+            "Santa",
+            " "
         ]
     },
     {
-        "program": "NO SOLUTION| ensure suffix [IF CONDITION]",
+        "program": "STRING|cste_out|concat_if,0,1",
+        "metadata": {
+            "name": "ensure suffix `Acura125`"
+        },
         "examples": [
             {
                 "inputs": [
@@ -3263,13 +3687,19 @@
                 "output": "83 RowdenAcura125"
             }
         ],
-        "constants": [
-            " ",
-            "Acura125"
+        "constants_in": [
+            " "
+        ],
+        "constants_out": [
+            "Acura125",
+            " "
         ]
     },
     {
-        "program": "NO SOLUTION| ensure suffix [IF CONDITION]",
+        "program": "STRING|cste_out|concat_if,0,1",
+        "metadata": {
+            "name": "ensure suffix `Madelaine`"
+        },
         "examples": [
             {
                 "inputs": [
@@ -3296,7 +3726,10 @@
                 "output": "Georgina 40Madelaine"
             }
         ],
-        "constants": [
+        "constants_in": [
+            " "
+        ],
+        "constants_out": [
             " ",
             "Madelaine"
         ]

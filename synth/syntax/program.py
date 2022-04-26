@@ -30,6 +30,9 @@ class Program(ABC):
     def is_constant(self) -> bool:
         return False
 
+    def is_invariant(self, constant_types) -> bool:
+        return True
+
     def count_constants(self) -> int:
         return int(self.is_constant())
 
@@ -50,6 +53,9 @@ class Program(ABC):
 class Variable(Program):
     __hash__ = Program.__hash__
 
+    def is_invariant(self, constant_types) -> bool:
+        return False
+    
     def __init__(self, variable: int, type: Type = UnknownType()):
         super().__init__(type)
         self.variable: int = variable
@@ -146,6 +152,11 @@ class Function(Program):
         return self.function.is_constant() and all(
             arg.is_constant() for arg in self.arguments
         )
+    
+    def is_invariant(self, constant_types) -> bool:
+        return self.function.is_invariant(constant_types) and all(
+            arg.is_invariant(constant_types) for arg in self.arguments
+        )
 
     def count_constants(self) -> int:
         return self.function.count_constants() + sum(
@@ -212,6 +223,9 @@ class Primitive(Program):
 
     def __pickle__(o: Program) -> Tuple:
         return Primitive, (o.primitive, o.type)  # type: ignore
+
+    def is_invariant(self, constant_types) -> bool:
+        return not(self.type in constant_types)
 
     def __str__(self) -> str:
         """

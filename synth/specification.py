@@ -45,7 +45,8 @@ class PBEWithConstants(TaskSpecification):
     """
 
     examples: List[Example]
-    constants: List[Any]
+    constants_in: List[Any]
+    constants_out: List[Any]
 
     def guess_type(self) -> Type:
         i = 0
