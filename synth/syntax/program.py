@@ -1,7 +1,13 @@
 from abc import ABC, abstractstaticmethod
 from typing import Generator, List as TList, Any, Optional, Set, Tuple
 
-from synth.syntax.type_system import Arrow, FunctionType, PrimitiveType, Type, UnknownType
+from synth.syntax.type_system import (
+    Arrow,
+    FunctionType,
+    PrimitiveType,
+    Type,
+    UnknownType,
+)
 
 
 class Program(ABC):
