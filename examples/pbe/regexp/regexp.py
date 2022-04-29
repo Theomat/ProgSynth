@@ -72,6 +72,7 @@ def __eval__(x, reg):
         return False
     return result.match.group() == x
 
+
 __semantics = {
     "begin": init.type_name,
     "?": __qmark__,

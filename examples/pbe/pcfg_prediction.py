@@ -160,11 +160,13 @@ elif dsl_name == REGEXP:
     max_list_length = 10
 elif dsl_name == CALCULATOR:
     from calculator.calculator import dsl, lexicon
+
     upper_bound_type_size = 5
 elif dsl_name == TRANSDUCTION:
     from transduction.transduction import dsl, lexicon, constant_types
+
     upper_bound_type_size = 5
-    dsl_constant_types = constant_types 
+    dsl_constant_types = constant_types
 else:
     print("Unknown dsl:", dsl_name, file=sys.stderr)
     sys.exit(1)
@@ -200,10 +202,18 @@ if all(task.solution is not None for task in full_dataset):
     max_depth = max(task.solution.depth() for task in full_dataset)
 else:
     max_depth = 15  # TODO: set as parameter
-cfgs = [ConcreteCFG.from_dsl(dsl, t, max_depth, upper_bound_type_size=upper_bound_type_size, constant_types=dsl_constant_types) for t in all_type_requests]
+cfgs = [
+    ConcreteCFG.from_dsl(
+        dsl,
+        t,
+        max_depth,
+        upper_bound_type_size=upper_bound_type_size,
+        constant_types=dsl_constant_types,
+    )
+    for t in all_type_requests
+]
 print(f"{len(all_type_requests)} type requests supported.")
 print(f"Lexicon: [{min(lexicon)};{max(lexicon)}]")
-
 
 
 class MyPredictor(nn.Module):

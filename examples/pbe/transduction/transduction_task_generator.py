@@ -32,6 +32,7 @@ from synth.generation.sampler import (
 )
 from examples.pbe.regexp.type_regex import REGEXP
 
+
 class TaskGenerator:
     def __init__(
         self,
@@ -238,7 +239,43 @@ def reproduce_dataset(
         UnionSampler(
             {
                 STRING: LexiconSampler(str_lexicon, seed=seed),
-                REGEXP: LexiconSampler(['_', ')', '{', '+', ';', '=', '$', '\\', '^', ',', '!', '*', "'", ' ', '>', '}', '<', '[', '"', '#', '|', '`', '%', '?', ':', ']', '&', '(', '@', '.', '/', '-'], seed=seed),
+                REGEXP: LexiconSampler(
+                    [
+                        "_",
+                        ")",
+                        "{",
+                        "+",
+                        ";",
+                        "=",
+                        "$",
+                        "\\",
+                        "^",
+                        ",",
+                        "!",
+                        "*",
+                        "'",
+                        " ",
+                        ">",
+                        "}",
+                        "<",
+                        "[",
+                        '"',
+                        "#",
+                        "|",
+                        "`",
+                        "%",
+                        "?",
+                        ":",
+                        "]",
+                        "&",
+                        "(",
+                        "@",
+                        ".",
+                        "/",
+                        "-",
+                    ],
+                    seed=seed,
+                ),
             }
         ),
         list_length_gen,

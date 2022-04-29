@@ -12,15 +12,23 @@ from synth.syntax import DSL, PrimitiveType, Arrow, List, INT, STRING
 
 import string
 import re
-from examples.pbe.regexp.type_regex import regex_findall, regex_match, Raw, REGEXP, regex_search
+from examples.pbe.regexp.type_regex import (
+    regex_findall,
+    regex_match,
+    Raw,
+    REGEXP,
+    regex_search,
+)
 
 from synth.syntax.type_system import BOOL, PolymorphicType
 
 CSTE_IN = PrimitiveType("CST_STR_INPUT")
 CSTE_OUT = PrimitiveType("CST_STR_OUTPUT")
 
+
 def __concat__(x, y):
     return "" + x + y
+
 
 def __concat_if__(x, y):
     if y in x:
@@ -29,11 +37,13 @@ def __concat_if__(x, y):
         return y
     return "" + x + y
 
+
 def __head__(x: str, regexp: str):
     sbstr = regex_search(Raw(get_regexp(regexp)), x, flags=re.ASCII)
     if sbstr == None:
         return ""
     return x.split(sbstr.match.group(), 1)[0]
+
 
 def __tail__(x: str, regexp: str):
     sbstr = regex_search(Raw(get_regexp(regexp)), x, flags=re.ASCII)
@@ -41,11 +51,13 @@ def __tail__(x: str, regexp: str):
         return ""
     return x.split(sbstr.match.group(), 1)[1]
 
+
 def __match__(x: str, regexp: str):
     sbstr = regex_search(Raw(get_regexp(regexp)), x, flags=re.ASCII)
     if sbstr == None:
         return ""
     return sbstr.match.group()
+
 
 # untreated matching, done for constant text inputs (e.g. "." will be considered as a point instead of any char)
 def __head_text__(x: str, text: str):
@@ -55,12 +67,14 @@ def __head_text__(x: str, text: str):
         return ""
     return x.split(sbstr.match.group(), 1)[0]
 
+
 def __tail_text__(x: str, text: str):
     regexp = "(\\" + text + ")"
     sbstr = regex_search(Raw(regexp), x, flags=re.ASCII)
     if sbstr == None:
         return ""
     return x.split(sbstr.match.group(), 1)[1]
+
 
 def __match_text__(x: str, text: str):
     regexp = "(\\" + text + ")"
@@ -69,16 +83,18 @@ def __match_text__(x: str, text: str):
         return ""
     return sbstr.match.group()
 
+
 def __compose__(x, y):
     return x + y
+
 
 __semantics = {
     "concat": lambda x: lambda y: __concat__(x, y),
     "concat_cste": lambda x: lambda y: __concat__(x, y),
     "concat_if": lambda x: lambda y: __concat_if__(x, y),
-    "head": lambda x: lambda regexp: __head__(x, regexp), 
-    "tail": lambda x: lambda regexp: __tail__(x, regexp), 
-    "match": lambda x: lambda regexp: __match__(x, regexp), 
+    "head": lambda x: lambda regexp: __head__(x, regexp),
+    "tail": lambda x: lambda regexp: __tail__(x, regexp),
+    "match": lambda x: lambda regexp: __match__(x, regexp),
     "head_cste": lambda x: lambda text: __head_text__(x, text),
     "tail_cste": lambda x: lambda text: __tail_text__(x, text),
     "match_cste": lambda x: lambda text: __match_text__(x, text),
@@ -88,7 +104,7 @@ __semantics = {
     "$": "$",
     ".": ".",
     "except": lambda x: "([^" + x + "]+",
-    "except_end": lambda x: "([^" + x + "]+$"
+    "except_end": lambda x: "([^" + x + "]+$",
 }
 
 __primitive_types = {
@@ -110,8 +126,7 @@ __primitive_types = {
     "except_end": Arrow(CSTE_IN, REGEXP),
 }
 
-__forbidden_patterns = [
-]
+__forbidden_patterns = []
 
 dsl = DSL(__primitive_types, __forbidden_patterns)
 constant_types: Set[PrimitiveType] = set()

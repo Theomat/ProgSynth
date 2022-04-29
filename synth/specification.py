@@ -38,6 +38,7 @@ class PBE(TaskSpecification):
             t = self.examples[i].guess_type()
         return t
 
+
 @dataclass
 class PBEWithConstants(TaskSpecification):
     """

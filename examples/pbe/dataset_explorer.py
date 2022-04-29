@@ -43,8 +43,11 @@ dataset_file: str = parameters.dataset.format(dsl_name=dsl_name)
 def pretty_print_solution(str: str):
     return str
 
+
 def pretty_print_inputs(str: str):
     return str
+
+
 if dsl_name == DEEPCODER:
     from deepcoder.deepcoder import dsl, lexicon
 

@@ -73,11 +73,17 @@ class DSLEvaluator(Evaluator):
         try:
             for sub_prog in program.depth_first_iter():
                 self._total_requests += 1
-                if sub_prog in evaluations and evaluations[sub_prog] and not(isinstance(sub_prog, Primitive) and sub_prog.primitive == "cste"):
+                if (
+                    sub_prog in evaluations
+                    and evaluations[sub_prog]
+                    and not (
+                        isinstance(sub_prog, Primitive) and sub_prog.primitive == "cste"
+                    )
+                ):
                     self._cache_hits += 1
                     continue
                 if isinstance(sub_prog, Primitive):
-                    if sub_prog.primitive == "cste": 
+                    if sub_prog.primitive == "cste":
                         evaluations[sub_prog] = constant
                         flush = True
                     else:
@@ -88,7 +94,7 @@ class DSLEvaluator(Evaluator):
                     fun = evaluations[sub_prog.function]
                     for arg in sub_prog.arguments:
                         fun = fun(evaluations[arg])
-                    evaluations[sub_prog] = fun   
+                    evaluations[sub_prog] = fun
         except Exception as e:
             if type(e) in self.skip_exceptions:
                 evaluations[program] = None
@@ -106,7 +112,12 @@ class DSLEvaluator(Evaluator):
 
 
 class DSLEvaluatorWithConstant(Evaluator):
-    def __init__(self, semantics: Dict[str, Any], constant_types: Set[PrimitiveType], use_cache: bool = True) -> None:
+    def __init__(
+        self,
+        semantics: Dict[str, Any],
+        constant_types: Set[PrimitiveType],
+        use_cache: bool = True,
+    ) -> None:
         super().__init__()
         self.semantics = semantics
         self.constant_types = constant_types
@@ -119,12 +130,17 @@ class DSLEvaluatorWithConstant(Evaluator):
         self._total_requests = 0
         self._cache_hits = 0
 
-    def eval_with_constant(self, program: Program, input: List, constant_in: str, constant_out: str) -> Any:
+    def eval_with_constant(
+        self, program: Program, input: List, constant_in: str, constant_out: str
+    ) -> Any:
         evaluations: Dict[Program, Any] = {}
         if self.use_cache:
             used_cons = False
             for sub_prog in program.depth_first_iter():
-                if isinstance(sub_prog, Primitive) and sub_prog.type in self.constant_types:
+                if (
+                    isinstance(sub_prog, Primitive)
+                    and sub_prog.type in self.constant_types
+                ):
                     used_cons = True
                     break
             if used_cons:
@@ -132,14 +148,14 @@ class DSLEvaluatorWithConstant(Evaluator):
                 key.append(constant_in)
                 key.append(constant_out)
                 key = __tuplify__(key)
-                evaluations = self._cons_cache[key] if key in self._cons_cache else {} 
+                evaluations = self._cons_cache[key] if key in self._cons_cache else {}
             else:
                 key = __tuplify__(input)
                 evaluations = self._cache[key] if key in self._cache else {}
 
         if program in evaluations:
             return evaluations[program]
-        try: 
+        try:
             for sub_prog in program.depth_first_iter():
                 self._total_requests += 1
                 if sub_prog in evaluations:
@@ -153,7 +169,7 @@ class DSLEvaluatorWithConstant(Evaluator):
                     else:
                         self._invariant_cache[sub_prog] = None
                 if isinstance(sub_prog, Primitive):
-                    if sub_prog.primitive == "cste_in": 
+                    if sub_prog.primitive == "cste_in":
                         evaluations[sub_prog] = constant_in
                     elif sub_prog.primitive == "cste_out":
                         evaluations[sub_prog] = constant_out
@@ -168,7 +184,7 @@ class DSLEvaluatorWithConstant(Evaluator):
                     evaluations[sub_prog] = fun
                 if sub_prog.is_invariant(self.constant_types):
                     self._invariant_cache[sub_prog] = evaluations[sub_prog]
-                    
+
         except Exception as e:
             if type(e) in self.skip_exceptions:
                 evaluations[program] = None
@@ -176,9 +192,9 @@ class DSLEvaluatorWithConstant(Evaluator):
             else:
                 print(e)
                 raise e
-            
+
         return evaluations[program]
-        
+
     def eval(self, program: Program, input: List) -> Any:
         key = __tuplify__(input)
         if key not in self._cache and self.use_cache:

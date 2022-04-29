@@ -55,7 +55,7 @@ class Variable(Program):
 
     def is_invariant(self, constant_types) -> bool:
         return False
-    
+
     def __init__(self, variable: int, type: Type = UnknownType()):
         super().__init__(type)
         self.variable: int = variable
@@ -152,7 +152,7 @@ class Function(Program):
         return self.function.is_constant() and all(
             arg.is_constant() for arg in self.arguments
         )
-    
+
     def is_invariant(self, constant_types) -> bool:
         return self.function.is_invariant(constant_types) and all(
             arg.is_invariant(constant_types) for arg in self.arguments
@@ -225,7 +225,7 @@ class Primitive(Program):
         return Primitive, (o.primitive, o.type)  # type: ignore
 
     def is_invariant(self, constant_types) -> bool:
-        return not(self.type in constant_types)
+        return not (self.type in constant_types)
 
     def __str__(self) -> str:
         """

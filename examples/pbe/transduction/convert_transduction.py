@@ -20,13 +20,14 @@ from synth.syntax.dsl import DSL
 
 name2type: Dict[str, Type] = {p.primitive: p.type for p in dsl.list_primitives}
 
+
 def __decompose_dsl__(dsl: DSL, max_bound: int = 10):
     name2fulltype = {}
     dsl.instantiate_polymorphic_types(max_bound)
     for p in dsl.list_primitives:
         name = str(p)
         if isinstance(p.type, Arrow):
-            name += ''.join([str(type) for type in p.type.arguments()])
+            name += "".join([str(type) for type in p.type.arguments()])
         name2fulltype[name] = p.type
     return name2fulltype
 
@@ -92,7 +93,7 @@ def __transduction_str2prog(s: str) -> Tuple[Program, Type]:
         else:
             targets = [int(x) for x in subparts]
             arguments = [stack[x] for x in targets]
-            longname = name + ''.join([str(arg.type) for arg in arguments])
+            longname = name + "".join([str(arg.type) for arg in arguments])
             primitive = Primitive(name, name2fulltype[longname])
             stack.append(Function(primitive, arguments))
     type_stack.append(stack[-1].type)

@@ -215,6 +215,7 @@ class Struct(AbsPattern):
     def __repr__(self) -> str:
         return f"{type(self).__name__}({self._type!r}, **{self._kwargs!r})"
 
+
 class Match:
     def __init__(
         self, match: Match[str], pattern: CompiledPattern, flags: RegexFlag

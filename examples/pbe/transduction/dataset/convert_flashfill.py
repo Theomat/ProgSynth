@@ -14,12 +14,13 @@ from synth.syntax import (
     Primitive,
     Program,
     Variable,
-    Arrow
+    Arrow,
 )
 from examples.pbe.regexp.type_regex import REGEXP
 from examples.pbe.transduction.transduction import dsl, evaluator
 
 name2type = {p.primitive: p.type for p in dsl.list_primitives}
+
 
 def lcs(u, v):
     # t[(n,m)] = length of longest common string ending at first
@@ -49,6 +50,7 @@ characters = (
 )
 
 WORDS = None
+
 
 def get_lexicon():
     return delimiters + characters
@@ -392,9 +394,9 @@ def add_constants_to_task(task):
         for i in range(len(examples[0][0]))
         if examples[0][0][i] is not None
     ]
-    
+
     all_o = list(examples[0][1])
-    separator = '#'
+    separator = "#"
     for i, o in examples:
         for index in range(len(all_o[:])):
             if not all_o[index] in o:
@@ -403,7 +405,7 @@ def add_constants_to_task(task):
             for index in range(len(all_i[num][:])):
                 if all_i[num][index] not in i[num]:
                     all_i[num][index] = separator
-    
+
     all_o.insert(0, separator)
     all_o.append(separator)
     word = ""
@@ -428,19 +430,20 @@ def flashfill2json(tasks, output: str = "flashfill.json"):
     with open(output, "w") as fd:
         result = []
         for t in tasks:
-            obj = { "program" : None }
-            obj["metadata"] = { "name": t[0]} 
+            obj = {"program": None}
+            obj["metadata"] = {"name": t[0]}
             e = []
             examples = t[1]
             for i, o in examples:
-                i_str = [''.join(j) for j in i]
-                o_str = ''.join(o)
-                e.append({ "inputs": i_str, "output": o_str}) 
+                i_str = ["".join(j) for j in i]
+                o_str = "".join(o)
+                e.append({"inputs": i_str, "output": o_str})
             obj["examples"] = e
             obj["constants_in"] = t[2]
             obj["constants_out"] = t[3]
             result.append(obj)
         json.dump(result, fd, indent=4)
+
 
 def __flashfill_str2prog__(s: str) -> Tuple[Program, Type]:
     if s is None:
@@ -470,7 +473,7 @@ def __flashfill_str2prog__(s: str) -> Tuple[Program, Type]:
     type_request = FunctionType(*type_stack)
     return stack[-1], type_request
 
-    
+
 def __convert__(load: Callable[[], Dataset[PBEWithConstants]], name: str) -> None:
     tasks = load()
     tasks.save(name)
@@ -489,13 +492,20 @@ def __convert__(load: Callable[[], Dataset[PBEWithConstants]], name: str) -> Non
             constants_out.append("")
             for cons_in in constants_in:
                 for cons_out in constants_out:
-                    if found: break
-                    #print(evaluator.eval_with_constant(task.solution, ex.inputs, cons_in, cons_out), " vs ", ex.output)
-                    found = evaluator.eval_with_constant(task.solution, ex.inputs, cons_in, cons_out) == ex.output
+                    if found:
+                        break
+                    # print(evaluator.eval_with_constant(task.solution, ex.inputs, cons_in, cons_out), " vs ", ex.output)
+                    found = (
+                        evaluator.eval_with_constant(
+                            task.solution, ex.inputs, cons_in, cons_out
+                        )
+                        == ex.output
+                    )
 
             if not found:
                 print(task.metadata["name"], "FAILED")
             assert found
+
 
 def convert_flashfill(input: str = "flashfill.json"):
     def load():
@@ -520,10 +530,17 @@ def convert_flashfill(input: str = "flashfill.json"):
                 if len(examples) < len(inputs):
                     continue
                 tasks.append(
-                    Task[PBEWithConstants](type_request, PBEWithConstants(examples, constants_in, constants_out), prog, {"name": name})
+                    Task[PBEWithConstants](
+                        type_request,
+                        PBEWithConstants(examples, constants_in, constants_out),
+                        prog,
+                        {"name": name},
+                    )
                 )
         return Dataset(tasks, metadata={"dataset": "flashfill", "source:": input})
+
     __convert__(load, "flashfill.pickle")
+
 
 if __name__ == "__main__":
     import argparse
@@ -531,7 +548,7 @@ if __name__ == "__main__":
     argument_parser: argparse.ArgumentParser = argparse.ArgumentParser(
         description="Convert flashfill original dataset to ProgSynth format."
     )
-    
+
     argument_parser.add_argument(
         type=str,
         dest="file",
@@ -541,9 +558,9 @@ if __name__ == "__main__":
 
     parsed_parameters = argument_parser.parse_args()
 
-    #challenge = load_tasks("flashfill_dataset")
-    #tasks = make_synthetic_tasks()
-    #print(len(tasks), "synthetic tasks")
+    # challenge = load_tasks("flashfill_dataset")
+    # tasks = make_synthetic_tasks()
+    # print(len(tasks), "synthetic tasks")
 
-    #flashfill2json(tasks, parsed_parameters.file)
+    # flashfill2json(tasks, parsed_parameters.file)
     convert_flashfill(parsed_parameters.file)

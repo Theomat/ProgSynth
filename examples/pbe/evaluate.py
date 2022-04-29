@@ -119,7 +119,9 @@ dataset_name = dataset_file[start_index : dataset_file.index(".", start_index)]
 # ================================
 
 
-def load_dataset() -> Tuple[Dataset[PBE], DSL, DSLEvaluatorWithConstant, List[int], str]:
+def load_dataset() -> Tuple[
+    Dataset[PBE], DSL, DSLEvaluatorWithConstant, List[int], str
+]:
     if dsl_name == DEEPCODER:
         from deepcoder.deepcoder import dsl, evaluator, lexicon
     elif dsl_name == DREAMCODER:
@@ -199,7 +201,7 @@ def produce_pcfgs(
         def __init__(self, size: int) -> None:
             super().__init__()
             self.bigram_layer = BigramsPredictorLayer(size, cfgs, variable_probability)
-            
+
             encoder = IOEncoder(encoding_dimension, lexicon)
             self.packer = Task2Tensor(
                 encoder, nn.Embedding(len(encoder.lexicon), size), size, device=device
@@ -269,7 +271,7 @@ def enumerative_search(
         trace.append(method(evaluator, task, pcfg))
         pbar.update(1)
         print("Cache hit:", evaluator.cache_hit_rate)
-        print("Programs tried:", trace[len(trace) -1 ][2])
+        print("Programs tried:", trace[len(trace) - 1][2])
     pbar.close()
 
 
@@ -299,8 +301,11 @@ def base(
                 )
     return (False, time, programs, None, None)
 
+
 def constants_injector(
-    evaluator: DSLEvaluatorWithConstant, task: Task[PBEWithConstants], pcfg: ConcretePCFG
+    evaluator: DSLEvaluatorWithConstant,
+    task: Task[PBEWithConstants],
+    pcfg: ConcretePCFG,
 ) -> Tuple[bool, float, int, Optional[Program]]:
     time = 0.0
     programs = 0
@@ -330,16 +335,33 @@ def constants_injector(
                 found = False
                 for cons_in in constants_in:
                     for cons_out in constants_out:
-                        if evaluator.eval_with_constant(program, ex.inputs, cons_in, cons_out) == ex.output:
+                        if (
+                            evaluator.eval_with_constant(
+                                program, ex.inputs, cons_in, cons_out
+                            )
+                            == ex.output
+                        ):
                             found = True
                             counter += 1
                             break
-                    if found: break
-                if not found: break
+                    if found:
+                        break
+                if not found:
+                    break
             if found:
                 print("Solution found.\n")
                 print("\t", program)
-                print("\nWorking for all ", counter, "/", len(task.specification.examples), " examples in ", time, "/", task_timeout, "s.")
+                print(
+                    "\nWorking for all ",
+                    counter,
+                    "/",
+                    len(task.specification.examples),
+                    " examples in ",
+                    time,
+                    "/",
+                    task_timeout,
+                    "s.",
+                )
                 return (
                     True,
                     c.elapsed_time(),

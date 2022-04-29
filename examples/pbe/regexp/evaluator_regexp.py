@@ -11,7 +11,7 @@ generalized_to_re = {
     "O": "[^A-Za-z0-9]",
     "W": "\s",
     "begin": "",
-    ".": "."
+    ".": ".",
 }
 
 
@@ -19,7 +19,11 @@ def get_regexp(reg, groups: bool = True):
     modified = ""
     for char in reg:
         if char in generalized_to_re:
-            modified += "(" + generalized_to_re[char] + ")" if groups else generalized_to_re[char]
+            modified += (
+                "(" + generalized_to_re[char] + ")"
+                if groups
+                else generalized_to_re[char]
+            )
         else:
             modified = modified[:-1] + char + ")" if groups else modified[:-1] + char
     return modified
