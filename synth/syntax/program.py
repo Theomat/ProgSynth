@@ -1,7 +1,7 @@
 from abc import ABC, abstractstaticmethod
 from typing import Generator, List as TList, Any, Optional, Set, Tuple
 
-from synth.syntax.type_system import Arrow, FunctionType, Type, UnknownType
+from synth.syntax.type_system import Arrow, FunctionType, PrimitiveType, Type, UnknownType
 
 
 class Program(ABC):
@@ -30,7 +30,7 @@ class Program(ABC):
     def is_constant(self) -> bool:
         return False
 
-    def is_invariant(self, constant_types) -> bool:
+    def is_invariant(self, constant_types: Set[PrimitiveType]) -> bool:
         return True
 
     def count_constants(self) -> int:
@@ -53,7 +53,7 @@ class Program(ABC):
 class Variable(Program):
     __hash__ = Program.__hash__
 
-    def is_invariant(self, constant_types) -> bool:
+    def is_invariant(self, constant_types: Set[PrimitiveType]) -> bool:
         return False
 
     def __init__(self, variable: int, type: Type = UnknownType()):
@@ -153,7 +153,7 @@ class Function(Program):
             arg.is_constant() for arg in self.arguments
         )
 
-    def is_invariant(self, constant_types) -> bool:
+    def is_invariant(self, constant_types: Set[PrimitiveType]) -> bool:
         return self.function.is_invariant(constant_types) and all(
             arg.is_invariant(constant_types) for arg in self.arguments
         )
@@ -224,7 +224,7 @@ class Primitive(Program):
     def __pickle__(o: Program) -> Tuple:
         return Primitive, (o.primitive, o.type)  # type: ignore
 
-    def is_invariant(self, constant_types) -> bool:
+    def is_invariant(self, constant_types: Set[PrimitiveType]) -> bool:
         return not (self.type in constant_types)
 
     def __str__(self) -> str:
