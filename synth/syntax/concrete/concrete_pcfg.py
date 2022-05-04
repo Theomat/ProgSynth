@@ -45,7 +45,11 @@ class ConcretePCFG:
     """
 
     def __init__(
-        self, start: NonTerminal, rules: PRules, max_program_depth: int, clean: bool = False
+        self,
+        start: NonTerminal,
+        rules: PRules,
+        max_program_depth: int,
+        clean: bool = False,
     ):
         self.start = start
         self.rules = rules
@@ -290,7 +294,9 @@ class ConcretePCFG:
     def from_weights(
         cls,
         cfg: ConcreteCFG,
-        get_weight: Callable[[NonTerminal, Union[Primitive, Variable, Constant]], float],
+        get_weight: Callable[
+            [NonTerminal, Union[Primitive, Variable, Constant]], float
+        ],
     ) -> "ConcretePCFG":
         augmented_rules: PRules = {}
         for S in cfg.rules:

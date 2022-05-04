@@ -22,7 +22,11 @@ class ConcreteLogPCFG:
     """
 
     def __init__(
-        self, start: NonTerminal, rules: LogPRules, max_program_depth: int, type_req: Type
+        self,
+        start: NonTerminal,
+        rules: LogPRules,
+        max_program_depth: int,
+        type_req: Type,
     ):
         self.start = start
         self.rules = rules

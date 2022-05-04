@@ -46,7 +46,9 @@ class ConcreteCFG:
     def __init__(
         self,
         start: NonTerminal,
-        rules: Dict[NonTerminal, Dict[Union[Primitive, Variable, Constant], List[NonTerminal]]],
+        rules: Dict[
+            NonTerminal, Dict[Union[Primitive, Variable, Constant], List[NonTerminal]]
+        ],
         max_program_depth: int,
         clean: bool = True,
     ):
@@ -256,7 +258,9 @@ class ConcreteCFG:
                                 new_predecessors = addition + non_terminal.predecessors
                                 if len(new_predecessors) > n_gram - 1:
                                     new_predecessors.pop()
-                                new_context = NonTerminal(arg, new_predecessors, depth + 1)
+                                new_context = NonTerminal(
+                                    arg, new_predecessors, depth + 1
+                                )
                                 decorated_arguments_P.append(new_context)
                                 if new_context not in list_to_be_treated:
                                     list_to_be_treated.appendleft(new_context)
@@ -274,7 +278,9 @@ class ConcreteCFG:
                                 new_predecessors = addition + non_terminal.predecessors
                                 if len(new_predecessors) > n_gram - 1:
                                     new_predecessors.pop()
-                                new_context = NonTerminal(arg, new_predecessors, depth + 1)
+                                new_context = NonTerminal(
+                                    arg, new_predecessors, depth + 1
+                                )
                                 decorated_arguments_V.append(new_context)
                                 if new_context not in list_to_be_treated:
                                     list_to_be_treated.appendleft(new_context)
@@ -291,7 +297,9 @@ class ConcreteCFG:
                                 new_predecessors = addition + non_terminal.predecessors
                                 if len(new_predecessors) > n_gram - 1:
                                     new_predecessors.pop()
-                                new_context = NonTerminal(arg, new_predecessors, depth + 1)
+                                new_context = NonTerminal(
+                                    arg, new_predecessors, depth + 1
+                                )
                                 decorated_arguments_self.append(new_context)
                                 if new_context not in list_to_be_treated:
                                     list_to_be_treated.appendleft(new_context)
