@@ -17,7 +17,7 @@ from synth.syntax.type_system import (
     STRING,
 )
 from synth.syntax.concrete import (
-    Context,
+    NonTerminal,
     ConcreteCFG,
     ConcretePCFG,
     enumerate_pcfg,

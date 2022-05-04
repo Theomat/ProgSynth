@@ -15,11 +15,11 @@ import numpy as np
 
 import vose
 
-from synth.syntax.concrete.concrete_cfg import ConcreteCFG, Context
+from synth.syntax.concrete.concrete_cfg import ConcreteCFG, NonTerminal
 from synth.syntax.program import Constant, Function, Primitive, Program, Variable
 from synth.syntax.type_system import Arrow
 
-PRules = Dict[Context, Dict[Program, Tuple[List[Context], float]]]
+PRules = Dict[NonTerminal, Dict[Program, Tuple[List[NonTerminal], float]]]
 
 
 class ConcretePCFG:
@@ -45,7 +45,7 @@ class ConcretePCFG:
     """
 
     def __init__(
-        self, start: Context, rules: PRules, max_program_depth: int, clean: bool = False
+        self, start: NonTerminal, rules: PRules, max_program_depth: int, clean: bool = False
     ):
         self.start = start
         self.rules = rules
@@ -175,11 +175,11 @@ class ConcretePCFG:
         """
         remove non-terminals which are not reachable from the initial non-terminal
         """
-        reachable: Set[Context] = set()
+        reachable: Set[NonTerminal] = set()
         reachable.add(self.start)
 
-        reach: Set[Context] = set()
-        new_reach: Set[Context] = set()
+        reach: Set[NonTerminal] = set()
+        new_reach: Set[NonTerminal] = set()
         reach.add(self.start)
 
         for _ in range(self.max_program_depth):
@@ -197,15 +197,15 @@ class ConcretePCFG:
             if S not in reachable:
                 del self.rules[S]
 
-    def compute_max_probability(self) -> Dict[Program, Dict[Context, float]]:
+    def compute_max_probability(self) -> Dict[Program, Dict[NonTerminal, float]]:
         """
         populates a dictionary max_probability
         """
         self.max_probability: Dict[
-            Union[Context, Tuple[Context, Program]], Program
+            Union[NonTerminal, Tuple[NonTerminal, Program]], Program
         ] = {}
 
-        probabilities: Dict[Program, Dict[Context, float]] = defaultdict(lambda: {})
+        probabilities: Dict[Program, Dict[NonTerminal, float]] = defaultdict(lambda: {})
 
         for S in reversed(self.rules):
             best_program = None
@@ -253,7 +253,7 @@ class ConcretePCFG:
         while True:
             yield self.sample_program(self.start)
 
-    def sample_program(self, S: Optional[Context] = None) -> Program:
+    def sample_program(self, S: Optional[NonTerminal] = None) -> Program:
         assert self.ready_for_sampling
         S = S or self.start
         i: int = self.vose_samplers[S].sample()
@@ -266,7 +266,7 @@ class ConcretePCFG:
             arguments.append(self.sample_program(arg))
         return Function(P, arguments)
 
-    def probability(self, P: Program, S: Optional[Context] = None) -> float:
+    def probability(self, P: Program, S: Optional[NonTerminal] = None) -> float:
         """
         Compute the probability of a program P generated from the non-terminal S
         """
@@ -290,7 +290,7 @@ class ConcretePCFG:
     def from_weights(
         cls,
         cfg: ConcreteCFG,
-        get_weight: Callable[[Context, Union[Primitive, Variable, Constant]], float],
+        get_weight: Callable[[NonTerminal, Union[Primitive, Variable, Constant]], float],
     ) -> "ConcretePCFG":
         augmented_rules: PRules = {}
         for S in cfg.rules:
@@ -310,13 +310,13 @@ class ConcretePCFG:
         cfg: ConcreteCFG,
         samples: Iterable[Program],
     ) -> "ConcretePCFG":
-        rules_cnt: Dict[Context, Dict[Program, int]] = {}
+        rules_cnt: Dict[NonTerminal, Dict[Program, int]] = {}
         for S in cfg.rules:
             rules_cnt[S] = {}
             for P in cfg.rules[S]:
                 rules_cnt[S][P] = 0
 
-        def add_count(S: Context, P: Program) -> bool:
+        def add_count(S: NonTerminal, P: Program) -> bool:
             if isinstance(P, Function):
                 F = P.function
                 args_P = P.arguments

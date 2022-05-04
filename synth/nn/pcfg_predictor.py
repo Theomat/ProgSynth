@@ -7,13 +7,13 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
 
-from synth.syntax.concrete.concrete_cfg import ConcreteCFG, Context
+from synth.syntax.concrete.concrete_cfg import ConcreteCFG, NonTerminal
 from synth.syntax.concrete.concrete_pcfg import ConcretePCFG
 from synth.syntax.program import Constant, Function, Primitive, Program, Variable
 from synth.syntax.type_system import Type
 
 
-LogPRules = Dict[Context, Dict[Program, Tuple[List[Context], Tensor]]]
+LogPRules = Dict[NonTerminal, Dict[Program, Tuple[List[NonTerminal], Tensor]]]
 
 
 class ConcreteLogPCFG:
@@ -22,7 +22,7 @@ class ConcreteLogPCFG:
     """
 
     def __init__(
-        self, start: Context, rules: LogPRules, max_program_depth: int, type_req: Type
+        self, start: NonTerminal, rules: LogPRules, max_program_depth: int, type_req: Type
     ):
         self.start = start
         self.rules = rules
@@ -55,7 +55,7 @@ class ConcreteLogPCFG:
     def __repr__(self) -> str:
         return self.__str__()
 
-    def log_probability(self, P: Program, S: Optional[Context] = None) -> Tensor:
+    def log_probability(self, P: Program, S: Optional[NonTerminal] = None) -> Tensor:
         """
         Compute the log probability of a program P generated from the non-terminal S
         """
