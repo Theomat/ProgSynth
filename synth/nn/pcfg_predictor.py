@@ -91,7 +91,6 @@ class ConcreteLogPCFG:
 
 class BigramsPredictorLayer(nn.Module):
     """
-    Needs a lot less parameters than BigramsPredictorLayer but seems to have worse performance.
 
     Parameters:
     ------------
