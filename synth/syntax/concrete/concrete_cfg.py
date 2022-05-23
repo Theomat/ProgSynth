@@ -9,7 +9,7 @@ from synth.syntax.type_system import Arrow, Type
 
 
 @dataclass(frozen=True)
-class Context:
+class NonTerminal:
     type: Type
     predecessors: List[Tuple[Union[Primitive, Variable], int]] = field(
         default_factory=lambda: []
@@ -45,8 +45,10 @@ class ConcreteCFG:
 
     def __init__(
         self,
-        start: Context,
-        rules: Dict[Context, Dict[Union[Primitive, Variable, Constant], List[Context]]],
+        start: NonTerminal,
+        rules: Dict[
+            NonTerminal, Dict[Union[Primitive, Variable, Constant], List[NonTerminal]]
+        ],
         max_program_depth: int,
         clean: bool = True,
     ):
@@ -77,7 +79,7 @@ class ConcreteCFG:
         return hash((self.start, str(self.rules), self.max_program_depth))
 
     def size(self) -> int:
-        total_programs: Dict[Context, int] = {}
+        total_programs: Dict[NonTerminal, int] = {}
         for S in reversed(self.rules):
             total = 0
             for P in self.rules[S]:
@@ -102,7 +104,7 @@ class ConcreteCFG:
         remove non-terminals which do not produce programs
         """
         new_rules: Dict[
-            Context, Dict[Union[Primitive, Variable, Constant], List[Context]]
+            NonTerminal, Dict[Union[Primitive, Variable, Constant], List[NonTerminal]]
         ] = {}
         for S in reversed(self.rules):
             for P in self.rules[S]:
@@ -122,11 +124,11 @@ class ConcreteCFG:
         """
         remove non-terminals which are not reachable from the initial non-terminal
         """
-        reachable: Set[Context] = set()
+        reachable: Set[NonTerminal] = set()
         reachable.add(self.start)
 
-        reach: Set[Context] = set()
-        new_reach: Set[Context] = set()
+        reach: Set[NonTerminal] = set()
+        new_reach: Set[NonTerminal] = set()
         reach.add(self.start)
 
         for _ in range(self.max_program_depth):
@@ -201,10 +203,10 @@ class ConcreteCFG:
             return_type = type_request
             args = []
 
-        rules: Dict[Context, Dict[Union[Variable, Primitive, Constant], List]] = {}
+        rules: Dict[NonTerminal, Dict[Union[Variable, Primitive, Constant], List]] = {}
 
-        list_to_be_treated: Deque[Context] = deque()
-        list_to_be_treated.append(Context(return_type, [], 0))
+        list_to_be_treated: Deque[NonTerminal] = deque()
+        list_to_be_treated.append(NonTerminal(return_type, [], 0))
 
         while len(list_to_be_treated) > 0:
             non_terminal = list_to_be_treated.pop()
@@ -256,7 +258,9 @@ class ConcreteCFG:
                                 new_predecessors = addition + non_terminal.predecessors
                                 if len(new_predecessors) > n_gram - 1:
                                     new_predecessors.pop()
-                                new_context = Context(arg, new_predecessors, depth + 1)
+                                new_context = NonTerminal(
+                                    arg, new_predecessors, depth + 1
+                                )
                                 decorated_arguments_P.append(new_context)
                                 if new_context not in list_to_be_treated:
                                     list_to_be_treated.appendleft(new_context)
@@ -274,7 +278,9 @@ class ConcreteCFG:
                                 new_predecessors = addition + non_terminal.predecessors
                                 if len(new_predecessors) > n_gram - 1:
                                     new_predecessors.pop()
-                                new_context = Context(arg, new_predecessors, depth + 1)
+                                new_context = NonTerminal(
+                                    arg, new_predecessors, depth + 1
+                                )
                                 decorated_arguments_V.append(new_context)
                                 if new_context not in list_to_be_treated:
                                     list_to_be_treated.appendleft(new_context)
@@ -291,7 +297,9 @@ class ConcreteCFG:
                                 new_predecessors = addition + non_terminal.predecessors
                                 if len(new_predecessors) > n_gram - 1:
                                     new_predecessors.pop()
-                                new_context = Context(arg, new_predecessors, depth + 1)
+                                new_context = NonTerminal(
+                                    arg, new_predecessors, depth + 1
+                                )
                                 decorated_arguments_self.append(new_context)
                                 if new_context not in list_to_be_treated:
                                     list_to_be_treated.appendleft(new_context)
@@ -299,7 +307,7 @@ class ConcreteCFG:
                             rules[non_terminal][P] = decorated_arguments_self
 
         return ConcreteCFG(
-            start=Context(return_type, [], 0),
+            start=NonTerminal(return_type, [], 0),
             rules=rules,
             max_program_depth=max_depth,
             clean=True,

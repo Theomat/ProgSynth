@@ -1,4 +1,4 @@
-from typing import Generic, List, Optional, TypeVar
+from typing import Dict, Generic, List, Optional, TypeVar
 import gc
 
 import torch
@@ -8,6 +8,7 @@ from torch.nn.utils.rnn import PackedSequence
 from synth.nn.spec_encoder import SpecificationEncoder
 
 from synth.specification import TaskSpecification
+from synth.syntax.program import Primitive, Program
 from synth.task import Task
 
 
@@ -92,6 +93,16 @@ class Task2Tensor(nn.Module, Generic[T]):
         ]
         packed: PackedSequence = self.packer(batch_embed)
         return packed
+
+
+def one_hot_encode_primitives(
+    program: Program, map: Dict[Primitive, int], nprimitives: int
+) -> Tensor:
+    tensor = torch.zeros((nprimitives))
+    for P in program.depth_first_iter():
+        if isinstance(P, Primitive):
+            tensor[map[P]] = 1
+    return tensor
 
 
 def print_model_summary(model: nn.Module) -> None:

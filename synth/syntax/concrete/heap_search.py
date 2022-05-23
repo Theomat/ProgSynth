@@ -3,7 +3,7 @@ from typing import Dict, Generator, List, Optional, Set
 from dataclasses import dataclass, field
 
 from synth.syntax.program import Program, Function, Variable
-from synth.syntax.concrete.concrete_cfg import Context
+from synth.syntax.concrete.concrete_cfg import NonTerminal
 from synth.syntax.concrete.concrete_pcfg import ConcretePCFG
 
 
@@ -25,17 +25,17 @@ class HSEnumerator:
         self.symbols = [S for S in self.rules]
 
         # self.heaps[S] is a heap containing programs generated from the non-terminal S
-        self.heaps: Dict[Context, List[HeapElement]] = {S: [] for S in self.symbols}
+        self.heaps: Dict[NonTerminal, List[HeapElement]] = {S: [] for S in self.symbols}
 
         # the same program can be pushed in different heaps, with different probabilities
         # however, the same program cannot be pushed twice in the same heap
 
         # self.succ[S][P] is the successor of P from S
-        self.succ: Dict[Context, Dict[int, Program]] = {S: {} for S in self.symbols}
+        self.succ: Dict[NonTerminal, Dict[int, Program]] = {S: {} for S in self.symbols}
 
         # self.hash_table_program[S] is the set of hashes of programs
         # ever added to the heap for S
-        self.hash_table_program: Dict[Context, Set[int]] = {
+        self.hash_table_program: Dict[NonTerminal, Set[int]] = {
             S: set() for S in self.symbols
         }
 
@@ -100,7 +100,7 @@ class HSEnumerator:
     def __iter__(self) -> Generator[Program, None, None]:
         return self.generator()
 
-    def query(self, S: Context, program: Optional[Program]) -> Optional[Program]:
+    def query(self, S: NonTerminal, program: Optional[Program]) -> Optional[Program]:
         """
         computing the successor of program from S
         """

@@ -1,4 +1,4 @@
-from typing import Callable, Dict, Iterable, List, Set, Tuple, Optional, Union
+from typing import Any, Callable, Dict, Iterable, List, Set, Tuple, Optional, Union
 
 import numpy as np
 
@@ -7,13 +7,15 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
 
-from synth.syntax.concrete.concrete_cfg import ConcreteCFG, Context
+from synth.nn.utils import one_hot_encode_primitives
+from synth.syntax.concrete.concrete_cfg import ConcreteCFG, NonTerminal
 from synth.syntax.concrete.concrete_pcfg import ConcretePCFG
+from synth.syntax.dsl import DSL
 from synth.syntax.program import Constant, Function, Primitive, Program, Variable
 from synth.syntax.type_system import Type
 
 
-LogPRules = Dict[Context, Dict[Program, Tuple[List[Context], Tensor]]]
+LogPRules = Dict[NonTerminal, Dict[Program, Tuple[List[NonTerminal], Tensor]]]
 
 
 class ConcreteLogPCFG:
@@ -22,7 +24,11 @@ class ConcreteLogPCFG:
     """
 
     def __init__(
-        self, start: Context, rules: LogPRules, max_program_depth: int, type_req: Type
+        self,
+        start: NonTerminal,
+        rules: LogPRules,
+        max_program_depth: int,
+        type_req: Type,
     ):
         self.start = start
         self.rules = rules
@@ -55,7 +61,7 @@ class ConcreteLogPCFG:
     def __repr__(self) -> str:
         return self.__str__()
 
-    def log_probability(self, P: Program, S: Optional[Context] = None) -> Tensor:
+    def log_probability(self, P: Program, S: Optional[NonTerminal] = None) -> Tensor:
         """
         Compute the log probability of a program P generated from the non-terminal S
         """
@@ -87,7 +93,6 @@ class ConcreteLogPCFG:
 
 class BigramsPredictorLayer(nn.Module):
     """
-    Needs a lot less parameters than BigramsPredictorLayer but seems to have worse performance.
 
     Parameters:
     ------------
@@ -231,6 +236,138 @@ class BigramsPredictorLayer(nn.Module):
                     rules[S][O] = rules[S][O][0], rules[S][O][1] + to_add
         grammar = ConcreteLogPCFG(cfg.start, rules, cfg.max_program_depth, type_request)
         return grammar
+
+
+class PrimitivePredictorLayer(nn.Module):
+    """
+
+    Parameters:
+    ------------
+    - input_size: int - the input size of the tensor to this layer
+    - dsl: DSL - the DSL to be supported
+    - variable_probability: float = 0.2 - the probability mass of all variable at any given derivation level
+    """
+
+    def __init__(
+        self,
+        input_size: int,
+        dsl: DSL,
+        variable_probability: float = 0.2,
+    ):
+        super(PrimitivePredictorLayer, self).__init__()
+        self.dsl = dsl
+        self.variable_probability = variable_probability
+        self.primitives = dsl.list_primitives[:]
+        self.P2index = {p: i for i, p in enumerate(self.primitives)}
+        output_size = len(self.primitives) + 1
+        self.log_probs_predictor = nn.Linear(
+            input_size,
+            output_size,
+        )
+
+    def forward(self, x: Tensor) -> Tensor:
+        """
+        batch_IOs is a tensor of size
+        (batch_size, input_size)
+
+        returns: (batch_size, len(self.primitives) + 1) in logits
+        """
+        y: Tensor = self.log_probs_predictor(x)
+        return y
+
+    def tensor2pcfg(
+        self,
+        x: Tensor,
+        type_request: Type,
+        total_variable_order: bool = True,
+        **kwargs: Any
+    ) -> ConcreteLogPCFG:
+        """
+
+        Parameters:
+        ------------
+        - x: Tensor - the tensor to be transformed into a PCFG
+        - type_request: Type - the type request of the PCFG
+        - total_variable_order: bool = True - reduce very slighlty (1e-7) some variable probabilities to ensure they are totally ordered in terms of probablities
+        -- **kwargs are passed to ConcreteCFG.from_dsl
+
+        """
+        device = x.device
+        cfg = ConcreteCFG.from_dsl(self.dsl, type_request, **kwargs)
+        rules: LogPRules = {}
+        x = F.logsigmoid(x)
+        for S in cfg.rules:
+            rules[S] = {}
+
+            # List of all variables derivable from S
+            variables: List[Variable] = []
+            # For each derivation parse probabilities
+            for P in cfg.rules[S]:
+                cpy_P = P
+                if isinstance(P, Primitive):
+                    primitive_index = self.P2index[P]
+                    rules[S][cpy_P] = (
+                        cfg.rules[S][P],
+                        x[primitive_index],
+                    )
+                elif isinstance(P, Variable):
+                    V: Variable = P  # ensure typing
+                    variables.append(V)
+                    # All variables together have probability mass self.variable_probability
+                    # then the probability of selecting a variable is uniform
+                else:
+                    continue
+            # If there are variables we need to normalise
+            total = sum(np.exp(rules[S][P][1].item()) for P in rules[S])
+            if variables:
+                var_probability = self.variable_probability
+                if total > 0:
+                    # Normalise rest
+                    to_add: float = np.log((1 - self.variable_probability) / total)
+                    for O in rules[S]:
+                        rules[S][O] = rules[S][O][0], rules[S][O][1] + to_add
+                else:
+                    # There are no other choices than variables
+                    var_probability = 1
+                # Normalise variable probability
+                normalised_variable_logprob: float = np.log(
+                    var_probability / len(variables)
+                )
+                for P in variables:
+                    rules[S][P] = cfg.rules[S][P], torch.tensor(
+                        normalised_variable_logprob
+                    ).to(device)
+                    # Trick to allow a total ordering on variables
+                    if total_variable_order:
+                        normalised_variable_logprob = np.log(
+                            np.exp(normalised_variable_logprob) - 1e-7
+                        )
+            else:
+                # We still need to normalise probabilities
+                # Since all derivations aren't possible
+                to_add = np.log(1 / total)
+                for O in rules[S]:
+                    rules[S][O] = rules[S][O][0], rules[S][O][1] + to_add
+        grammar = ConcreteLogPCFG(cfg.start, rules, cfg.max_program_depth, type_request)
+        return grammar
+
+    def loss(
+        self,
+        programs: Iterable[Program],
+        batch: Tensor,
+        loss: Callable[[Tensor, Tensor], Tensor] = F.binary_cross_entropy_with_logits,
+        reduce: Callable[[Tensor], Tensor] = torch.mean,
+    ) -> Tensor:
+        encoded_programs = torch.stack(
+            [
+                one_hot_encode_primitives(p, self.P2index, len(self.primitives))
+                for p in programs
+            ]
+        ).to(batch.device)
+        out = loss(encoded_programs, batch)
+        if reduce:
+            out = reduce(out)
+        return out
 
 
 def loss_negative_log_prob(

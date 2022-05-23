@@ -5,19 +5,19 @@ import copy
 
 import numpy as np
 
-from synth.syntax.concrete.concrete_pcfg import ConcretePCFG, Context, PRules
+from synth.syntax.concrete.concrete_pcfg import ConcretePCFG, NonTerminal, PRules
 from synth.syntax.program import Program
 
 
 @dataclass(order=True, frozen=True)
 class Node:
     probability: float
-    next_contexts: List[Context] = field(compare=False)
+    next_contexts: List[NonTerminal] = field(compare=False)
     program: List[Program] = field(compare=False)
-    derivation_history: List[Context] = field(compare=False)
+    derivation_history: List[NonTerminal] = field(compare=False)
 
 
-def __common_prefix__(a: List[Context], b: List[Context]) -> List[Context]:
+def __common_prefix__(a: List[NonTerminal], b: List[NonTerminal]) -> List[NonTerminal]:
     if a == b:
         return a
     candidates = []
@@ -36,19 +36,19 @@ def __common_prefix__(a: List[Context], b: List[Context]) -> List[Context]:
     return candidates[1]
 
 
-def __adapt_ctx__(S: Context, i: int) -> Context:
+def __adapt_ctx__(S: NonTerminal, i: int) -> NonTerminal:
     pred = S.predecessors[0]
-    return Context(S.type, [(pred[0], i)] + S.predecessors[1:], S.depth)
+    return NonTerminal(S.type, [(pred[0], i)] + S.predecessors[1:], S.depth)
 
 
 def __create_path__(
     rules: PRules,
     original_pcfg: ConcretePCFG,
     rule_no: int,
-    Slist: List[Context],
+    Slist: List[NonTerminal],
     Plist: List[Program],
-    mapping: Dict[Context, Context],
-    original_start: Context,
+    mapping: Dict[NonTerminal, NonTerminal],
+    original_start: NonTerminal,
 ) -> int:
     for i, (S, P) in enumerate(zip(Slist, Plist)):
         if i == 0:
@@ -88,7 +88,7 @@ def __pcfg_from__(original_pcfg: ConcretePCFG, group: List[Node]) -> ConcretePCF
     # Extract the start symbol
     start = min_prefix.pop()
 
-    rules: Dict[Context, Dict[Program, Tuple[List[Context], float]]] = {}
+    rules: Dict[NonTerminal, Dict[Program, Tuple[List[NonTerminal], float]]] = {}
     rule_no: int = (
         max(
             max(x[1] for x in key.predecessors) if key.predecessors else 0
@@ -96,7 +96,7 @@ def __pcfg_from__(original_pcfg: ConcretePCFG, group: List[Node]) -> ConcretePCF
         )
         + 1
     )
-    mapping: Dict[Context, Context] = {}
+    mapping: Dict[NonTerminal, NonTerminal] = {}
     # Our min_prefix may be something like (int, 1, (+, 1))
     # which means we already chose +
     # But it is not in the PCFG
@@ -114,7 +114,7 @@ def __pcfg_from__(original_pcfg: ConcretePCFG, group: List[Node]) -> ConcretePCF
 
     # Now we need to make a path from the common prefix to each node's prefix
     # We also need to mark all contexts that should be filled
-    to_fill: List[Context] = []
+    to_fill: List[NonTerminal] = []
     for node in group:
         args, program, prefix = (
             node.next_contexts,
@@ -203,7 +203,7 @@ def __node_split__(pcfg: ConcretePCFG, node: Node) -> Tuple[bool, List[Node]]:
     # If there is no next then it means this node can't be split
     if len(next_contexts) == 0:
         return False, [node]
-    new_context: Context = next_contexts.pop()
+    new_context: NonTerminal = next_contexts.pop()
     for P in pcfg.rules[new_context]:
         args, p_prob = pcfg.rules[new_context][P]
         new_root = Node(
@@ -237,7 +237,7 @@ def __split_nodes_until_quantity_reached__(
     return nodes
 
 
-def __holes_of__(pcfg: ConcretePCFG, node: Node) -> List[Context]:
+def __holes_of__(pcfg: ConcretePCFG, node: Node) -> List[NonTerminal]:
     stack = [pcfg.start]
     current = node.program[:]
     while current:
@@ -250,7 +250,7 @@ def __holes_of__(pcfg: ConcretePCFG, node: Node) -> List[Context]:
 
 
 def __is_fixing_any_hole__(
-    pcfg: ConcretePCFG, node: Node, holes: List[Context]
+    pcfg: ConcretePCFG, node: Node, holes: List[NonTerminal]
 ) -> bool:
     current = node.program[:]
     stack = [pcfg.start]
