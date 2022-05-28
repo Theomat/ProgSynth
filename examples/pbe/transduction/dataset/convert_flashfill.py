@@ -17,7 +17,40 @@ from synth.syntax import (
     Arrow,
 )
 from examples.pbe.regexp.type_regex import REGEXP
-from examples.pbe.transduction.transduction import dsl, evaluator
+import argparse
+
+
+TRANSDUCTION = "transduction"
+TRANSDUCTION_OLD = "transduction_old"
+
+argument_parser: argparse.ArgumentParser = argparse.ArgumentParser(
+    description="Convert flashfill original dataset to ProgSynth format."
+)
+
+argument_parser.add_argument(
+    type=str,
+    dest="file",
+    action="store",
+    help="Source JSON transduction file to be converted",
+)
+
+argument_parser.add_argument(
+    "--dsl",
+    type=str,
+    default=TRANSDUCTION,
+    choices=[TRANSDUCTION, TRANSDUCTION_OLD],
+    help="dsl (default: transduction)",
+)
+
+parsed_parameters = argument_parser.parse_args()
+dsl = parsed_parameters.dsl
+if dsl == TRANSDUCTION:
+    from examples.pbe.transduction.transduction import dsl, evaluator
+elif dsl == TRANSDUCTION_OLD:
+    from examples.pbe.transduction.transduction_old import dsl, evaluator
+else:
+    print("DSL not recognized.")
+    exit()
 
 name2type = {p.primitive: p.type for p in dsl.list_primitives}
 
@@ -507,7 +540,7 @@ def __convert__(load: Callable[[], Dataset[PBEWithConstants]], name: str) -> Non
             assert found
 
 
-def convert_flashfill(input: str = "flashfill.json"):
+def convert_flashfill(input: str, name2type: Dict[str, Any]):
     def load():
         tasks: TList[Task[PBE]] = []
         with open(input, "r") as fd:
@@ -543,24 +576,9 @@ def convert_flashfill(input: str = "flashfill.json"):
 
 
 if __name__ == "__main__":
-    import argparse
-
-    argument_parser: argparse.ArgumentParser = argparse.ArgumentParser(
-        description="Convert flashfill original dataset to ProgSynth format."
-    )
-
-    argument_parser.add_argument(
-        type=str,
-        dest="file",
-        action="store",
-        help="Source JSON transduction file to be converted",
-    )
-
-    parsed_parameters = argument_parser.parse_args()
-
     # challenge = load_tasks("flashfill_dataset")
     # tasks = make_synthetic_tasks()
     # print(len(tasks), "synthetic tasks")
 
     # flashfill2json(tasks, parsed_parameters.file)
-    convert_flashfill(parsed_parameters.file)
+    convert_flashfill(parsed_parameters.file, name2type)

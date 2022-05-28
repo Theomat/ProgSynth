@@ -310,22 +310,25 @@ class ConcretePCFG:
             clean=True,
         )
 
-
     @classmethod
     def from_samples_bigram(
         cls,
         cfg: ConcreteCFG,
         samples: Iterable[Program],
     ) -> "ConcretePCFG":
-        def add_count(key: Tuple[Program], count: Dict[Program, Dict[Program, int]]):
+        def add_count(
+            key: Tuple[Optional[Program], Optional[Program]],
+            count: Dict[Optional[Program], Dict[Optional[Program], int]],
+        ) -> None:
             first, second = key
-            if not(first in count):
+            if not (first in count):
                 count[first] = {}
-            if not(second in count[first]):
+            if not (second in count[first]):
                 count[first][second] = 0
             count[first][second] += 1
 
-        bigram_count: Dict[Tuple[Program], int] = {}
+        bigram_count: Dict[Optional[Program], Dict[Optional[Program], int]] = {}
+        key: Tuple[Optional[Program], Optional[Program]] = (None, None)
         for sample in samples:
             for P in sample.depth_first_iter():
                 if isinstance(P, Function):
@@ -338,34 +341,40 @@ class ConcretePCFG:
                         else:
                             key = (P.function, arg)
                         add_count(key, bigram_count)
-        
-        """
-        for k in bigram_count:
-            print(k)
-            for l in bigram_count[k]:
-                print("\t", l, bigram_count[k][l])
-        """
+
         rules: PRules = {}
         for S in cfg.rules:
             rules[S] = {}
-            total: Dict[Program, int] = {}
+            total: Dict[Optional[Program], int] = {}
             if S.depth == 0:
-                total[None] = sum(bigram_count[None][P] if P in bigram_count[None] else 0 for P in cfg.rules[S])
+                total[None] = sum(
+                    bigram_count[None][P] if P in bigram_count[None] else 0
+                    for P in cfg.rules[S]
+                )
             else:
                 for program, _ in S.predecessors:
                     if program in bigram_count:
-                        total[program] = sum(bigram_count[program][P] if P in bigram_count[program] else 0 for P in cfg.rules[S])
+                        total[program] = sum(
+                            bigram_count[program][P]
+                            if P in bigram_count[program]
+                            else 0
+                            for P in cfg.rules[S]
+                        )
                     else:
                         total[program] = 0
             for P in cfg.rules[S]:
+                keys: List[Optional[Union[Primitive, Variable]]]
                 if S.depth == 0:
-                    key = [None]
+                    keys = [None]
                 else:
-                    key = [program for program, _ in S.predecessors]
-                for predecessor in key:
+                    keys = [program for program, _ in S.predecessors]
+                for predecessor in keys:
                     if predecessor in bigram_count:
                         if P in bigram_count[predecessor]:
-                            rules[S][P] = (cfg.rules[S][P], bigram_count[predecessor][P] / total[predecessor])
+                            rules[S][P] = (
+                                cfg.rules[S][P],
+                                bigram_count[predecessor][P] / total[predecessor],
+                            )
                         else:
                             rules[S][P] = (cfg.rules[S][P], 1e-2 / total[predecessor])
                     else:
@@ -380,7 +389,7 @@ class ConcretePCFG:
             start=cfg.start,
             rules=rules,
             max_program_depth=cfg.max_program_depth,
-            clean=True
+            clean=True,
         )
 
     @classmethod
@@ -389,36 +398,38 @@ class ConcretePCFG:
         cfg: ConcreteCFG,
         samples: Iterable[Program],
     ) -> "ConcretePCFG":
-        primitives_cnt: Dict[Union[Primitive, Variable], int] = {}
+        primitives_cnt: Dict[Union[Primitive, Variable, Constant], int] = {}
         for sample in samples:
             for P in sample.depth_first_iter():
                 if isinstance(P, Primitive) or isinstance(P, Variable):
-                    if not(P in primitives_cnt):
+                    if not (P in primitives_cnt):
                         primitives_cnt[P] = 0
                     primitives_cnt[P] += 1
 
         rules: PRules = {}
         for S in cfg.rules:
             rules[S] = {}
-            total = sum(primitives_cnt[P] if P in primitives_cnt else 0 for P in cfg.rules[S])
+            total = sum(
+                primitives_cnt[P] if P in primitives_cnt else 0 for P in cfg.rules[S]
+            )
             for P in cfg.rules[S]:
                 if P in primitives_cnt:
                     rules[S][P] = (cfg.rules[S][P], primitives_cnt[P] / total)
-                else: 
+                else:
                     ## Problem: a primitive never appears in solution program
                     # naive solution: consider there is a small possibility for it to appear
-                    rules[S][P] = (cfg.rules[S][P], 1/total)
-        #"""    
+                    rules[S][P] = (cfg.rules[S][P], 1 / total)
+        # """
         for S in rules:
             print(S)
             for P in rules[S]:
                 print("\t", P, "\t\t", rules[S][P][1])
-        #"""
+        # """
         return ConcretePCFG(
             start=cfg.start,
             rules=rules,
             max_program_depth=cfg.max_program_depth,
-            clean=True
+            clean=True,
         )
 
     @classmethod

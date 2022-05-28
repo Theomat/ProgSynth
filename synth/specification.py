@@ -40,19 +40,10 @@ class PBE(TaskSpecification):
 
 
 @dataclass
-class PBEWithConstants(TaskSpecification):
+class PBEWithConstants(PBE):
     """
     Programming By Example (PBE) with constants specification
     """
 
-    examples: List[Example]
     constants_in: List[Any]
     constants_out: List[Any]
-
-    def guess_type(self) -> Type:
-        i = 0
-        t = self.examples[i].guess_type()
-        while EmptyList in t and i + 1 < len(self.examples):
-            i += 1
-            t = self.examples[i].guess_type()
-        return t
