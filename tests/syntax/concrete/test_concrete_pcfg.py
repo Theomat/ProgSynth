@@ -68,16 +68,18 @@ def test_ready_for_sampling() -> None:
 def test_seeding() -> None:
     dsl = DSL(syntax)
     for max_depth in [3, 7, 11]:
+        seed = 100
         cfg = ConcreteCFG.from_dsl(dsl, FunctionType(INT, INT), max_depth)
         pcfg = ConcretePCFG.uniform(cfg)
-        pcfg.init_sampling(0)
+        pcfg.init_sampling(seed)
         g1 = pcfg.sampling()
         cpy = ConcretePCFG.uniform(cfg)
-        cpy.init_sampling(0)
+        cpy.init_sampling(seed)
+        assert pcfg == cpy
         g2 = cpy.sampling()
         for _ in range(1000):
             p1, p2 = next(g1), next(g2)
-            assert p1 == p2, f"{p1} != {p2}"
+            assert p1 == p2, f"[n°{_}]: {p1} != {p2}"
 
 
 def test_depth() -> None:

@@ -2,6 +2,7 @@ import vose
 
 import numpy as np
 
+
 def test_seeding() -> None:
     for _ in range(100):
         probs = np.random.randn((10))
