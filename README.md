@@ -14,6 +14,7 @@ ProgSynth is a high-level framework that enables to leverage program synthesis f
   - [From Source](#from-source)
     - [Install ProgSynth](#install-progsynth)
 - [Documentation](#documentation)
+- [Troubleshooting](#troubleshooting)
 - [Examples](./examples)
 - [The Team](#the-team)
 - [License](#license)
@@ -78,6 +79,12 @@ If Sphinx installation was successful, then use the following command line to ge
 ```bash
 sphinx-build -b html docs/source docs/build/html
 ```
+
+## Troubleshooting
+
+There are some known issues:
+- **seed = 0** is the **same as no seeding**.
+- if you get an error after installation try to update/upgrade ``numpy``, it is often due to a discrepancy between the version with which ``vose`` is compiled and the version the environment is running.
 
 ## The Team
 
