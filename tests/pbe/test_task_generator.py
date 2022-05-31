@@ -58,7 +58,7 @@ def test_gen() -> None:
 
 def test_seed() -> None:
     pcfg = ConcretePCFG.uniform(ConcreteCFG.from_dsl(dsl, type_req, max_depth))
-    pcfg.init_sampling(0)
+    pcfg.init_sampling(10)
     g1 = TaskGenerator(
         LexiconSampler(int_lexicon, seed=10),
         DSLEvaluator(semantics),
@@ -68,7 +68,7 @@ def test_seed() -> None:
         validator,
     )
     pcfg = ConcretePCFG.uniform(ConcreteCFG.from_dsl(dsl, type_req, max_depth))
-    pcfg.init_sampling(0)
+    pcfg.init_sampling(10)
     g2 = TaskGenerator(
         LexiconSampler(int_lexicon, seed=10),
         DSLEvaluator(semantics),
