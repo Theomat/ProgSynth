@@ -56,7 +56,7 @@ __semantics = {
     "MAP[/3]": lambda l: [int(x / 3) for x in l],
     "MAP[*4]": lambda l: [x * 4 for x in l],
     "MAP[/4]": lambda l: [int(x / 4) for x in l],
-    "MAP[**2]": lambda l: [x ** 2 for x in l],
+    "MAP[**2]": lambda l: [x**2 for x in l],
     "MAP[*-1]": lambda l: [-x for x in l],
     "ZIPWITH[+]": lambda l1: lambda l2: [x + y for (x, y) in zip(l1, l2)],
     "ZIPWITH[-]": lambda l1: lambda l2: [x - y for (x, y) in zip(l1, l2)],
