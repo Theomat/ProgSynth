@@ -1,88 +1,42 @@
-from heapq import heappush, heappop
-from typing import Dict, Generator, List, Optional, Set
+import argparse
+from cgi import test
+from enum import Enum
+from os import abort
+import string
+import time
+import itertools
+import random
+from operator import add
+from heapq import heappop, heappush
 from dataclasses import dataclass, field
+from typing import Dict, Generator, List, Optional, Tuple,Set
 
+from synth.syntax.bucket import Bucket
+from synth.syntax.concrete.heap_search import Enumerator
 from synth.syntax.program import Program, Function, Variable
 from synth.syntax.concrete.concrete_cfg import NonTerminal
 from synth.syntax.concrete.concrete_pcfg import ConcretePCFG
 
-class Enumerator:
-    hash_table_global: Dict[int, Program] = {}
-    
-    def __init__(self, G: ConcretePCFG) -> None:
-        self.current: Optional[Program] = None
-
-        self.G = G
-        self.start = G.start
-        self.rules = G.rules
-        self.symbols = [S for S in self.rules]
-
-        # self.heaps[S] is a heap containing programs generated from the non-terminal S
-        self.heaps: Dict[NonTerminal, List[HeapElement]] = {S: [] for S in self.symbols}
-
-        # the same program can be pushed in different heaps, with different probabilities
-        # however, the same program cannot be pushed twice in the same heap
-
-        # self.succ[S][P] is the successor of P from S
-        self.succ: Dict[NonTerminal, Dict[int, Program]] = {S: {} for S in self.symbols}
-
-        # self.hash_table_program[S] is the set of hashes of programs
-        # ever added to the heap for S
-        self.hash_table_program: Dict[NonTerminal, Set[int]] = {
-            S: set() for S in self.symbols
-        }
-
-        # self.hash_table_global[hash] = P maps
-        # hashes to programs for all programs ever added to some heap
-        self.hash_table_global = {}
-    
-    def __return_unique__(self, P: Program) -> Program:
-        """
-        ensures that if a program appears in several heaps,
-        it is represented by the same object,
-        so we do not evaluate it several times
-        """
-        hash_P = hash(P)
-        if hash_P in self.hash_table_global:
-            return self.hash_table_global[hash_P]
-        else:
-            self.hash_table_global[hash_P] = P
-            return P
-    
-    def generator(self) -> Generator[Program, None, None]:
-        """
-        A generator which outputs the next most probable program
-        """
-        while True:
-            program = self.query(self.start, self.current)
-            if program is None:
-                break
-            self.current = program
-            yield program
-
-    def __iter__(self) -> Generator[Program, None, None]:
-        return self.generator()
-
 @dataclass(order=True, frozen=True)
-class HeapElement:
-    priority: float
+class BHeapElement:
+    priority: Bucket
     program: Program = field(compare=False)
 
-class HSEnumerator(Enumerator): 
+class BSEnumerator(Enumerator):
 
     def __init__(self, G: ConcretePCFG) -> None:
-     
-        super().__init__(G)
 
+        super().__init__(G)
+        
         # Initialisation heaps
         ## 0. compute max probability
-        self.probabilities = self.G.compute_max_probability()
+        self.bucket_tuples = self.G.compute_max_bucket_tuples()
 
         ## 1. add P(max(S1),max(S2), ...) to self.heaps[S] for all S -> P(S1, S2, ...)
         for S in reversed(self.rules):
             for P in self.rules[S]:
 
-                program = self.G.max_probability[(S, P)]
+                program = self.G.max_bucket_tuple[(S, P)]
                 hash_program = hash(program)
 
                 # Remark: the program cannot already be in self.heaps[S]
@@ -96,7 +50,7 @@ class HSEnumerator(Enumerator):
 
                 heappush(
                     self.heaps[S],
-                    HeapElement(-self.probabilities[program][S], program),
+                    BHeapElement(self.bucket_tuples[program][S], program),
                 )
 
         # 2. call query(S, None) for all non-terminal symbols S, from leaves to root
@@ -130,6 +84,7 @@ class HSEnumerator(Enumerator):
             F = succ.function
 
             for i in range(len(succ.arguments)):
+                
                 # non-terminal symbol used to derive the i-th argument
                 S2 = self.G.rules[S][F][0][i]
                 succ_sub_program = self.query(S2, succ.arguments[i])
@@ -138,17 +93,22 @@ class HSEnumerator(Enumerator):
                     new_arguments[i] = succ_sub_program
 
                     new_program: Program = Function(F, new_arguments)
+
                     new_program = self.__return_unique__(new_program)
                     hash_new_program = hash(new_program)
 
                     if hash_new_program not in self.hash_table_program[S]:
                         self.hash_table_program[S].add(hash_new_program)
-                        probability = self.G.rules[S][F][1]
+                        new_bucket = Bucket()
+                        new_bucket.add_prob_uniform(self.G.rules[S][F][1])
                         for arg, S3 in zip(new_arguments, self.G.rules[S][F][0]):
-                            probability *= self.probabilities[arg][S3]
-                        
-                        heappush(self.heaps[S], HeapElement(-probability, new_program))
-                        self.probabilities[new_program][S] = probability
+                            new_bucket.add(self.bucket_tuples[arg][S3])
+                            
+                        heappush(
+                            self.heaps[S], 
+                            BHeapElement(new_bucket, new_program)
+                        )
+                        self.bucket_tuples[new_program][S] = new_bucket
 
         if isinstance(succ, Variable):
             return succ  # if succ is a variable, there is no successor so we stop here
@@ -156,5 +116,5 @@ class HSEnumerator(Enumerator):
         return succ
 
 
-def enumerate_pcfg(G: ConcretePCFG) -> HSEnumerator:
-    return HSEnumerator(G)
+def enumerate_pcfg_bucket(G: ConcretePCFG) -> BSEnumerator:  
+    return BSEnumerator(G)
