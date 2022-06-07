@@ -37,10 +37,10 @@ def test_gen() -> None:
     pcfg = ConcretePCFG.uniform(ConcreteCFG.from_dsl(dsl, type_req, max_depth))
     pcfg.init_sampling(0)
     g = TaskGenerator(
-        LexiconSampler(int_lexicon, seed=0),
+        LexiconSampler(int_lexicon, seed=10),
         DSLEvaluator(semantics),
-        LexiconSampler([type_req], seed=0),
-        LexiconSampler(samples_lexicon, [0.25, 0.5, 0.25], seed=0),
+        LexiconSampler([type_req], seed=10),
+        LexiconSampler(samples_lexicon, [0.25, 0.5, 0.25], seed=10),
         {pcfg},
         validator,
     )
@@ -58,22 +58,22 @@ def test_gen() -> None:
 
 def test_seed() -> None:
     pcfg = ConcretePCFG.uniform(ConcreteCFG.from_dsl(dsl, type_req, max_depth))
-    pcfg.init_sampling(0)
+    pcfg.init_sampling(10)
     g1 = TaskGenerator(
-        LexiconSampler(int_lexicon, seed=0),
+        LexiconSampler(int_lexicon, seed=10),
         DSLEvaluator(semantics),
-        LexiconSampler([type_req], seed=0),
-        LexiconSampler([2, 3, 4], [0.25, 0.5, 0.25], seed=0),
+        LexiconSampler([type_req], seed=10),
+        LexiconSampler([2, 3, 4], [0.25, 0.5, 0.25], seed=10),
         {pcfg},
         validator,
     )
     pcfg = ConcretePCFG.uniform(ConcreteCFG.from_dsl(dsl, type_req, max_depth))
-    pcfg.init_sampling(0)
+    pcfg.init_sampling(10)
     g2 = TaskGenerator(
-        LexiconSampler(int_lexicon, seed=0),
+        LexiconSampler(int_lexicon, seed=10),
         DSLEvaluator(semantics),
-        LexiconSampler([type_req], seed=0),
-        LexiconSampler([2, 3, 4], [0.25, 0.5, 0.25], seed=0),
+        LexiconSampler([type_req], seed=10),
+        LexiconSampler([2, 3, 4], [0.25, 0.5, 0.25], seed=10),
         {pcfg},
         validator,
     )

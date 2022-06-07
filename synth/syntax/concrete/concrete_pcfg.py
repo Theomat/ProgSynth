@@ -343,7 +343,10 @@ class ConcretePCFG:
         elif isinstance(P, (Variable, Primitive)):
             return self.rules[S][P][1]
 
-        assert False
+        return 0
+
+    def __contains__(self, P: Program) -> bool:
+        return self.probability(P) > 0
 
     @classmethod
     def from_weights(
