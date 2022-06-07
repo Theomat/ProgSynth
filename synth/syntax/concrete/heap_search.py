@@ -16,7 +16,7 @@ from abc import ABC, abstractmethod
 from synth.syntax.program import Program, Function, Variable
 from synth.syntax.concrete.concrete_cfg import NonTerminal
 from synth.syntax.concrete.concrete_pcfg import ConcretePCFG
-from synth.utils.ordered import Ordered
+from synth.utils.ordered import Bucket, Ordered
 
 
 @dataclass(order=True, frozen=True)
@@ -81,6 +81,7 @@ class HSEnumerator(ABC):
         """
         while True:
             program = self.query(self.start, self.current)
+
             if program is None:
                 break
             self.current = program
@@ -108,6 +109,7 @@ class HSEnumerator(ABC):
                     function=P_unique,
                     arguments=arguments,
                 )
+
                 P_unique = self.G.return_unique(new_program)
             priority = self.compute_priority(S, P_unique)
             self.max_priority[(S, P)] = P_unique
@@ -128,6 +130,7 @@ class HSEnumerator(ABC):
             # are represented by the same object
             self.hash_table_global[hash_program] = program
             priority = self.compute_priority(S, program)
+
             heappush(
                 self.heaps[S],
                 HeapElement(priority, program),
@@ -179,6 +182,7 @@ class HSEnumerator(ABC):
                         self.hash_table_program[S].add(hash_new_program)
 
                         priority: Ordered = self.compute_priority(S, new_program)
+
                         heappush(self.heaps[S], HeapElement(priority, new_program))
 
         if isinstance(succ, Variable):
@@ -218,68 +222,15 @@ def enumerate_pcfg(G: ConcretePCFG) -> HeapSearch:
     return HeapSearch(G)
 
 
-class Bucket(Ordered):
-    def __init__(self, tup: List[int] = [0, 0, 0]):
-        self.elems = []
-        self.size = len(tup)
-        for elem in tup:
-            self.elems.append(elem)
-
-    def __str__(self) -> str:
-        s = "("
-        for elem in self.elems:
-            s += "{},".format(elem)
-        s = s[:-1] + ")"
-        return s
-
-    def __repr__(self) -> str:
-        return str(self)
-
-    def __lt__(self, other: "Bucket") -> bool:
-        if self.size == 0:
-            return False
-
-        if self.elems[0] > other.elems[0]:
-            return True
-        elif self.elems[0] == other.elems[0]:
-            return Bucket(self.elems[1:]).__lt__(Bucket(other.elems[1:]))
-        else:
-            return False
-
-    def __gt__(self, other: "Bucket") -> bool:
-        return other.__lt__(self)
-
-    def __eq__(self, other: Any) -> bool:
-        return isinstance(other, Bucket) and all(
-            self.elems[i] == other.elems[i] for i in range(self.size)
-        )
-
-    def __iadd__(self, other: "Bucket") -> "Bucket":
-        if self.size == other.size:
-            for i in range(self.size):
-                self.elems[i] += other.elems[i]
-            return self
-        else:
-            raise RuntimeError(
-                "size mismatch, Bucket{}: {}, Bucket{}: {}".format(
-                    self, self.size, other, other.size
-                )
-            )
-
-    def add_prob_uniform(self, probability: float) -> None:
-        """
-        Given a probability add 1 in the relevant bucket assuming buckets are linearly distributed.
-        """
-        index = self.size - int(probability * self.size) - 1
-        self.elems[index] += 1
-
-
 class BucketSearch(HSEnumerator):
     def __init__(self, G: ConcretePCFG) -> None:
         super().__init__(G)
         self.bucket_tuples: Dict[Program, Dict[NonTerminal, Bucket]] = defaultdict(
             lambda: {}
         )
+
+        for S in reversed(self.G.rules):
+            self.__init_non_terminal__(S)
 
     def compute_priority(self, S: NonTerminal, new_program: Program) -> Bucket:
         new_bucket = Bucket()
@@ -289,8 +240,10 @@ class BucketSearch(HSEnumerator):
             new_bucket.add_prob_uniform(self.G.rules[S][F][1])
             for arg, S3 in zip(new_arguments, self.G.rules[S][F][0]):
                 new_bucket += self.bucket_tuples[arg][S3]
+        else:
+            new_bucket.add_prob_uniform(self.G.rules[S][new_program][1])
         self.bucket_tuples[new_program][S] = new_bucket
-        return new_bucket
+        return -new_bucket
 
 
 def enumerate_bucket_pcfg(G: ConcretePCFG) -> BucketSearch:

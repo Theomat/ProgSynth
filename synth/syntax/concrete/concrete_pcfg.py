@@ -15,6 +15,7 @@ import numpy as np
 import vose
 
 from synth.syntax.concrete.concrete_cfg import ConcreteCFG, NonTerminal
+from synth.utils.ordered import Bucket
 from synth.syntax.program import Constant, Function, Primitive, Program, Variable
 from synth.syntax.type_system import Arrow
 
@@ -239,6 +240,32 @@ class ConcretePCFG:
             return self.rules[S][P][1]
 
         return 0
+
+    def bucket_tuple(self, P: Program, S: Optional[NonTerminal] = None) -> Bucket:
+        """
+        Compute the bucket_tuple of a program P generated from the non-terminal S
+        """
+        S = S or self.start
+        new_bucket = Bucket()
+
+        if isinstance(P, Function):
+            F = P.function
+            args_P = P.arguments
+            probability = self.rules[S][F][1]
+            new_bucket.add_prob_uniform(probability)
+
+            for i, arg in enumerate(args_P):
+                new_bucket.add_prob_uniform(
+                    self.probability(arg, self.rules[S][F][0][i])
+                )
+            return new_bucket
+
+        elif isinstance(P, (Variable, Primitive)):
+            probability = self.rules[S][P][1]
+            new_bucket.add_prob_uniform(probability)
+            return new_bucket
+
+        return new_bucket
 
     def __contains__(self, P: Program) -> bool:
         return self.probability(P) > 0

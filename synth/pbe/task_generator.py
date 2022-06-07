@@ -298,7 +298,7 @@ def __multi_discrete_to_gen__(
 ) -> RequestSampler[int]:
 
     choice_map: Dict[Type, TList[int]] = {k: list(v.keys()) for k, v in distr.items()}
-    probs_map: Dict[Type, np.ndarray] = {
+    probs_map: Dict[Type, Any] = {
         k: np.array(list(v.values()), dtype=float) for k, v in distr.items()
     }
     if maxi:

@@ -19,8 +19,7 @@ from synth.nn import BigramsPredictorLayer, Task2Tensor, free_pytorch_memory
 from synth.pbe import IOEncoder
 from synth.semantic import DSLEvaluator
 from synth.syntax import ConcreteCFG, ConcretePCFG, enumerate_pcfg, DSL, Program
-from synth.syntax.concrete.bucket_search import BSEnumerator, enumerate_pcfg_bucket
-from synth.syntax.concrete.heap_search import Enumerator
+from synth.syntax.concrete.heap_search import HSEnumerator, enumerate_bucket_pcfg
 from synth.syntax.program import Function
 from synth.utils import chrono
 
@@ -119,7 +118,7 @@ elif not os.path.exists(dataset_file) or not os.path.isfile(dataset_file):
 if search_algo == "heap_search":
     custom_enumerate = enumerate_pcfg
 elif search_algo == "bucket_search":
-    custom_enumerate = enumerate_pcfg_bucket
+    custom_enumerate = enumerate_bucket_pcfg
 else:
     print(
         "search algorithm must be a valid name (heap_search / bucket_search)!",
@@ -277,7 +276,7 @@ def enumerative_search(
         [DSLEvaluator, Task[PBE], ConcretePCFG],
         Tuple[bool, float, int, Optional[Program]],
     ],
-    custom_enumerate: Callable[[ConcretePCFG], BSEnumerator],
+    custom_enumerate: Callable[[ConcretePCFG], HSEnumerator],
 ) -> None:
 
     start = len(trace)
@@ -293,7 +292,7 @@ def base(
     evaluator: DSLEvaluator,
     task: Task[PBE],
     pcfg: ConcretePCFG,
-    custom_enumerate: Callable[[ConcretePCFG], Enumerator],
+    custom_enumerate: Callable[[ConcretePCFG], HSEnumerator],
 ) -> Tuple[bool, float, int, Optional[Program]]:
     time = 0.0
     programs = 0
