@@ -16,9 +16,11 @@ from synth.syntax.type_system import (
 
 syntax = {
     "+": FunctionType(INT, INT, INT),
+    "-": FunctionType(INT, INT, INT),
     "head": FunctionType(List(PolymorphicType("a")), PolymorphicType("a")),
     "non_reachable": PrimitiveType("non_reachable"),
     "1": INT,
+    "2": INT,
     "non_productive": FunctionType(INT, STRING),
 }
 
@@ -91,3 +93,63 @@ def test_depth() -> None:
         g = pcfg.sampling()
         for _ in range(1000):
             assert next(g).depth() <= max_depth
+
+
+def test_intersection() -> None:
+    dsl = DSL(syntax)
+    type_req = FunctionType(INT, INT)
+    cfg = ConcreteCFG.from_dsl(dsl, type_req, 4)
+    pcfg = ConcretePCFG.uniform(cfg)
+
+    p1 = dsl.parse_program("(+ 1 var0)", type_req)
+    p2 = dsl.parse_program("(- 2 var0)", type_req)
+    p3 = dsl.parse_program("(- 1 var0)", type_req)
+    p4 = dsl.parse_program("(+ (+ 1 1) var0)", type_req)
+    p5 = dsl.parse_program("(- (+ var0 1) var0)", type_req)
+    p6 = dsl.parse_program("(- (+ 1 var0) var0)", type_req)
+    p7 = dsl.parse_program("(+ 2 var0)", type_req)
+
+    ipcfg = pcfg.intersection([(p1, 1)], 1, depth_matters=True)
+    assert p1 not in ipcfg
+    assert p2 not in ipcfg
+    assert p3 not in ipcfg
+    assert p4 not in ipcfg
+    assert p5 not in ipcfg
+    assert p6 not in ipcfg
+    assert p7 in ipcfg
+
+    ipcfg = pcfg.intersection([(p1, 1)], 0, depth_matters=True)
+    assert p1 in ipcfg
+    assert p2 not in ipcfg
+    assert p3 not in ipcfg
+    assert p4 not in ipcfg
+    assert p5 not in ipcfg
+    assert p6 not in ipcfg
+    assert p7 not in ipcfg
+
+    ipcfg = pcfg.intersection([(p1, 1)], 2, depth_matters=True)
+    assert p1 not in ipcfg
+    assert p2 not in ipcfg
+    assert p3 not in ipcfg
+    assert p4 not in ipcfg
+    assert p5 not in ipcfg
+    assert p6 not in ipcfg
+    assert p7 not in ipcfg
+
+    ipcfg = pcfg.intersection([(p1, 1)], 2, depth_matters=False)
+    assert p1 not in ipcfg
+    assert p2 not in ipcfg
+    assert p3 not in ipcfg
+    assert p4 in ipcfg
+    assert p5 not in ipcfg
+    assert p6 not in ipcfg
+    assert p7 not in ipcfg
+
+    ipcfg = pcfg.intersection([(p1, 1)], 3, depth_matters=False)
+    assert p1 not in ipcfg
+    assert p2 in ipcfg
+    assert p3 in ipcfg
+    assert p4 not in ipcfg
+    assert p5 not in ipcfg
+    assert p6 in ipcfg
+    assert p7 not in ipcfg
