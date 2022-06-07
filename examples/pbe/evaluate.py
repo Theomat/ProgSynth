@@ -47,7 +47,7 @@ parser.add_argument(
     "-s",
     "--search",
     type=str,
-    default = "heap_search",
+    default="heap_search",
     help="enumeration algorithm (default: heap_search)",
 )
 parser.add_argument(
@@ -116,10 +116,15 @@ elif not os.path.exists(dataset_file) or not os.path.isfile(dataset_file):
     print("Dataset must be a valid dataset file!", file=sys.stderr)
     sys.exit(1)
 
-if search_algo == "heap_search": custom_enumerate = enumerate_pcfg
-elif search_algo == "bucket_search": custom_enumerate = enumerate_pcfg_bucket
+if search_algo == "heap_search":
+    custom_enumerate = enumerate_pcfg
+elif search_algo == "bucket_search":
+    custom_enumerate = enumerate_pcfg_bucket
 else:
-    print("search algorithm must be a valid name (heap_saerch / bucket_search)!", file=sys.stderr)
+    print(
+        "search algorithm must be a valid name (heap_search / bucket_search)!",
+        file=sys.stderr,
+    )
     sys.exit(1)
 
 start_index = (
@@ -272,22 +277,23 @@ def enumerative_search(
         [DSLEvaluator, Task[PBE], ConcretePCFG],
         Tuple[bool, float, int, Optional[Program]],
     ],
-    custom_enumerate: Callable[[ConcretePCFG],BSEnumerator]
+    custom_enumerate: Callable[[ConcretePCFG], BSEnumerator],
 ) -> None:
-    
+
     start = len(trace)
     pbar = tqdm.tqdm(total=len(pcfgs) - start, desc="Tasks")
-    i = 0
     for task, pcfg in zip(dataset.tasks[start:], pcfgs[start:]):
         trace.append(method(evaluator, task, pcfg, custom_enumerate))
         pbar.update(1)
         evaluator.clear_cache()
-        i = i+1
     pbar.close()
 
 
 def base(
-    evaluator: DSLEvaluator, task: Task[PBE], pcfg: ConcretePCFG, custom_enumerate: Callable[[ConcretePCFG],Enumerator]
+    evaluator: DSLEvaluator,
+    task: Task[PBE],
+    pcfg: ConcretePCFG,
+    custom_enumerate: Callable[[ConcretePCFG], Enumerator],
 ) -> Tuple[bool, float, int, Optional[Program]]:
     time = 0.0
     programs = 0
@@ -342,7 +348,9 @@ if __name__ == "__main__":
                         "%)",
                     )
             try:
-                enumerative_search(full_dataset, evaluator, pcfgs, trace, method, custom_enumerate)
+                enumerative_search(
+                    full_dataset, evaluator, pcfgs, trace, method, custom_enumerate
+                )
             except:
                 should_exit = True
             with open(file, "w") as fd:
