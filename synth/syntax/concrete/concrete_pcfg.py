@@ -18,6 +18,7 @@ import vose
 from synth.syntax.concrete.concrete_cfg import ConcreteCFG, NonTerminal
 from synth.syntax.program import Constant, Function, Primitive, Program, Variable
 from synth.syntax.type_system import Arrow
+from synth.syntax.bucket import Bucket
 
 PRules = Dict[NonTerminal, Dict[Program, Tuple[List[NonTerminal], float]]]
 
@@ -212,6 +213,7 @@ class ConcretePCFG:
         probabilities: Dict[Program, Dict[NonTerminal, float]] = defaultdict(lambda: {})
 
         for S in reversed(self.rules):
+
             best_program = None
             best_probability: float = 0
 
@@ -247,7 +249,61 @@ class ConcretePCFG:
             # assert best_probability > 0
             assert best_program
             self.max_probability[S] = best_program
+            
         return probabilities
+
+    def compute_max_bucket_tuples(self) -> Dict[Program, Dict[NonTerminal, Bucket]]:
+        """
+        populates a dictionary max_bucket_tuple
+        """
+        self.max_bucket_tuple: Dict[
+            Union[NonTerminal, Tuple[NonTerminal, Program]], Program
+        ] = {}
+
+        bucket_tuples: Dict[Program, Dict[NonTerminal, Bucket]] = defaultdict(lambda: {})
+        
+        for S in reversed(self.rules):
+            best_program = None
+            best_bucket: Bucket = Bucket()
+
+            for P in self.rules[S]:
+                args_P, w = self.rules[S][P]
+                P_unique = self.return_unique(P)
+
+                if len(args_P) == 0:
+                    self.max_bucket_tuple[(S, P)] = P_unique
+                    temp = Bucket()
+                    temp.add_prob_uniform(w)
+                    bucket_tuples[P_unique][S] = temp
+                    # assert P_unique.probability[
+                    #     (self.__hash__(), S)
+                    # ] == self.probability_program(S, P_unique)
+
+                else:
+                    new_program = Function(
+                        function=P_unique,
+                        arguments=[self.max_bucket_tuple[arg] for arg in args_P],
+                    )
+                    P_unique = self.return_unique(new_program)
+                    new_bucket = Bucket()
+                    new_bucket.add_prob_uniform(w)
+                    for arg in args_P:
+                        new_bucket.add(bucket_tuples[self.max_bucket_tuple[arg]][arg])
+                    self.max_bucket_tuple[(S, P)] = P_unique
+                    # assert (self.__hash__(), S) not in P_unique.probability
+                    bucket_tuples[P_unique][S] = new_bucket
+                    # assert probability == self.probability_program(S, P_unique)
+                
+                if (bucket_tuples[self.max_bucket_tuple[(S, P)]][S] > best_bucket) or (best_bucket == Bucket()):
+                    best_program = self.max_bucket_tuple[(S, P)]
+                    best_bucket = bucket_tuples[self.max_bucket_tuple[(S, P)]][S]
+
+
+            # assert best_probability > 0
+            assert best_program
+            self.max_bucket_tuple[S] = best_program
+            
+        return bucket_tuples
 
     def sampling(self) -> Generator[Program, None, None]:
         """
