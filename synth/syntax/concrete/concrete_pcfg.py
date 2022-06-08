@@ -8,6 +8,7 @@ from typing import (
     Optional,
     Set,
     Tuple,
+    TypeVar,
     Union,
 )
 from collections import defaultdict
@@ -22,11 +23,12 @@ from synth.syntax.program import Constant, Function, Primitive, Program, Variabl
 from synth.syntax.type_system import Arrow
 
 PRules = Dict[NonTerminal, Dict[Program, Tuple[List[NonTerminal], float]]]
+T = TypeVar("T")
 
 
 class ConcretePCFG:
     """
-    Object that represents a probabilistic context-free grammar
+    Object that represents a deterministic probabilistic context-free grammar
     with normalised weights
 
     rules: a dictionary of type {S: D}
@@ -34,12 +36,9 @@ class ConcretePCFG:
     with P a program, l a list of non-terminals, and w a weight
     representing the derivation S -> P(S1, S2, ...) with weight w for l' = [S1, S2, ...]
 
-    list_derivations: a dictionary of type {S: l}
+    list_derivations: a dictionary of type {S: l} (only is init_sampling has been called)
     with S a non-terminal and l the list of programs P appearing in derivations from S,
     sorted from most probable to least probable
-
-    max_probability: a dictionary of type {S: (Pmax, probability)} cup {(S, P): (Pmax, probability)}
-    with S a non-terminal
 
     hash_table_programs: a dictionary {hash: P}
     mapping hashes to programs
@@ -228,20 +227,33 @@ class ConcretePCFG:
         """
         Compute the probability of a program P generated from the non-terminal S
         """
+        return self.follow_derivations(lambda p1, uu, uy, p2: p1 * p2, 1.0, P, S)
+
+    def follow_derivations(
+        self,
+        reduce: Callable[[T, NonTerminal, Program, float], T],
+        init: T,
+        P: Program,
+        S: Optional[NonTerminal] = None,
+    ) -> T:
+        """
+        Reduce the following program.
+        """
+        v = init
         S = S or self.start
         if isinstance(P, Function):
             F = P.function
             args_P = P.arguments
-            probability = self.rules[S][F][1]
+            v = reduce(v, S, F, self.rules[S][F][1])
 
             for i, arg in enumerate(args_P):
-                probability *= self.probability(arg, self.rules[S][F][0][i])
-            return probability
+                v = self.follow_derivations(reduce, v, arg, self.rules[S][F][0][i])
+            return v
 
         elif isinstance(P, (Variable, Primitive)):
-            return self.rules[S][P][1]
+            return reduce(v, S, P, self.rules[S][P][1])
 
-        return 0
+        return v
 
     def __contains__(self, P: Program) -> bool:
         return self.probability(P) > 0
