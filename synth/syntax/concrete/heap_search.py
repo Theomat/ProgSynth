@@ -1,4 +1,5 @@
 from collections import defaultdict
+from copy import copy
 from heapq import heappush, heappop
 from typing import (
     Any,
@@ -16,7 +17,7 @@ from abc import ABC, abstractmethod
 from synth.syntax.program import Program, Function, Variable
 from synth.syntax.concrete.concrete_cfg import NonTerminal
 from synth.syntax.concrete.concrete_pcfg import ConcretePCFG
-from synth.utils.ordered import Bucket, Ordered
+from synth.utils.ordered import Ordered
 
 
 @dataclass(order=True, frozen=True)
@@ -255,6 +256,17 @@ class Bucket(Ordered):
             self.elems[i] == other.elems[i] for i in range(self.size)
         )
 
+    def __le__(self, other: Any) -> bool:
+        return self.__lt__(other) or self.__eq__(other)
+
+    def __ge__(self, other: Any) -> bool:
+        return self.__gt__(other) or self.__eq__(other)
+
+    def __neg__(self) -> "Bucket":
+        neg_bucket = copy(self)
+        neg_bucket.elems = [-elem for elem in neg_bucket.elems]
+        return neg_bucket
+
     def __iadd__(self, other: "Bucket") -> "Bucket":
         if self.size == other.size:
             for i in range(self.size):
@@ -267,12 +279,14 @@ class Bucket(Ordered):
                 )
             )
 
-    def add_prob_uniform(self, probability: float) -> None:
+    def add_prob_uniform(self, probability: float) -> Optional["Bucket"]:
         """
         Given a probability add 1 in the relevant bucket assuming buckets are linearly distributed.
         """
         index = self.size - int(probability * self.size) - 1
         self.elems[index] += 1
+        return self
+
 
 class BucketSearch(HSEnumerator):
     def __init__(self, G: ConcretePCFG, bucket_size: int) -> None:

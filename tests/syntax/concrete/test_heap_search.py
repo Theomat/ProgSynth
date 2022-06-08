@@ -17,11 +17,10 @@ from synth.syntax.type_system import (
 
 
 syntax = {
-    # "+": FunctionType(INT, INT, INT),
+    "+": FunctionType(INT, INT, INT),
     "head": FunctionType(List(PolymorphicType("a")), PolymorphicType("a")),
     "non_reachable": PrimitiveType("non_reachable"),
-    # "1": INT,
-    # "2": INT,
+    "1": INT,
     "non_productive": FunctionType(INT, STRING),
 }
 
@@ -56,9 +55,7 @@ def test_unicity_bucketSearch() -> None:
     cfg = ConcreteCFG.from_dsl(dsl, FunctionType(INT, INT), max_depth)
     pcfg = ConcretePCFG.uniform(cfg)
     seen = set()
-    i = 0
-    for program in enumerate_bucket_pcfg(pcfg):
-        i = i + 1
+    for program in enumerate_bucket_pcfg(pcfg, bucket_size=3):
         assert program not in seen
         seen.add(program)
     assert len(seen) == cfg.size()
@@ -69,8 +66,12 @@ def test_order_bucketSearch() -> None:
     max_depth = 3
     cfg = ConcreteCFG.from_dsl(dsl, FunctionType(INT, INT), max_depth)
     pcfg = ConcretePCFG.uniform(cfg)
-    last = Bucket()
-    for program in enumerate_bucket_pcfg(pcfg):
-        p = pcfg.bucket_tuple(program)
-        assert p <= last or last == Bucket()
-        last = p
+    for bucketSize in range(3, 10):
+        last = Bucket(bucketSize)
+        for program in enumerate_bucket_pcfg(pcfg, bucket_size=bucketSize):
+            p = pcfg.follow_derivations(
+                lambda b, uu, uy, p: b.add_prob_uniform(p), Bucket(bucketSize), program
+            )
+            assert p.size == bucketSize
+            assert p <= last or last == Bucket(bucketSize)
+            last = p
