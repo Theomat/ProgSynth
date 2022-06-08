@@ -302,7 +302,6 @@ class ConcretePCFG:
                 success = add_score(S, F, score)
 
                 for i, arg in enumerate(args_P):
-                    # type: ignore
                     add_score(self.rules[S][F][0][i] if success else S, arg, score)
             else:
                 if P not in rules_score[S]:

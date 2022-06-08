@@ -5,7 +5,6 @@ import sys
 from typing import Callable, List, Optional, Tuple
 import csv
 import pickle
-from numpy import iterable
 
 import tqdm
 
@@ -18,9 +17,15 @@ from synth import Dataset, PBE, Task
 from synth.nn import BigramsPredictorLayer, Task2Tensor, free_pytorch_memory
 from synth.pbe import IOEncoder
 from synth.semantic import DSLEvaluator
-from synth.syntax import ConcreteCFG, ConcretePCFG, enumerate_pcfg, DSL, Program
-from synth.syntax.concrete.heap_search import HSEnumerator, enumerate_bucket_pcfg
-from synth.syntax.program import Function
+from synth.syntax import (
+    ConcreteCFG,
+    ConcretePCFG,
+    enumerate_pcfg,
+    enumerate_bucket_pcfg,
+    DSL,
+    Program,
+)
+from synth.syntax.concrete.heap_search import HSEnumerator
 from synth.utils import chrono
 
 
@@ -118,7 +123,8 @@ elif not os.path.exists(dataset_file) or not os.path.isfile(dataset_file):
 if search_algo == "heap_search":
     custom_enumerate = enumerate_pcfg
 elif search_algo == "bucket_search":
-    custom_enumerate = enumerate_bucket_pcfg
+    custom_enumerate = lambda x: enumerate_bucket_pcfg(x, 3)
+    # TODO: add parameter for bucket_search size
 else:
     print(
         "search algorithm must be a valid name (heap_search / bucket_search)!",
