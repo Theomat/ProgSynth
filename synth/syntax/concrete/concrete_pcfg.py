@@ -26,7 +26,7 @@ PRules = Dict[NonTerminal, Dict[Program, Tuple[List[NonTerminal], float]]]
 
 class ConcretePCFG:
     """
-    Object that represents a probabilistic context-free grammar
+    Object that represents a deterministic probabilistic context-free grammar
     with normalised weights
 
     rules: a dictionary of type {S: D}
@@ -34,12 +34,9 @@ class ConcretePCFG:
     with P a program, l a list of non-terminals, and w a weight
     representing the derivation S -> P(S1, S2, ...) with weight w for l' = [S1, S2, ...]
 
-    list_derivations: a dictionary of type {S: l}
+    list_derivations: a dictionary of type {S: l} (only is init_sampling has been called)
     with S a non-terminal and l the list of programs P appearing in derivations from S,
     sorted from most probable to least probable
-
-    max_probability: a dictionary of type {S: (Pmax, probability)} cup {(S, P): (Pmax, probability)}
-    with S a non-terminal
 
     hash_table_programs: a dictionary {hash: P}
     mapping hashes to programs
