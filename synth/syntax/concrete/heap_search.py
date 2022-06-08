@@ -219,11 +219,9 @@ def enumerate_pcfg(G: ConcretePCFG) -> HeapSearch:
 
 
 class Bucket(Ordered):
-    def __init__(self, tup: List[int] = [0, 0, 0]):
-        self.elems = []
-        self.size = len(tup)
-        for elem in tup:
-            self.elems.append(elem)
+    def __init__(self, size: int = 3):
+        self.elems = [0 for _ in range(size)]
+        self.size = size
 
     def __str__(self) -> str:
         s = "("
@@ -238,13 +236,12 @@ class Bucket(Ordered):
     def __lt__(self, other: "Bucket") -> bool:
         if self.size == 0:
             return False
-
-        if self.elems[0] > other.elems[0]:
-            return True
-        elif self.elems[0] == other.elems[0]:
-            return Bucket(self.elems[1:]).__lt__(Bucket(other.elems[1:]))
-        else:
-            return False
+        for i in range(self.size):
+            if self.elems[i] > other.elems[i]:
+                return True
+            elif self.elems[i] < other.elems[i]:
+                return False
+        return False
 
     def __gt__(self, other: "Bucket") -> bool:
         return other.__lt__(self)
@@ -275,23 +272,27 @@ class Bucket(Ordered):
 
 
 class BucketSearch(HSEnumerator):
-    def __init__(self, G: ConcretePCFG) -> None:
+    def __init__(self, G: ConcretePCFG, bucket_size: int) -> None:
         super().__init__(G)
         self.bucket_tuples: Dict[Program, Dict[NonTerminal, Bucket]] = defaultdict(
             lambda: {}
         )
+        self.bucket_size = bucket_size
 
     def compute_priority(self, S: NonTerminal, new_program: Program) -> Bucket:
-        new_bucket = Bucket()
+        new_bucket = Bucket(self.bucket_size)
         if isinstance(new_program, Function):
             F = new_program.function
             new_arguments = new_program.arguments
             new_bucket.add_prob_uniform(self.G.rules[S][F][1])
             for arg, S3 in zip(new_arguments, self.G.rules[S][F][0]):
                 new_bucket += self.bucket_tuples[arg][S3]
+        else:
+            probability = self.G.rules[S][new_program][1]
+            new_bucket.add_prob_uniform(probability)
         self.bucket_tuples[new_program][S] = new_bucket
         return new_bucket
 
 
-def enumerate_bucket_pcfg(G: ConcretePCFG) -> BucketSearch:
-    return BucketSearch(G)
+def enumerate_bucket_pcfg(G: ConcretePCFG, bucket_size: int) -> BucketSearch:
+    return BucketSearch(G, bucket_size)
