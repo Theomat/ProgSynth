@@ -81,7 +81,6 @@ class HSEnumerator(ABC):
         """
         while True:
             program = self.query(self.start, self.current)
-
             if program is None:
                 break
             self.current = program
@@ -132,7 +131,6 @@ class HSEnumerator(ABC):
             # are represented by the same object
             self.hash_table_global[hash_program] = program
             priority = self.compute_priority(S, program)
-
             heappush(
                 self.heaps[S],
                 HeapElement(priority, program),
@@ -183,7 +181,6 @@ class HSEnumerator(ABC):
                         self.hash_table_program[S].add(hash_new_program)
 
                         priority: Ordered = self.compute_priority(S, new_program)
-
                         heappush(self.heaps[S], HeapElement(priority, new_program))
 
         if isinstance(succ, Variable):

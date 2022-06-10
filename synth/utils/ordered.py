@@ -1,4 +1,4 @@
-from typing import Any, Protocol, List
+from typing import Any, Protocol
 from abc import abstractmethod
 
 
