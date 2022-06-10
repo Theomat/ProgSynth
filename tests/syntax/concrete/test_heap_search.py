@@ -1,4 +1,8 @@
-from synth.syntax.concrete.heap_search import enumerate_pcfg
+from synth.syntax.concrete.heap_search import (
+    Bucket,
+    enumerate_pcfg,
+    enumerate_bucket_pcfg,
+)
 from synth.syntax.concrete.concrete_cfg import ConcreteCFG
 from synth.syntax.concrete.concrete_pcfg import ConcretePCFG
 from synth.syntax.dsl import DSL
@@ -21,7 +25,7 @@ syntax = {
 }
 
 
-def test_unicity() -> None:
+def test_unicity_heapSearch() -> None:
     dsl = DSL(syntax)
     max_depth = 3
     cfg = ConcreteCFG.from_dsl(dsl, FunctionType(INT, INT), max_depth)
@@ -33,7 +37,7 @@ def test_unicity() -> None:
     assert len(seen) == cfg.size()
 
 
-def test_order() -> None:
+def test_order_heapSearch() -> None:
     dsl = DSL(syntax)
     max_depth = 3
     cfg = ConcreteCFG.from_dsl(dsl, FunctionType(INT, INT), max_depth)
@@ -43,3 +47,32 @@ def test_order() -> None:
         p = pcfg.probability(program)
         assert p <= last
         last = p
+
+
+def test_unicity_bucketSearch() -> None:
+    dsl = DSL(syntax)
+    max_depth = 3
+    cfg = ConcreteCFG.from_dsl(dsl, FunctionType(INT, INT), max_depth)
+    pcfg = ConcretePCFG.uniform(cfg)
+    for bucketSize in range(3, 10):
+        seen = set()
+        for program in enumerate_bucket_pcfg(pcfg, bucket_size=bucketSize):
+            assert program not in seen
+            seen.add(program)
+        assert len(seen) == cfg.size()
+
+
+def test_order_bucketSearch() -> None:
+    dsl = DSL(syntax)
+    max_depth = 3
+    cfg = ConcreteCFG.from_dsl(dsl, FunctionType(INT, INT), max_depth)
+    pcfg = ConcretePCFG.uniform(cfg)
+    for bucketSize in range(3, 10):
+        last = Bucket(bucketSize)
+        for program in enumerate_bucket_pcfg(pcfg, bucket_size=bucketSize):
+            p = pcfg.follow_derivations(
+                lambda b, uu, uy, p: b.add_prob_uniform(p), Bucket(bucketSize), program
+            )
+            assert p.size == bucketSize
+            assert p >= last or last == Bucket(bucketSize)
+            last = p
