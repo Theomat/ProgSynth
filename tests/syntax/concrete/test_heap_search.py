@@ -54,11 +54,12 @@ def test_unicity_bucketSearch() -> None:
     max_depth = 3
     cfg = ConcreteCFG.from_dsl(dsl, FunctionType(INT, INT), max_depth)
     pcfg = ConcretePCFG.uniform(cfg)
-    seen = set()
-    for program in enumerate_bucket_pcfg(pcfg, bucket_size=3):
-        assert program not in seen
-        seen.add(program)
-    assert len(seen) == cfg.size()
+    for bucketSize in range(3, 10):
+        seen = set()
+        for program in enumerate_bucket_pcfg(pcfg, bucket_size=bucketSize):
+            assert program not in seen
+            seen.add(program)
+        assert len(seen) == cfg.size()
 
 
 def test_order_bucketSearch() -> None:
@@ -73,5 +74,5 @@ def test_order_bucketSearch() -> None:
                 lambda b, uu, uy, p: b.add_prob_uniform(p), Bucket(bucketSize), program
             )
             assert p.size == bucketSize
-            assert p <= last or last == Bucket(bucketSize)
+            assert p >= last or last == Bucket(bucketSize)
             last = p

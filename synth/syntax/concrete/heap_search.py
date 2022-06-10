@@ -1,5 +1,4 @@
 from collections import defaultdict
-from copy import copy
 from heapq import heappush, heappop
 from typing import (
     Any,
@@ -204,9 +203,6 @@ class HeapSearch(HSEnumerator):
             lambda: {}
         )
 
-        # for S in reversed(self.G.rules.keys()):
-        # self.__init_non_terminal__(S)
-
     def compute_priority(self, S: NonTerminal, new_program: Program) -> float:
         if isinstance(new_program, Function):
             F = new_program.function
@@ -243,9 +239,9 @@ class Bucket(Ordered):
         if self.size == 0:
             return False
         for i in range(self.size):
-            if self.elems[i] > other.elems[i]:
+            if self.elems[i] < other.elems[i]:
                 return True
-            elif self.elems[i] < other.elems[i]:
+            elif self.elems[i] > other.elems[i]:
                 return False
         return False
 
@@ -257,16 +253,11 @@ class Bucket(Ordered):
             self.elems[i] == other.elems[i] for i in range(self.size)
         )
 
-    def __le__(self, other: Any) -> bool:
+    def __le__(self, other: "Bucket") -> bool:
         return self.__lt__(other) or self.__eq__(other)
 
-    def __ge__(self, other: Any) -> bool:
+    def __ge__(self, other: "Bucket") -> bool:
         return self.__gt__(other) or self.__eq__(other)
-
-    def __neg__(self) -> "Bucket":
-        neg_bucket = copy(self)
-        neg_bucket.elems = [-elem for elem in neg_bucket.elems]
-        return neg_bucket
 
     def __iadd__(self, other: "Bucket") -> "Bucket":
         if self.size == other.size:
@@ -280,7 +271,7 @@ class Bucket(Ordered):
                 )
             )
 
-    def add_prob_uniform(self, probability: float) -> Optional["Bucket"]:
+    def add_prob_uniform(self, probability: float) -> "Bucket":
         """
         Given a probability add 1 in the relevant bucket assuming buckets are linearly distributed.
         """
@@ -297,9 +288,6 @@ class BucketSearch(HSEnumerator):
         )
         self.bucket_size = bucket_size
 
-        for S in reversed(self.G.rules):
-            self.__init_non_terminal__(S)
-
     def compute_priority(self, S: NonTerminal, new_program: Program) -> Bucket:
         new_bucket = Bucket(self.bucket_size)
         if isinstance(new_program, Function):
@@ -312,7 +300,7 @@ class BucketSearch(HSEnumerator):
             probability = self.G.rules[S][new_program][1]
             new_bucket.add_prob_uniform(probability)
         self.bucket_tuples[new_program][S] = new_bucket
-        return -new_bucket
+        return new_bucket
 
 
 def enumerate_bucket_pcfg(G: ConcretePCFG, bucket_size: int) -> BucketSearch:
