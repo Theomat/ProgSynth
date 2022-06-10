@@ -92,6 +92,9 @@ class HSEnumerator(ABC):
         return self.generator()
 
     def __init_non_terminal__(self, S: NonTerminal) -> None:
+        if S in self._init:
+            return
+        self._init.add(S)
         # 1) Compute max probablities
         best_program = None
         best_priority: Optional[Ordered] = None
@@ -102,8 +105,7 @@ class HSEnumerator(ABC):
                 arguments = []
                 for arg in args_P:
                     # Try to init sub NonTerminal in case they were not initialised
-                    if arg not in self._init:
-                        self.__init_non_terminal__(arg)
+                    self.__init_non_terminal__(arg)
                     arguments.append(self.max_priority[arg])
 
                 new_program = Function(
@@ -138,13 +140,14 @@ class HSEnumerator(ABC):
             )
 
         # 3) Do the 1st query
-        self._init.add(S)
         self.query(S, None)
 
     def query(self, S: NonTerminal, program: Optional[Program]) -> Optional[Program]:
         """
         computing the successor of program from S
         """
+        if S not in self._init:
+            self.__init_non_terminal__(S)
         if program:
             hash_program = hash(program)
         else:
@@ -154,8 +157,6 @@ class HSEnumerator(ABC):
         if hash_program in self.succ[S]:
             return self.succ[S][hash_program]
 
-        if S not in self._init:
-            self.__init_non_terminal__(S)
         # otherwise the successor is the next element in the heap
         try:
             element = heappop(self.heaps[S])
@@ -203,8 +204,8 @@ class HeapSearch(HSEnumerator):
             lambda: {}
         )
 
-        for S in reversed(self.G.rules):
-            self.__init_non_terminal__(S)
+        # for S in reversed(self.G.rules.keys()):
+        # self.__init_non_terminal__(S)
 
     def compute_priority(self, S: NonTerminal, new_program: Program) -> float:
         if isinstance(new_program, Function):
