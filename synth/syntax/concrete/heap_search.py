@@ -110,7 +110,6 @@ class HSEnumerator(ABC):
                     function=P_unique,
                     arguments=arguments,
                 )
-
                 P_unique = self.G.return_unique(new_program)
             priority = self.compute_priority(S, P_unique)
             self.max_priority[(S, P)] = P_unique
