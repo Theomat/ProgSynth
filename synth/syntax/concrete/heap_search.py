@@ -199,9 +199,6 @@ class HeapSearch(HSEnumerator):
             lambda: {}
         )
 
-        # for S in reversed(self.G.rules.keys()):
-        # self.__init_non_terminal__(S)
-
     def compute_priority(self, S: NonTerminal, new_program: Program) -> float:
         if isinstance(new_program, Function):
             F = new_program.function
@@ -238,9 +235,9 @@ class Bucket(Ordered):
         if self.size == 0:
             return False
         for i in range(self.size):
-            if self.elems[i] > other.elems[i]:
+            if self.elems[i] < other.elems[i]:
                 return True
-            elif self.elems[i] < other.elems[i]:
+            elif self.elems[i] > other.elems[i]:
                 return False
         return False
 
@@ -251,6 +248,12 @@ class Bucket(Ordered):
         return isinstance(other, Bucket) and all(
             self.elems[i] == other.elems[i] for i in range(self.size)
         )
+
+    def __le__(self, other: "Bucket") -> bool:
+        return self.__lt__(other) or self.__eq__(other)
+
+    def __ge__(self, other: "Bucket") -> bool:
+        return self.__gt__(other) or self.__eq__(other)
 
     def __iadd__(self, other: "Bucket") -> "Bucket":
         if self.size == other.size:
@@ -264,12 +267,13 @@ class Bucket(Ordered):
                 )
             )
 
-    def add_prob_uniform(self, probability: float) -> None:
+    def add_prob_uniform(self, probability: float) -> "Bucket":
         """
         Given a probability add 1 in the relevant bucket assuming buckets are linearly distributed.
         """
         index = self.size - int(probability * self.size) - 1
         self.elems[index] += 1
+        return self
 
 
 class BucketSearch(HSEnumerator):
