@@ -259,7 +259,7 @@ class PrimitivePredictorLayer(nn.Module):
         self.variable_probability = variable_probability
         self.primitives = dsl.list_primitives[:]
         self.P2index = {p: i for i, p in enumerate(self.primitives)}
-        output_size = len(self.primitives) + 1
+        output_size = len(self.primitives)
         self.log_probs_predictor = nn.Linear(
             input_size,
             output_size,
@@ -273,7 +273,8 @@ class PrimitivePredictorLayer(nn.Module):
         returns: (batch_size, len(self.primitives) + 1) in logits
         """
         y: Tensor = self.log_probs_predictor(x)
-        return y
+        z =  F.softmax(y)
+        return z
 
     def tensor2pcfg(
         self,
@@ -295,7 +296,7 @@ class PrimitivePredictorLayer(nn.Module):
         device = x.device
         cfg = ConcreteCFG.from_dsl(self.dsl, type_request, **kwargs)
         rules: LogPRules = {}
-        x = F.logsigmoid(x)
+        x = torch.log(x)
         for S in cfg.rules:
             rules[S] = {}
 
@@ -355,7 +356,7 @@ class PrimitivePredictorLayer(nn.Module):
         self,
         programs: Iterable[Program],
         batch: Tensor,
-        loss: Callable[[Tensor, Tensor], Tensor] = F.binary_cross_entropy_with_logits,
+        loss: Callable[[Tensor, Tensor], Tensor] = F.cross_entropy,
         reduce: Callable[[Tensor], Tensor] = torch.mean,
     ) -> Tensor:
         encoded_programs = torch.stack(
