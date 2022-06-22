@@ -30,15 +30,18 @@ class NLPEncoder(SpecificationEncoder[NLP, Tensor]):
 
     @property
     def embedding_size(self) -> int:
-        return self.encoder.config.hidden_size
+        size: int = self.encoder.config.hidden_size
+        return size
 
     def encode(self, task: Task[NLP], device: Optional[str] = None) -> Tensor:
         intent_tokens, slot_map = self.canonicalize_intent(task.specification.intent)
-        tensor: torch.Tensor = self.encoder(intent_tokens).last_hidden_state
+        tensor: Tensor = self.encoder(intent_tokens).last_hidden_state
         return tensor.to(device)
         # find the slot map
 
-    def canonicalize_intent(self, intent: str) -> Tuple[torch.Tensor, Dict[str, str]]:
+    def canonicalize_intent(
+        self, intent: str
+    ) -> Tuple[Tensor, Dict[str, Dict[str, str]]]:
         # handle the following special case: quote is `''`
         marked_token_matches = __QUOTED_TOKEN_RE__.findall(intent)
 
@@ -61,10 +64,10 @@ class NLPEncoder(SpecificationEncoder[NLP, Tensor]):
                 "type": slot_type,
             }
 
-        intent: List[str] = self.tokenizer.tokenize(intent.lower())
-        intent = ["[CLS]"] + intent + ["[SEP]"]
+        intent_list: List[str] = self.tokenizer.tokenize(intent.lower())
+        intent_list = ["[CLS]"] + intent_list + ["[SEP]"]
         voc: Dict[str, int] = self.tokenizer.get_vocab()
-        intent_tensor = torch.tensor([voc[x] for x in intent]).unsqueeze(0)
+        intent_tensor = torch.tensor([voc[x] for x in intent_list]).unsqueeze(0)
         return intent_tensor, slot_map
 
 
