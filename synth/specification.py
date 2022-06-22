@@ -38,6 +38,7 @@ class PBE(TaskSpecification):
             t = self.examples[i].guess_type()
         return t
 
+
 @dataclass
 class NLP(TaskSpecification):
     """
@@ -45,6 +46,7 @@ class NLP(TaskSpecification):
     """
 
     intent: str
+
 
 @dataclass
 class NLPBE(TaskSpecification):

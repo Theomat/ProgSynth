@@ -273,7 +273,7 @@ class PrimitivePredictorLayer(nn.Module):
         returns: (batch_size, len(self.primitives) + 1) in logits
         """
         y: Tensor = self.log_probs_predictor(x)
-        z =  F.softmax(y)
+        z = F.softmax(y)
         return z
 
     def tensor2pcfg(

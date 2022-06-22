@@ -26,6 +26,7 @@ from synth.nn import (
 from synth.pbe import IOEncoder
 from synth.syntax import ConcreteCFG
 from synth.utils import chrono
+
 # =============================
 # Misc init
 # ================================
@@ -41,7 +42,13 @@ for P in dsl.list_primitives:
     if "[" in P.primitive:
         continue
     if isinstance(P.type, Arrow) and len(P.type.arguments()) == 1:
-        dataset.append(Task[NLP](P.type, NLP(P.primitive.lower() + " the list `list`."), Function(P, [Variable(0, P.type.arguments()[0])])))
+        dataset.append(
+            Task[NLP](
+                P.type,
+                NLP(P.primitive.lower() + " the list `list`."),
+                Function(P, [Variable(0, P.type.arguments()[0])]),
+            )
+        )
 
 
 full_dataset = Dataset(dataset)
@@ -117,7 +124,9 @@ def do_batch(iter_number: int) -> None:
             task = batch[0]
             print(task)
             out = batch_outputs[0]
-            pcfg = predictor.primitive_layer.tensor2pcfg(out, task.type_request, max_depth=2).to_pcfg()
+            pcfg = predictor.primitive_layer.tensor2pcfg(
+                out, task.type_request, max_depth=2
+            ).to_pcfg()
             print(pcfg)
 
 
@@ -136,8 +145,6 @@ def train() -> None:
     j = 0
     for ep in tqdm.trange(100, desc="epochs"):
         j = do_epoch(j)
-
-
 
 
 train()
