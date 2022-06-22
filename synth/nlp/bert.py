@@ -28,6 +28,10 @@ class NLPEncoder(SpecificationEncoder[NLP, Tensor]):
         self.encoder = BertModel.from_pretrained(__BERT_MODEL__)
         self.encoder.resize_token_embeddings(len(self.tokenizer))
 
+    @property
+    def embedding_size(self) -> int:
+        return self.encoder.config.hidden_size
+
     def encode(self, task: Task[NLP], device: Optional[str] = None) -> Tensor:
         intent_tokens, slot_map = self.canonicalize_intent(task.specification.intent)
         tensor: torch.Tensor = self.encoder(intent_tokens).last_hidden_state
