@@ -1,85 +1,53 @@
-from typing import Optional
+from typing import Dict, List, Literal, Optional, Tuple
+import re
 
 import torch
-import re
 from torch import Tensor
 
-from transformers import BertTokenizer,BertModel
+from transformers import BertTokenizer, BertModel
 
 from synth.nn.spec_encoder import SpecificationEncoder
 from synth.specification import NLP
 from synth.task import Task
 
+__QUOTED_TOKEN_RE__ = re.compile(r"(?P<quote>''|[`'\"])(?P<string>.*?)(?P=quote)")
+"""
+Patterns that find strings surrounded by backquotes.
+"""
+
+__BERT_MODEL__ = "bert-base-uncased"
+
 
 class NLPEncoder(SpecificationEncoder[NLP, Tensor]):
-    def __init__(self) -> None:
-        self.tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
+    def __init__(self, max_var_num: int = 4) -> None:
+        self.tokenizer = BertTokenizer.from_pretrained(__BERT_MODEL__)
         self.tokenizer.add_tokens(
-            [
-                "var_0",
-                "str_0",
-                "var_1",
-                "str_1",
-                "var_2",
-                "str_2",
-                "var_3",
-                "str_3",
-                "var_4",
-                "str_4",
-            ]
+            [f"var_{i}" for i in range(max_var_num + 1)]
+            + [f"str_{i}" for i in range(max_var_num + 1)]
         )
-        self.encoder = BertModel.from_pretrained("bert-base-uncased")
+        self.encoder = BertModel.from_pretrained(__BERT_MODEL__)
         self.encoder.resize_token_embeddings(len(self.tokenizer))
 
     def encode(self, task: Task[NLP], device: Optional[str] = None) -> Tensor:
         intent_tokens, slot_map = self.canonicalize_intent(task.specification.intent)
-        return self.encoder(intent_tokens).last_hidden_state
+        tensor: torch.Tensor = self.encoder(intent_tokens).last_hidden_state
+        return tensor.to(device)
         # find the slot map
 
-    def infer_slot_type(self, quote, value):
-        if quote == "`" and value.isidentifier():
-            return "var"
-        return "str"
-
-    def canonicalize_intent(self, intent):
+    def canonicalize_intent(self, intent: str) -> Tuple[torch.Tensor, Dict[str, str]]:
         # handle the following special case: quote is `''`
-        QUOTED_TOKEN_RE = re.compile(r"(?P<quote>''|[`'\"])(?P<string>.*?)(?P=quote)")
-        marked_token_matches = QUOTED_TOKEN_RE.findall(intent)
+        marked_token_matches = __QUOTED_TOKEN_RE__.findall(intent)
 
         slot_map = dict()
-        var_id = 0
-        str_id = 0
+        ids_counts = {"var": 0, "str": 0}
         for match in marked_token_matches:
-            quote = match[0]
-            value = match[1]
+            quote: str = match[0]
+            value: str = match[1]
             quoted_value = quote + value + quote
 
-            # try:
-            #     # if it's a number, then keep it and leave it to the copy mechanism
-            #     float(value)
-            #     intent = intent.replace(quoted_value, value)
-            #     continue
-            # except:
-            #     pass
-
-            slot_type = self.infer_slot_type(quote, value)
-
-            if slot_type == "var":
-                slot_name = "var_%d" % var_id
-                var_id += 1
-                slot_type = "var"
-            else:
-
-                slot_name = "str_%d" % str_id
-                str_id += 1
-                slot_type = "str"
-
-            # slot_id = len(slot_map)
-            # slot_name = 'slot_%d' % slot_id
-            # # make sure slot_name is also unicode
-            # slot_name = unicode(slot_name)
-            # is_list = is_enumerable_str(value.strip().encode().decode('unicode_escape', 'ignore'))
-            # if not is_list:
+            slot_type = __infer_slot_type__(quote, value)
+            slot_name = slot_type + ("_%d" % ids_counts[slot_type])
+            ids_counts[slot_type] += 1
 
             intent = intent.replace(quoted_value, slot_name)
 
@@ -89,11 +57,14 @@ class NLPEncoder(SpecificationEncoder[NLP, Tensor]):
                 "type": slot_type,
             }
 
-            # else:
-            #     pass
-
-        intent = self.tokenizer.tokenize(intent.lower())
+        intent: List[str] = self.tokenizer.tokenize(intent.lower())
         intent = ["[CLS]"] + intent + ["[SEP]"]
-        voc = self.tokenizer.get_vocab()
-        intent = torch.tensor([voc[x] for x in intent]).unsqueeze(0)
-        return intent, slot_map
+        voc: Dict[str, int] = self.tokenizer.get_vocab()
+        intent_tensor = torch.tensor([voc[x] for x in intent]).unsqueeze(0)
+        return intent_tensor, slot_map
+
+
+def __infer_slot_type__(quote: str, value: str) -> Literal["var", "str"]:
+    if quote == "`" and value.isidentifier():
+        return "var"
+    return "str"
