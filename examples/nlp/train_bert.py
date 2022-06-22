@@ -1,40 +1,36 @@
 from deepcoder import dsl, evaluator, lexicon
 from typing import List
-import atexit
-from synth.nn.pcfg_predictor import PrimitivePredictorLayer
-from synth.specification import NLP
-from synth.syntax.program import Function, Variable
-from synth.syntax.type_system import Arrow
-from synth.nlp.bert import NLPEncoder
+
 
 import tqdm
 
 import torch
 from torch import Tensor
 import torch.nn as nn
-from torch.nn.utils.rnn import PackedSequence
 
 import numpy as np
 
-from synth import Dataset, PBE, Task
+from synth import Dataset, Task
 from synth.nn import (
-    BigramsPredictorLayer,
-    loss_negative_log_prob,
-    Task2Tensor,
+    PrimitivePredictorLayer,
     print_model_summary,
 )
-from synth.pbe import IOEncoder
-from synth.syntax import ConcreteCFG
+from synth.specification import NLP
+from synth.nlp import NLPEncoder
+from synth.syntax import ConcreteCFG, Function, Variable, Arrow
 from synth.utils import chrono
 
+seed: int = 1
+cpu_only = True
+batch_size = 2
+
+torch.manual_seed(seed)
 # =============================
 # Misc init
 # ================================
 # Get device
-device = "cpu"
+device = "cuda" if not cpu_only and torch.cuda.is_available() else "cpu"
 print("Using device:", device)
-
-batch_size = 2
 
 # Dataset
 dataset = []
@@ -57,11 +53,6 @@ full_dataset = Dataset(dataset)
 # ================================
 # Generate the CFG dictionnary
 all_type_requests = full_dataset.type_requests()
-if all(task.solution is not None for task in full_dataset):
-    max_depth = max(task.solution.depth() for task in full_dataset)
-else:
-    max_depth = 5  # TODO: set as parameter
-cfgs = [ConcreteCFG.from_dsl(dsl, t, max_depth) for t in all_type_requests]
 print(f"{len(all_type_requests)} type requests supported.")
 print(f"Lexicon: [{min(lexicon)};{max(lexicon)}]")
 
@@ -71,7 +62,8 @@ class MyPredictor(nn.Module):
         super().__init__()
         self.primitive_layer = PrimitivePredictorLayer(size, dsl, 0.2)
         self.encoder = NLPEncoder()
-        self.rnn = nn.LSTM(size, size, 1, batch_first=True)
+        input_size = self.encoder.embedding_size
+        self.rnn = nn.LSTM(input_size, size, 1, batch_first=True)
 
         self.end = nn.Sequential(
             nn.Linear(size, size),
@@ -88,7 +80,7 @@ class MyPredictor(nn.Module):
         return self.primitive_layer(self.end(y))
 
 
-predictor = MyPredictor(768).to(device)
+predictor = MyPredictor(2000).to(device)
 print_model_summary(predictor)
 optim = torch.optim.AdamW(predictor.parameters(), 1e-3)
 
@@ -96,7 +88,7 @@ dataset_index = 0
 
 
 @chrono.clock(prefix="train.do_batch")
-def get_batch_of_tasks() -> List[Task[PBE]]:
+def get_batch_of_tasks() -> List[Task[NLP]]:
     global dataset_index
     batch = full_dataset[dataset_index : dataset_index + batch_size]
     dataset_index += batch_size
