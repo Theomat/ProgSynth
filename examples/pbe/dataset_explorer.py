@@ -15,9 +15,7 @@ CALCULATOR = "calculator"
 
 import argparse
 
-parser = argparse.ArgumentParser(
-    description="Generate a dataset copying the original distribution of another dataset"
-)
+parser = argparse.ArgumentParser(description="Explore a dataset")
 parser.add_argument(
     "--dsl",
     type=str,
