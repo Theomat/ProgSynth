@@ -2759,7 +2759,7 @@
         ]
     },
     {
-        "program": "STRING|.|cste_out|cste_in|head,0,1|concat_cste,3,2|concat,4,0",
+        "program": "STRING|.|cste_out|head,0,1|concat_cste,3,2|concat,4,0",
         "metadata": {
             "name": "Prepend '+65'"
         },
