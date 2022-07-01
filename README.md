@@ -82,6 +82,7 @@ sphinx-build -b html docs/source docs/build/html
 ## The Team
 
 ProgSynth is a project initiated by [Nathanaël Fijalkow](https://nathanael-fijalkow.github.io/) and joined by [Théo Matricon](https://theomat.github.io/).
+A 4 month internship by [Gaëtan Margueritte](https://github.com/gaetanmargueritte) was realized, leading to the creation of the transduction DSL, documentation and first drafts of code related to the use of user defined constants.
 
 ## License
 

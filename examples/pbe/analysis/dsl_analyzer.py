@@ -109,8 +109,6 @@ def load_dsl(dsl_name: str) -> Tuple[DSL, DSLEvaluatorWithConstant, List[int]]:
         from examples.pbe.calculator.calculator import dsl, evaluator, lexicon
     elif dsl_name == TRANSDUCTION:
         from examples.pbe.transduction.transduction import dsl, evaluator, lexicon
-    elif dsl_name == TRANSDUCTION_OLD:
-        from examples.pbe.transduction.transduction_old import dsl, evaluator, lexicon
     else:
         print("Unknown dsl:", dsl_name, file=sys.stderr)
         sys.exit(0)
@@ -265,7 +263,6 @@ if __name__ == "__main__":
     REGEXP = "regexp"
     CALCULATOR = "calculator"
     TRANSDUCTION = "transduction"
-    TRANSDUCTION_OLD = "transduction_old"
     BIGRAM = "bigram"
 
     parser = argparse.ArgumentParser(description="Evaluate model prediction")
@@ -303,28 +300,14 @@ if __name__ == "__main__":
         "--dsl-before",
         type=str,
         default=DEEPCODER,
-        choices=[
-            DEEPCODER,
-            DREAMCODER,
-            REGEXP,
-            CALCULATOR,
-            TRANSDUCTION,
-            TRANSDUCTION_OLD,
-        ],
+        choices=[DEEPCODER, DREAMCODER, REGEXP, CALCULATOR, TRANSDUCTION],
     )
     parser.add_argument(
         "-dsla",
         "--dsl-after",
         type=str,
         default=DEEPCODER,
-        choices=[
-            DEEPCODER,
-            DREAMCODER,
-            REGEXP,
-            CALCULATOR,
-            TRANSDUCTION,
-            TRANSDUCTION_OLD,
-        ],
+        choices=[DEEPCODER, DREAMCODER, REGEXP, CALCULATOR, TRANSDUCTION],
     )
 
     parser.add_argument(
