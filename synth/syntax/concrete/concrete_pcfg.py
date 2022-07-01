@@ -1,3 +1,4 @@
+from math import prod
 from typing import (
     Callable,
     Dict,
@@ -7,6 +8,7 @@ from typing import (
     Optional,
     Set,
     Tuple,
+    TypeVar,
     Union,
 )
 from collections import defaultdict
@@ -16,15 +18,17 @@ import numpy as np
 import vose
 
 from synth.syntax.concrete.concrete_cfg import ConcreteCFG, NonTerminal
+from synth.syntax.concrete.upcfg import UPCFG
 from synth.syntax.program import Constant, Function, Primitive, Program, Variable
 from synth.syntax.type_system import Arrow
 
 PRules = Dict[NonTerminal, Dict[Program, Tuple[List[NonTerminal], float]]]
+T = TypeVar("T")
 
 
 class ConcretePCFG:
     """
-    Object that represents a probabilistic context-free grammar
+    Object that represents a deterministic probabilistic context-free grammar
     with normalised weights
 
     rules: a dictionary of type {S: D}
@@ -32,12 +36,9 @@ class ConcretePCFG:
     with P a program, l a list of non-terminals, and w a weight
     representing the derivation S -> P(S1, S2, ...) with weight w for l' = [S1, S2, ...]
 
-    list_derivations: a dictionary of type {S: l}
+    list_derivations: a dictionary of type {S: l} (only is init_sampling has been called)
     with S a non-terminal and l the list of programs P appearing in derivations from S,
     sorted from most probable to least probable
-
-    max_probability: a dictionary of type {S: (Pmax, probability)} cup {(S, P): (Pmax, probability)}
-    with S a non-terminal
 
     hash_table_programs: a dictionary {hash: P}
     mapping hashes to programs
@@ -201,54 +202,6 @@ class ConcretePCFG:
             if S not in reachable:
                 del self.rules[S]
 
-    def compute_max_probability(self) -> Dict[Program, Dict[NonTerminal, float]]:
-        """
-        populates a dictionary max_probability
-        """
-        self.max_probability: Dict[
-            Union[NonTerminal, Tuple[NonTerminal, Program]], Program
-        ] = {}
-
-        probabilities: Dict[Program, Dict[NonTerminal, float]] = defaultdict(lambda: {})
-
-        for S in reversed(self.rules):
-            best_program = None
-            best_probability: float = 0
-
-            for P in self.rules[S]:
-                args_P, w = self.rules[S][P]
-                P_unique = self.return_unique(P)
-
-                if len(args_P) == 0:
-                    self.max_probability[(S, P)] = P_unique
-                    probabilities[P_unique][S] = w
-                    # assert P_unique.probability[
-                    #     (self.__hash__(), S)
-                    # ] == self.probability_program(S, P_unique)
-
-                else:
-                    new_program = Function(
-                        function=P_unique,
-                        arguments=[self.max_probability[arg] for arg in args_P],
-                    )
-                    P_unique = self.return_unique(new_program)
-                    probability = w
-                    for arg in args_P:
-                        probability *= probabilities[self.max_probability[arg]][arg]
-                    self.max_probability[(S, P)] = P_unique
-                    # assert (self.__hash__(), S) not in P_unique.probability
-                    probabilities[P_unique][S] = probability
-                    # assert probability == self.probability_program(S, P_unique)
-
-                if probabilities[self.max_probability[(S, P)]][S] > best_probability:
-                    best_program = self.max_probability[(S, P)]
-                    best_probability = probabilities[self.max_probability[(S, P)]][S]
-
-            # assert best_probability > 0
-            assert best_program
-            self.max_probability[S] = best_program
-        return probabilities
-
     def sampling(self) -> Generator[Program, None, None]:
         """
         A generator that samples programs according to the PCFG G
@@ -274,21 +227,210 @@ class ConcretePCFG:
         """
         Compute the probability of a program P generated from the non-terminal S
         """
+        return self.follow_derivations(lambda p1, uu, uy, p2: p1 * p2, 1.0, P, S)
+
+    def follow_derivations(
+        self,
+        reduce: Callable[[T, NonTerminal, Program, float], T],
+        init: T,
+        P: Program,
+        S: Optional[NonTerminal] = None,
+    ) -> T:
+        """
+        Reduce the following program.
+        """
+        v = init
         S = S or self.start
         if isinstance(P, Function):
             F = P.function
             args_P = P.arguments
-            probability = self.rules[S][F][1]
+            v = reduce(v, S, F, self.rules[S][F][1])
 
             for i, arg in enumerate(args_P):
-                probability *= self.probability(arg, self.rules[S][F][0][i])
-            return probability
+                v = self.follow_derivations(reduce, v, arg, self.rules[S][F][0][i])
+            return v
 
         elif isinstance(P, (Variable, Primitive)):
-            return self.rules[S][P][1]
+            return reduce(v, S, P, self.rules[S][P][1])
 
-        print("probability_program", P)
-        assert False
+        return v
+
+    def __contains__(self, P: Program) -> bool:
+        return self.probability(P) > 0
+
+    def intersection(
+        self,
+        programs: List[Tuple[Program, int]],
+        red_derivations: int,
+        depth_matters: bool = True,
+    ) -> UPCFG[int]:
+        """
+        Computes the intersection of this PCFG and the given programs.
+        Each program has a score, derivations are kept in the PCFG if they follow a path iff it reaches a score over the threshold.
+
+        depth_matters: bool - if depth matters then + at depth 2 is different from + at depth 1
+        """
+
+        # 1) First create a PCFG that gives a score to each derivation
+        rules_score: Dict[NonTerminal, Dict[Program, int]] = defaultdict(
+            lambda: defaultdict(lambda: 0)
+        )
+        for S in self.rules:
+            rules_score[S] = {}
+            for P in self.rules[S]:
+                rules_score[S][P] = 0
+
+        def add_score(S: NonTerminal, P: Program, score: int) -> bool:
+            if isinstance(P, Function):
+                F = P.function
+                args_P = P.arguments
+                success = add_score(S, F, score)
+
+                for i, arg in enumerate(args_P):
+                    add_score(self.rules[S][F][0][i] if success else S, arg, score)
+            else:
+                if P not in rules_score[S]:
+                    # This case occurs when a forbidden pattern has been removed from the CFG
+                    # What to do? Ignore for now, but this bias a bit the probabilities
+                    # TODO: perhaps rethink that? or provide a program simplifier
+                    return False
+                else:
+                    if depth_matters:
+                        rules_score[S][P] = 1
+                    else:
+                        for depth in range(0, self.max_program_depth):
+                            newS = NonTerminal(S.type, S.predecessors, depth)
+                            rules_score[newS][P] = 1
+            return True
+
+        for sample, score in programs:
+            add_score(self.start, sample, score)
+
+        # Remove null derivation
+        for S in self.rules:
+            total = sum(rules_score[S][P] for P in self.rules[S])
+            if total == 0:
+                del rules_score[S]
+
+        def sums_of(n: int, size: int) -> Generator[List[int], None, None]:
+            if size == 0:
+                yield []
+                return
+            elif size == 1:
+                yield [n]
+                return
+            for i in range(n + 1):
+                for l in sums_of(n - i, size - 1):
+                    yield l + [i]
+
+        # 2) Pre compute the rules
+        pre_rules: Dict[
+            Tuple[NonTerminal, int],
+            Dict[Program, List[Tuple[List[Tuple[NonTerminal, int]], float]]],
+        ] = {}
+
+        queue: List[Tuple[NonTerminal, int]] = [(self.start, red_derivations)]
+        while queue:
+            S, cnt = queue.pop()
+            if (S, cnt) in pre_rules:
+                continue
+            pre_rules[(S, cnt)] = {}
+            for P in self.rules[S]:
+                score = 1 - rules_score[S][P]
+                args, w = self.rules[S][P]
+                if cnt - score < 0:
+                    continue
+                pre_rules[(S, cnt)][P] = []
+                for decomposition in sums_of(cnt - score, len(args)):
+                    new_args = [(args[i], decomposition[i]) for i in range(len(args))]
+                    pre_rules[(S, cnt)][P].append((new_args, w))
+                    for arg in new_args:
+                        queue.append(arg)
+
+        # 3) Remove useless terminals
+        keys = sorted(pre_rules.keys(), key=lambda pair: pair[0].depth, reverse=True)
+        for S, cnt in keys:
+            all_P = list(pre_rules[(S, cnt)].keys())
+            for P in all_P:
+                deriv = pre_rules[(S, cnt)][P]
+                # If you can't get any more score and you still have some points left to score destroy the derivation
+                if len(deriv) == 0 and cnt != 0:
+                    del pre_rules[(S, cnt)][P]
+                else:
+                    # Check if P is terminal
+                    if len(deriv[0][0]) == 0 and (cnt - (1 - rules_score[S][P])) != 0:
+                        del pre_rules[(S, cnt)][P]
+                        continue
+                    # Filter out the possibles that used deleted non terminals
+                    new_deriv = []
+                    for possible in deriv:
+                        fail = False
+                        for arg in possible[0]:
+                            if arg not in pre_rules:
+                                fail = True
+                                break
+                        if not fail:
+                            new_deriv.append(possible)
+                    if new_deriv != deriv:
+                        if len(new_deriv) == 0:
+                            del pre_rules[(S, cnt)][P]
+                        else:
+                            pre_rules[(S, cnt)][P] = new_deriv
+            # Delete the whole thing if it is empty
+            if len(pre_rules[(S, cnt)]) == 0:
+                del pre_rules[(S, cnt)]
+
+        # 4) Transform pre-rules into actual rules
+        to_normalise = []
+        rules: Dict[
+            Tuple[NonTerminal, int],
+            Dict[Tuple[Program, int], Tuple[List[Tuple[NonTerminal, int]], float]],
+        ] = {}
+        for S, cnt in pre_rules:
+            AS = (S, cnt)
+            rules[AS] = {}
+            for P in pre_rules[(S, cnt)]:
+                deriv = pre_rules[(S, cnt)][P]
+                primes = []
+                for i, d in enumerate(deriv):
+                    P_prime = (P, i)
+                    primes.append(P_prime)
+                    rules[AS][P_prime] = (
+                        [(S1, n1) for S1, n1 in d[0]],
+                        deriv[i][1],
+                    )
+                if len(primes) > 1:
+                    to_normalise.append((AS, primes))
+        # 5) Normalise (different than regular normalisation)
+        total_programs: Dict[Tuple[NonTerminal, int], int] = {}
+
+        def count_progs(S: Tuple[NonTerminal, int]) -> int:
+            if S in total_programs:
+                return total_programs[S]
+            total = 0
+            for Pp in rules[S]:
+                args_P = rules[S][Pp][0]
+                if len(args_P) == 0:
+                    total += 1
+                else:
+                    total += prod(count_progs(C) for C in args_P)
+            total_programs[S] = total
+            return total
+
+        while to_normalise:
+            Ss, primes = to_normalise.pop()
+            counts = np.array(
+                [prod(count_progs(C) for C in rules[Ss][Pp][0]) for Pp in primes],
+                dtype=np.float64,
+            )
+            counts /= np.sum(counts)
+            for Pp, f in zip(primes, counts):
+                args_P, w = rules[Ss][Pp]
+                rules[Ss][Pp] = (args_P, w * f)
+
+        return UPCFG[int](
+            (self.start, red_derivations), rules, self.max_program_depth, True
+        )
 
     @classmethod
     def from_weights(

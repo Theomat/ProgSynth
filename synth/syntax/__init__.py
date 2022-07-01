@@ -20,6 +20,8 @@ from synth.syntax.concrete import (
     NonTerminal,
     ConcreteCFG,
     ConcretePCFG,
+    UPCFG,
     enumerate_pcfg,
+    enumerate_bucket_pcfg,
     split,
 )

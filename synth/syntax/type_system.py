@@ -98,7 +98,7 @@ class PolymorphicType(Type):
         self.name = name
         self.hash = hash(self.name)
 
-    def __pickle__(o: Type) -> Tuple:
+    def __pickle__(o: Type) -> Tuple:  # type: ignore[override]
         return PolymorphicType, (o.name,)  # type: ignore
 
     def __str__(self) -> str:
@@ -128,7 +128,7 @@ class PrimitiveType(Type):
         self.type_name = type_name
         self.hash = hash(self.type_name)
 
-    def __pickle__(o: Type) -> Tuple:
+    def __pickle__(o: Type) -> Tuple:  # type: ignore[override]
         return PrimitiveType, (o.type_name,)  # type: ignore
 
     def __str__(self) -> str:
@@ -157,7 +157,7 @@ class Arrow(Type):
         self.type_out = type_out
         self.hash = hash((self.type_in, self.type_out))
 
-    def __pickle__(o: Type) -> Tuple:
+    def __pickle__(o: Type) -> Tuple:  # type: ignore[override]
         return Arrow, (o.type_in, o.type_out)  # type: ignore
 
     def __str__(self) -> str:
@@ -219,7 +219,7 @@ class List(Type):
         self.element_type = element_type
         self.hash = hash(18923 + hash(self.element_type))
 
-    def __pickle__(o: Type) -> Tuple:
+    def __pickle__(o: Type) -> Tuple:  # type: ignore[override]
         return List, (o.element_type,)  # type: ignore
 
     def __str__(self) -> str:
@@ -265,7 +265,7 @@ class UnknownType(Type):
         super().__init__()
         self.hash = hash(1984)
 
-    def __pickle__(o: Type) -> Tuple:
+    def __pickle__(o: Type) -> Tuple:  # type: ignore[override]
         return UnknownType, ()
 
     def __str__(self) -> str:

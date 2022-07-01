@@ -1,0 +1,6 @@
+[
+    {
+        "intent": "Sort a list `numbers`.",
+        "solution": "(SORT var0)"
+    }
+]

@@ -76,7 +76,7 @@ class Variable(Program):
     def __eq__(self, other: Any) -> bool:
         return isinstance(other, Variable) and self.variable == other.variable
 
-    def __pickle__(o: Program) -> Tuple:
+    def __pickle__(o: Program) -> Tuple:  # type: ignore[override]
         return Variable, (o.variable, o.type)  # type: ignore
 
 
@@ -115,7 +115,7 @@ class Constant(Program):
             and self.value == other.value
         )
 
-    def __pickle__(o: Program) -> Tuple:
+    def __pickle__(o: Program) -> Tuple:  # type: ignore[override]
         return Constant, (o.type, o.value, o._has_value)  # type: ignore
 
 
@@ -134,7 +134,7 @@ class Function(Program):
         self.arguments = arguments
         self.hash = hash(tuple([arg for arg in self.arguments] + [self.function]))
 
-    def __pickle__(o: Program) -> Tuple:
+    def __pickle__(o: Program) -> Tuple:  # type: ignore[override]
         return Function, (o.function, o.arguments)  # type: ignore
 
     def __str__(self) -> str:
@@ -198,7 +198,7 @@ class Lambda(Program):
         self.body = body
         self.hash = hash(94135 + hash(self.body))
 
-    def __pickle__(o: Program) -> Tuple:
+    def __pickle__(o: Program) -> Tuple:  # type: ignore[override]
         return Lambda, (o.body, o.type)  # type: ignore
 
     def __str__(self) -> str:
@@ -227,7 +227,7 @@ class Primitive(Program):
         self.primitive = primitive
         self.hash = hash((self.primitive, self.type))
 
-    def __pickle__(o: Program) -> Tuple:
+    def __pickle__(o: Program) -> Tuple:  # type: ignore[override]
         return Primitive, (o.primitive, o.type)  # type: ignore
 
     def is_invariant(self, constant_types: Set[PrimitiveType]) -> bool:

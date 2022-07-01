@@ -3,27 +3,25 @@ from typing import Optional
 
 from colorama import Fore as F
 
-from synth import Dataset, PBE
+from synth import Dataset, NLP
 from synth.syntax import ConcreteCFG
 from synth.task import Task
 from synth.utils import chrono
 
-DREAMCODER = "dreamcoder"
-DEEPCODER = "deepcoder"
-REGEXP = "regexp"
-CALCULATOR = "calculator"
-TRANSDUCTION = "transduction"
+CONALA = "conala"
 
 
 import argparse
 
-parser = argparse.ArgumentParser(description="Explore a dataset")
+parser = argparse.ArgumentParser(
+    description="Generate a dataset copying the original distribution of another dataset"
+)
 parser.add_argument(
     "--dsl",
     type=str,
-    default=DEEPCODER,
-    help="dsl (default: deepcoder)",
-    choices=[DEEPCODER, DREAMCODER, REGEXP, CALCULATOR, TRANSDUCTION],
+    default=CONALA,
+    help=f"dsl (default: {CONALA})",
+    choices=[CONALA],
 )
 parser.add_argument(
     "--dataset",
@@ -38,33 +36,8 @@ dataset_file: str = parameters.dataset.format(dsl_name=dsl_name)
 # ================================
 # Load constants specific to DSL
 # ================================
-def pretty_print_solution(str: str):
-    return str
-
-
-def pretty_print_inputs(str: str):
-    return str
-
-
-if dsl_name == DEEPCODER:
-    from deepcoder.deepcoder import dsl, lexicon
-
-elif dsl_name == DREAMCODER:
-    from dreamcoder.dreamcoder import dsl, lexicon
-
-elif dsl_name == REGEXP:
-    from regexp.regexp import (
-        dsl,
-        lexicon,
-        pretty_print_solution,
-        pretty_print_inputs,
-    )
-elif dsl_name == CALCULATOR:
-    from calculator.calculator import dsl, lexicon
-
-elif dsl_name == TRANSDUCTION:
-    from transduction.transduction import dsl, lexicon
-
+if dsl_name == CONALA:
+    from conala.conala import dsl, lexicon
 else:
     print(F.LIGHTRED_EX + "Unknown dsl:", dsl_name + F.RESET, file=sys.stderr)
     sys.exit(1)
@@ -74,7 +47,7 @@ else:
 # Load dataset
 print(f"Loading {F.LIGHTCYAN_EX}{dataset_file}{F.RESET}...", end="")
 with chrono.clock("dataset.load") as c:
-    full_dataset: Dataset[PBE] = Dataset.load(dataset_file)
+    full_dataset: Dataset[NLP] = Dataset.load(dataset_file)
     print(f"done in{F.LIGHTYELLOW_EX}", c.elapsed_time(), f"s{F.RESET}")
 
 
@@ -147,23 +120,11 @@ def task(*args: str) -> None:
             f"{F.LIGHTRED_EX}{task_no} is an invalid task number, it must be in the range [0;{len(full_dataset) - 1}]!{F.RESET}"
         )
         return
-    task: Task[PBE] = full_dataset[task_no]
+    task: Task[NLP] = full_dataset[task_no]
     print_value(f"Name", task.metadata.get("name", "None"))
     print_value("Type", task.type_request)
-    print_value("Solution", pretty_print_solution(task.solution))
-    print_value("Examples", "")
-    for example in task.specification.examples:
-        print_value(
-            "\tInput",
-            ", ".join(
-                [
-                    f"var{i}={pretty_print_inputs(x)}"
-                    for i, x in enumerate(example.inputs)
-                ]
-            ),
-        )
-        print_value("\tOutput", example.output)
-        print()
+    print_value("Solution", task.solution)
+    print_value("Intent", task.specification.intent)
     print_value("Metadata", task.metadata)
 
 

@@ -19,7 +19,15 @@ from synth.pbe import IOEncoder
 from synth.semantic import DSLEvaluator
 from synth.semantic.evaluator import DSLEvaluatorWithConstant
 from synth.specification import PBEWithConstants
-from synth.syntax import ConcreteCFG, ConcretePCFG, enumerate_pcfg, DSL, Program
+from synth.syntax import (
+    ConcreteCFG,
+    ConcretePCFG,
+    enumerate_pcfg,
+    enumerate_bucket_pcfg,
+    DSL,
+    Program,
+)
+from synth.syntax.concrete.heap_search import HSEnumerator
 from synth.utils import chrono
 
 
@@ -42,6 +50,13 @@ parser.add_argument(
     type=str,
     default=DEEPCODER + ".pickle",
     help="dataset (default: deepcoder.pickle)",
+)
+parser.add_argument(
+    "-s",
+    "--search",
+    type=str,
+    default="heap_search",
+    help="enumeration algorithm (default: heap_search)",
 )
 parser.add_argument(
     "--dsl",
@@ -91,6 +106,7 @@ parser.add_argument(
 parameters = parser.parse_args()
 dataset_file: str = parameters.dataset
 dsl_name: str = parameters.dsl
+search_algo: str = parameters.search
 output_folder: str = parameters.output
 model_file: str = parameters.model
 variable_probability: float = parameters.var_prob
@@ -100,11 +116,24 @@ task_timeout: float = parameters.timeout
 batch_size: int = parameters.batch_size
 plot_only: bool = parameters.plot
 
+
 if not plot_only and (not os.path.exists(model_file) or not os.path.isfile(model_file)):
     print("Model must be a valid model file!", file=sys.stderr)
     sys.exit(1)
 elif not os.path.exists(dataset_file) or not os.path.isfile(dataset_file):
     print("Dataset must be a valid dataset file!", file=sys.stderr)
+    sys.exit(1)
+
+if search_algo == "heap_search":
+    custom_enumerate = enumerate_pcfg
+elif search_algo == "bucket_search":
+    custom_enumerate = lambda x: enumerate_bucket_pcfg(x, 3)
+    # TODO: add parameter for bucket_search size
+else:
+    print(
+        "search algorithm must be a valid name (heap_search / bucket_search)!",
+        file=sys.stderr,
+    )
     sys.exit(1)
 
 start_index = (
@@ -264,24 +293,30 @@ def enumerative_search(
         [DSLEvaluatorWithConstant, Task[PBE], ConcretePCFG],
         Tuple[bool, float, int, Optional[Program]],
     ],
+    custom_enumerate: Callable[[ConcretePCFG], HSEnumerator],
 ) -> None:
+
     start = len(trace)
     pbar = tqdm.tqdm(total=len(pcfgs) - start, desc="Tasks")
     for task, pcfg in zip(dataset.tasks[start:], pcfgs[start:]):
-        trace.append(method(evaluator, task, pcfg))
+        trace.append(method(evaluator, task, pcfg, custom_enumerate))
         pbar.update(1)
-        print("Cache hit:", evaluator.cache_hit_rate)
-        print("Programs tried:", trace[len(trace) - 1][2])
+        # print("Cache hit:", evaluator.cache_hit_rate)
+        # print("Programs tried:", trace[len(trace) - 1][2])
     pbar.close()
 
 
 def base(
-    evaluator: DSLEvaluator, task: Task[PBE], pcfg: ConcretePCFG
+    evaluator: DSLEvaluator,
+    task: Task[PBE],
+    pcfg: ConcretePCFG,
+    custom_enumerate: Callable[[ConcretePCFG], HSEnumerator],
 ) -> Tuple[bool, float, int, Optional[Program]]:
     time = 0.0
     programs = 0
     with chrono.clock("search.base") as c:
-        for program in enumerate_pcfg(pcfg):
+
+        for program in custom_enumerate(pcfg):
             time = c.elapsed_time()
             if time >= task_timeout:
                 return (False, time, programs, None, None)
@@ -306,6 +341,7 @@ def constants_injector(
     evaluator: DSLEvaluatorWithConstant,
     task: Task[PBEWithConstants],
     pcfg: ConcretePCFG,
+    custom_enumerate: Callable[[ConcretePCFG], HSEnumerator],
 ) -> Tuple[bool, float, int, Optional[Program]]:
     time = 0.0
     programs = 0
@@ -321,12 +357,12 @@ def constants_injector(
         return (False, time, programs, None, None)
     with chrono.clock("search.constant_injector") as c:
 
-        print("\n-----------------------")
-        print(name)
-        for program in enumerate_pcfg(pcfg):
+        # print("\n-----------------------")
+        # print(name)
+        for program in custom_enumerate(pcfg):
             time = c.elapsed_time()
             if time >= task_timeout:
-                print("TIMEOUT\n\n")
+                # print("TIMEOUT\n\n")
                 return (False, time, programs, None, None)
             programs += 1
             found = False
@@ -349,19 +385,19 @@ def constants_injector(
                 if not found:
                     break
             if found:
-                print("Solution found.\n")
-                print("\t", program)
-                print(
-                    "\nWorking for all ",
-                    counter,
-                    "/",
-                    len(task.specification.examples),
-                    " examples in ",
-                    time,
-                    "/",
-                    task_timeout,
-                    "s.",
-                )
+                # print("Solution found.\n")
+                # print("\t", program)
+                # print(
+                #    "\nWorking for all ",
+                #    counter,
+                #    "/",
+                #    len(task.specification.examples),
+                #    " examples in ",
+                #    time,
+                #    "/",
+                #    task_timeout,
+                #    "s.",
+                # )
                 return (
                     True,
                     c.elapsed_time(),
@@ -380,12 +416,13 @@ if __name__ == "__main__":
     ]
 
     full_dataset, dsl, evaluator, lexicon, model_name = load_dataset()
+
     if not plot_only:
         pcfgs = produce_pcfgs(full_dataset, dsl, lexicon)
         should_exit = False
         for name, method in methods:
             file = os.path.join(
-                output_folder, f"{dataset_name}_{model_name}_{name}.csv"
+                output_folder, f"{dataset_name}_{model_name}_{search_algo}_{name}.csv"
             )
             trace = []
             print("Working on:", name)
@@ -404,11 +441,11 @@ if __name__ == "__main__":
                         "%)",
                     )
             try:
-                enumerative_search(full_dataset, evaluator, pcfgs, trace, method)
+                enumerative_search(
+                    full_dataset, evaluator, pcfgs, trace, method, custom_enumerate
+                )
             except Exception as e:
-                print("ERROR:")
                 print(e)
-                # print(f"should_exit: {trace}")
                 should_exit = True
             with open(file, "w") as fd:
                 writer = csv.writer(fd)

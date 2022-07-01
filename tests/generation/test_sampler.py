@@ -21,7 +21,7 @@ def test_list_sampling() -> None:
     lexicon = list(range(100))
     sampler = LexiconSampler(lexicon)
     for max_depth in [2, 3, 4]:
-        a = ListSampler(sampler, [0.2] * 5, max_depth=max_depth, seed=0)
+        a = ListSampler(sampler, [0.2] * 5, max_depth=max_depth, seed=10)
         my_type: Type = INT
         for _ in range(max_depth - 1):
             my_type = List(my_type)
@@ -64,12 +64,12 @@ def test_union_sampler() -> None:
 
 def test_seeding() -> None:
     lexicon = list(range(100))
-    aint = LexiconSampler(lexicon, seed=0)
-    bint = LexiconSampler(lexicon, seed=0)
+    aint = LexiconSampler(lexicon, seed=10)
+    bint = LexiconSampler(lexicon, seed=10)
     for _ in range(1000):
         assert aint.sample(type=INT) == bint.sample(type=INT), _
 
-    a = ListSampler(aint, [0.2] * 5, max_depth=3, seed=0)
-    b = ListSampler(bint, [0.2] * 5, max_depth=3, seed=0)
+    a = ListSampler(aint, [0.2] * 5, max_depth=3, seed=10)
+    b = ListSampler(bint, [0.2] * 5, max_depth=3, seed=10)
     for _ in range(1000):
         assert a.sample(type=List(INT)) == b.sample(type=List(INT))

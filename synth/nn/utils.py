@@ -87,12 +87,19 @@ class Task2Tensor(nn.Module, Generic[T]):
         self.embed_size = embed_size
 
     def forward(self, tasks: List[Task[T]]) -> PackedSequence:
-        batch_inputs = [self.encoder.encode(task).to(self.device) for task in tasks]
-        batch_embed: List[Tensor] = [
-            self.embedder(x).reshape((-1, self.embed_size)) for x in batch_inputs
-        ]
-        packed: PackedSequence = self.packer(batch_embed)
+        packed: PackedSequence = self.packer(self.embed(self.encode(tasks)))
         return packed
+
+    def encode(self, tasks: List[Task[T]]) -> List[Tensor]:
+        return [self.encoder.encode(task).to(self.device) for task in tasks]
+
+    def embed(self, batch_inputs: List[Tensor]) -> List[Tensor]:
+        print(
+            batch_inputs[0].shape,
+            self.embedder(batch_inputs[0]).shape,
+            self.embedder(batch_inputs[0]).reshape((-1, self.embed_size)).shape,
+        )
+        return [self.embedder(x).reshape((-1, self.embed_size)) for x in batch_inputs]
 
 
 def one_hot_encode_primitives(
