@@ -36,7 +36,7 @@ def unescape(s: str) -> str:
 
 class RegexFlag(enum.IntFlag):
     # split character (whitespace)
-    SPLIT: int = 2 ** 21
+    SPLIT: int = 2**21
 
 
 class _RepeatState:
