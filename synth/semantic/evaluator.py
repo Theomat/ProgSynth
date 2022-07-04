@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Set
+from typing import Any, Dict, Iterable, List, Set
 
 from synth.syntax.program import Function, Primitive, Program, Variable
 
@@ -15,6 +15,24 @@ def __tuplify__(element: Any) -> Any:
         return tuple(__tuplify__(x) for x in element)
     else:
         return element
+
+
+def auto_complete_semantics(
+    primitives: Iterable[str], semantics: Dict[str, Any]
+) -> None:
+    """
+    Copy the semantics for all primitives that are not semantically defined yet there are defined up to prefix before @.
+    Examples:
+        1) and, and@0, and@1
+        Defining only and and then autocompleting will give the same semantic to the 3 previous primitives
+        2) or@0
+        Since or is not defined semantically then or@0 is not either.
+    """
+    for prim in primitives:
+        if "@" in prim and prim not in semantics:
+            prefix = prim[: prim.index("@")]
+            if prefix in semantics:
+                semantics[prim] = semantics[prefix]
 
 
 class DSLEvaluator(Evaluator):
