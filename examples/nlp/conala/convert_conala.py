@@ -75,10 +75,11 @@ def build_program(node: ast.AST, ctx: ParseContext) -> Program:
             spec = importlib.util.find_spec(object.primitive)
             if spec is not None:
                 ctx.modules.add(object.primitive)
+                return Primitive(object.primitive+ "." + node.attr, INT)
             else:
                 ctx.rest.add(object.primitive)
-            object.type = FunctionType(INT, INT)
-            return Function(object, [Primitive(node.attr, INT)])
+                object.type = FunctionType(INT, INT)
+                return Function(object, [Primitive(node.attr, INT)])
         return Function(Primitive(node.attr, Arrow(object.type, INT)), [object])
     elif isinstance(node, ast.Expr):
         # print("expression:", node.value)
