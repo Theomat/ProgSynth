@@ -245,12 +245,34 @@ def duplicate_primitive(primitive: str, syntax: Dict[str, Type]) -> str:
 
 def __are_equivalent_types__(syntax: Dict[str, Type], t1: Type, t2: Type) -> bool:
     # Two types are equivalent iff
-    #   for all primitives P producing t1 there is an equivalent primitive producing t2
+    #   for all primitives P producing t1 there is an equivalent primitive producing t2 and vice versa
     #   an equivalent primitive is a primitive that has the same type request but for the produced type and the same name_prefix up to @
     t2_producers = producers_of(syntax, t2)
-    for p1 in producers_of(syntax, t1):
+    t1_producers = producers_of(syntax, t1)
+    marked = [False for i in range(len(t2_producers))]
+    # t1 in t2
+    for p1 in t1_producers:
         found_match = False
-        for p2 in t2_producers:
+        for i, p2 in enumerate(t2_producers):
+            if get_prefix(p1) != get_prefix(p2):
+                continue
+            if isinstance(syntax[p1], Arrow) and isinstance(syntax[p2], Arrow):
+                found_match = syntax[p1].arguments() == syntax[p2].arguments()
+                if found_match:
+                    marked[i] = True
+                    break
+            if not isinstance(p1, Arrow) and not isinstance(p2, Arrow):
+                found_match = True
+                marked[i] = True
+                break
+        if not found_match:
+            return False
+    # t2 in t1
+    for already_found, p1 in zip(marked, t2_producers):
+        if already_found:
+            continue
+        found_match = False
+        for p2 in t1_producers:
             if get_prefix(p1) != get_prefix(p2):
                 continue
             if isinstance(syntax[p1], Arrow) and isinstance(syntax[p2], Arrow):
@@ -284,55 +306,25 @@ def __merge_for__(syntax: Dict[str, Type], primitive: str) -> bool:
             if len(consumers_of(syntax, syntax[P])) == 0:
                 merged = True
                 del syntax[P]
-        # Merge those with same types
-        for i, P1 in enumerate(candidates):
-            if P1 not in syntax:
+    # Merge those with same types
+    for i, P1 in enumerate(candidates):
+        if P1 not in syntax:
+            continue
+        for P2 in candidates[i + 1 :]:
+            if P2 not in syntax:
                 continue
-            for P2 in candidates[i + 1 :]:
-                if syntax[P1] == syntax[P2]:
-                    del syntax[P2]
-                    merged = True
+            if syntax[P1] == syntax[P2]:
+                del syntax[P2]
+                merged = True
 
-        return merged
-    # Handle NonTerminal
-    types_list: Dict[str, TList[Type]] = {
-        p: syntax[p].arguments() + [syntax[p].returns()] for p in candidates
-    }
-    merged = True
-    atleast_one_merge = False
-    while merged:
-        merged = False
-        new_candidates = candidates[:]
-        for i, P1 in enumerate(candidates):
-            if P1 not in new_candidates:
-                continue
-            for P2 in candidates[i + 1 :]:
-                if P2 not in new_candidates:
-                    continue
-                can_merge = True
-                for at1, at2 in zip(types_list[P1], types_list[P2]):
-                    if at1 == at2:
-                        continue
-                    if not __are_equivalent_types__(syntax, at1, at2):
-                        can_merge = False
-                        break
-                    else:
-                        __replace_type__(syntax, at2, at1)
-                if can_merge:
-                    del syntax[P2]
-                    new_candidates.remove(P2)
-                    merged = True
-                    atleast_one_merge = True
-
-        candidates = new_candidates
-        new_candidates = candidates[:]
-    return atleast_one_merge
+    return merged
 
 
 def clean(syntax: Dict[str, Type]) -> None:
     """
     Try merging duplicates that were created.
     """
+    # Delete all primitives using a non-interesting type
     all_primitives = set(get_prefix(p) for p in syntax.keys())
     interesting_types = types_used_by(all_primitives, syntax)
     for P in list(syntax.keys()):
@@ -344,6 +336,33 @@ def clean(syntax: Dict[str, Type]) -> None:
             del syntax[P]
         elif not isinstance(ptype, Arrow) and ptype not in interesting_types:
             del syntax[P]
-    # TODO: Fix since some merges aren't legal
-    # while any(__merge_for__(syntax, p) for p in all_primitives):
-    #     pass
+    # Gather equivalent(by name up to @) in groups
+    type_classes = {}
+    for t in interesting_types:
+        prefix = get_prefix(str(t))
+        if prefix in type_classes:
+            continue
+        type_classes[prefix] = [
+            tt for tt in interesting_types if get_prefix(str(tt)) == prefix
+        ]
+
+    merged_types = True
+    while merged_types:
+        merged_types = False
+
+        for prefix, tclass in list(type_classes.items()):
+            next_gen: TList[Type] = tclass[:]
+            # Try to merge two types in equivalence class
+            for i, t1 in enumerate(tclass):
+                if t1 not in next_gen:
+                    continue
+                for t2 in tclass[i + 1 :]:
+                    if t2 not in next_gen:
+                        continue
+                    if __are_equivalent_types__(syntax, t1, t2):
+                        __replace_type__(syntax, t2, t1)
+                        next_gen.remove(t2)
+                        for p in all_primitives:
+                            __merge_for__(syntax, p)
+                        merged_types = True
+            type_classes[prefix] = next_gen
