@@ -306,10 +306,10 @@ def guess_type(element: Any) -> Type:
     Guess the type of the given element.
     Does not work for Arrow and Polymorphic Types.
     """
-    if isinstance(element, TList) or isinstance(element, Tuple):
+    if isinstance(element, (TList, Tuple)):
         if len(element) == 0:
             return EmptyList
-        current = UnknownType()
+        current: Type = UnknownType()
         i = 0
         while i < len(element) and isinstance(current, UnknownType):
             current = guess_type(element[i])
@@ -321,6 +321,8 @@ def guess_type(element: Any) -> Type:
         return INT
     elif isinstance(element, str):
         return STRING
+    elif element is None:
+        return UNIT
     return UnknownType()
 
 
