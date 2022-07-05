@@ -7,11 +7,8 @@ from synth.syntax import Type, Arrow
 from synth.tools.type_constraints.utils import (
     PREFIX_CAST,
     SYMBOL_VAR_EXPR,
-    equivalent_primitives,
+    Syntax,
     map_type,
-    producers_of,
-    duplicate_primitive,
-    duplicate_type,
     get_prefix,
     parse_choices,
     SYMBOL_SEPARATOR,
@@ -29,7 +26,7 @@ def __add_variable_constraint__(
     parent: str,
     argno: int,
     arg_type: Type,
-    syntax: Dict[str, Type],
+    syntax: Syntax,
     nconstraints: Dict[str, int],
     type_request: Optional[Arrow],
     level: int = 0,
@@ -65,15 +62,14 @@ def __add_variable_constraint__(
             assert len(already_defined) == 1
             types_map[var_type] = var_type
         else:
-            types_map[var_type] = duplicate_type(var_type, syntax)
+            types_map[var_type] = syntax.duplicate_type(var_type)
     # rest
-    for type in types_to_duplicate.difference(var_types):
-        types_map[type] = duplicate_type(type, syntax)
+    for dtype in types_to_duplicate.difference(var_types):
+        types_map[dtype] = syntax.duplicate_type(dtype)
 
     # Duplicate primitives
     for primitive in to_duplicate:
-        new_primitive = duplicate_primitive(primitive, syntax)
-        syntax[new_primitive] = map_type(syntax[new_primitive], types_map)
+        syntax.duplicate_primitive(primitive, map_type(syntax[primitive], types_map))
 
     # Add casts
     for var_type in var_types:
@@ -99,33 +95,30 @@ def __add_primitive_constraint__(
     content: str,
     parent: str,
     argno: int,
-    syntax: Dict[str, Type],
+    syntax: Syntax,
     level: int = 0,
     target_type: Optional[Type] = None,
 ) -> str:
     prim = content.strip("()")
-    for primitive in equivalent_primitives(syntax, prim):
+    for primitive in {p for p in syntax.equivalent_primitives(prim)}:
         ptype = syntax[primitive]
         rtype = ptype.returns() if isinstance(ptype, Arrow) else ptype
         new_type_needed = any(
-            get_prefix(p) != get_prefix(prim) for p in producers_of(syntax, rtype)
+            get_prefix(p) != get_prefix(prim) for p in syntax.producers_of(rtype)
         )
         # If there are other ways to produce the same thing
         if new_type_needed:
-            new_primitive = duplicate_primitive(primitive, syntax)
             new_return_type = (
-                duplicate_type(rtype, syntax) if target_type is None else target_type
+                syntax.duplicate_type(rtype) if target_type is None else target_type
             )
+            ntype = new_return_type
             if isinstance(ptype, Arrow):
-                syntax[new_primitive] = FunctionType(
-                    *ptype.arguments(), new_return_type
-                )
-            else:
-                syntax[new_primitive] = new_return_type
+                ntype = FunctionType(*ptype.arguments(), new_return_type)
+            new_primitive = syntax.duplicate_primitive(primitive, ntype)
 
             if primitive == prim:
                 prim = new_primitive
-            # print("\t" * level, "Added:", new_primitive, ":", syntax[primitive])
+            # print("\t" * level, "Added:", new_primitive, ":", syntax[new_primitive])
             # Update parent signature
             parent_type = syntax[parent]
             assert isinstance(parent_type, Arrow)
@@ -139,7 +132,7 @@ def __add_primitives_constraint__(
     content: str,
     parent: str,
     argno: int,
-    syntax: Dict[str, Type],
+    syntax: Syntax,
     level: int = 0,
 ) -> None:
     primitives = parse_choices(content)
@@ -185,7 +178,7 @@ def __add_forbidden_constraint__(
     content: str,
     parent: str,
     argno: int,
-    syntax: Dict[str, Type],
+    syntax: Syntax,
     *args: Any,
     level: int = 0,
     **kwargs: Any,
@@ -194,8 +187,8 @@ def __add_forbidden_constraint__(
     primitives = parse_choices(content[1:])
     all_forbidden = set()
     for p in primitives:
-        all_forbidden |= set(equivalent_primitives(syntax, p))
-    all_producers = set(producers_of(syntax, syntax[parent].arguments()[argno]))
+        all_forbidden |= syntax.equivalent_primitives(p)
+    all_producers = syntax.producers_of(syntax[parent].arguments()[argno])
     remaining = all_producers - all_forbidden
     # print("\t" * level, "\tallowed:", remaining)
 
@@ -206,7 +199,7 @@ def __add_forbidden_constraint__(
 
 def __process__(
     constraint: TList[str],
-    syntax: Dict[str, Type],
+    syntax: Syntax,
     nconstraints: Dict[str, int],
     type_request: Arrow,
     level: int = 0,
@@ -214,7 +207,7 @@ def __process__(
     # If one element then there is nothing to do.
     if len(constraint) == 1:
         return constraint, type_request
-    function = equivalent_primitives(syntax, constraint.pop(0))
+    function = {p for p in syntax.equivalent_primitives(constraint.pop(0))}
     args = []
     # We need to process all arguments first
     for arg in constraint:
@@ -270,7 +263,7 @@ def produce_new_syntax_for_constraints(
     If no constraint depends on variables the type request is ignored.
     if progress is set to True use a tqdm progress bar.
     """
-    new_syntax = {k: v for k, v in syntax.items()}
+    new_syntax = Syntax({k: v for k, v in syntax.items()})
     parsed_constraints = [parse_specification(constraint) for constraint in constraints]
 
     if progress:
@@ -288,57 +281,85 @@ def produce_new_syntax_for_constraints(
             pbar.set_postfix_str(f"+{len(new_syntax)/ len(syntax) - 1:.0%} DSL size")
     if progress:
         pbar.close()
-    return new_syntax, type_request
+    return new_syntax.syntax, type_request
 
 
 if __name__ == "__main__":
     from synth.syntax import DSL, ConcreteCFG, INT, FunctionType, ConcretePCFG
     from examples.pbe.towers.towers_base import syntax, BLOCK
 
-    type_request = FunctionType(INT, INT, BLOCK)
+    # type_request = FunctionType(INT, INT, BLOCK)
+
+    # patterns = [
+    #     "and ^and *",
+    #     "or ^or,and ^and",
+    #     "+ ^+ *",
+    #     # "elif if elif,if,EMPTY",
+    #     "ifY * 1x3,3x1",
+    #     "ifX $(var0) ifY,elifY",
+    #     "elifY ifY EMPTY,elifY",
+    #     "elifX ifX EMPTY,elifX",
+    #     # "elif ^EMPTY elif,if,EMPTY",
+    #     # "elif ^elif *"
+    #     # "elif ^EMPTY,elif elif,if,EMPTY",
+    # ]
+
+    from examples.pbe.deepcoder.deepcoder import dsl, List
+
+    type_request = FunctionType(List(INT), List(INT))
+
+    syntax = {p.primitive: p.type for p in dsl.list_primitives}
 
     patterns = [
-        "and ^and *",
-        "or ^or,and ^and",
-        "+ ^+ *",
-        # "elif if elif,if,EMPTY",
-        "ifY * 1x3,3x1",
-        "ifX $(var0) ifY,elifY",
-        "elifY ifY EMPTY,elifY",
-        "elifX ifX EMPTY,elifX",
-        # "elif ^EMPTY elif,if,EMPTY",
-        # "elif ^elif *"
-        # "elif ^EMPTY,elif elif,if,EMPTY",
+        "COUNT[<0] ^MAP[*-1],MAP[**2]",
+        "COUNT[>0] ^MAP[*-1],MAP[**2]",
+        "COUNT[EVEN] ^MAP[+1],MAP[*2]",
+        "COUNT[ODD] ^MAP[+1],MAP[*2]",
+        "FILTER[EVEN] ^MAP[+1],MAP[*2]",
+        "FILTER[ODD] ^MAP[+1],MAP[*2]",
+        "ZIPWITH[+] ^SORT,REVERSE,ZIPWITH[+] ^SORT,REVERSE",
+        "ZIPWITH[-] ^SORT,REVERSE ^SORT,REVERSE",
+        # "ZIPWITH[*] ^SORT,REVERSE,ZIPWITH[*] ^SORT,REVERSE",
+        # "ZIPWITH[min] ^SORT,REVERSE,ZIPWITH[min] ^SORT,REVERSE",
+        # "ZIPWITH[max] ^SORT,REVERSE,ZIPWITH[max] ^SORT,REVERSE",
     ]
-    max_depth = 5
-    original_size = ConcreteCFG.from_dsl(DSL(syntax), type_request, max_depth).size()
+
+    max_depth = 4
+    original_size = ConcreteCFG.from_dsl(dsl, type_request, max_depth).size()
 
     # test for patterns
     new_syntax = syntax
     new_syntax, type_request = produce_new_syntax_for_constraints(
         new_syntax, patterns, type_request
     )
+
     # Print
     print(f"[BEF CLEAN][PATTERNS] New syntax ({len(new_syntax)} primitives):")
-    for prim, type in new_syntax.items():
-        print("\t", prim, ":", type)
-    new_size = ConcreteCFG.from_dsl(DSL(new_syntax), type_request, max_depth).size()
+    # for prim, type in new_syntax.items():
+    # print("\t", prim, ":", type)
+    new_size = ConcreteCFG.from_dsl(
+        DSL(new_syntax, dsl.forbidden_patterns), type_request, max_depth
+    ).size()
     pc = (original_size - new_size) / original_size
     print("Removed", original_size - new_size, f"({pc:%}) programs at depth", max_depth)
     print("New TR:", type_request)
 
     clean(new_syntax, type_request)
     print(f"[AFT CLEAN][PATTERNS] New syntax ({len(new_syntax)} primitives):")
-    for prim, type in new_syntax.items():
-        print("\t", prim, ":", type)
+    # for prim, type in new_syntax.items():
+    # print("\t", prim, ":", type)
 
-    new_size = ConcreteCFG.from_dsl(DSL(new_syntax), type_request, max_depth).size()
+    new_size = ConcreteCFG.from_dsl(
+        DSL(new_syntax, dsl.forbidden_patterns), type_request, max_depth
+    ).size()
     pc = (original_size - new_size) / original_size
     print("Removed", original_size - new_size, f"({pc:%}) programs at depth", max_depth)
 
-    pcfg = ConcretePCFG.uniform(
-        ConcreteCFG.from_dsl(DSL(new_syntax), type_request, max_depth)
-    )
-    pcfg.init_sampling(2)
-    for i in range(30):
-        print(pcfg.sample_program())
+    # pcfg = ConcretePCFG.uniform(
+    #     ConcreteCFG.from_dsl(DSL(new_syntax), type_request, max_depth)
+    # )
+    # pcfg.init_sampling(2)
+    # for i in range(30):
+    #     print(pcfg.sample_program())
+
+    # print(export_syntax_to_python(new_syntax))

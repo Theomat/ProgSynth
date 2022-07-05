@@ -1,4 +1,6 @@
-from typing import Generator, List as TList, Optional, Tuple, Dict, Set, Iterable
+from collections import defaultdict
+from typing import Generator, List as TList, Optional, Tuple, Dict, Set, Iterable, Union
+
 
 from synth.syntax import Type, Arrow, List, PrimitiveType, PolymorphicType, FunctionType
 
@@ -56,24 +58,106 @@ def parse_specification(spec: str) -> TList[str]:
 # ========================================================================================
 # TYPE PRODUCERS/CONSUMERS
 # ========================================================================================
-def producers_of(syntax: Dict[str, Type], rtype: Type) -> Generator[str, None, None]:
-    for prim, ptype in syntax.items():
+
+
+class Syntax:
+    def __init__(self, type_constraints: Dict[str, Type]) -> None:
+        self.syntax = type_constraints
+        self.all_types_names = set(map(str, __all_types__(self.syntax)))
+
+        # Init producers by type
+        self.producers_by_type = defaultdict(set)
+        for prim, ptype in self.syntax.items():
+            if isinstance(ptype, Arrow):
+                self.producers_by_type[ptype.returns()].add(prim)
+            else:
+                self.producers_by_type[ptype].add(prim)
+
+        # Init equivalent primitives
+        self.equivalents: Dict[str, Set[str]] = defaultdict(set)
+        for prim in self.syntax.keys():
+            self.equivalents[get_prefix(prim)].add(prim)
+
+    def __getitem__(self, item: str) -> Type:
+        return self.syntax[item]
+
+    def __contains__(self, item: str) -> bool:
+        return item in self.syntax
+
+    def __len__(self) -> int:
+        return len(self.syntax)
+
+    def __delitem__(self, item: str) -> None:
+        ptype = self.syntax[item]
+        rtype = ptype
         if isinstance(ptype, Arrow):
-            if ptype.returns() == rtype:
+            rtype = ptype.returns()
+        if item not in self.producers_by_type[rtype]:
+            print("DELETING", item, "type:", ptype, "returns:", rtype)
+            print("¨Producers:", self.producers_by_type[rtype])
+        self.producers_by_type[rtype].remove(item)
+        if len(self.producers_by_type[rtype]) == 0:
+            self.all_types_names.remove(str(rtype))
+        self.equivalents[get_prefix(item)].remove(item)
+        del self.syntax[item]
+
+    def __setitem__(self, item: str, new_t: Type) -> None:
+        ptype = self.syntax[item]
+        rtype = ptype.returns() if isinstance(ptype, Arrow) else ptype
+        rtype_now = new_t.returns() if isinstance(new_t, Arrow) else new_t
+        if rtype != rtype_now:
+            self.producers_by_type[rtype].remove(item)
+            if len(self.producers_by_type[rtype]) == 0:
+                self.all_types_names.remove(str(rtype))
+            self.producers_by_type[rtype_now].add(item)
+
+        self.syntax[item] = new_t
+
+    def producers_of(self, rtype: Type) -> Set[Type]:
+        return self.producers_by_type[rtype]
+
+    def consumers_of(self, atype: Type) -> Generator[str, None, None]:
+        for prim, ptype in self.syntax.items():
+            if isinstance(ptype, Arrow) and atype in ptype.arguments():
                 yield prim
-        elif ptype == rtype:
-            yield prim
+
+    def equivalent_primitives(self, name: str) -> Set[str]:
+        return self.equivalents[get_prefix(name)]
+
+    def replace_type(self, old_t: Type, new_t: Type) -> None:
+        self.all_types_names.remove(str(old_t))
+        tmap = {old_t: new_t}
+        for P, ptype in self.syntax.items():
+            if P in self.producers_by_type[old_t]:
+                self.producers_by_type[old_t].remove(P)
+                self.producers_by_type[new_t].add(P)
+            self.syntax[P] = map_type(ptype, tmap)
+
+    def duplicate_primitive(self, primitive: str, ntype: Type) -> str:
+        new_name = __new_primitive_name__(primitive, self)
+        self.syntax[new_name] = ntype
+        self.equivalents[get_prefix(new_name)].add(new_name)
+        rtype = ntype
+        if isinstance(ntype, Arrow):
+            rtype = ntype.returns()
+        self.producers_by_type[rtype].add(new_name)
+        return new_name
+
+    def duplicate_type(self, base: Type) -> Type:
+        out = None
+        if isinstance(base, PrimitiveType):
+            out = PrimitiveType(__new_type_name__(base.type_name, self))
+        elif isinstance(base, List):
+            out = List(self.duplicate_type(base.element_type))
+        elif isinstance(base, PolymorphicType):
+            # Not sure how relevant this is
+            out = PolymorphicType(__new_type_name__(base.name, self))
+        assert out is not None
+        self.all_types_names.add(str(out))
+        return out
 
 
-def consumers_of(syntax: Dict[str, Type], atype: Type) -> Generator[str, None, None]:
-    for prim, ptype in syntax.items():
-        if isinstance(ptype, Arrow) and atype in ptype.arguments():
-            yield prim
-
-
-def producers_of_using(
-    syntax: Dict[str, Type], rtype: Type, consuming: Set[Type]
-) -> Set[str]:
+def producers_of_using(syntax: Syntax, rtype: Type, consuming: Set[Type]) -> Set[str]:
     """
     Return the list of producers of <rtype> that can directly or indirectly consume any <consuming>
     """
@@ -83,7 +167,7 @@ def producers_of_using(
     types_dones = set()
     while queue:
         atype = queue.pop()
-        for prod in producers_of(syntax, atype):
+        for prod in syntax.producers_of(atype):
             if prod not in candidates:
                 candidates.add(prod)
                 if isinstance(syntax[prod], Arrow):
@@ -95,7 +179,7 @@ def producers_of_using(
     # Compute all consumers
     all_consumers = set()
     for atype in consuming:
-        all_consumers |= set(consumers_of(syntax, atype))
+        all_consumers |= set(syntax.consumers_of(atype))
     # Now we can go down
     out = set(candidates).intersection(all_consumers)
     current = [p for p in out]
@@ -106,7 +190,7 @@ def producers_of_using(
         if isinstance(ptype, Arrow):
             prtype = ptype.returns()
             if prtype not in types_dones:
-                consumers = consumers_of(syntax, prtype)
+                consumers = syntax.consumers_of(prtype)
                 for consumer in consumers:
                     if consumer in candidates:
                         current.append(consumer)
@@ -116,9 +200,7 @@ def producers_of_using(
     return out
 
 
-def types_produced_directly_by(
-    primitives: Iterable[str], syntax: Dict[str, Type]
-) -> Set[Type]:
+def types_produced_directly_by(primitives: Iterable[str], syntax: Syntax) -> Set[Type]:
     out = set()
     for prim in primitives:
         ptype = syntax[prim]
@@ -129,7 +211,7 @@ def types_produced_directly_by(
     return out
 
 
-def types_used_by(primitives: Iterable[str], syntax: Dict[str, Type]) -> Set[Type]:
+def types_used_by(primitives: Iterable[str], syntax: Syntax) -> Set[Type]:
     """
     Return the set of types that can be produced or consumed directly with the given primitives, then add all producers of those types recursively.
 
@@ -150,18 +232,14 @@ def types_used_by(primitives: Iterable[str], syntax: Dict[str, Type]) -> Set[Typ
                 queue.append(ptype)
     # Update list for all other types
     while queue:
-        producers = producers_of(syntax, queue.pop())
+        producers = syntax.producers_of(queue.pop())
         for prim in producers:
             ptype = syntax[prim]
             if isinstance(ptype, Arrow):
-                for atype in [ptype.returns()] + ptype.arguments():
+                for atype in ptype.arguments():
                     if atype not in out:
                         out.add(atype)
                         queue.append(atype)
-            else:
-                if ptype not in out:
-                    out.add(ptype)
-                    queue.append(ptype)
     return out
 
 
@@ -189,44 +267,29 @@ def map_type(type: Type, map: Dict[Type, Type]) -> Type:
     return type
 
 
-def equivalent_primitives(syntax: Dict[str, Type], prefix: str) -> TList[str]:
-    return [
-        s
-        for s in syntax.keys()
-        if s.startswith(prefix)
-        and (len(s) == len(prefix) or s[len(prefix)] == SYMBOL_DUPLICATA)
-    ]
-
-
 # ========================================================================================
 # DUPLICATE PRIMITIVE/TYPE
 # ========================================================================================
 
 
-def __new_type_name__(name: str, syntax: Dict[str, Type]) -> str:
+def __all_types__(syntax: Dict[str, Type]) -> Set[Type]:
     all_types = set()
     for t in syntax.values():
-        all_types |= {tt.type_name for tt in t.decompose_type()[0]}
+        for tt in t.decompose_type()[0]:
+            all_types.add(tt)
+    return all_types
+
+
+def __new_type_name__(name: str, syntax: Syntax) -> str:
     i = 0
     name = get_prefix(name)
-    while f"{name}{SYMBOL_DUPLICATA}{i}" in all_types:
+    while f"{name}{SYMBOL_DUPLICATA}{i}" in syntax.all_types_names:
         i += 1
 
     return f"{name}{SYMBOL_DUPLICATA}{i}"
 
 
-def duplicate_type(base: Type, syntax: Dict[str, Type]) -> Type:
-    if isinstance(base, PrimitiveType):
-        return PrimitiveType(__new_type_name__(base.type_name, syntax))
-    elif isinstance(base, List):
-        return List(duplicate_type(base.element_type, syntax))
-    elif isinstance(base, PolymorphicType):
-        # Not sure how relevnt this is
-        return PolymorphicType(__new_type_name__(base.name, syntax))
-    assert False
-
-
-def __new_primitive_name__(primitive: str, syntax: Dict[str, Type]) -> str:
+def __new_primitive_name__(primitive: str, syntax: Syntax) -> str:
     i = 0
     primitive = get_prefix(primitive)
     while f"{primitive}{SYMBOL_DUPLICATA}{i}" in syntax:
@@ -234,23 +297,17 @@ def __new_primitive_name__(primitive: str, syntax: Dict[str, Type]) -> str:
     return f"{primitive}{SYMBOL_DUPLICATA}{i}"
 
 
-def duplicate_primitive(primitive: str, syntax: Dict[str, Type]) -> str:
-    new_name = __new_primitive_name__(primitive, syntax)
-    syntax[new_name] = syntax[primitive]
-    return new_name
-
-
 # ========================================================================================
 # CLEANING
 # ========================================================================================
 
 
-def __are_equivalent_types__(syntax: Dict[str, Type], t1: Type, t2: Type) -> bool:
+def __are_equivalent_types__(syntax: Syntax, t1: Type, t2: Type) -> bool:
     # Two types are equivalent iff
     #   for all primitives P producing t1 there is an equivalent primitive producing t2 and vice versa
     #   an equivalent primitive is a primitive that has the same type request but for the produced type and the same name_prefix up to @
-    t2_producers = list(producers_of(syntax, t2))
-    t1_producers = list(producers_of(syntax, t1))
+    t2_producers = syntax.producers_of(t2)
+    t1_producers = syntax.producers_of(t1)
     marked = [False for _ in range(len(t2_producers))]
     # t1 in t2
     for p1 in t1_producers:
@@ -289,14 +346,8 @@ def __are_equivalent_types__(syntax: Dict[str, Type], t1: Type, t2: Type) -> boo
     return True
 
 
-def __replace_type__(syntax: Dict[str, Type], old_t: Type, new_t: Type):
-    tmap = {old_t: new_t}
-    for P, ptype in syntax.items():
-        syntax[P] = map_type(ptype, tmap)
-
-
-def __merge_for__(syntax: Dict[str, Type], primitive: str) -> bool:
-    candidates = equivalent_primitives(syntax, primitive)
+def __merge_for__(syntax: Syntax, primitive: str) -> bool:
+    candidates = list(syntax.equivalent_primitives(primitive))
     if len(candidates) <= 1:
         return False
 
@@ -305,7 +356,7 @@ def __merge_for__(syntax: Dict[str, Type], primitive: str) -> bool:
     if not isinstance(syntax[candidates[0]], Arrow):
         # Delete those with no consumers
         for P in candidates:
-            if not any(consumers_of(syntax, syntax[P])):
+            if not any(syntax.consumers_of(syntax[P])):
                 merged = True
                 del syntax[P]
     # Merge those with same types
@@ -322,18 +373,23 @@ def __merge_for__(syntax: Dict[str, Type], primitive: str) -> bool:
     return merged
 
 
-def clean(syntax: Dict[str, Type], type_request: Optional[Arrow] = None) -> None:
+def clean(
+    syntax: Union[Syntax, Dict[str, Type]], type_request: Optional[Arrow] = None
+) -> None:
     """
     Try merging duplicates that were created.
     """
+    if not isinstance(syntax, Syntax):
+        syntax = Syntax(syntax)
+    assert isinstance(syntax, Syntax)
     # Delete all primitives using a non-interesting type
-    all_primitives = set(get_prefix(p) for p in syntax.keys())
+    all_primitives = set(syntax.equivalents.keys())
     interesting_types = types_used_by(all_primitives, syntax)
     var_types = set()
     if type_request and isinstance(type_request, Arrow):
         var_types = set(type_request.arguments())
     interesting_types |= var_types
-    for P in list(syntax.keys()):
+    for P in list(syntax.syntax.keys()):
         ptype = syntax[P]
         if isinstance(ptype, Arrow) and (
             any(tt not in interesting_types for tt in ptype.arguments())
@@ -368,7 +424,7 @@ def clean(syntax: Dict[str, Type], type_request: Optional[Arrow] = None) -> None
                     if t2 not in next_gen:
                         continue
                     if __are_equivalent_types__(syntax, t1, t2):
-                        __replace_type__(syntax, t2, t1)
+                        syntax.replace_type(t2, t1)
                         next_gen.remove(t2)
                         for p in all_primitives:
                             __merge_for__(syntax, p)
