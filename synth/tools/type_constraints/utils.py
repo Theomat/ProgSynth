@@ -249,7 +249,7 @@ def __are_equivalent_types__(syntax: Dict[str, Type], t1: Type, t2: Type) -> boo
     #   an equivalent primitive is a primitive that has the same type request but for the produced type and the same name_prefix up to @
     t2_producers = producers_of(syntax, t2)
     t1_producers = producers_of(syntax, t1)
-    marked = [False for i in range(len(t2_producers))]
+    marked = [False for _ in range(len(t2_producers))]
     # t1 in t2
     for p1 in t1_producers:
         found_match = False
@@ -261,7 +261,7 @@ def __are_equivalent_types__(syntax: Dict[str, Type], t1: Type, t2: Type) -> boo
                 if found_match:
                     marked[i] = True
                     break
-            if not isinstance(p1, Arrow) and not isinstance(p2, Arrow):
+            if not isinstance(syntax[p1], Arrow) and not isinstance(syntax[p2], Arrow):
                 found_match = True
                 marked[i] = True
                 break
@@ -279,7 +279,7 @@ def __are_equivalent_types__(syntax: Dict[str, Type], t1: Type, t2: Type) -> boo
                 found_match = syntax[p1].arguments() == syntax[p2].arguments()
                 if found_match:
                     break
-            if not isinstance(p1, Arrow) and not isinstance(p2, Arrow):
+            if not isinstance(syntax[p1], Arrow) and not isinstance(syntax[p2], Arrow):
                 found_match = True
                 break
         if not found_match:
