@@ -223,10 +223,7 @@ class List(Type):
         return List, (o.element_type,)  # type: ignore
 
     def __str__(self) -> str:
-        if isinstance(self.element_type, Arrow):
-            return "list{}".format(self.element_type)
-        else:
-            return "list({})".format(self.element_type)
+        return "list({})".format(self.element_type)
 
     def __contains__(self, t: Type) -> bool:
         return super().__contains__(t) or t in self.element_type
