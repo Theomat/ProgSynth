@@ -1,7 +1,10 @@
 from collections import defaultdict
 from typing import Any, Optional, Dict, Iterable, Tuple, List as TList
 from utils import (
+    PREFIX_CAST,
+    SYMBOL_VAR_EXPR,
     equivalent_primitives,
+    map_type,
     producers_of,
     duplicate_primitive,
     duplicate_type,
@@ -12,9 +15,82 @@ from utils import (
     SYMBOL_ANYTHING,
     clean,
     parse_specification,
+    producers_of_using,
+    types_produced_directly_by,
 )
 
 from synth.syntax import Type, Arrow
+
+
+def __add_variable_constraint__(
+    content: str,
+    parent: str,
+    argno: int,
+    arg_type: Type,
+    syntax: Dict[str, Type],
+    nconstraints: Dict[str, int],
+    type_request: Optional[Arrow],
+    level: int = 0,
+) -> Arrow:
+    assert type_request, "A type request is needed for variable constraints!"
+    content = content.strip(f"{SYMBOL_VAR_EXPR}()")
+    variables = set(map(int, parse_choices(content.replace("var", ""))))
+    var_types = set(type_request.arguments()[i] for i in variables)
+    varno2type = {no: type_request.arguments()[no] for no in variables}
+    # print("\t" * level,  "Variables:", variables, "types:", var_types)
+    # Always assume there are other variables of the same types
+
+    to_duplicate = producers_of_using(syntax, arg_type, var_types)
+    # add constantsof same types
+    to_duplicate |= set(
+        [
+            p
+            for p, ptype in syntax.items()
+            if not isinstance(ptype, Arrow) and ptype in var_types
+        ]
+    )
+    types_to_duplicate = types_produced_directly_by(to_duplicate, syntax)
+    # print("\t" * level,  "To duplicate:", to_duplicate)
+    # print("\t" * level,  "Types to duplicate:", types_to_duplicate)
+
+    # Compute the mapping of types
+    types_map = {}
+    # variables first
+    for var_type in var_types:
+        concerned = {i for i in variables if varno2type[i] == var_type}
+        if any(nconstraints[f"var{i}"] > 0 for i in concerned):
+            already_defined = [i for i in concerned if nconstraints[f"var{i}"] > 0]
+            assert len(already_defined) == 1
+            types_map[var_type] = var_type
+        else:
+            types_map[var_type] = duplicate_type(var_type, syntax)
+    # rest
+    for type in types_to_duplicate.difference(var_types):
+        types_map[type] = duplicate_type(type, syntax)
+
+    # Duplicate primitives
+    for primitive in to_duplicate:
+        new_primitive = duplicate_primitive(primitive, syntax)
+        syntax[new_primitive] = map_type(syntax[new_primitive], types_map)
+
+    # Add casts
+    for var_type in var_types:
+        syntax[f"{PREFIX_CAST}{types_map[var_type]}->{var_type}"] = FunctionType(
+            types_map[var_type], var_type
+        )
+
+    # Fix parent type
+    args = syntax[parent].arguments()
+    args[argno] = map_type(args[argno], types_map)
+    syntax[parent] = FunctionType(*args, syntax[parent].returns())
+
+    # Fix type request
+    args = type_request.arguments()
+    for i in variables:
+        args[i] = map_type(args[i], types_map)
+        # Add constraints
+        nconstraints[f"var{i}"] += 1
+    return FunctionType(*args, type_request.returns())
 
 
 def __add_primitive_constraint__(
@@ -22,7 +98,6 @@ def __add_primitive_constraint__(
     parent: str,
     argno: int,
     syntax: Dict[str, Type],
-    nconstraints: Dict[str, int],
     level: int = 0,
     target_type: Optional[Type] = None,
 ) -> str:
@@ -49,14 +124,12 @@ def __add_primitive_constraint__(
             if primitive == prim:
                 prim = new_primitive
             # print("\t" * level, "Added:", new_primitive, ":", syntax[primitive])
-            # Now change the type of parent to match
             # Update parent signature
             parent_type = syntax[parent]
             assert isinstance(parent_type, Arrow)
             old_types = parent_type.arguments() + [parent_type.returns()]
             old_types[argno] = new_return_type
             syntax[parent] = FunctionType(*old_types)
-            nconstraints[new_primitive] += 1
     return prim
 
 
@@ -65,17 +138,16 @@ def __add_primitives_constraint__(
     parent: str,
     argno: int,
     syntax: Dict[str, Type],
-    nconstraints: Dict[str, int],
     level: int = 0,
 ) -> None:
     primitives = parse_choices(content)
     if len(primitives) <= 0:
         return
-    print("\t" * level, "\tcontent:", content)
-    print("\t" * level, "\tprimitives:", primitives)
+    # print("\t" * level, "\tcontent:", content)
+    # print("\t" * level, "\tprimitives:", primitives)
     # 1) Simply do it for all primitives in the list
     new_primitives = [
-        __add_primitive_constraint__(p, parent, argno, syntax, nconstraints, level)
+        __add_primitive_constraint__(p, parent, argno, syntax, level)
         for p in primitives
     ]
     # 2) Make them coherent
@@ -116,14 +188,14 @@ def __add_forbidden_constraint__(
     level: int = 0,
     **kwargs: Any,
 ):
-    print("\t" * level, "\tcontent:", content)
+    # print("\t" * level, "\tcontent:", content)
     primitives = parse_choices(content[1:])
     all_forbidden = set()
     for p in primitives:
         all_forbidden |= set(equivalent_primitives(syntax, p))
     all_producers = producers_of(syntax, syntax[parent].arguments()[argno])
     remaining = all_producers - all_forbidden
-    print("\t" * level, "\tallowed:", remaining)
+    # print("\t" * level, "\tallowed:", remaining)
 
     __add_primitives_constraint__(
         SYMBOL_SEPARATOR.join(remaining), parent, argno, syntax, *args, **kwargs
@@ -152,7 +224,7 @@ def __process__(
     if all(len(arg) == 1 and arg[0] == "*" for arg in args):
         return function, type_request
 
-    print("\t" * level, "processing:", constraint)
+    # print("\t" * level, "processing:", constraint)
     for parent in function:
         fun_tr = syntax[get_prefix(parent)]
         assert isinstance(fun_tr, Arrow)
@@ -165,14 +237,21 @@ def __process__(
                 content: str = eq_args[0]
                 if content == SYMBOL_ANYTHING:
                     continue
+                elif content[0] == SYMBOL_VAR_EXPR:
+                    type_request = __add_variable_constraint__(
+                        content,
+                        parent,
+                        argno,
+                        arg_type,
+                        syntax,
+                        nconstraints,
+                        type_request,
+                        level,
+                    )
                 elif content[0] == SYMBOL_FORBIDDEN:
-                    __add_forbidden_constraint__(
-                        content, parent, argno, syntax, nconstraints, level
-                    )
+                    __add_forbidden_constraint__(content, parent, argno, syntax, level)
                 else:
-                    __add_primitives_constraint__(
-                        content, parent, argno, syntax, nconstraints, level
-                    )
+                    __add_primitives_constraint__(content, parent, argno, syntax, level)
 
     return function, type_request
 
@@ -197,26 +276,32 @@ def produce_new_syntax_for_constraints(
 
 
 if __name__ == "__main__":
-    from synth.syntax import DSL, ConcreteCFG, INT, FunctionType
+    from synth.syntax import DSL, ConcreteCFG, INT, FunctionType, ConcretePCFG
     from examples.pbe.towers.towers_base import syntax, BLOCK
 
     type_request = FunctionType(INT, INT, BLOCK)
 
     patterns = [
         "and ^and *",
-        "or ^or *",
+        "or ^or,and ^and",
         "+ ^+ *",
-        "elif if elif,if,EMPTY",
+        # "elif if elif,if,EMPTY",
+        "ifY * 1x3,3x1",
+        "ifX $(var0) ifY,elifY",
+        "elifY ifY EMPTY,elifY",
+        "elifX ifX EMPTY,elifX",
+        # "elif ^EMPTY elif,if,EMPTY",
+        # "elif ^elif *"
+        # "elif ^EMPTY,elif elif,if,EMPTY",
     ]
-    # TODO:
-    # - Enable pattern constraints depending on variables
-    # e.g., elif $(var0) *
     max_depth = 5
     original_size = ConcreteCFG.from_dsl(DSL(syntax), type_request, max_depth).size()
 
     # test for patterns
     new_syntax = syntax
-    new_syntax, _ = produce_new_syntax_for_constraints(new_syntax, patterns)
+    new_syntax, type_request = produce_new_syntax_for_constraints(
+        new_syntax, patterns, type_request
+    )
     # Print
     print(f"[BEF CLEAN][PATTERNS] New syntax ({len(new_syntax)} primitives):")
     for prim, type in new_syntax.items():
@@ -224,8 +309,9 @@ if __name__ == "__main__":
     new_size = ConcreteCFG.from_dsl(DSL(new_syntax), type_request, max_depth).size()
     pc = (original_size - new_size) / original_size
     print("Removed", original_size - new_size, f"({pc:%}) programs at depth", max_depth)
+    print("New TR:", type_request)
 
-    clean(new_syntax)
+    clean(new_syntax, type_request)
     print(f"[AFT CLEAN][PATTERNS] New syntax ({len(new_syntax)} primitives):")
     for prim, type in new_syntax.items():
         print("\t", prim, ":", type)
@@ -233,3 +319,10 @@ if __name__ == "__main__":
     new_size = ConcreteCFG.from_dsl(DSL(new_syntax), type_request, max_depth).size()
     pc = (original_size - new_size) / original_size
     print("Removed", original_size - new_size, f"({pc:%}) programs at depth", max_depth)
+
+    pcfg = ConcretePCFG.uniform(
+        ConcreteCFG.from_dsl(DSL(new_syntax), type_request, max_depth)
+    )
+    pcfg.init_sampling(2)
+    for i in range(30):
+        print(pcfg.sample_program())
