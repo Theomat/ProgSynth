@@ -1,6 +1,10 @@
 from collections import defaultdict
 from typing import Any, Optional, Dict, Iterable, Tuple, List as TList
-from utils import (
+
+import tqdm
+
+from synth.syntax import Type, Arrow
+from synth.tools.type_constraints.utils import (
     PREFIX_CAST,
     SYMBOL_VAR_EXPR,
     equivalent_primitives,
@@ -18,8 +22,6 @@ from utils import (
     producers_of_using,
     types_produced_directly_by,
 )
-
-from synth.syntax import Type, Arrow
 
 
 def __add_variable_constraint__(
@@ -260,18 +262,40 @@ def produce_new_syntax_for_constraints(
     syntax: Dict[str, Type],
     constraints: Iterable[str],
     type_request: Optional[Arrow] = None,
+    progress: bool = True,
 ) -> Tuple[Dict[str, Type], Optional[Arrow]]:
     """
     Add type constraints on the specified syntax in order to enforce the given constraints.
 
     If no constraint depends on variables the type request is ignored.
+    if progress is set to True use a tqdm progress bar.
     """
     new_syntax = {k: v for k, v in syntax.items()}
     parsed_constraints = [parse_specification(constraint) for constraint in constraints]
+    size = len(syntax)
+
+    if progress:
+        pbar = tqdm.tqdm(total=len(parsed_constraints), desc="constraints", smoothing=1)
+
     for constraint in parsed_constraints:
         _, type_request = __process__(
             constraint, new_syntax, defaultdict(int), type_request
         )
+        if progress:
+            pbar.update(1)
+            pbar.set_postfix_str(f"+{len(new_syntax)/ len(syntax) - 1:.1%} DSL size")
+
+        if size * 3 / 2 <= len(new_syntax):
+            if progress:
+                pbar.set_postfix_str("cleaning...")
+            clean(new_syntax, type_request)
+            size = len(new_syntax)
+            if progress:
+                pbar.set_postfix_str(
+                    f"+{len(new_syntax)/ len(syntax) - 1:.0%} DSL size"
+                )
+    if progress:
+        pbar.close()
     return new_syntax, type_request
 
 
