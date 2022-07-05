@@ -169,6 +169,8 @@ def types_used_by(primitives: Iterable[str], syntax: Dict[str, Type]) -> Set[Typ
 # MISC
 # ========================================================================================
 def get_prefix(name: str) -> str:
+    if name.startswith(PREFIX_CAST):
+        return name
     return (
         name if SYMBOL_DUPLICATA not in name else name[: name.index(SYMBOL_DUPLICATA)]
     )
