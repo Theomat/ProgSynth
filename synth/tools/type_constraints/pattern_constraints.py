@@ -193,7 +193,7 @@ def __add_forbidden_constraint__(
     all_forbidden = set()
     for p in primitives:
         all_forbidden |= set(equivalent_primitives(syntax, p))
-    all_producers = producers_of(syntax, syntax[parent].arguments()[argno])
+    all_producers = set(producers_of(syntax, syntax[parent].arguments()[argno]))
     remaining = all_producers - all_forbidden
     # print("\t" * level, "\tallowed:", remaining)
 

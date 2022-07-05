@@ -1,4 +1,4 @@
-from typing import List as TList, Optional, Tuple, Dict, Set, Iterable
+from typing import Generator, List as TList, Optional, Tuple, Dict, Set, Iterable
 
 from synth.syntax import Type, Arrow, List, PrimitiveType, PolymorphicType, FunctionType
 
@@ -56,23 +56,19 @@ def parse_specification(spec: str) -> TList[str]:
 # ========================================================================================
 # TYPE PRODUCERS/CONSUMERS
 # ========================================================================================
-def producers_of(syntax: Dict[str, Type], rtype: Type) -> Set[str]:
-    out = set()
+def producers_of(syntax: Dict[str, Type], rtype: Type) -> Generator[str, None, None]:
     for prim, ptype in syntax.items():
         if isinstance(ptype, Arrow):
             if ptype.returns() == rtype:
-                out.add(prim)
+                yield prim
         elif ptype == rtype:
-            out.add(prim)
-    return out
+            yield prim
 
 
-def consumers_of(syntax: Dict[str, Type], atype: Type) -> Set[str]:
-    out = set()
+def consumers_of(syntax: Dict[str, Type], atype: Type) -> Generator[str, None, None]:
     for prim, ptype in syntax.items():
         if isinstance(ptype, Arrow) and atype in ptype.arguments():
-            out.add(prim)
-    return out
+            yield prim
 
 
 def producers_of_using(
@@ -249,8 +245,8 @@ def __are_equivalent_types__(syntax: Dict[str, Type], t1: Type, t2: Type) -> boo
     # Two types are equivalent iff
     #   for all primitives P producing t1 there is an equivalent primitive producing t2 and vice versa
     #   an equivalent primitive is a primitive that has the same type request but for the produced type and the same name_prefix up to @
-    t2_producers = producers_of(syntax, t2)
-    t1_producers = producers_of(syntax, t1)
+    t2_producers = list(producers_of(syntax, t2))
+    t1_producers = list(producers_of(syntax, t1))
     marked = [False for _ in range(len(t2_producers))]
     # t1 in t2
     for p1 in t1_producers:
@@ -305,7 +301,7 @@ def __merge_for__(syntax: Dict[str, Type], primitive: str) -> bool:
     if not isinstance(syntax[candidates[0]], Arrow):
         # Delete those with no consumers
         for P in candidates:
-            if len(consumers_of(syntax, syntax[P])) == 0:
+            if not any(consumers_of(syntax, syntax[P])):
                 merged = True
                 del syntax[P]
     # Merge those with same types
