@@ -272,7 +272,6 @@ def produce_new_syntax_for_constraints(
     """
     new_syntax = {k: v for k, v in syntax.items()}
     parsed_constraints = [parse_specification(constraint) for constraint in constraints]
-    size = len(syntax)
 
     if progress:
         pbar = tqdm.tqdm(total=len(parsed_constraints), desc="constraints", smoothing=1)
@@ -283,17 +282,10 @@ def produce_new_syntax_for_constraints(
         )
         if progress:
             pbar.update(1)
-            pbar.set_postfix_str(f"+{len(new_syntax)/ len(syntax) - 1:.1%} DSL size")
-
-        if size * 3 / 2 <= len(new_syntax):
-            if progress:
-                pbar.set_postfix_str("cleaning...")
-            clean(new_syntax, type_request)
-            size = len(new_syntax)
-            if progress:
-                pbar.set_postfix_str(
-                    f"+{len(new_syntax)/ len(syntax) - 1:.0%} DSL size"
-                )
+            pbar.set_postfix_str("cleaning...")
+        clean(new_syntax, type_request)
+        if progress:
+            pbar.set_postfix_str(f"+{len(new_syntax)/ len(syntax) - 1:.0%} DSL size")
     if progress:
         pbar.close()
     return new_syntax, type_request
