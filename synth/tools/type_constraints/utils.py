@@ -130,6 +130,10 @@ def types_produced_directly_by(
 
 
 def types_used_by(primitives: Iterable[str], syntax: Dict[str, Type]) -> Set[Type]:
+    """
+    Return the set of types that can be produced or consumed directly with the given primitives, then add all producers of those types recursively.
+
+    """
     out = set()
     queue = []
     # Add all types from primitives
