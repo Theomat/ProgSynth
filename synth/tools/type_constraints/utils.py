@@ -374,3 +374,39 @@ def clean(syntax: Dict[str, Type], type_request: Optional[Arrow] = None) -> None
                             __merge_for__(syntax, p)
                         merged_types = True
             type_classes[prefix] = next_gen
+
+
+# ========================================================================================
+# EXPORTING
+# ========================================================================================
+def __export_type__(ptype: Type) -> str:
+    if isinstance(ptype, Arrow):
+        return f"Arrow({__export_type__(ptype.type_in)}, {__export_type__(ptype.type_out)})"
+    elif isinstance(ptype, PrimitiveType):
+        return ptype.type_name.replace("@", "_")
+    elif isinstance(ptype, List):
+        return f"List({__export_type__(ptype.element_type)})"
+    elif isinstance(ptype, PolymorphicType):
+        return f"PolymorphicType({ptype.name})"
+
+
+def export_syntax_to_python(syntax: Dict[str, Type]) -> str:
+    types_declaration = ""
+    types = types_used_by(syntax.keys(), syntax)
+    for ntype in types:
+        while isinstance(ntype, List):
+            ntype = ntype.element_type
+        if isinstance(ntype, PrimitiveType) and "@" in ntype.type_name:
+            types_declaration += (
+                ntype.type_name.replace("@", "_")
+                + ' = PrimitiveType("'
+                + ntype.type_name
+                + '")'
+                + "\n"
+            )
+
+    out = "syntax = {\n"
+    for prim, ptype in syntax.items():
+        out += '\t"' + prim + '":' + __export_type__(ptype)
+    out += "\n}"
+    return types_declaration + out
