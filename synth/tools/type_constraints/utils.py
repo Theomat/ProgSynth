@@ -1,4 +1,4 @@
-from typing import List as TList, Tuple, Dict, Set, Iterable
+from typing import List as TList, Optional, Tuple, Dict, Set, Iterable
 
 from synth.syntax import Type, Arrow, List, PrimitiveType, PolymorphicType, FunctionType
 
@@ -322,13 +322,17 @@ def __merge_for__(syntax: Dict[str, Type], primitive: str) -> bool:
     return merged
 
 
-def clean(syntax: Dict[str, Type]) -> None:
+def clean(syntax: Dict[str, Type], type_request: Optional[Arrow] = None) -> None:
     """
     Try merging duplicates that were created.
     """
     # Delete all primitives using a non-interesting type
     all_primitives = set(get_prefix(p) for p in syntax.keys())
     interesting_types = types_used_by(all_primitives, syntax)
+    var_types = set()
+    if type_request and isinstance(type_request, Arrow):
+        var_types = set(type_request.arguments())
+    interesting_types |= var_types
     for P in list(syntax.keys()):
         ptype = syntax[P]
         if isinstance(ptype, Arrow) and (
@@ -345,7 +349,9 @@ def clean(syntax: Dict[str, Type]) -> None:
         if prefix in type_classes:
             continue
         type_classes[prefix] = [
-            tt for tt in interesting_types if get_prefix(str(tt)) == prefix
+            tt
+            for tt in interesting_types
+            if get_prefix(str(tt)) == prefix and tt not in var_types
         ]
 
     merged_types = True
