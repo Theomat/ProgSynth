@@ -142,9 +142,10 @@ class Syntax:
         return new_name
 
     def __new_type_name__(self, name: str) -> str:
-        id = self._new_types_index[get_prefix(name)]
-        self._new_types_index[get_prefix(name)] += 1
-        return f"{name}{SYMBOL_DUPLICATA}{id}"
+        prefix = get_prefix(name)
+        id = self._new_types_index[prefix]
+        self._new_types_index[prefix] += 1
+        return f"{prefix}{SYMBOL_DUPLICATA}{id}"
 
     def duplicate_type(self, base: Type) -> Type:
         out = None
