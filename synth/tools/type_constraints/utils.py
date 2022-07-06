@@ -63,7 +63,13 @@ def parse_specification(spec: str) -> TList[str]:
 class Syntax:
     def __init__(self, type_constraints: Dict[str, Type]) -> None:
         self.syntax = type_constraints
-        self.all_types_names = set(map(str, __all_types__(self.syntax)))
+
+        self._new_types_index = defaultdict(int)
+        for ttype in __all_types__(self.syntax):
+            name = str(ttype)
+            if "@" in name and not name.startswith(PREFIX_CAST):
+                id = int(name[name.index("@") + 1 :])
+                self._new_types_index[get_prefix(name)] = id + 1
 
         # Init producers by type
         self.producers_by_type = defaultdict(set)
@@ -92,12 +98,7 @@ class Syntax:
         rtype = ptype
         if isinstance(ptype, Arrow):
             rtype = ptype.returns()
-        if item not in self.producers_by_type[rtype]:
-            print("DELETING", item, "type:", ptype, "returns:", rtype)
-            print("¨Producers:", self.producers_by_type[rtype])
         self.producers_by_type[rtype].remove(item)
-        if len(self.producers_by_type[rtype]) == 0:
-            self.all_types_names.remove(str(rtype))
         self.equivalents[get_prefix(item)].remove(item)
         del self.syntax[item]
 
@@ -107,8 +108,6 @@ class Syntax:
         rtype_now = new_t.returns() if isinstance(new_t, Arrow) else new_t
         if rtype != rtype_now:
             self.producers_by_type[rtype].remove(item)
-            if len(self.producers_by_type[rtype]) == 0:
-                self.all_types_names.remove(str(rtype))
             self.producers_by_type[rtype_now].add(item)
 
         self.syntax[item] = new_t
@@ -125,7 +124,6 @@ class Syntax:
         return self.equivalents[get_prefix(name)]
 
     def replace_type(self, old_t: Type, new_t: Type) -> None:
-        self.all_types_names.remove(str(old_t))
         tmap = {old_t: new_t}
         for P, ptype in self.syntax.items():
             if P in self.producers_by_type[old_t]:
@@ -143,17 +141,21 @@ class Syntax:
         self.producers_by_type[rtype].add(new_name)
         return new_name
 
+    def __new_type_name__(self, name: str) -> str:
+        id = self._new_types_index[get_prefix(name)]
+        self._new_types_index[get_prefix(name)] += 1
+        return f"{name}{SYMBOL_DUPLICATA}{id}"
+
     def duplicate_type(self, base: Type) -> Type:
         out = None
         if isinstance(base, PrimitiveType):
-            out = PrimitiveType(__new_type_name__(base.type_name, self))
+            out = PrimitiveType(self.__new_type_name__(base.type_name))
         elif isinstance(base, List):
             out = List(self.duplicate_type(base.element_type))
         elif isinstance(base, PolymorphicType):
             # Not sure how relevant this is
-            out = PolymorphicType(__new_type_name__(base.name, self))
+            out = PolymorphicType(self.__new_type_name__(base.name))
         assert out is not None
-        self.all_types_names.add(str(out))
         return out
 
 
@@ -278,15 +280,6 @@ def __all_types__(syntax: Dict[str, Type]) -> Set[Type]:
         for tt in t.decompose_type()[0]:
             all_types.add(tt)
     return all_types
-
-
-def __new_type_name__(name: str, syntax: Syntax) -> str:
-    i = 0
-    name = get_prefix(name)
-    while f"{name}{SYMBOL_DUPLICATA}{i}" in syntax.all_types_names:
-        i += 1
-
-    return f"{name}{SYMBOL_DUPLICATA}{i}"
 
 
 def __new_primitive_name__(primitive: str, syntax: Syntax) -> str:
