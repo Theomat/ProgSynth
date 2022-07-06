@@ -440,8 +440,9 @@ def __export_type__(ptype: Type) -> str:
 
 
 def export_syntax_to_python(syntax: Dict[str, Type]) -> str:
+    nsyntax = Syntax(syntax)
     types_declaration = ""
-    types = types_used_by(syntax.keys(), syntax)
+    types = types_used_by(nsyntax.syntax.keys(), nsyntax)
     for ntype in types:
         while isinstance(ntype, List):
             ntype = ntype.element_type
@@ -456,6 +457,6 @@ def export_syntax_to_python(syntax: Dict[str, Type]) -> str:
 
     out = "syntax = {\n"
     for prim, ptype in syntax.items():
-        out += '\t"' + prim + '":' + __export_type__(ptype)
+        out += '\t"' + prim + '":' + __export_type__(ptype) + ",\n"
     out += "\n}"
     return types_declaration + out
