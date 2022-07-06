@@ -3,9 +3,8 @@ from typing import Any, Optional, Dict, Iterable, Tuple, List as TList
 
 import tqdm
 
-from synth.syntax import Type, Arrow
+from synth.syntax import Type, Arrow, FunctionType
 from synth.tools.type_constraints.utils import (
-    PREFIX_CAST,
     SYMBOL_VAR_EXPR,
     Syntax,
     map_type,
