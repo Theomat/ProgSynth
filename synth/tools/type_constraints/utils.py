@@ -228,6 +228,8 @@ def types_used_by(primitives: Iterable[str], syntax: Syntax) -> Set[Type]:
     queue = []
     # Add all types from primitives
     for prim in primitives:
+        if prim not in syntax:
+            continue
         ptype = syntax[prim]
         if isinstance(ptype, Arrow):
             for atype in [ptype.returns()] + ptype.arguments():
