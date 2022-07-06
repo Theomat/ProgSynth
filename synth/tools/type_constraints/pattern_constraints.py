@@ -44,7 +44,7 @@ def __add_variable_constraint__(
     to_duplicate |= set(
         [
             p
-            for p, ptype in syntax.items()
+            for p, ptype in syntax.syntax.items()
             if not isinstance(ptype, Arrow) and ptype in var_types
         ]
     )
@@ -73,9 +73,7 @@ def __add_variable_constraint__(
 
     # Add casts
     for var_type in var_types:
-        syntax[f"{PREFIX_CAST}{types_map[var_type]}->{var_type}"] = FunctionType(
-            types_map[var_type], var_type
-        )
+        syntax.add_cast(var_type, types_map[var_type])
 
     # Fix parent type
     args = syntax[parent].arguments()

@@ -158,6 +158,11 @@ class Syntax:
         assert out is not None
         return out
 
+    def add_cast(self, from_type: Type, to: Type) -> None:
+        name = f"{PREFIX_CAST}{from_type}->{to}"
+        self.syntax[name] = Arrow(from_type, to)
+        self.producers_by_type[to].add(name)
+
 
 def producers_of_using(syntax: Syntax, rtype: Type, consuming: Set[Type]) -> Set[str]:
     """
