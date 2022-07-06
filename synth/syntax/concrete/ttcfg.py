@@ -170,7 +170,9 @@ class TTCFG(Generic[T]):
             assert isinstance(F, Primitive)
             if F not in self.rules[S]:
                 return None
-            current = self.rules[S][F][1]
+            current: Optional[T] = self.rules[S][F][1]
+            if current is None:
+                return None
             for nc, arg in zip(self.rules[S][F][0], args_P):
                 current = self.__parse__(arg, (nc[0], nc[1], current))
                 if current is None:
@@ -243,12 +245,12 @@ def __saturation_build__(
     type_request: Type,
     init: T,
     transition: Callable[
-        [Tuple[Type, str, int], Union[Primitive, Variable, Constant]], Tuple[bool, T]
+        [Tuple[Type, str, T], Union[Primitive, Variable, Constant]], Tuple[bool, T]
     ],
 ) -> "TTCFG[T]":
     rules: Dict[
-        Tuple[Type, str, int],
-        Dict[Union[Primitive, Variable, Constant], Tuple[List[Tuple[Type, str]], int]],
+        Tuple[Type, str, T],
+        Dict[Union[Primitive, Variable, Constant], Tuple[List[Tuple[Type, str]], T]],
     ] = {}
 
     if isinstance(type_request, Arrow):
@@ -258,11 +260,10 @@ def __saturation_build__(
         return_type = type_request
         args = []
 
-    start = ((return_type, "start"), init, [])
     list_to_be_treated: Deque[
         Tuple[Tuple[Type, str], T, List[Tuple[Type, str]]]
     ] = deque()
-    list_to_be_treated.append(start)
+    list_to_be_treated.append(((return_type, "start"), init, []))
 
     while list_to_be_treated:
         (current_type, non_terminal), current, stack = list_to_be_treated.pop()
