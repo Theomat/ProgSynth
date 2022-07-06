@@ -261,7 +261,11 @@ def produce_new_syntax_for_constraints(
     if progress is set to True use a tqdm progress bar.
     """
     new_syntax = Syntax({k: v for k, v in syntax.items()})
-    parsed_constraints = [parse_specification(constraint) for constraint in constraints]
+    constraint_plus = [(int("var" in c), c) for c in constraints]
+    constraint_plus.sort(reverse=True)
+    parsed_constraints = [
+        parse_specification(constraint) for _, constraint in constraint_plus
+    ]
 
     if progress:
         pbar = tqdm.tqdm(total=len(parsed_constraints), desc="constraints", smoothing=1)
