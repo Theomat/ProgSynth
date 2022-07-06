@@ -444,7 +444,7 @@ def __export_type__(ptype: Type) -> str:
         return f"PolymorphicType({ptype.name})"
 
 
-def export_syntax_to_python(syntax: Dict[str, Type]) -> str:
+def export_syntax_to_python(syntax: Dict[str, Type], varname: str = "syntax") -> str:
     nsyntax = Syntax(syntax)
     types_declaration = ""
     types = types_used_by(nsyntax.syntax.keys(), nsyntax)
@@ -460,8 +460,8 @@ def export_syntax_to_python(syntax: Dict[str, Type]) -> str:
                 + "\n"
             )
 
-    out = "syntax = {\n"
+    out = f"{varname} = " + "{\n"
     for prim, ptype in syntax.items():
-        out += '\t"' + prim + '":' + __export_type__(ptype) + ",\n"
+        out += '\t"' + prim + '": ' + __export_type__(ptype) + ",\n"
     out += "\n}"
     return types_declaration + out
