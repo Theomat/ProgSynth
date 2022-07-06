@@ -94,7 +94,6 @@ def __add_primitive_constraint__(
     argno: int,
     syntax: Syntax,
     level: int = 0,
-    target_type: Optional[Type] = None,
 ) -> str:
     prim = content.strip("()")
     for primitive in {p for p in syntax.equivalent_primitives(prim)}:
@@ -105,9 +104,7 @@ def __add_primitive_constraint__(
         )
         # If there are other ways to produce the same thing
         if new_type_needed:
-            new_return_type = (
-                syntax.duplicate_type(rtype) if target_type is None else target_type
-            )
+            new_return_type = syntax.duplicate_type(rtype)
             ntype = new_return_type
             if isinstance(ptype, Arrow):
                 ntype = FunctionType(*ptype.arguments(), new_return_type)
@@ -222,9 +219,7 @@ def __process__(
         assert isinstance(fun_tr, Arrow)
         for argno, (eq_args, arg_type) in enumerate(zip(args, fun_tr.arguments())):
             if len(eq_args) > 1:
-                __add_primitives_constraint__(
-                    content, parent, argno, syntax, nconstraints, level
-                )
+                __add_primitives_constraint__(content, parent, argno, syntax, level)
             else:
                 content: str = eq_args[0]
                 if content == SYMBOL_ANYTHING:
