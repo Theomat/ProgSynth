@@ -21,6 +21,7 @@ from synth.syntax.concrete import (
     ConcreteCFG,
     ConcretePCFG,
     UPCFG,
+    TTCFG,
     enumerate_pcfg,
     enumerate_bucket_pcfg,
     split,
