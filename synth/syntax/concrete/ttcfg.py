@@ -31,8 +31,7 @@ class TTCFG(Generic[S, T]):
         start: Tuple[Type, S, T],
         rules: Dict[
             Tuple[Type, S, T],
-            Dict[Union[Primitive, Variable, Constant],
-                 Tuple[List[Tuple[Type, S]], T]],
+            Dict[Union[Primitive, Variable, Constant], Tuple[List[Tuple[Type, S]], T]],
         ],
         clean: bool = False,
     ):
@@ -224,6 +223,38 @@ class TTCFG(Generic[S, T]):
         )
 
     @classmethod
+    def size_constraint(
+        cls,
+        dsl: DSL,
+        type_request: Type,
+        max_size: int,
+    ) -> "TTCFG[str, int]":
+        """
+        Constructs a TT CFG from a DSL imposing the maximum program size.
+
+        max_size: int - is the maxium depth of programs allowed
+        """
+
+        def __transition__(
+            state: Tuple[Type, str, int],
+            derivation: Union[Primitive, Variable, Constant],
+        ) -> Tuple[bool, int]:
+            size = state[2]
+            if size > max_size:
+                return False, 0
+            if not isinstance(derivation.type, Arrow):
+                return size + 1 <= max_size, size + 1
+            return size + 1 + len(derivation.type.arguments()) <= max_size, size + 1
+
+        return __saturation_build__(
+            dsl,
+            type_request,
+            ("start", 0),
+            __transition__,
+            lambda _, P, i, __: f"{P} arg n°{i}",
+        )
+
+    @classmethod
     def at_most_k(
         cls,
         dsl: DSL,
@@ -266,8 +297,7 @@ def __saturation_build__(
 ) -> "TTCFG[S, T]":
     rules: Dict[
         Tuple[Type, S, T],
-        Dict[Union[Primitive, Variable, Constant],
-             Tuple[List[Tuple[Type, S]], T]],
+        Dict[Union[Primitive, Variable, Constant], Tuple[List[Tuple[Type, S]], T]],
     ] = {}
 
     if isinstance(type_request, Arrow):
@@ -277,8 +307,7 @@ def __saturation_build__(
         return_type = type_request
         args = []
 
-    list_to_be_treated: Deque[Tuple[Tuple[Type, S],
-                                    T, List[Tuple[Type, S]]]] = deque()
+    list_to_be_treated: Deque[Tuple[Tuple[Type, S], T, List[Tuple[Type, S]]]] = deque()
     list_to_be_treated.append(((return_type, init[0]), init[1], []))
 
     while list_to_be_treated:
@@ -297,8 +326,7 @@ def __saturation_build__(
                 if can_add:
                     rules[rule][var] = ([], new_el)
                     if stack:
-                        list_to_be_treated.append(
-                            (stack[0], new_el, stack[1:]))
+                        list_to_be_treated.append((stack[0], new_el, stack[1:]))
         # DSL Primitives
         for P in dsl.list_primitives:
             type_P = P.type
@@ -313,7 +341,6 @@ def __saturation_build__(
                     rules[rule][P] = (decorated_arguments_P, new_el)
                     tmp_stack = decorated_arguments_P + stack
                     if tmp_stack:
-                        list_to_be_treated.append(
-                            (tmp_stack[0], new_el, tmp_stack[1:]))
+                        list_to_be_treated.append((tmp_stack[0], new_el, tmp_stack[1:]))
 
     return TTCFG((return_type, init[0], init[1]), rules)

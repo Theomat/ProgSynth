@@ -50,6 +50,22 @@ def test_depth_constraint() -> None:
         ), f"Program depth:{res.depth()} should NOT be in the TTCFG max_depth:{max_depth}"
 
 
+def test_size_constraint() -> None:
+    dsl = DSL(syntax)
+    for max_size in [3, 7, 11]:
+        cfg = TTCFG.size_constraint(dsl, FunctionType(INT, INT), max_size)
+        depth1 = dsl.parse_program("(+ 1 var0)", FunctionType(INT, INT))
+        res = depth1
+        while res.length() <= max_size:
+            assert (
+                res in cfg
+            ), f"Program size:{res.length()} should be in the TTCFG max_size:{max_size}"
+            res = dsl.parse_program(f"(+ {res} var0)", FunctionType(INT, INT))
+        assert (
+            res not in cfg
+        ), f"Program size:{res.length()} should NOT be in the TTCFG max_size:{max_size}"
+
+
 def test_at_most() -> None:
     dsl = DSL(syntax)
     for max_occ in [3, 7, 11]:
