@@ -21,7 +21,7 @@ U = TypeVar("U")
 
 class TTCFG(Generic[T]):
     """
-    Represents an unambiguous, possibly non deterministic Tree Traversing CFG (TTPFG).
+    Represents a deterministic Tree Traversing CFG (TTCFG).
     """
 
     def __init__(
