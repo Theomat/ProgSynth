@@ -17,21 +17,22 @@ from synth.syntax.type_system import Arrow, Type
 
 T = TypeVar("T")
 U = TypeVar("U")
+S = TypeVar("S")
+V = TypeVar("V")
 
 
-class TTCFG(Generic[T]):
+class TTCFG(Generic[S, T]):
     """
     Represents a deterministic Tree Traversing CFG (TTCFG).
     """
 
     def __init__(
         self,
-        start: Tuple[Type, str, T],
+        start: Tuple[Type, S, T],
         rules: Dict[
-            Tuple[Type, str, T],
-            Dict[
-                Union[Primitive, Variable, Constant], Tuple[List[Tuple[Type, str]], T]
-            ],
+            Tuple[Type, S, T],
+            Dict[Union[Primitive, Variable, Constant],
+                 Tuple[List[Tuple[Type, S]], T]],
         ],
         clean: bool = False,
     ):
@@ -86,20 +87,20 @@ class TTCFG(Generic[T]):
     def __repr__(self) -> str:
         return self.__str__()
 
-    def __mul__(self, other: "TTCFG[U]") -> "TTCFG[Tuple[T, U]]":
+    def __mul__(self, other: "TTCFG[U, V]") -> "TTCFG[Tuple[S, U], Tuple[T, V]]":
         assert (
             self.type_request == other.type_request
-        ), "BOth TTCFGs do not have the same type request!"
+        ), "Both TTCFGs do not have the same type request!"
         rules: Dict[
-            Tuple[Type, str, Tuple[T, U]],
+            Tuple[Type, Tuple[S, U], Tuple[T, V]],
             Dict[
                 Union[Primitive, Variable, Constant],
-                Tuple[List[Tuple[Type, str]], Tuple[T, U]],
+                Tuple[List[Tuple[Type, Tuple[S, U]]], Tuple[T, V]],
             ],
         ] = {}
-        start: Tuple[Type, str, Tuple[T, U]] = (
+        start: Tuple[Type, Tuple[S, U], Tuple[T, V]] = (
             self.start[0],
-            f"{self.start[1]} x {other.start[1]}",
+            (self.start[1], other.start[1]),
             (self.start[2], other.start[2]),
         )
         for nT1 in self.rules:
@@ -107,14 +108,14 @@ class TTCFG(Generic[T]):
                 # check type equality
                 if nT1[0] != nT2[0]:
                     continue
-                rule = (nT1[0], f"{nT1[1]} x {nT2[1]}", (nT1[2], nT2[2]))
+                rule = (nT1[0], (nT1[1], nT2[1]), (nT1[2], nT2[2]))
                 rules[rule] = {}
                 for P1 in self.rules[nT1]:
                     for P2 in other.rules[nT2]:
                         if P1 != P2:
                             continue
                         new_deriv = [
-                            (el1[0], f"{el1[1]} x {el2[1]}")
+                            (el1[0], (el1[1], el2[1]))
                             for el1, el2 in zip(
                                 self.rules[nT1][P1][0], other.rules[nT2][P1][0]
                             )
@@ -134,7 +135,7 @@ class TTCFG(Generic[T]):
 
         # Compute the list of reachable
         list_to_be_treated: Deque[
-            Tuple[Tuple[Type, str, T], List[Tuple[Type, str]]]
+            Tuple[Tuple[Type, S, T], List[Tuple[Type, S]]]
         ] = deque()
         list_to_be_treated.append((self.start, []))
         while list_to_be_treated:
@@ -159,7 +160,7 @@ class TTCFG(Generic[T]):
                 del self.rules[rule]
 
     def __parse__(
-        self, P: Program, S: Optional[Tuple[Type, str, T]] = None
+        self, P: Program, S: Optional[Tuple[Type, S, T]] = None
     ) -> Optional[T]:
         S = S or self.start
         if S not in self.rules:
@@ -183,7 +184,7 @@ class TTCFG(Generic[T]):
             return self.rules[S].get(P, (None, None))[1]
         return None
 
-    def __contains__(self, P: Program, S: Optional[Tuple[Type, str, T]] = None) -> bool:
+    def __contains__(self, P: Program, S: Optional[Tuple[Type, S, T]] = None) -> bool:
         return self.__parse__(P, S) is not None
 
     @classmethod
@@ -193,7 +194,7 @@ class TTCFG(Generic[T]):
         type_request: Type,
         max_depth: int,
         min_variable_depth: int = 1,
-    ) -> "TTCFG[int]":
+    ) -> "TTCFG[str, int]":
         """
         Constructs a TT CFG from a DSL imposing the maximum program depth.
 
@@ -214,7 +215,13 @@ class TTCFG(Generic[T]):
                 return True, depth
             return depth + 1 <= max_depth, depth + 1
 
-        return __saturation_build__(dsl, type_request, 1, __transition__)
+        return __saturation_build__(
+            dsl,
+            type_request,
+            ("start", 1),
+            __transition__,
+            lambda _, P, i, __: f"{P} arg n°{i}",
+        )
 
     @classmethod
     def at_most_k(
@@ -223,7 +230,7 @@ class TTCFG(Generic[T]):
         type_request: Type,
         primitive: str,
         k: int,
-    ) -> "TTCFG[int]":
+    ) -> "TTCFG[str, int]":
         """
         Constructs a TT CFG from a DSL imposing at most k occurences of a certain primitive.
         """
@@ -237,20 +244,30 @@ class TTCFG(Generic[T]):
                 return True, occ_left
             return occ_left > 0, occ_left - 1
 
-        return __saturation_build__(dsl, type_request, k, __transition__)
+        return __saturation_build__(
+            dsl,
+            type_request,
+            ("start", k),
+            __transition__,
+            lambda _, P, i, __: f"{P} arg n°{i}",
+        )
 
 
 def __saturation_build__(
     dsl: DSL,
     type_request: Type,
-    init: T,
+    init: Tuple[S, T],
     transition: Callable[
-        [Tuple[Type, str, T], Union[Primitive, Variable, Constant]], Tuple[bool, T]
+        [Tuple[Type, S, T], Union[Primitive, Variable, Constant]], Tuple[bool, T]
     ],
-) -> "TTCFG[T]":
+    get_non_terminal: Callable[
+        [Tuple[Type, S, T], Union[Primitive, Variable, Constant], int, Type], S
+    ],
+) -> "TTCFG[S, T]":
     rules: Dict[
-        Tuple[Type, str, T],
-        Dict[Union[Primitive, Variable, Constant], Tuple[List[Tuple[Type, str]], T]],
+        Tuple[Type, S, T],
+        Dict[Union[Primitive, Variable, Constant],
+             Tuple[List[Tuple[Type, S]], T]],
     ] = {}
 
     if isinstance(type_request, Arrow):
@@ -260,10 +277,9 @@ def __saturation_build__(
         return_type = type_request
         args = []
 
-    list_to_be_treated: Deque[
-        Tuple[Tuple[Type, str], T, List[Tuple[Type, str]]]
-    ] = deque()
-    list_to_be_treated.append(((return_type, "start"), init, []))
+    list_to_be_treated: Deque[Tuple[Tuple[Type, S],
+                                    T, List[Tuple[Type, S]]]] = deque()
+    list_to_be_treated.append(((return_type, init[0]), init[1], []))
 
     while list_to_be_treated:
         (current_type, non_terminal), current, stack = list_to_be_treated.pop()
@@ -281,7 +297,8 @@ def __saturation_build__(
                 if can_add:
                     rules[rule][var] = ([], new_el)
                     if stack:
-                        list_to_be_treated.append((stack[0], new_el, stack[1:]))
+                        list_to_be_treated.append(
+                            (stack[0], new_el, stack[1:]))
         # DSL Primitives
         for P in dsl.list_primitives:
             type_P = P.type
@@ -290,11 +307,13 @@ def __saturation_build__(
                 can_add, new_el = transition(rule, P)
                 if can_add:
                     decorated_arguments_P = [
-                        (arg, f"{P} arg n°{i}") for i, arg in enumerate(arguments_P)
+                        (arg, get_non_terminal(rule, P, i, arg))
+                        for i, arg in enumerate(arguments_P)
                     ]
                     rules[rule][P] = (decorated_arguments_P, new_el)
                     tmp_stack = decorated_arguments_P + stack
                     if tmp_stack:
-                        list_to_be_treated.append((tmp_stack[0], new_el, tmp_stack[1:]))
+                        list_to_be_treated.append(
+                            (tmp_stack[0], new_el, tmp_stack[1:]))
 
-    return TTCFG((return_type, "start", init), rules)
+    return TTCFG((return_type, init[0], init[1]), rules)
