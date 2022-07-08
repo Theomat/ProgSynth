@@ -286,7 +286,7 @@ def enumerative_search(
 ) -> None:
 
     start = len(trace)
-    pbar = tqdm.tqdm(total=len(pcfgs) - start, desc="Tasks")
+    pbar = tqdm.tqdm(total=len(pcfgs) - start, desc="Tasks", smoothing=0)
     for task, pcfg in zip(dataset.tasks[start:], pcfgs[start:]):
         trace.append(method(evaluator, task, pcfg, custom_enumerate))
         pbar.update(1)
