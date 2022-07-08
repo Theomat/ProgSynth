@@ -4,7 +4,6 @@ Module that contains anything relevant to neural networks
 from synth.nn.pcfg_predictor import (
     BigramsPredictorLayer,
     PrimitivePredictorLayer,
-    loss_negative_log_prob,
 )
 from synth.nn.utils import (
     AutoPack,
