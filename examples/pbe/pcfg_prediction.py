@@ -209,8 +209,8 @@ class MyPredictor(nn.Module):
 
     def forward(self, x: List[Task[PBE]]) -> Tensor:
         seq: PackedSequence = self.packer(x)
-        y0, _ = self.rnn(seq)
-        y = y0.data
+        _, (y, _) = self.rnn(seq)
+        y: Tensor = y.squeeze(0)
         return self.bigram_layer(self.end(y))
 
 
