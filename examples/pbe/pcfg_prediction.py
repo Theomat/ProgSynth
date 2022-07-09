@@ -17,7 +17,6 @@ import numpy as np
 from synth import Dataset, PBE, Task
 from synth.nn import (
     BigramsPredictorLayer,
-    loss_negative_log_prob,
     Task2Tensor,
     print_model_summary,
 )
@@ -234,8 +233,8 @@ class MyPredictor(nn.Module):
 
     def forward(self, x: List[Task[PBE]]) -> Tensor:
         seq: PackedSequence = self.packer(x)
-        y0, _ = self.rnn(seq)
-        y = y0.data
+        _, (y, _) = self.rnn(seq)
+        y: Tensor = y.squeeze(0)
         return self.bigram_layer(self.end(y))
 
 
@@ -270,28 +269,31 @@ def do_batch(iter_number: int) -> None:
         writer.add_scalar("program/length", mean_length, iter_number)
     with chrono.clock("train.do_batch.inference"):
         batch_outputs: Tensor = predictor(batch)
-    with chrono.clock("train.do_batch.tensor2pcfg"):
-        batch_log_pcfg = [
-            predictor.bigram_layer.tensor2pcfg(batch_outputs[i], task.type_request)
-            for i, task in enumerate(batch)
-        ]
+    # with chrono.clock("train.do_batch.tensor2pcfg"):
+    #     batch_log_pcfg = [
+    #         predictor.bigram_layer.tensor2pcfg(batch_outputs[i], task.type_request)
+    #         for i, task in enumerate(batch)
+    #     ]
     # Gradient descent
     with chrono.clock("train.do_batch.loss"):
         optim.zero_grad()
         with chrono.clock("train.do_batch.loss.compute"):
-            loss = loss_negative_log_prob(batch_programs, batch_log_pcfg)
+            loss = predictor.bigram_layer.loss_cross_entropy(
+                batch_programs, batch_outputs
+            )
+            # loss = predictor.bigram_layer.loss_negative_log_prob(batch_programs, batch_log_pcfg)
         with chrono.clock("train.do_batch.loss.backprop"):
             loss.backward()
             optim.step()
     # Logging
     writer.add_scalar("train/loss", loss.item(), iter_number)
-    with torch.no_grad():
-        loss = loss_negative_log_prob(
-            batch_programs, batch_log_pcfg, length_normed=False
-        )
-        writer.add_scalar(
-            "train/program_probability", np.exp(-loss.item()), iter_number
-        )
+    # with torch.no_grad():
+    #     loss = loss_negative_log_prob(
+    #         batch_programs, batch_log_pcfg, length_normed=False
+    #     )
+    #     writer.add_scalar(
+    #         "train/program_probability", np.exp(-loss.item()), iter_number
+    #     )
 
 
 def do_epoch(j: int) -> int:

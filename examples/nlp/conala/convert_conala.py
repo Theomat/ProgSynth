@@ -24,9 +24,15 @@ from synth.syntax import (
 )
 
 from conala import dsl, evaluator
-from synth.syntax.type_system import UnknownType
+from synth.syntax.type_system import STRING, PolymorphicType, UnknownType
 
 VAR = re.compile("'([^' ]*)'")
+
+KNOWN_TYPES = {
+    "string": STRING,
+    "list": List(PolymorphicType("any")),
+    "integer": INT,
+}
 
 
 @dataclass
@@ -35,6 +41,18 @@ class ParseContext:
     variables: Dict[str, Tuple[int, Type]] = field(default_factory=lambda: {})
     modules: Set[str] = field(default_factory=set)
     rest: Set[str] = field(default_factory=set)
+
+    def variable_by_no(self, no: int) -> Optional[Tuple[str, Type]]:
+        for name, (varno, t) in self.variables.items():
+            if varno == no:
+                return name, t
+
+
+def try_parse_variable(value: str, ctx: ParseContext) -> Optional[Variable]:
+    if value in ctx.variables:
+        (varno, var_type) = ctx.variables[value]
+        return Variable(varno, var_type)
+    return None
 
 
 def build_program(node: ast.AST, ctx: ParseContext) -> Program:
@@ -60,13 +78,11 @@ def build_program(node: ast.AST, ctx: ParseContext) -> Program:
             raise ValueError
         return Function(func, args)
     elif isinstance(node, ast.Name):
+        # This is basically module names and variables
         assert isinstance(node.ctx, ast.Load)
         value = str(node.id)
-        if value in ctx.variables:
-            (varno, _) = ctx.variables[value]
-            ctx.variables[value] = (varno, guess_type(node.value))
-            return Variable(ctx.variables[value][0], ctx.variables[value][1])
-        return Primitive(node.id, INT)
+        var_prog = try_parse_variable(value, ctx)
+        return var_prog if var_prog else Primitive(node.id, INT)
     elif isinstance(node, ast.Attribute):
         assert isinstance(node.ctx, ast.Load)
         object = build_program(node.value, ctx)
@@ -75,26 +91,32 @@ def build_program(node: ast.AST, ctx: ParseContext) -> Program:
             spec = importlib.util.find_spec(object.primitive)
             if spec is not None:
                 ctx.modules.add(object.primitive)
+                return Primitive(object.primitive + "." + node.attr, INT)
             else:
                 ctx.rest.add(object.primitive)
-            object.type = FunctionType(INT, INT)
-            return Function(object, [Primitive(node.attr, INT)])
+                object.type = FunctionType(INT, INT)
+                return Function(object, [Primitive(node.attr, INT)])
+        elif isinstance(object, Variable):
+            res = ctx.variable_by_no(object.variable)
+            assert res is not None
+            _, vartype = res
+            return Function(
+                Primitive(f"{vartype}.{node.attr}", Arrow(object.type, INT)), [object]
+            )
         return Function(Primitive(node.attr, Arrow(object.type, INT)), [object])
     elif isinstance(node, ast.Expr):
-        # print("expression:", node.value)
         return build_program(node.value, ctx)
     elif isinstance(node, ast.Constant):
         value = str(node.value)
-        if value in ctx.variables:
-            (varno, _) = ctx.variables[value]
-            ctx.variables[value] = (varno, guess_type(node.value))
-            out = Variable(ctx.variables[value][0], ctx.variables[value][1])
-        else:
+        var_prog = try_parse_variable(value, ctx)
+        if var_prog is None:
             # out = Variable(ctx.varno, guess_type(node.value))
             # ctx.variables[node.value] = ctx.varno
             # ctx.varno += 1
             out = Primitive(node.value, guess_type(node.value))
-        return out
+            assert False
+        else:
+            return var_prog
     elif isinstance(node, ast.List) or isinstance(node, ast.Tuple):
         elements = [build_program(el, ctx) for el in node.elts]
         if not all(isinstance(el, Primitive) for el in elements):
@@ -140,36 +162,48 @@ def extract_variables(intent: str) -> Tuple[str, Dict[str, Tuple[int, Type]]]:
     variables = {}
     for var in re.finditer(VAR, intent):
         content = var.group(1).encode().decode("unicode_escape")
+
+        start_pos = var.start() - 1
+        word_before = intent[intent.rfind(" ", 0, start_pos) + 1 : start_pos]
+        var_type = KNOWN_TYPES.get(word_before, UnknownType())
         varno = len(variables)
-        variables[content] = (varno, UnknownType())
+        variables[content] = (varno, var_type)
         intent = intent.replace(var.group(0), f"var{varno}")
     return intent, variables
 
 
 def try_convert_task(task: Dict[str, str], tasks: TList[Task[NLP]]) -> None:
     intent = task["intent"]
-    if task["rewritten_intent"] is not None:
-        intent = task["rewritten_intent"].replace("`", "'").replace('"', "'")
+    if task["rewritten_intent"] is None:
+        return
+    intent = task["rewritten_intent"].replace("`", "'").replace('"', "'")
     metadata = {"question_id": int(task["question_id"])}
     snippet: str = task["snippet"]
-    intent, variables = extract_variables(intent)
+    try:
+        intent, variables = extract_variables(intent)
+    except UnicodeDecodeError:
+        return
     if len(tasks) > 0 and tasks[-1].specification.intent == intent:
         return
     out = try_parse_snippet(snippet, variables)
-    if out:
+    if out and len(out[1].rest) == 0:
         solution, ctx = out
         vars = list(variables.values())
         vars.sort(key=lambda x: x[0])
-        type_request = FunctionType(*[var for var in vars], INT)
+        if any(isinstance(var[1], UnknownType) for var in vars):
+            return
+        type_request = FunctionType(*[var[1] for var in vars], INT)
+        print("OG Description=", task["rewritten_intent"])
         print("Description=", intent)
-        # print("Variables=", ctx.variables)
-        # print("Type=", solution.type)
-        print("Modules=", ctx.modules)
-        print("Rest=", ctx.rest)
+        print("TR=", type_request)
+        print("Variables=", ctx.variables)
+        print("Type=", solution.type)
+        # print("Modules=", ctx.modules)
+        # print("Rest=", ctx.rest)
         print("Solution=", solution)
         print("Original=", task["snippet"])
-        tasks.append(Task(solution.type, NLP(intent), solution, metadata))
         print()
+        tasks.append(Task(solution.type, NLP(intent), solution, metadata))
     # else:
     # print("FAILED:", intent)
 
@@ -178,12 +212,24 @@ def convert_conala(file: str) -> None:
     filename: str = Path(file).stem
     output_file = f"./{filename}.pickle"
 
+    # 1st task processing
+    # Crude parsing of programs
     tasks: List[Task[NLP]] = []
     with open(file) as fd:
         data = json.load(fd)
         for task in tqdm.tqdm(data):
             try_convert_task(task, tasks)
 
+    # 2nd task processing
+    # Remove constants out
+    primitives = set()
+    for task in tasks:
+        sol = task.solution
+        assert sol is not None
+        for P in sol.depth_first_iter():
+            if isinstance(P, Primitive):
+                primitives.add(P.primitive)
+    print("Primitives:", primitives)
     dataset = Dataset(tasks)
     dataset.save(output_file)
     print(

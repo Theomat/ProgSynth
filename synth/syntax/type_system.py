@@ -223,10 +223,7 @@ class List(Type):
         return List, (o.element_type,)  # type: ignore
 
     def __str__(self) -> str:
-        if isinstance(self.element_type, Arrow):
-            return "list{}".format(self.element_type)
-        else:
-            return "list({})".format(self.element_type)
+        return "list({})".format(self.element_type)
 
     def __contains__(self, t: Type) -> bool:
         return super().__contains__(t) or t in self.element_type
@@ -306,16 +303,23 @@ def guess_type(element: Any) -> Type:
     Guess the type of the given element.
     Does not work for Arrow and Polymorphic Types.
     """
-    if isinstance(element, TList):
+    if isinstance(element, (TList, Tuple)):  # type: ignore
         if len(element) == 0:
             return EmptyList
-        return List(guess_type(element[0]))
+        current: Type = UnknownType()
+        i = 0
+        while i < len(element) and isinstance(current, UnknownType):
+            current = guess_type(element[i])
+            i += 1
+        return List(current)
     if isinstance(element, bool):
         return BOOL
     elif isinstance(element, int):
         return INT
     elif isinstance(element, str):
         return STRING
+    elif element is None:
+        return UNIT
     return UnknownType()
 
 

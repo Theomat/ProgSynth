@@ -1,4 +1,15 @@
-from typing import Any, Callable, Dict, Iterable, List, Set, Tuple, Optional, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Literal,
+    Set,
+    Tuple,
+    Optional,
+    Union,
+)
 
 import numpy as np
 
@@ -126,7 +137,7 @@ class BigramsPredictorLayer(nn.Module):
                         self.all_pairs[key].add(P)
 
         output_size = sum(len(self.all_pairs[S]) for S in self.all_pairs)
-
+        self.output_size = output_size
         self.s2index: Dict[
             Optional[Tuple[Union[Primitive, Variable], int]],
             Tuple[int, int, Dict[Primitive, int]],
@@ -153,13 +164,7 @@ class BigramsPredictorLayer(nn.Module):
         returns: (batch_size, self.number_of_parents, self.maximum_arguments, self.number_of_primitives)
         """
         y: Tensor = self.log_probs_predictor(x)
-        z = torch.ones_like(y)
-        for _, (start, length, _) in self.s2index.items():
-            z[:, start : start + length] = F.log_softmax(
-                y[:, start : start + length], dim=-1
-            )
-
-        return z
+        return y
 
     def tensor2pcfg(
         self,
@@ -177,6 +182,7 @@ class BigramsPredictorLayer(nn.Module):
 
         """
         device = x.device
+        self.__normalize__(x, x)
         cfg = self.cfg_dictionary[type_request]
         rules: LogPRules = {}
         for S in cfg.rules:
@@ -236,6 +242,82 @@ class BigramsPredictorLayer(nn.Module):
                     rules[S][O] = rules[S][O][0], rules[S][O][1] + to_add
         grammar = ConcreteLogPCFG(cfg.start, rules, cfg.max_program_depth, type_request)
         return grammar
+
+    def encode(
+        self, program: Program, device: Union[torch.device, str, Literal[None]] = None
+    ) -> Tensor:
+        out: Tensor = torch.zeros((self.output_size), device=device)
+        self.__encode__(program, out)
+
+        return out
+
+    def __normalize__(self, src: Tensor, dst: Tensor) -> None:
+        # Normalize
+        if len(dst.shape) == 1:
+            for _, (start, length, _) in self.s2index.items():
+                dst[start : start + length] = F.log_softmax(
+                    src[start : start + length], dim=-1
+                )
+
+        else:
+            for _, (start, length, _) in self.s2index.items():
+                dst[:, start : start + length] = F.log_softmax(
+                    src[:, start : start + length], dim=-1
+                )
+
+    def __encode__(
+        self,
+        program: Program,
+        tensor: Tensor,
+        parent: Optional[Primitive] = None,
+        argno: int = 0,
+    ) -> None:
+        S = None if parent is None else (parent, argno)
+        start, _, symbol2index = self.s2index[S]
+        if isinstance(program, Function):
+            F = program.function
+            assert isinstance(F, Primitive)
+            tensor[start + symbol2index[F]] = 1
+            for argno, arg in enumerate(program.arguments):
+                self.__encode__(arg, tensor, F, argno)
+        elif isinstance(program, Primitive):
+            tensor[start + symbol2index[program]] = 1
+
+    def loss_cross_entropy(
+        self,
+        programs: Iterable[Program],
+        batch_outputs: Tensor,
+        reduce: Optional[Callable[[Tensor], Tensor]] = torch.mean,
+    ) -> Tensor:
+        target = torch.stack(
+            [self.encode(prog, device=batch_outputs.device) for prog in programs]
+        ).to(device=batch_outputs.device)
+        # Since we already do LogSoftmax we only have to do NNL to get cross entropy
+        out = F.cross_entropy(batch_outputs, target)
+        if reduce:
+            out = reduce(out)
+        return out
+
+    def loss_negative_log_prob(
+        self,
+        programs: Iterable[Program],
+        log_pcfgs: Iterable[ConcreteLogPCFG],
+        reduce: Optional[Callable[[Tensor], Tensor]] = torch.mean,
+        length_normed: bool = True,
+    ) -> Tensor:
+        if length_normed:
+            log_prob_list = [
+                log_pcfg.log_probability(p) / p.length()
+                for p, log_pcfg in zip(programs, log_pcfgs)
+            ]
+        else:
+            log_prob_list = [
+                log_pcfg.log_probability(p) for p, log_pcfg in zip(programs, log_pcfgs)
+            ]
+        out = -torch.stack(log_prob_list)
+        if reduce:
+            out = reduce(out)
+        return out
 
 
 class PrimitivePredictorLayer(nn.Module):
@@ -369,24 +451,3 @@ class PrimitivePredictorLayer(nn.Module):
         if reduce:
             out = reduce(out)
         return out
-
-
-def loss_negative_log_prob(
-    programs: Iterable[Program],
-    log_pcfgs: Iterable[ConcreteLogPCFG],
-    reduce: Optional[Callable[[Tensor], Tensor]] = torch.mean,
-    length_normed: bool = True,
-) -> Tensor:
-    if length_normed:
-        log_prob_list = [
-            log_pcfg.log_probability(p) / p.length()
-            for p, log_pcfg in zip(programs, log_pcfgs)
-        ]
-    else:
-        log_prob_list = [
-            log_pcfg.log_probability(p) for p, log_pcfg in zip(programs, log_pcfgs)
-        ]
-    out = -torch.stack(log_prob_list)
-    if reduce:
-        out = reduce(out)
-    return out
