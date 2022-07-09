@@ -17,6 +17,8 @@ from synth import Dataset, PBE, Task
 from synth.nn import BigramsPredictorLayer, Task2Tensor, free_pytorch_memory
 from synth.pbe import IOEncoder
 from synth.semantic import DSLEvaluator
+from synth.semantic.evaluator import DSLEvaluatorWithConstant
+from synth.specification import PBEWithConstants
 from synth.syntax import (
     ConcreteCFG,
     ConcretePCFG,
@@ -31,7 +33,9 @@ from synth.utils import chrono
 
 DREAMCODER = "dreamcoder"
 DEEPCODER = "deepcoder"
+REGEXP = "regexp"
 CALCULATOR = "calculator"
+TRANSDUCTION = "transduction"
 
 import argparse
 
@@ -58,7 +62,7 @@ parser.add_argument(
     "--dsl",
     type=str,
     default=DEEPCODER,
-    choices=[DEEPCODER, DREAMCODER, CALCULATOR],
+    choices=[DEEPCODER, DREAMCODER, REGEXP, CALCULATOR, TRANSDUCTION],
     help="dsl (default: deepcoder)",
 )
 parser.add_argument(
@@ -144,13 +148,19 @@ dataset_name = dataset_file[start_index : dataset_file.index(".", start_index)]
 # ================================
 
 
-def load_dataset() -> Tuple[Dataset[PBE], DSL, DSLEvaluator, List[int], str]:
+def load_dataset() -> Tuple[
+    Dataset[PBE], DSL, DSLEvaluatorWithConstant, List[int], str
+]:
     if dsl_name == DEEPCODER:
         from deepcoder.deepcoder import dsl, evaluator, lexicon
     elif dsl_name == DREAMCODER:
         from dreamcoder.dreamcoder import dsl, evaluator, lexicon
+    elif dsl_name == REGEXP:
+        from regexp.regexp import dsl, evaluator, lexicon
     elif dsl_name == CALCULATOR:
         from calculator.calculator import dsl, evaluator, lexicon
+    elif dsl_name == TRANSDUCTION:
+        from transduction.transduction import dsl, evaluator, lexicon
     else:
         print("Unknown dsl:", dsl_name, file=sys.stderr)
         sys.exit(0)
@@ -213,13 +223,14 @@ def produce_pcfgs(
     if all(task.solution is not None for task in full_dataset):
         max_depth = max(task.solution.depth() for task in full_dataset)
     else:
-        max_depth = 5  # TODO: set as parameter
+        max_depth = 10  # TODO: set as parameter
     cfgs = [ConcreteCFG.from_dsl(dsl, t, max_depth) for t in all_type_requests]
 
     class MyPredictor(nn.Module):
         def __init__(self, size: int) -> None:
             super().__init__()
             self.bigram_layer = BigramsPredictorLayer(size, cfgs, variable_probability)
+
             encoder = IOEncoder(encoding_dimension, lexicon)
             self.packer = Task2Tensor(
                 encoder, nn.Embedding(len(encoder.lexicon), size), size, device=device
@@ -275,11 +286,11 @@ def produce_pcfgs(
 # Enumeration methods =====================================================
 def enumerative_search(
     dataset: Dataset[PBE],
-    evaluator: DSLEvaluator,
+    evaluator: DSLEvaluatorWithConstant,
     pcfgs: List[ConcretePCFG],
     trace: List[Tuple[bool, float]],
     method: Callable[
-        [DSLEvaluator, Task[PBE], ConcretePCFG],
+        [DSLEvaluatorWithConstant, Task[PBE], ConcretePCFG],
         Tuple[bool, float, int, Optional[Program]],
     ],
     custom_enumerate: Callable[[ConcretePCFG], HSEnumerator],
@@ -290,7 +301,8 @@ def enumerative_search(
     for task, pcfg in zip(dataset.tasks[start:], pcfgs[start:]):
         trace.append(method(evaluator, task, pcfg, custom_enumerate))
         pbar.update(1)
-        evaluator.clear_cache()
+        # print("Cache hit:", evaluator.cache_hit_rate)
+        # print("Programs tried:", trace[len(trace) - 1][2])
     pbar.close()
 
 
@@ -307,7 +319,7 @@ def base(
         for program in custom_enumerate(pcfg):
             time = c.elapsed_time()
             if time >= task_timeout:
-                return (False, time, programs, None)
+                return (False, time, programs, None, None)
             programs += 1
             failed = False
             for ex in task.specification.examples:
@@ -315,16 +327,92 @@ def base(
                     failed = True
                     break
             if not failed:
-                return (True, c.elapsed_time(), programs, program)
+                return (
+                    True,
+                    c.elapsed_time(),
+                    programs,
+                    program,
+                    pcfg.probability(program),
+                )
+    return (False, time, programs, None, None)
 
-    return (False, time, programs, None)
+
+def constants_injector(
+    evaluator: DSLEvaluatorWithConstant,
+    task: Task[PBEWithConstants],
+    pcfg: ConcretePCFG,
+    custom_enumerate: Callable[[ConcretePCFG], HSEnumerator],
+) -> Tuple[bool, float, int, Optional[Program]]:
+    time = 0.0
+    programs = 0
+    constants_in = task.specification.constants_in
+    if len(constants_in) == 0:
+        constants_in.append("")
+    constants_out = task.specification.constants_out
+    if len(constants_out) == 0:
+        constants_out.append("")
+    name = task.metadata["name"]
+    program = task.solution
+    if program == None:
+        return (False, time, programs, None, None)
+    with chrono.clock("search.constant_injector") as c:
+
+        # print("\n-----------------------")
+        # print(name)
+        for program in custom_enumerate(pcfg):
+            time = c.elapsed_time()
+            if time >= task_timeout:
+                # print("TIMEOUT\n\n")
+                return (False, time, programs, None, None)
+            programs += 1
+            found = False
+            counter = 0
+            for ex in task.specification.examples:
+                found = False
+                for cons_in in constants_in:
+                    for cons_out in constants_out:
+                        if (
+                            evaluator.eval_with_constant(
+                                program, ex.inputs, cons_in, cons_out
+                            )
+                            == ex.output
+                        ):
+                            found = True
+                            counter += 1
+                            break
+                    if found:
+                        break
+                if not found:
+                    break
+            if found:
+                # print("Solution found.\n")
+                # print("\t", program)
+                # print(
+                #    "\nWorking for all ",
+                #    counter,
+                #    "/",
+                #    len(task.specification.examples),
+                #    " examples in ",
+                #    time,
+                #    "/",
+                #    task_timeout,
+                #    "s.",
+                # )
+                return (
+                    True,
+                    c.elapsed_time(),
+                    programs,
+                    program,
+                    pcfg.probability(program),
+                )
+    return (False, time, programs, None, None)
 
 
 # Main ====================================================================
 
 if __name__ == "__main__":
     methods = [
-        ("base", base),
+        ("constants_injector", constants_injector),
     ]
 
     full_dataset, dsl, evaluator, lexicon, model_name = load_dataset()
@@ -356,15 +444,22 @@ if __name__ == "__main__":
                 enumerative_search(
                     full_dataset, evaluator, pcfgs, trace, method, custom_enumerate
                 )
-            except:
+            except Exception as e:
+                print(e)
                 should_exit = True
             with open(file, "w") as fd:
                 writer = csv.writer(fd)
                 writer.writerow(
-                    ["Solved", "Time (in s)", "Programs Generated", "Solution found"]
+                    [
+                        "Solved",
+                        "Time (in s)",
+                        "Programs Generated",
+                        "Solution found",
+                        "Program probability",
+                    ]
                 )
                 writer.writerows(trace)
-
+            print("csv file is saved.")
             if should_exit:
                 break
 
@@ -395,7 +490,6 @@ if __name__ == "__main__":
             continue
         name = name[name.index("_") + 1 :].replace("_", " ")
         trace = []
-
         with open(file, "r") as fd:
             reader = csv.reader(fd)
             trace = [tuple(row) for row in reader]

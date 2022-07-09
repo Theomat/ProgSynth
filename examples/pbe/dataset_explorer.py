@@ -10,7 +10,9 @@ from synth.utils import chrono
 
 DREAMCODER = "dreamcoder"
 DEEPCODER = "deepcoder"
+REGEXP = "regexp"
 CALCULATOR = "calculator"
+TRANSDUCTION = "transduction"
 
 
 import argparse
@@ -21,7 +23,7 @@ parser.add_argument(
     type=str,
     default=DEEPCODER,
     help="dsl (default: deepcoder)",
-    choices=[DEEPCODER, DREAMCODER, CALCULATOR],
+    choices=[DEEPCODER, DREAMCODER, REGEXP, CALCULATOR, TRANSDUCTION],
 )
 parser.add_argument(
     "--dataset",
@@ -36,13 +38,33 @@ dataset_file: str = parameters.dataset.format(dsl_name=dsl_name)
 # ================================
 # Load constants specific to DSL
 # ================================
+def pretty_print_solution(str: str):
+    return str
+
+
+def pretty_print_inputs(str: str):
+    return str
+
+
 if dsl_name == DEEPCODER:
     from deepcoder.deepcoder import dsl, lexicon
 
 elif dsl_name == DREAMCODER:
     from dreamcoder.dreamcoder import dsl, lexicon
+
+elif dsl_name == REGEXP:
+    from regexp.regexp import (
+        dsl,
+        lexicon,
+        pretty_print_solution,
+        pretty_print_inputs,
+    )
 elif dsl_name == CALCULATOR:
     from calculator.calculator import dsl, lexicon
+
+elif dsl_name == TRANSDUCTION:
+    from transduction.transduction import dsl, lexicon
+
 else:
     print(F.LIGHTRED_EX + "Unknown dsl:", dsl_name + F.RESET, file=sys.stderr)
     sys.exit(1)
@@ -128,11 +150,17 @@ def task(*args: str) -> None:
     task: Task[PBE] = full_dataset[task_no]
     print_value(f"Name", task.metadata.get("name", "None"))
     print_value("Type", task.type_request)
-    print_value("Solution", task.solution)
+    print_value("Solution", pretty_print_solution(task.solution))
     print_value("Examples", "")
     for example in task.specification.examples:
         print_value(
-            "\tInput", ", ".join([f"var{i}={x}" for i, x in enumerate(example.inputs)])
+            "\tInput",
+            ", ".join(
+                [
+                    f"var{i}={pretty_print_inputs(x)}"
+                    for i, x in enumerate(example.inputs)
+                ]
+            ),
         )
         print_value("\tOutput", example.output)
         print()

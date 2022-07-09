@@ -40,6 +40,15 @@ class PBE(TaskSpecification):
 
 
 @dataclass
+class PBEWithConstants(PBE):
+    """
+    Programming By Example (PBE) with constants specification
+    """
+
+    constants_in: List[Any]
+    constants_out: List[Any]
+
+
 class NLP(TaskSpecification):
     """
     Natural Language (NLP) specification.

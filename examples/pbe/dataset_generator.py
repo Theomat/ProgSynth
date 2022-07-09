@@ -5,7 +5,9 @@ from synth.utils import chrono, gen_take
 
 DREAMCODER = "dreamcoder"
 DEEPCODER = "deepcoder"
+REGEXP = "regexp"
 CALCULATOR = "calculator"
+TRANSDUCTION = "transduction"
 
 
 import argparse
@@ -18,7 +20,7 @@ parser.add_argument(
     type=str,
     default=DEEPCODER,
     help="dsl (default: deepcoder)",
-    choices=[DEEPCODER, DREAMCODER, CALCULATOR],
+    choices=[DEEPCODER, DREAMCODER, REGEXP, CALCULATOR, TRANSDUCTION],
 )
 parser.add_argument(
     "--dataset",
@@ -55,18 +57,31 @@ max_list_length = None
 if dsl_name == DEEPCODER:
     from synth.pbe import reproduce_dataset
     from deepcoder.deepcoder import dsl, evaluator, lexicon
+    from synth.pbe import reproduce_dataset
 
 elif dsl_name == DREAMCODER:
     from synth.pbe import reproduce_dataset
     from dreamcoder.dreamcoder import dsl, evaluator, lexicon
+    from synth.pbe import reproduce_dataset
 
     max_list_length = 10
+
+elif dsl_name == REGEXP:
+    from regexp.task_generator_regexp import reproduce_dataset
+    from regexp.regexp import dsl, evaluator, lexicon
+
+    # max_list_length = 10
+
 elif dsl_name == CALCULATOR:
     from calculator.calculator_task_generator import reproduce_dataset
     from calculator.calculator import dsl, evaluator, lexicon
+elif dsl_name == TRANSDUCTION:
+    from transduction.transduction_task_generator import reproduce_dataset
+    from transduction.transduction import dsl, evaluator, lexicon
 else:
     print("Unknown dsl:", dsl_name, file=sys.stderr)
     sys.exit(1)
+
 # ================================
 # Load dataset & Task Generator
 # ================================

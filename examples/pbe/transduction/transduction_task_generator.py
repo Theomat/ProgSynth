@@ -1,4 +1,5 @@
-from re import X
+from random import randint
+import re
 from typing import (
     Callable,
     Dict,
@@ -19,7 +20,7 @@ from synth.specification import PBE, Example
 from synth.semantic.evaluator import Evaluator
 from synth.syntax.dsl import DSL
 from synth.syntax.program import Program
-from synth.syntax.type_system import BOOL, INT, Arrow, List, Type, STRING
+from synth.syntax.type_system import Arrow, List, Type, STRING, PrimitiveType
 from synth.syntax.concrete.concrete_cfg import ConcreteCFG
 from synth.syntax.concrete.concrete_pcfg import ConcretePCFG
 from synth.generation.sampler import (
@@ -29,6 +30,7 @@ from synth.generation.sampler import (
     Sampler,
     UnionSampler,
 )
+from examples.pbe.regexp.type_regex import REGEXP
 
 
 class TaskGenerator:
@@ -37,11 +39,10 @@ class TaskGenerator:
         input_generator: Sampler,
         evaluator: Evaluator,
         gen_random_type_request: Sampler[Type],
-        gen_random_sample_number: Sampler[int],
+        gen_random_sample_number: Sampler[str],
         pcfgs: Iterable[ConcretePCFG],
         output_validator: Callable[[Any], bool],
         max_tries: int = 100,
-        uniques: bool = False,
         skip_exceptions: Optional[Set[PythonType]] = None,
     ) -> None:
         self.input_generator = input_generator
@@ -52,8 +53,6 @@ class TaskGenerator:
         self.max_tries = max_tries
         self.output_validator = output_validator
         self.skip_exceptions = skip_exceptions or set()
-        self.uniques = uniques
-        self.seen: Set[Program] = set()
 
         self._failed_types: Set[Type] = set()
         # For statistics
@@ -65,16 +64,11 @@ class TaskGenerator:
             0 if not isinstance(type_request, Arrow) else len(type_request.arguments())
         )
         solution: Program = self.type2pcfg[type_request].sample_program()
-        while solution in self.seen:
-            solution = self.type2pcfg[type_request].sample_program()
         tries: int = 0
         var_used = len(solution.used_variables())
         best = solution
         while var_used < nargs and tries < self.max_tries:
             solution = self.type2pcfg[type_request].sample_program()
-            while solution in self.seen:
-                solution = self.type2pcfg[type_request].sample_program()
-
             tries += 1
             n = len(solution.used_variables())
             if n > var_used:
@@ -116,7 +110,8 @@ class TaskGenerator:
                     continue
                 else:
                     raise e
-            if self.output_validator(output) and output not in outputs:
+            if self.output_validator(output):
+                # print(f"input = {new_input}, output = {output}, solution = {solution}")
                 inputs.append(new_input)
                 outputs.append(output)
                 if len(inputs) >= samples:
@@ -131,8 +126,6 @@ class TaskGenerator:
             return self.generate_task()
         self._failed_types = set()
         self.generated_types[type_request] += 1
-        if self.uniques:
-            self.seen.add(solution)
         return Task(
             type_request,
             PBE([Example(inp, out) for inp, out in zip(inputs, outputs)]),
@@ -146,13 +139,11 @@ class TaskGenerator:
 
 
 def basic_output_validator(
-    int_lexicon: TList[int], max_list_length: int
+    str_lexicon: TList[str], max_list_length: int
 ) -> Callable[[Any], bool]:
     def validate_output(output: Any) -> bool:
-        if isinstance(output, bool):
-            return True
-        elif isinstance(output, int):
-            return output in int_lexicon
+        if isinstance(output, str):
+            return output in str_lexicon
         elif isinstance(output, list):
             return (max_list_length < 0 or len(output) <= max_list_length) and all(
                 validate_output(x) for x in output
@@ -169,8 +160,7 @@ def reproduce_dataset(
     seed: Optional[int] = None,
     uniform_pcfg: bool = True,
     max_tries: int = 100,
-    int_bound: int = 1000,
-    default_max_depth: int = 5,
+    default_max_depth: int = 10,
     max_list_length: Optional[int] = None,
 ) -> Tuple[TaskGenerator, TList[int]]:
 
@@ -182,9 +172,6 @@ def reproduce_dataset(
     no_samples: Dict[Type, Dict[int, int]] = {}
     max_list_depth = [0]
 
-    int_range: TList[int] = [999999999, 0]
-    int_range[1] = -int_range[0]
-
     def analyze(element: Any, type: Type, depth: int = 1) -> None:
         if depth > max_list_depth[0]:
             max_list_depth[0] = depth
@@ -194,9 +181,6 @@ def reproduce_dataset(
                 __multi_discrete_distribution__(list_length, type, len(element))
                 for el in element:
                     analyze(el, elt_type, depth + 1)
-        elif element:
-            int_range[0] = min(int_range[0], max(-int_bound, element))
-            int_range[1] = max(int_range[1], min(int_bound, element))
 
     # Capture all information in one dataset pass
     for task in dataset:
@@ -220,6 +204,7 @@ def reproduce_dataset(
         r = t if not isinstance(t, Arrow) else t.returns()
 
         # Input data analysis
+
         for ex in task.specification.examples:
             for input, ti in zip(ex.inputs, args):
                 analyze(input, ti)
@@ -234,7 +219,6 @@ def reproduce_dataset(
     )
     no_samples_gen = __multi_discrete_to_gen__(no_samples, seed=seed)
 
-    int_lexicon = list(range(int_range[0], int_range[1] + 1))
     if max_depth == -1:
         max_depth = default_max_depth
     if uniform_pcfg:
@@ -250,11 +234,48 @@ def reproduce_dataset(
     for pcfg in pcfgs:
         pcfg.init_sampling(seed)
 
+    str_lexicon = list([chr(i) for i in range(32, 126)])
     input_sampler = ListSampler(
         UnionSampler(
             {
-                INT: LexiconSampler(int_lexicon, seed=seed),
-                BOOL: LexiconSampler([True, False], seed=seed),
+                STRING: LexiconSampler(str_lexicon, seed=seed),
+                REGEXP: LexiconSampler(
+                    [
+                        "_",
+                        ")",
+                        "{",
+                        "+",
+                        ";",
+                        "=",
+                        "$",
+                        "\\",
+                        "^",
+                        ",",
+                        "!",
+                        "*",
+                        "'",
+                        " ",
+                        ">",
+                        "}",
+                        "<",
+                        "[",
+                        '"',
+                        "#",
+                        "|",
+                        "`",
+                        "%",
+                        "?",
+                        ":",
+                        "]",
+                        "&",
+                        "(",
+                        "@",
+                        ".",
+                        "/",
+                        "-",
+                    ],
+                    seed=seed,
+                ),
             }
         ),
         list_length_gen,
@@ -270,7 +291,7 @@ def reproduce_dataset(
             no_samples_gen,
             pcfgs,
             basic_output_validator(
-                int_lexicon,
+                str_lexicon,
                 max_list_length
                 or max(
                     (max(l.keys()) for l in list_length.values()), default=-1
@@ -278,7 +299,7 @@ def reproduce_dataset(
             ),
             max_tries,
         ),
-        int_lexicon,
+        str_lexicon,
     )
 
 

@@ -11,5 +11,14 @@ __pycache__
 # Tensorboard runs
 runs
 
+# venv
+py3
+
 # documentation build
 docs/build
+
+# dataset files
+*.pickle
+
+# csv files
+*.csv
