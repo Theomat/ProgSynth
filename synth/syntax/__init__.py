@@ -23,6 +23,7 @@ from synth.syntax.grammars import (
     UPCFG,
     TTCFG,
     Grammar,
+    DetGrammar,
     enumerate_pcfg,
     enumerate_bucket_pcfg,
     split,
