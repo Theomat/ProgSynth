@@ -6,7 +6,6 @@ import pytest
 
 from synth.nn.pcfg_predictor import (
     BigramsPredictorLayer,
-    loss_negative_log_prob,
 )
 from synth.syntax.grammars.concrete_cfg import ConcreteCFG
 from synth.syntax.dsl import DSL
@@ -124,7 +123,7 @@ def test_varprob(layer_class: BigramsPredictorLayer) -> None:
             for i in range(batch_size)
         ]
         opti.zero_grad()
-        loss = loss_negative_log_prob(programs, pcfgs)
+        loss = layer.loss_negative_log_prob(programs, pcfgs)
         loss.backward()
         opti.step()
 
@@ -155,12 +154,12 @@ def test_learning() -> None:
         y = layer(inputs)
         pcfgs = [layer.tensor2pcfg(y[i], cfg.type_request) for i in range(batch_size)]
         opti.zero_grad()
-        loss = loss_negative_log_prob(programs, pcfgs)
+        loss = layer.loss_negative_log_prob(programs, pcfgs)
         loss.backward()
         opti.step()
 
         with torch.no_grad():
-            logprob = -loss_negative_log_prob(
+            logprob = -layer.loss_negative_log_prob(
                 programs, pcfgs, length_normed=False
             ).item()
             mean_prob.append(np.exp(logprob))
