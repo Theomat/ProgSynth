@@ -1,7 +1,7 @@
-from synth.syntax.concrete.heap_search import enumerate_pcfg
-from synth.syntax.concrete.pcfg_splitter import split
-from synth.syntax.concrete.concrete_cfg import ConcreteCFG
-from synth.syntax.concrete.concrete_pcfg import ConcretePCFG
+from synth.syntax.grammars.heap_search import enumerate_pcfg
+from synth.syntax.grammars.pcfg_splitter import split
+from synth.syntax.grammars.concrete_cfg import ConcreteCFG
+from synth.syntax.grammars.concrete_pcfg import ConcretePCFG
 from synth.syntax.dsl import DSL
 from synth.syntax.type_system import (
     INT,

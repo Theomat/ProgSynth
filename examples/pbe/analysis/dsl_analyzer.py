@@ -5,7 +5,6 @@ import atexit
 import sys
 
 from typing import Tuple, Any, Dict, List
-from tensorboard import program
 from torch import Tensor
 import torch
 import torch.nn as nn
@@ -16,8 +15,7 @@ from synth.specification import PBE
 import math
 from synth.syntax import DSL
 from synth.nn.pcfg_predictor import ConcreteCFG
-from synth.syntax.concrete import concrete_pcfg
-from synth.syntax.concrete.concrete_pcfg import ConcretePCFG
+from synth.syntax.grammars.concrete_pcfg import ConcretePCFG
 from synth.syntax.program import Function, Primitive, Program
 from synth.task import Dataset
 from synth.utils import chrono

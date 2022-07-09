@@ -16,7 +16,7 @@ from synth.syntax.type_system import (
     BOOL,
     STRING,
 )
-from synth.syntax.concrete import (
+from synth.syntax.grammars import (
     NonTerminal,
     ConcreteCFG,
     ConcretePCFG,

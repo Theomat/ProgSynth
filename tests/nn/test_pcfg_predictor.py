@@ -8,7 +8,7 @@ from synth.nn.pcfg_predictor import (
     BigramsPredictorLayer,
     loss_negative_log_prob,
 )
-from synth.syntax.concrete.concrete_cfg import ConcreteCFG
+from synth.syntax.grammars.concrete_cfg import ConcreteCFG
 from synth.syntax.dsl import DSL
 from synth.syntax.program import Function, Primitive, Variable
 from synth.syntax.type_system import (

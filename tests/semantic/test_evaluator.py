@@ -1,5 +1,5 @@
-from synth.syntax.concrete.concrete_cfg import ConcreteCFG
-from synth.syntax.concrete.concrete_pcfg import ConcretePCFG
+from synth.syntax.grammars.concrete_cfg import ConcreteCFG
+from synth.syntax.grammars.concrete_pcfg import ConcretePCFG
 from synth.semantic.evaluator import DSLEvaluator, __tuplify__
 from synth.syntax.dsl import DSL
 from synth.syntax.type_system import (

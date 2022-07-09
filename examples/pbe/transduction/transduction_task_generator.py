@@ -1,5 +1,3 @@
-from random import randint
-import re
 from typing import (
     Callable,
     Dict,
@@ -20,9 +18,9 @@ from synth.specification import PBE, Example
 from synth.semantic.evaluator import Evaluator
 from synth.syntax.dsl import DSL
 from synth.syntax.program import Program
-from synth.syntax.type_system import Arrow, List, Type, STRING, PrimitiveType
-from synth.syntax.concrete.concrete_cfg import ConcreteCFG
-from synth.syntax.concrete.concrete_pcfg import ConcretePCFG
+from synth.syntax.type_system import Arrow, List, Type, STRING
+from synth.syntax.grammars.concrete_cfg import ConcreteCFG
+from synth.syntax.grammars.concrete_pcfg import ConcretePCFG
 from synth.generation.sampler import (
     LexiconSampler,
     ListSampler,

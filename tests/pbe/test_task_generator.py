@@ -1,8 +1,8 @@
 from synth.generation.sampler import LexiconSampler
 from synth.pbe.task_generator import TaskGenerator, basic_output_validator
 from synth.semantic.evaluator import DSLEvaluator
-from synth.syntax.concrete.concrete_cfg import ConcreteCFG
-from synth.syntax.concrete.concrete_pcfg import ConcretePCFG
+from synth.syntax.grammars.concrete_cfg import ConcreteCFG
+from synth.syntax.grammars.concrete_pcfg import ConcretePCFG
 from synth.syntax.dsl import DSL
 from synth.syntax.type_system import (
     INT,

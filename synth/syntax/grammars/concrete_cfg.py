@@ -80,7 +80,7 @@ class ConcreteCFG:
 
     def size(self) -> int:
         total_programs: Dict[NonTerminal, int] = {}
-        for S in reversed(self.rules):
+        for S in sorted(self.rules, key=lambda nt: nt.depth, reverse=True):
             total = 0
             for P in self.rules[S]:
                 args_P = self.rules[S][P]

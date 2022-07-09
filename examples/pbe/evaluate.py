@@ -27,7 +27,7 @@ from synth.syntax import (
     DSL,
     Program,
 )
-from synth.syntax.concrete.heap_search import HSEnumerator
+from synth.syntax.grammars.heap_search import HSEnumerator
 from synth.utils import chrono
 
 

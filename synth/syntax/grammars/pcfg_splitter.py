@@ -5,7 +5,7 @@ import copy
 
 import numpy as np
 
-from synth.syntax.concrete.concrete_pcfg import ConcretePCFG, NonTerminal, PRules
+from synth.syntax.grammars.concrete_pcfg import ConcretePCFG, NonTerminal, PRules
 from synth.syntax.program import Program
 
 

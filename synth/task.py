@@ -17,8 +17,8 @@ import bz2
 from synth.specification import TaskSpecification
 from synth.syntax.program import Program
 from synth.syntax.type_system import Type
-from synth.syntax.concrete.concrete_cfg import ConcreteCFG
-from synth.syntax.concrete.concrete_pcfg import ConcretePCFG
+from synth.syntax.grammars.concrete_cfg import ConcreteCFG
+from synth.syntax.grammars.concrete_pcfg import ConcretePCFG
 
 
 T = TypeVar("T", bound=TaskSpecification)

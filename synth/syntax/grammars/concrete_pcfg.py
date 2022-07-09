@@ -17,8 +17,8 @@ import numpy as np
 
 import vose
 
-from synth.syntax.concrete.concrete_cfg import ConcreteCFG, NonTerminal
-from synth.syntax.concrete.upcfg import UPCFG
+from synth.syntax.grammars.concrete_cfg import ConcreteCFG, NonTerminal
+from synth.syntax.grammars.upcfg import UPCFG
 from synth.syntax.program import Constant, Function, Primitive, Program, Variable
 from synth.syntax.type_system import Arrow
 
