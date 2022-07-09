@@ -26,10 +26,11 @@ def test_from_dsl() -> None:
     for max_depth in [3, 7, 11]:
         cfg = TTCFG.depth_constraint(dsl, FunctionType(INT, INT), max_depth)
         for rule in cfg.rules:
-            assert rule[2] <= max_depth
             for P in cfg.rules[rule]:
                 if isinstance(P, Primitive):
                     assert P.primitive != "non_reachable"
+                    assert P.primitive != "non_productive"
+                    assert P.primitive != "head"
                 else:
                     assert P.type == INT
 
