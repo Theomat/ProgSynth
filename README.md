@@ -65,6 +65,7 @@ ProgSynth can be installed from source with `pip`, `conda` or `poetry`.
 ```bash
 pip install .
 ```
+
 ## Documentation
 
 You might want to generate html pages of the documentation locally, where usage, contribution guidelines and more can be found.
@@ -89,7 +90,10 @@ There are some known issues:
 ## The Team
 
 ProgSynth is a project initiated by [Nathanaël Fijalkow](https://nathanael-fijalkow.github.io/) and joined by [Théo Matricon](https://theomat.github.io/).
-A 4 month internship by [Gaëtan Margueritte](https://github.com/gaetanmargueritte) was realized, leading to the creation of the transduction DSL, documentation and first drafts of code related to the use of user defined constants.
+
+Former:
+
+- [Gaëtan Margueritte](https://github.com/gaetanmargueritte) did a four-month internship. He created the regexp and transduction DSLs, the first tutorial and first drafts of code related to the use of user defined constants.
 
 ## License
 
