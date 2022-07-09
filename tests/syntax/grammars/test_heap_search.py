@@ -3,7 +3,7 @@ from synth.syntax.grammars.heap_search import (
     enumerate_pcfg,
     enumerate_bucket_pcfg,
 )
-from synth.syntax.grammars.concrete_cfg import ConcreteCFG
+from synth.syntax.grammars.cfg import CFG
 from synth.syntax.grammars.concrete_pcfg import ConcretePCFG
 from synth.syntax.dsl import DSL
 from synth.syntax.type_system import (
@@ -28,7 +28,7 @@ syntax = {
 def test_unicity_heapSearch() -> None:
     dsl = DSL(syntax)
     max_depth = 3
-    cfg = ConcreteCFG.from_dsl(dsl, FunctionType(INT, INT), max_depth)
+    cfg = CFG.from_dsl(dsl, FunctionType(INT, INT), max_depth)
     pcfg = ConcretePCFG.uniform(cfg)
     seen = set()
     for program in enumerate_pcfg(pcfg):
@@ -40,7 +40,7 @@ def test_unicity_heapSearch() -> None:
 def test_order_heapSearch() -> None:
     dsl = DSL(syntax)
     max_depth = 3
-    cfg = ConcreteCFG.from_dsl(dsl, FunctionType(INT, INT), max_depth)
+    cfg = CFG.from_dsl(dsl, FunctionType(INT, INT), max_depth)
     pcfg = ConcretePCFG.uniform(cfg)
     last = 1.0
     for program in enumerate_pcfg(pcfg):
@@ -52,7 +52,7 @@ def test_order_heapSearch() -> None:
 def test_unicity_bucketSearch() -> None:
     dsl = DSL(syntax)
     max_depth = 3
-    cfg = ConcreteCFG.from_dsl(dsl, FunctionType(INT, INT), max_depth)
+    cfg = CFG.from_dsl(dsl, FunctionType(INT, INT), max_depth)
     pcfg = ConcretePCFG.uniform(cfg)
     for bucketSize in range(3, 10):
         seen = set()
@@ -65,7 +65,7 @@ def test_unicity_bucketSearch() -> None:
 def test_order_bucketSearch() -> None:
     dsl = DSL(syntax)
     max_depth = 3
-    cfg = ConcreteCFG.from_dsl(dsl, FunctionType(INT, INT), max_depth)
+    cfg = CFG.from_dsl(dsl, FunctionType(INT, INT), max_depth)
     pcfg = ConcretePCFG.uniform(cfg)
     for bucketSize in range(3, 10):
         last = Bucket(bucketSize)

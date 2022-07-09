@@ -1,4 +1,4 @@
-from synth.syntax.grammars.concrete_cfg import ConcreteCFG
+from synth.syntax.grammars.cfg import CFG
 from synth.syntax.dsl import DSL
 from synth.syntax.program import Primitive
 from synth.syntax.type_system import (
@@ -24,7 +24,7 @@ syntax = {
 def test_from_dsl() -> None:
     dsl = DSL(syntax)
     for max_depth in [3, 7, 11]:
-        cfg = ConcreteCFG.from_dsl(dsl, FunctionType(INT, INT), max_depth)
+        cfg = CFG.from_dsl(dsl, FunctionType(INT, INT), max_depth)
         for rule in cfg.rules:
             assert rule.depth <= max_depth
             for P in cfg.rules[rule]:
@@ -37,14 +37,14 @@ def test_from_dsl() -> None:
 def test_function_as_variable() -> None:
     dsl = DSL(syntax)
     max_depth = 5
-    cfg = ConcreteCFG.from_dsl(dsl, FunctionType(Arrow(INT, INT), INT), max_depth)
+    cfg = CFG.from_dsl(dsl, FunctionType(Arrow(INT, INT), INT), max_depth)
     assert cfg.size() > 0
 
 
 def test_clean() -> None:
     dsl = DSL(syntax)
     for max_depth in [3, 7, 11]:
-        cfg = ConcreteCFG.from_dsl(dsl, FunctionType(INT, INT), max_depth)
+        cfg = CFG.from_dsl(dsl, FunctionType(INT, INT), max_depth)
         for rule in cfg.rules:
             assert rule.depth <= max_depth
             for P in cfg.rules[rule]:
@@ -52,6 +52,6 @@ def test_clean() -> None:
                     assert P.primitive != "non_reachable"
                     assert P.primitive != "non_productive"
 
-        cpy = ConcreteCFG.from_dsl(dsl, FunctionType(INT, INT), max_depth)
+        cpy = CFG.from_dsl(dsl, FunctionType(INT, INT), max_depth)
         cpy.clean()
         assert cfg == cpy

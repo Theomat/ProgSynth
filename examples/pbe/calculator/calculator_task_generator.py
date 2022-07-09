@@ -20,7 +20,7 @@ from synth.semantic.evaluator import Evaluator
 from synth.syntax.dsl import DSL
 from synth.syntax.program import Program
 from synth.syntax.type_system import BOOL, INT, Arrow, List, Type
-from synth.syntax.grammars.concrete_cfg import ConcreteCFG
+from synth.syntax.grammars.cfg import CFG
 from synth.syntax.grammars.concrete_pcfg import ConcretePCFG
 from synth.generation.sampler import (
     LexiconSampler,
@@ -242,12 +242,11 @@ def reproduce_dataset(
         max_depth = default_max_depth
     if uniform_pcfg:
         pcfgs = {
-            ConcretePCFG.uniform(ConcreteCFG.from_dsl(dsl, t, max_depth))
-            for t in allowed_types
+            ConcretePCFG.uniform(CFG.from_dsl(dsl, t, max_depth)) for t in allowed_types
         }
     else:
         pcfgs = {
-            dataset.to_pcfg(ConcreteCFG.from_dsl(dsl, t, max_depth), filter=True)
+            dataset.to_pcfg(CFG.from_dsl(dsl, t, max_depth), filter=True)
             for t in allowed_types
         }
     for pcfg in pcfgs:

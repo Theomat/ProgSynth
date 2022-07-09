@@ -1,4 +1,4 @@
-from synth.syntax.grammars.concrete_cfg import ConcreteCFG
+from synth.syntax.grammars.cfg import CFG
 from synth.syntax.dsl import DSL
 from synth.syntax.type_system import BOOL, INT, FunctionType
 from synth.tools.type_constraints.pattern_constraints import (
@@ -39,7 +39,7 @@ def test_produce() -> None:
         new_syntax, _ = produce_new_syntax_for_constraints(
             syntax, constraints, type_request, progress=False
         )
-        size = ConcreteCFG.from_dsl(DSL(new_syntax), type_request, depth).size()
+        size = CFG.from_dsl(DSL(new_syntax), type_request, depth).size()
         if old_size == -1:
             old_size = size
         assert old_size == size

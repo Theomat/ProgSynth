@@ -5,7 +5,7 @@ import numpy as np
 
 import vose
 
-from synth.syntax.grammars.concrete_cfg import NonTerminal
+from synth.syntax.grammars.cfg import NonTerminal
 from synth.syntax.program import Function, Primitive, Program, Variable
 from synth.syntax.type_system import Arrow
 

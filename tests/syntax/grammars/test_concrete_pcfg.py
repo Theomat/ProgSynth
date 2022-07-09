@@ -1,6 +1,6 @@
 import numpy as np
 
-from synth.syntax.grammars.concrete_cfg import ConcreteCFG
+from synth.syntax.grammars.cfg import CFG
 from synth.syntax.grammars.concrete_pcfg import ConcretePCFG
 from synth.syntax.dsl import DSL
 from synth.syntax.program import Primitive
@@ -28,7 +28,7 @@ syntax = {
 def test_from_cfg() -> None:
     dsl = DSL(syntax)
     for max_depth in [3, 7, 11]:
-        cfg = ConcreteCFG.from_dsl(dsl, FunctionType(INT, INT), max_depth)
+        cfg = CFG.from_dsl(dsl, FunctionType(INT, INT), max_depth)
         pcfg = ConcretePCFG.uniform(cfg)
         for rule in pcfg.rules:
             n = len(pcfg.rules[rule])
@@ -43,7 +43,7 @@ def test_from_cfg() -> None:
 def test_clean() -> None:
     dsl = DSL(syntax)
     for max_depth in [3, 7, 11]:
-        cfg = ConcreteCFG.from_dsl(dsl, FunctionType(INT, INT), max_depth)
+        cfg = CFG.from_dsl(dsl, FunctionType(INT, INT), max_depth)
         pcfg = ConcretePCFG.uniform(cfg)
         for rule in pcfg.rules:
             assert rule.depth <= max_depth
@@ -60,7 +60,7 @@ def test_clean() -> None:
 def test_ready_for_sampling() -> None:
     dsl = DSL(syntax)
     for max_depth in [3, 7, 11]:
-        cfg = ConcreteCFG.from_dsl(dsl, FunctionType(INT, INT), max_depth)
+        cfg = CFG.from_dsl(dsl, FunctionType(INT, INT), max_depth)
         pcfg = ConcretePCFG.uniform(cfg)
         assert not pcfg.ready_for_sampling
         pcfg.init_sampling()
@@ -71,7 +71,7 @@ def test_seeding() -> None:
     dsl = DSL(syntax)
     for max_depth in [3, 7, 11]:
         seed = 100
-        cfg = ConcreteCFG.from_dsl(dsl, FunctionType(INT, INT), max_depth)
+        cfg = CFG.from_dsl(dsl, FunctionType(INT, INT), max_depth)
         pcfg = ConcretePCFG.uniform(cfg)
         pcfg.init_sampling(seed)
         g1 = pcfg.sampling()
@@ -87,7 +87,7 @@ def test_seeding() -> None:
 def test_depth() -> None:
     dsl = DSL(syntax)
     for max_depth in [3, 7, 11]:
-        cfg = ConcreteCFG.from_dsl(dsl, FunctionType(INT, INT), max_depth)
+        cfg = CFG.from_dsl(dsl, FunctionType(INT, INT), max_depth)
         pcfg = ConcretePCFG.uniform(cfg)
         pcfg.init_sampling(0)
         g = pcfg.sampling()
@@ -98,7 +98,7 @@ def test_depth() -> None:
 def test_intersection() -> None:
     dsl = DSL(syntax)
     type_req = FunctionType(INT, INT)
-    cfg = ConcreteCFG.from_dsl(dsl, type_req, 4)
+    cfg = CFG.from_dsl(dsl, type_req, 4)
     pcfg = ConcretePCFG.uniform(cfg)
 
     p1 = dsl.parse_program("(+ 1 var0)", type_req)

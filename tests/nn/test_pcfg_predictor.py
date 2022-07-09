@@ -7,7 +7,7 @@ import pytest
 from synth.nn.pcfg_predictor import (
     BigramsPredictorLayer,
 )
-from synth.syntax.grammars.concrete_cfg import ConcreteCFG
+from synth.syntax.grammars.cfg import CFG
 from synth.syntax.dsl import DSL
 from synth.syntax.program import Function, Primitive, Variable
 from synth.syntax.type_system import (
@@ -23,8 +23,8 @@ syntax = {
 }
 
 dsl = DSL(syntax)
-cfg = ConcreteCFG.from_dsl(dsl, FunctionType(INT, INT), 4)
-cfg2 = ConcreteCFG.from_dsl(dsl, FunctionType(FunctionType(INT, INT), INT, INT), 5)
+cfg = CFG.from_dsl(dsl, FunctionType(INT, INT), 4)
+cfg2 = CFG.from_dsl(dsl, FunctionType(FunctionType(INT, INT), INT, INT), 5)
 
 
 layers = [BigramsPredictorLayer]

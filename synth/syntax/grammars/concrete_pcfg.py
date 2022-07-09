@@ -17,7 +17,7 @@ import numpy as np
 
 import vose
 
-from synth.syntax.grammars.concrete_cfg import ConcreteCFG, NonTerminal
+from synth.syntax.grammars.cfg import CFG, NonTerminal
 from synth.syntax.grammars.upcfg import UPCFG
 from synth.syntax.program import Constant, Function, Primitive, Program, Variable
 from synth.syntax.type_system import Arrow
@@ -435,7 +435,7 @@ class ConcretePCFG:
     @classmethod
     def from_weights(
         cls,
-        cfg: ConcreteCFG,
+        cfg: CFG,
         get_weight: Callable[
             [NonTerminal, Union[Primitive, Variable, Constant]], float
         ],
@@ -455,7 +455,7 @@ class ConcretePCFG:
     @classmethod
     def from_samples_bigram(
         cls,
-        cfg: ConcreteCFG,
+        cfg: CFG,
         samples: Iterable[Program],
     ) -> "ConcretePCFG":
         def add_count(
@@ -537,7 +537,7 @@ class ConcretePCFG:
     @classmethod
     def from_samples_alt(
         cls,
-        cfg: ConcreteCFG,
+        cfg: CFG,
         samples: Iterable[Program],
     ) -> "ConcretePCFG":
         primitives_cnt: Dict[Union[Primitive, Variable, Constant], int] = {}
@@ -577,7 +577,7 @@ class ConcretePCFG:
     @classmethod
     def from_samples(
         cls,
-        cfg: ConcreteCFG,
+        cfg: CFG,
         samples: Iterable[Program],
     ) -> "ConcretePCFG":
         rules_cnt: Dict[NonTerminal, Dict[Program, int]] = {}
@@ -624,5 +624,5 @@ class ConcretePCFG:
         )
 
     @classmethod
-    def uniform(cls, cfg: ConcreteCFG) -> "ConcretePCFG":
+    def uniform(cls, cfg: CFG) -> "ConcretePCFG":
         return cls.from_weights(cfg, lambda _, __: 1)

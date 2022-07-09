@@ -14,7 +14,7 @@ from dataclasses import dataclass, field
 from abc import ABC, abstractmethod
 
 from synth.syntax.program import Program, Function, Variable
-from synth.syntax.grammars.concrete_cfg import NonTerminal
+from synth.syntax.grammars.cfg import NonTerminal
 from synth.syntax.grammars.concrete_pcfg import ConcretePCFG
 from synth.utils.ordered import Ordered
 

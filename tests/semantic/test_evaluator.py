@@ -1,4 +1,4 @@
-from synth.syntax.grammars.concrete_cfg import ConcreteCFG
+from synth.syntax.grammars.cfg import CFG
 from synth.syntax.grammars.concrete_pcfg import ConcretePCFG
 from synth.semantic.evaluator import DSLEvaluator, __tuplify__
 from synth.syntax.dsl import DSL
@@ -24,7 +24,7 @@ semantics = {
 }
 max_depth = 4
 dsl = DSL(syntax)
-cfg = ConcreteCFG.from_dsl(dsl, FunctionType(INT, INT), max_depth)
+cfg = CFG.from_dsl(dsl, FunctionType(INT, INT), max_depth)
 
 
 def test_eval() -> None:

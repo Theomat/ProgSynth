@@ -19,7 +19,7 @@ import torch.nn.functional as F
 from torch import Tensor
 
 from synth.nn.utils import one_hot_encode_primitives
-from synth.syntax.grammars.concrete_cfg import ConcreteCFG, NonTerminal
+from synth.syntax.grammars.cfg import CFG, NonTerminal
 from synth.syntax.grammars.concrete_pcfg import ConcretePCFG
 from synth.syntax.dsl import DSL
 from synth.syntax.program import Constant, Function, Primitive, Program, Variable
@@ -108,14 +108,14 @@ class BigramsPredictorLayer(nn.Module):
     Parameters:
     ------------
     - input_size: int - the input size of the tensor to this layer
-    - cfgs: Iterable[ConcreteCFG] - the set of all supported CFG
+    - cfgs: Iterable[CFG] - the set of all supported CFG
     - variable_probability: float = 0.2 - the probability mass of all variable at any given derivation level
     """
 
     def __init__(
         self,
         input_size: int,
-        cfgs: Iterable[ConcreteCFG],
+        cfgs: Iterable[CFG],
         variable_probability: float = 0.2,
     ):
         super(BigramsPredictorLayer, self).__init__()
@@ -372,11 +372,11 @@ class PrimitivePredictorLayer(nn.Module):
         - x: Tensor - the tensor to be transformed into a PCFG
         - type_request: Type - the type request of the PCFG
         - total_variable_order: bool = True - reduce very slighlty (1e-7) some variable probabilities to ensure they are totally ordered in terms of probablities
-        -- **kwargs are passed to ConcreteCFG.from_dsl
+        -- **kwargs are passed to CFG.from_dsl
 
         """
         device = x.device
-        cfg = ConcreteCFG.from_dsl(self.dsl, type_request, **kwargs)
+        cfg = CFG.from_dsl(self.dsl, type_request, **kwargs)
         rules: LogPRules = {}
         x = torch.log(x)
         for S in cfg.rules:

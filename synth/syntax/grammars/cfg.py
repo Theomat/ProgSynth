@@ -26,7 +26,7 @@ class NonTerminal:
         return self.__str__()
 
 
-class ConcreteCFG:
+class CFG:
     """
     Object that represents a context-free grammar with normalised probabilites
 
@@ -47,7 +47,8 @@ class ConcreteCFG:
         self,
         start: NonTerminal,
         rules: Dict[
-            NonTerminal, Dict[Union[Primitive, Variable, Constant], List[NonTerminal]]
+            NonTerminal, Dict[Union[Primitive,
+                                    Variable, Constant], List[NonTerminal]]
         ],
         max_program_depth: int,
         clean: bool = True,
@@ -104,7 +105,8 @@ class ConcreteCFG:
         remove non-terminals which do not produce programs
         """
         new_rules: Dict[
-            NonTerminal, Dict[Union[Primitive, Variable, Constant], List[NonTerminal]]
+            NonTerminal, Dict[Union[Primitive,
+                                    Variable, Constant], List[NonTerminal]]
         ] = {}
         for S in reversed(self.rules):
             for P in self.rules[S]:
@@ -147,7 +149,7 @@ class ConcreteCFG:
                 del self.rules[S]
 
     def __str__(self) -> str:
-        s = "Print a ConcreteCFG\n"
+        s = "Print a CFG\n"
         s += "start: {}\n".format(self.start)
         for S in reversed(self.rules):
             s += "#\n {}\n".format(S)
@@ -157,7 +159,7 @@ class ConcreteCFG:
 
     def __eq__(self, o: object) -> bool:
         return (
-            isinstance(o, ConcreteCFG)
+            isinstance(o, CFG)
             and o.type_request == self.type_request
             and o.rules == self.rules
         )
@@ -173,7 +175,7 @@ class ConcreteCFG:
         n_gram: int = 2,
         recursive: bool = False,
         constant_types: Set[Type] = set(),
-    ) -> "ConcreteCFG":
+    ) -> "CFG":
         """
         Constructs a CFG from a DSL imposing bounds on size of the types
         and on the maximum program depth.
@@ -203,7 +205,8 @@ class ConcreteCFG:
             return_type = type_request
             args = []
 
-        rules: Dict[NonTerminal, Dict[Union[Variable, Primitive, Constant], List]] = {}
+        rules: Dict[NonTerminal,
+                    Dict[Union[Variable, Primitive, Constant], List]] = {}
 
         list_to_be_treated: Deque[NonTerminal] = deque()
         list_to_be_treated.append(NonTerminal(return_type, [], 0))
@@ -306,7 +309,7 @@ class ConcreteCFG:
 
                             rules[non_terminal][P] = decorated_arguments_self
 
-        return ConcreteCFG(
+        return CFG(
             start=NonTerminal(return_type, [], 0),
             rules=rules,
             max_program_depth=max_depth,

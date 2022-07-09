@@ -1,6 +1,6 @@
 from synth.syntax.grammars.heap_search import enumerate_pcfg
 from synth.syntax.grammars.pcfg_splitter import split
-from synth.syntax.grammars.concrete_cfg import ConcreteCFG
+from synth.syntax.grammars.cfg import CFG
 from synth.syntax.grammars.concrete_pcfg import ConcretePCFG
 from synth.syntax.dsl import DSL
 from synth.syntax.type_system import (
@@ -26,7 +26,7 @@ syntax = {
 def test_unicity() -> None:
     dsl = DSL(syntax)
     max_depth = 4
-    cfg = ConcreteCFG.from_dsl(dsl, FunctionType(INT, INT), max_depth)
+    cfg = CFG.from_dsl(dsl, FunctionType(INT, INT), max_depth)
     pcfg = ConcretePCFG.uniform(cfg)
     for splits in [2, 4, 5]:
         fragments, _ = split(pcfg, splits, desired_ratio=1.05)
@@ -40,7 +40,7 @@ def test_unicity() -> None:
 def prout_test_none_missing() -> None:
     dsl = DSL(syntax)
     max_depth = 3
-    cfg = ConcreteCFG.from_dsl(dsl, FunctionType(INT, INT), max_depth)
+    cfg = CFG.from_dsl(dsl, FunctionType(INT, INT), max_depth)
     pcfg = ConcretePCFG.uniform(cfg)
     seen = set()
     for program in enumerate_pcfg(pcfg):

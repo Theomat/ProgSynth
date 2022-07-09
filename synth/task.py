@@ -17,7 +17,7 @@ import bz2
 from synth.specification import TaskSpecification
 from synth.syntax.program import Program
 from synth.syntax.type_system import Type
-from synth.syntax.grammars.concrete_cfg import ConcreteCFG
+from synth.syntax.grammars.cfg import CFG
 from synth.syntax.grammars.concrete_pcfg import ConcretePCFG
 
 
@@ -66,7 +66,7 @@ class Dataset(Generic[T]):
     def __getitem__(self, key: Any) -> Any:
         return self.tasks.__getitem__(key)
 
-    def to_pcfg(self, cfg: ConcreteCFG, filter: bool = False) -> ConcretePCFG:
+    def to_pcfg(self, cfg: CFG, filter: bool = False) -> ConcretePCFG:
         """
 
         - filter (bool, default=False) - compute pcfg only on tasks with the same type request as the cfg's

@@ -18,7 +18,7 @@ from synth.syntax.type_system import (
 )
 from synth.syntax.grammars import (
     NonTerminal,
-    ConcreteCFG,
+    CFG,
     ConcretePCFG,
     UPCFG,
     TTCFG,
