@@ -22,6 +22,7 @@ from synth.syntax.grammars import (
     ConcretePCFG,
     UPCFG,
     TTCFG,
+    Grammar,
     enumerate_pcfg,
     enumerate_bucket_pcfg,
     split,
