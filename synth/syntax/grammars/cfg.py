@@ -47,8 +47,7 @@ class CFG:
         self,
         start: NonTerminal,
         rules: Dict[
-            NonTerminal, Dict[Union[Primitive,
-                                    Variable, Constant], List[NonTerminal]]
+            NonTerminal, Dict[Union[Primitive, Variable, Constant], List[NonTerminal]]
         ],
         max_program_depth: int,
         clean: bool = True,
@@ -105,8 +104,7 @@ class CFG:
         remove non-terminals which do not produce programs
         """
         new_rules: Dict[
-            NonTerminal, Dict[Union[Primitive,
-                                    Variable, Constant], List[NonTerminal]]
+            NonTerminal, Dict[Union[Primitive, Variable, Constant], List[NonTerminal]]
         ] = {}
         for S in reversed(self.rules):
             for P in self.rules[S]:
@@ -205,8 +203,7 @@ class CFG:
             return_type = type_request
             args = []
 
-        rules: Dict[NonTerminal,
-                    Dict[Union[Variable, Primitive, Constant], List]] = {}
+        rules: Dict[NonTerminal, Dict[Union[Variable, Primitive, Constant], List]] = {}
 
         list_to_be_treated: Deque[NonTerminal] = deque()
         list_to_be_treated.append(NonTerminal(return_type, [], 0))
