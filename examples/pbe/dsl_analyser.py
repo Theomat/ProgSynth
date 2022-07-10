@@ -8,7 +8,7 @@ from synth import Dataset, PBE
 from synth.pbe import reproduce_dataset
 from synth.pruning import UseAllVariablesPruner
 from synth.syntax import (
-    ConcreteCFG,
+    CFG,
     ConcretePCFG,
     enumerate_pcfg,
     DSL,
@@ -223,7 +223,7 @@ with chrono.clock("search"):
             continue
         # Remove forbidden patterns to speed up search
         dsl.forbidden_patterns = syntaxic_restrictions[:]
-        cfg = ConcreteCFG.from_dsl(dsl, primitive.type, max_depth + 1)
+        cfg = CFG.from_dsl(dsl, primitive.type, max_depth + 1)
         cfg.rules[cfg.start] = {
             P: d for P, d in cfg.rules[cfg.start].items() if P == primitive
         }
@@ -319,7 +319,7 @@ with chrono.clock("constants"):
         }
         # Remove forbidden patterns to speed up search
         dsl.forbidden_patterns = syntaxic_restrictions[:]
-        cfg = ConcreteCFG.from_dsl(dsl, primitive.type, max_depth + 1)
+        cfg = CFG.from_dsl(dsl, primitive.type, max_depth + 1)
         pcfg = ConcretePCFG.uniform(cfg)
         with chrono.clock("constants.enumeration"):
             for program in enumerate_pcfg(pcfg):
@@ -353,8 +353,8 @@ copied_dsl = DSL(
 )
 all_type_requests = set(task_generator.type2pcfg.keys())
 dsl.forbidden_patterns = []
-cfgs = [ConcreteCFG.from_dsl(dsl, t, 5) for t in all_type_requests]
-reduced_cfgs = [ConcreteCFG.from_dsl(copied_dsl, t, 5) for t in all_type_requests]
+cfgs = [CFG.from_dsl(dsl, t, 5) for t in all_type_requests]
+reduced_cfgs = [CFG.from_dsl(copied_dsl, t, 5) for t in all_type_requests]
 ratio = np.mean(
     [
         (original.size() - red.size()) / original.size()

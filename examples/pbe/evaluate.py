@@ -20,7 +20,7 @@ from synth.semantic import DSLEvaluator
 from synth.semantic.evaluator import DSLEvaluatorWithConstant
 from synth.specification import PBEWithConstants
 from synth.syntax import (
-    ConcreteCFG,
+    CFG,
     ConcretePCFG,
     enumerate_pcfg,
     enumerate_bucket_pcfg,
@@ -189,7 +189,7 @@ def load_dataset() -> Tuple[
 @torch.no_grad()
 def produce_pcfgs(
     full_dataset: Dataset[PBE], dsl: DSL, lexicon: List[int]
-) -> List[ConcreteCFG]:
+) -> List[CFG]:
     # ================================
     # Load already done PCFGs
     # ================================
@@ -224,7 +224,7 @@ def produce_pcfgs(
         max_depth = max(task.solution.depth() for task in full_dataset)
     else:
         max_depth = 10  # TODO: set as parameter
-    cfgs = [ConcreteCFG.from_dsl(dsl, t, max_depth) for t in all_type_requests]
+    cfgs = [CFG.from_dsl(dsl, t, max_depth) for t in all_type_requests]
 
     class MyPredictor(nn.Module):
         def __init__(self, size: int) -> None:

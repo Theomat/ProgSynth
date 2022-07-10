@@ -21,7 +21,7 @@ from synth.nn import (
     print_model_summary,
 )
 from synth.pbe import IOEncoder
-from synth.syntax import ConcreteCFG
+from synth.syntax import CFG
 from synth.utils import chrono
 
 DREAMCODER = "dreamcoder"
@@ -202,7 +202,7 @@ if all(task.solution is not None for task in full_dataset):
 else:
     max_depth = 15  # TODO: set as parameter
 cfgs = [
-    ConcreteCFG.from_dsl(
+    CFG.from_dsl(
         dsl,
         t,
         max_depth,

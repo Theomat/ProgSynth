@@ -14,7 +14,7 @@ from synth.semantic.evaluator import DSLEvaluatorWithConstant
 from synth.specification import PBE
 import math
 from synth.syntax import DSL
-from synth.nn.pcfg_predictor import ConcreteCFG
+from synth.nn.pcfg_predictor import CFG
 from synth.syntax.grammars.concrete_pcfg import ConcretePCFG
 from synth.syntax.program import Function, Primitive, Program
 from synth.task import Dataset
@@ -114,7 +114,7 @@ def load_dsl(dsl_name: str) -> Tuple[DSL, DSLEvaluatorWithConstant, List[int]]:
 
 
 def dataset_to_pcfg_bigram(
-    full_dataset: Dataset[PBE], cfg: ConcreteCFG, filter: bool = False
+    full_dataset: Dataset[PBE], cfg: CFG, filter: bool = False
 ) -> ConcretePCFG:
     """
     - filter (bool, default=False) - compute pcfg only on tasks with the same type request as the cfg's
@@ -133,7 +133,7 @@ def produce_bigrams(full_dataset: Dataset[PBE], dsl: DSL) -> List[ConcretePCFG]:
         max_depth = max(task.solution.depth() for task in full_dataset)
     else:
         max_depth = 10
-    cfgs = [ConcreteCFG.from_dsl(dsl, t, max_depth) for t in all_type_requests]
+    cfgs = [CFG.from_dsl(dsl, t, max_depth) for t in all_type_requests]
     types_pcfgs = [dataset_to_pcfg_bigram(full_dataset, c) for c in cfgs]
     pcfgs = []
     for task in full_dataset.tasks:
@@ -150,7 +150,7 @@ def produce_pcfgs(
     dsl: DSL,
     lexicon: List[int],
     model_file: str,
-) -> List[ConcreteCFG]:
+) -> List[CFG]:
     if model_file == BIGRAM:
         return produce_bigrams(full_dataset, dsl)
     # ================================
@@ -194,7 +194,7 @@ def produce_pcfgs(
         max_depth = max(task.solution.depth() for task in full_dataset)
     else:
         max_depth = 10  # TODO: set as parameter
-    cfgs = [ConcreteCFG.from_dsl(dsl, t, max_depth) for t in all_type_requests]
+    cfgs = [CFG.from_dsl(dsl, t, max_depth) for t in all_type_requests]
 
     class MyPredictor(nn.Module):
         def __init__(self, size: int) -> None:
