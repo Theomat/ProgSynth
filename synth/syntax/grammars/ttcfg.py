@@ -1,10 +1,10 @@
 from collections import deque
+from dataclasses import dataclass, field
 from typing import (
     Callable,
     Deque,
     Dict,
     List,
-    Optional,
     Tuple,
     TypeVar,
     Generic,
@@ -20,6 +20,33 @@ T = TypeVar("T")
 U = TypeVar("U")
 S = TypeVar("S")
 V = TypeVar("V")
+
+
+@dataclass(frozen=True)
+class NGram:
+    n: int
+    predecessors: List[Tuple[DerivableProgram, int]] = field(default_factory=lambda: [])
+
+    def __hash__(self) -> int:
+        return hash((self.n, tuple(self.predecessors)))
+
+    def __str__(self) -> str:
+        return str(self.predecessors)
+
+    def __repr__(self) -> str:
+        return self.__str__()
+
+    def __len__(self) -> int:
+        return len(self.predecessors)
+
+    def successor(self, new_succ: Tuple[DerivableProgram, int]) -> "NGram":
+        new_pred = [new_succ] + self.predecessors
+        if len(new_pred) + 1 >= self.n:
+            new_pred.pop()
+        return NGram(self.n, new_pred)
+
+    def last(self) -> Tuple[DerivableProgram, int]:
+        return self.predecessors[0]
 
 
 class TTCFG(
@@ -156,16 +183,17 @@ class TTCFG(
         type_request: Type,
         max_depth: int,
         min_variable_depth: int = 1,
-    ) -> "TTCFG[Optional[Tuple[int, DerivableProgram]], int]":
+        n_gram: int = 2,
+    ) -> "TTCFG[NGram, int]":
         """
-        Constructs a bigram TT CFG from a DSL imposing the maximum program depth.
+        Constructs a n-gram TT CFG from a DSL imposing the maximum program depth.
 
         max_depth: int - is the maxium depth of programs allowed
         min_variable_depth: int - min depth at which variables and constants are allowed
         """
 
         def __transition__(
-            state: Tuple[Type, Tuple[Optional[Tuple[int, DerivableProgram]], int]],
+            state: Tuple[Type, Tuple[NGram, int]],
             derivation: Union[Primitive, Variable, Constant],
         ) -> Tuple[bool, int]:
             depth = state[1][1]
@@ -180,26 +208,23 @@ class TTCFG(
         return __saturation_build__(
             dsl,
             type_request,
-            (None, 1),
+            (NGram(n_gram), 1),
             __transition__,
-            lambda _, P, i, __: (i, P),
+            lambda ctx, P, i, __: ctx[1][0].successor((P, i)),
         )
 
     @classmethod
     def size_constraint(
-        cls,
-        dsl: DSL,
-        type_request: Type,
-        max_size: int,
-    ) -> "TTCFG[Optional[Tuple[int, DerivableProgram]], int]":
+        cls, dsl: DSL, type_request: Type, max_size: int, n_gram: int = 2
+    ) -> "TTCFG[NGram, int]":
         """
-        Constructs a bigram TT CFG from a DSL imposing the maximum program size.
+        Constructs a n-gram TT CFG from a DSL imposing the maximum program size.
 
         max_size: int - is the maxium depth of programs allowed
         """
 
         def __transition__(
-            state: Tuple[Type, Tuple[Optional[Tuple[int, DerivableProgram]], int]],
+            state: Tuple[Type, Tuple[NGram, int]],
             derivation: Union[Primitive, Variable, Constant],
         ) -> Tuple[bool, int]:
             size = state[1][1]
@@ -212,25 +237,21 @@ class TTCFG(
         return __saturation_build__(
             dsl,
             type_request,
-            (None, 0),
+            (NGram(n_gram), 0),
             __transition__,
-            lambda _, P, i, __: (i, P),
+            lambda ctx, P, i, __: ctx[1][0].successor((P, i)),
         )
 
     @classmethod
     def at_most_k(
-        cls,
-        dsl: DSL,
-        type_request: Type,
-        primitive: str,
-        k: int,
-    ) -> "TTCFG[Optional[Tuple[int, DerivableProgram]], int]":
+        cls, dsl: DSL, type_request: Type, primitive: str, k: int, n_gram: int = 2
+    ) -> "TTCFG[NGram, int]":
         """
-        Constructs a bigram TT CFG from a DSL imposing at most k occurences of a certain primitive.
+        Constructs a n-gram TT CFG from a DSL imposing at most k occurences of a certain primitive.
         """
 
         def __transition__(
-            state: Tuple[Type, Tuple[Optional[Tuple[int, DerivableProgram]], int]],
+            state: Tuple[Type, Tuple[NGram, int]],
             derivation: Union[Primitive, Variable, Constant],
         ) -> Tuple[bool, int]:
             occ_left = state[1][1]
@@ -241,9 +262,9 @@ class TTCFG(
         return __saturation_build__(
             dsl,
             type_request,
-            (None, k),
+            (NGram(n_gram), k),
             __transition__,
-            lambda _, P, i, __: (i, P),
+            lambda ctx, P, i, __: ctx[1][0].successor((P, i)),
         )
 
 
