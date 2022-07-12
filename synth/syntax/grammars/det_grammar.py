@@ -42,7 +42,7 @@ class DetGrammar(Grammar, ABC, Generic[U, V, W]):
         return "{}: {}".format(P, out)
 
     def __str__(self) -> str:
-        s = f"Print a {self.__class__.__qualname__}\n"
+        s = f"Print a {self.name()}\n"
         s += "start: {}\n".format(self.start)
         for S in reversed(self.rules):
             s += "#\n {}\n".format(S)

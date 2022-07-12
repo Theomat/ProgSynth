@@ -140,6 +140,9 @@ class TTCFG(
         args, state = out
         return "{}: {}\t\t{}".format(P, state, args)
 
+    def name(self) -> str:
+        return "TTCFG"
+
     @classmethod
     def depth_constraint(
         cls,
