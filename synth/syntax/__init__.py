@@ -22,7 +22,7 @@ from synth.syntax.grammars import (
     TTCFG,
     Grammar,
     DetGrammar,
-    enumerate_pcfg,
-    enumerate_bucket_pcfg,
+    enumerate_prob_grammar,
+    enumerate_bucket_prob_grammar,
     # split,
 )

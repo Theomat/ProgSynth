@@ -232,7 +232,7 @@ class HeapSearch(HSEnumerator[U, V, W]):
         return -probability
 
 
-def enumerate_pcfg(G: ProbDetGrammar[U, V, W]) -> HeapSearch[U, V, W]:
+def enumerate_prob_grammar(G: ProbDetGrammar[U, V, W]) -> HeapSearch[U, V, W]:
     return HeapSearch(G)
 
 
@@ -325,7 +325,7 @@ class BucketSearch(HSEnumerator[U, V, W]):
         return new_bucket
 
 
-def enumerate_bucket_pcfg(
+def enumerate_bucket_prob_grammar(
     G: ProbDetGrammar[U, V, W], bucket_size: int
 ) -> BucketSearch[U, V, W]:
     return BucketSearch(G, bucket_size)
