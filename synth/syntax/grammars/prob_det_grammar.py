@@ -119,11 +119,8 @@ class ProbDetGrammar(DetGrammar[U, V, Tuple[W, float]]):
         A generator that samples programs according to the PCFG G
         """
         assert self.ready_for_sampling
-        print(self)
         while True:
-            print("SAMPLING A PROGRAM")
             yield self.sample_program(self.start)
-            print("DONE")
 
     def sample_program(
         self, S: Optional[Tuple[Type, U]] = None, information: Optional[W] = None
