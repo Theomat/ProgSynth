@@ -4,19 +4,25 @@ from typing import (
     Any,
     Dict,
     Generator,
+    Generic,
     List,
     Optional,
     Set,
     Tuple,
+    TypeVar,
     Union,
 )
 from dataclasses import dataclass, field
 from abc import ABC, abstractmethod
 
-from synth.syntax.program import Program, Function, Variable
-from synth.syntax.grammars.cfg import NonTerminal
-from synth.syntax.grammars.concrete_pcfg import ConcretePCFG
+from synth.syntax.program import Primitive, Program, Function, Variable
+from synth.syntax.grammars.prob_det_grammar import ProbDetGrammar
+from synth.syntax.type_system import Type
 from synth.utils.ordered import Ordered
+
+U = TypeVar("U")
+V = TypeVar("V")
+W = TypeVar("W")
 
 
 @dataclass(order=True, frozen=True)
@@ -28,8 +34,8 @@ class HeapElement:
         return f"({self.priority}, {self.program})"
 
 
-class HSEnumerator(ABC):
-    def __init__(self, G: ConcretePCFG) -> None:
+class HSEnumerator(ABC, Generic[U, V, W]):
+    def __init__(self, G: ProbDetGrammar[U, V, W]) -> None:
         self.current: Optional[Program] = None
 
         self.G = G
@@ -38,17 +44,17 @@ class HSEnumerator(ABC):
         symbols = [S for S in self.rules]
 
         # self.heaps[S] is a heap containing programs generated from the non-terminal S
-        self.heaps: Dict[NonTerminal, List[HeapElement]] = {S: [] for S in symbols}
+        self.heaps: Dict[Tuple[Type, U], List[HeapElement]] = {S: [] for S in symbols}
 
         # the same program can be pushed in different heaps, with different probabilities
         # however, the same program cannot be pushed twice in the same heap
 
         # self.succ[S][P] is the successor of P from S
-        self.succ: Dict[NonTerminal, Dict[int, Program]] = {S: {} for S in symbols}
+        self.succ: Dict[Tuple[Type, U], Dict[int, Program]] = {S: {} for S in symbols}
 
         # self.hash_table_program[S] is the set of hashes of programs
         # ever added to the heap for S
-        self.hash_table_program: Dict[NonTerminal, Set[int]] = {
+        self.hash_table_program: Dict[Tuple[Type, U], Set[int]] = {
             S: set() for S in symbols
         }
 
@@ -56,10 +62,10 @@ class HSEnumerator(ABC):
         # hashes to programs for all programs ever added to some heap
         self.hash_table_global: Dict[int, Program] = {}
 
-        self._init: Set[NonTerminal] = set()
+        self._init: Set[Tuple[Type, U]] = set()
 
         self.max_priority: Dict[
-            Union[NonTerminal, Tuple[NonTerminal, Program]], Program
+            Union[Tuple[Type, U], Tuple[Tuple[Type, U], Program]], Program
         ] = {}
 
     def __return_unique__(self, P: Program) -> Program:
@@ -89,7 +95,7 @@ class HSEnumerator(ABC):
     def __iter__(self) -> Generator[Program, None, None]:
         return self.generator()
 
-    def __init_non_terminal__(self, S: NonTerminal) -> None:
+    def __init_non_terminal__(self, S: Tuple[Type, U]) -> None:
         if S in self._init:
             return
         self._init.add(S)
@@ -97,20 +103,25 @@ class HSEnumerator(ABC):
         best_program = None
         best_priority: Optional[Ordered] = None
         for P in self.rules[S]:
-            args_P, _ = self.rules[S][P]
-            P_unique = self.G.return_unique(P)
-            if len(args_P) > 0:
+            nargs = self.G.arguments_length_for(S, P)
+            P_unique: Program = P
+            if nargs > 0:
                 arguments = []
-                for arg in args_P:
-                    # Try to init sub NonTerminal in case they were not initialised
-                    self.__init_non_terminal__(arg)
-                    arguments.append(self.max_priority[arg])
+                information, current = self.G.derive(self.G.start_information(), S, P)
+                for _ in range(nargs):
+                    self.__init_non_terminal__(current)
+                    # Try to init sub Tuple[Type, U] in case they were not initialised
+                    arguments.append(self.max_priority[current])
+                    information, lst = self.G.derive_all(
+                        information, current, arguments[-1]
+                    )
+                    current = lst[-1]
 
                 new_program = Function(
                     function=P_unique,
                     arguments=arguments,
                 )
-                P_unique = self.G.return_unique(new_program)
+                P_unique = new_program
             priority = self.compute_priority(S, P_unique)
             self.max_priority[(S, P)] = P_unique
             if not best_priority or priority < best_priority:
@@ -138,7 +149,7 @@ class HSEnumerator(ABC):
         # 3) Do the 1st query
         self.query(S, None)
 
-    def query(self, S: NonTerminal, program: Optional[Program]) -> Optional[Program]:
+    def query(self, S: Tuple[Type, U], program: Optional[Program]) -> Optional[Program]:
         """
         computing the successor of program from S
         """
@@ -165,8 +176,9 @@ class HSEnumerator(ABC):
         # now we need to add all potential successors of succ in heaps[S]
         if isinstance(succ, Function):
             F = succ.function
-
-            for i, S2 in enumerate(self.G.rules[S][F][0]):
+            information, lst = self.G.derive_all(self.G.start_information(), S, F)
+            S2 = lst[-1]
+            for i in range(self.G.arguments_length_for(S, F)):  # type: ignore
                 # S2 is non-terminal symbol used to derive the i-th argument
                 succ_sub_program = self.query(S2, succ.arguments[i])
                 if succ_sub_program:
@@ -181,6 +193,8 @@ class HSEnumerator(ABC):
 
                         priority: Ordered = self.compute_priority(S, new_program)
                         heappush(self.heaps[S], HeapElement(priority, new_program))
+                information, lst = self.G.derive_all(information, S2, succ.arguments[i])
+                S2 = lst[-1]
 
         if isinstance(succ, Variable):
             return succ  # if succ is a variable, there is no successor so we stop here
@@ -188,31 +202,37 @@ class HSEnumerator(ABC):
         return succ
 
     @abstractmethod
-    def compute_priority(self, S: NonTerminal, new_program: Program) -> Ordered:
+    def compute_priority(self, S: Tuple[Type, U], new_program: Program) -> Ordered:
         pass
 
 
-class HeapSearch(HSEnumerator):
-    def __init__(self, G: ConcretePCFG) -> None:
+class HeapSearch(HSEnumerator[U, V, W]):
+    def __init__(self, G: ProbDetGrammar[U, V, W]) -> None:
         super().__init__(G)
-        self.probabilities: Dict[Program, Dict[NonTerminal, float]] = defaultdict(
+        self.probabilities: Dict[Program, Dict[Tuple[Type, U], float]] = defaultdict(
             lambda: {}
         )
 
-    def compute_priority(self, S: NonTerminal, new_program: Program) -> float:
+    def compute_priority(self, S: Tuple[Type, U], new_program: Program) -> float:
         if isinstance(new_program, Function):
             F = new_program.function
+            # We guarantee that F is a Primitive
             new_arguments = new_program.arguments
-            probability = self.G.rules[S][F][1]
-            for arg, S3 in zip(new_arguments, self.G.rules[S][F][0]):
-                probability *= self.probabilities[arg][S3]
+            probability = self.G.probabilities[S][F]  # type: ignore
+            information, lst = self.G.derive_all(self.G.start_information(), S, F)
+            S2 = lst[-1]
+            for i in range(self.G.arguments_length_for(S, F)):  # type: ignore
+                arg = new_arguments[i]
+                probability *= self.probabilities[arg][S2]
+                information, lst = self.G.derive_all(information, S2, arg)
+                S2 = lst[-1]
         else:
-            probability = self.G.rules[S][new_program][1]
+            probability = self.G.probabilities[S][new_program]  # type: ignore
         self.probabilities[new_program][S] = probability
         return -probability
 
 
-def enumerate_pcfg(G: ConcretePCFG) -> HeapSearch:
+def enumerate_pcfg(G: ProbDetGrammar[U, V, W]) -> HeapSearch[U, V, W]:
     return HeapSearch(G)
 
 
@@ -276,28 +296,36 @@ class Bucket(Ordered):
         return self
 
 
-class BucketSearch(HSEnumerator):
-    def __init__(self, G: ConcretePCFG, bucket_size: int) -> None:
+class BucketSearch(HSEnumerator[U, V, W]):
+    def __init__(self, G: ProbDetGrammar[U, V, W], bucket_size: int) -> None:
         super().__init__(G)
-        self.bucket_tuples: Dict[Program, Dict[NonTerminal, Bucket]] = defaultdict(
+        self.bucket_tuples: Dict[Program, Dict[Tuple[Type, U], Bucket]] = defaultdict(
             lambda: {}
         )
         self.bucket_size = bucket_size
 
-    def compute_priority(self, S: NonTerminal, new_program: Program) -> Bucket:
+    def compute_priority(self, S: Tuple[Type, U], new_program: Program) -> Bucket:
         new_bucket = Bucket(self.bucket_size)
         if isinstance(new_program, Function):
             F = new_program.function
             new_arguments = new_program.arguments
-            new_bucket.add_prob_uniform(self.G.rules[S][F][1])
-            for arg, S3 in zip(new_arguments, self.G.rules[S][F][0]):
-                new_bucket += self.bucket_tuples[arg][S3]
+            new_bucket.add_prob_uniform(self.G.probabilities[S][F])  # type: ignore
+
+            information, lst = self.G.derive_all(self.G.start_information(), S, F)
+            S2 = lst[-1]
+            for i in range(self.G.arguments_length_for(S, F)):  # type: ignore
+                arg = new_arguments[i]
+                new_bucket += self.bucket_tuples[arg][S2]
+                information, lst = self.G.derive_all(information, S2, arg)
+                S2 = lst[-1]
         else:
-            probability = self.G.rules[S][new_program][1]
+            probability = self.G.probabilities[S][new_program]  # type: ignore
             new_bucket.add_prob_uniform(probability)
         self.bucket_tuples[new_program][S] = new_bucket
         return new_bucket
 
 
-def enumerate_bucket_pcfg(G: ConcretePCFG, bucket_size: int) -> BucketSearch:
+def enumerate_bucket_pcfg(
+    G: ProbDetGrammar[U, V, W], bucket_size: int
+) -> BucketSearch[U, V, W]:
     return BucketSearch(G, bucket_size)

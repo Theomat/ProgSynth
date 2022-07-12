@@ -18,12 +18,11 @@ from synth.syntax.type_system import (
 )
 from synth.syntax.grammars import (
     CFG,
-    # ConcretePCFG,
     # UPCFG,
     TTCFG,
     Grammar,
     DetGrammar,
-    # enumerate_pcfg,
-    # enumerate_bucket_pcfg,
+    enumerate_pcfg,
+    enumerate_bucket_pcfg,
     # split,
 )
