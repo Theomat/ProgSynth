@@ -1,6 +1,7 @@
 from typing import (
     Dict,
     Generator,
+    List,
     Optional,
     Tuple,
     TypeVar,
@@ -8,6 +9,7 @@ from typing import (
 
 import numpy as np
 import vose
+from synth.syntax.grammars.cfg import CFG, CFGNonTerminal, CFGState, NoneType
 
 from synth.syntax.grammars.det_grammar import DerivableProgram, DetGrammar
 from synth.syntax.program import Function, Program
@@ -152,3 +154,46 @@ class ProbDetGrammar(DetGrammar[U, V, Tuple[W, float]]):
                 for S in grammar.rules
             },
         )
+
+    @classmethod
+    def pcfg_from_samples(
+        cls, cfg: CFG, samples: List[Program]
+    ) -> "ProbDetGrammar[Tuple[CFGState, NoneType], Tuple[List[Tuple[Type, CFGState]], NoneType], List[Tuple[Type, CFGState]]]":
+        rules_cnt: Dict[CFGNonTerminal, Dict[DerivableProgram, int]] = {}
+        for S in cfg.rules:
+            rules_cnt[S] = {}
+            for P in cfg.rules[S]:
+                rules_cnt[S][P] = 0
+
+        def add_count(S: CFGNonTerminal, P: Program) -> bool:
+            if isinstance(P, Function):
+                F = P.function
+                args_P = P.arguments
+                success = add_count(S, F)
+
+                args = cfg.rules[S][F][0]  # type: ignore
+                for i, arg in enumerate(args_P):
+                    add_count((args[i][0], (args[i][1], None)) if success else S, arg)
+            else:
+                if P not in rules_cnt[S]:
+                    # This case occurs when a forbidden pattern has been removed from the CFG
+                    # What to do? Ignore for now, but this bias a bit the probabilities
+                    # TODO: perhaps rethink that? or provide a program simplifier
+                    return False
+                else:
+                    rules_cnt[S][P] += 1  # type: ignore
+            return True
+
+        for sample in samples:
+            add_count(cfg.start, sample)
+
+        # Compute probabilities
+        probabilities: Dict[CFGNonTerminal, Dict[DerivableProgram, float]] = {}
+        for S in cfg.rules:
+            total = sum(rules_cnt[S][P] for P in cfg.rules[S])
+            if total > 0:
+                probabilities[S] = {}
+                for P in rules_cnt[S]:
+                    probabilities[S][P] = rules_cnt[S][P] / total
+
+        return ProbDetGrammar(cfg, probabilities)
