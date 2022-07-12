@@ -121,6 +121,9 @@ class DetGrammar(Grammar, ABC, Generic[U, V, W]):
     def derive(
         self, information: W, S: Tuple[Type, U], P: DerivableProgram
     ) -> Tuple[W, Tuple[Type, U]]:
+        """
+        Given the current information and the derivation S -> P, produces the new information state and the next S after this derivation.
+        """
         pass
 
     @abstractmethod
@@ -136,6 +139,8 @@ class DetGrammar(Grammar, ABC, Generic[U, V, W]):
     ) -> T:
         """
         Reduce the given program using the given reduce operator.
+
+        reduce is called after derivation.
         """
 
         return self.__reduce_derivations_rec__(
@@ -154,15 +159,15 @@ class DetGrammar(Grammar, ABC, Generic[U, V, W]):
         if isinstance(program, Function):
             function = program.function
             args_P = program.arguments
-            value = reduce(value, start, function, self.rules[start][function])  # type: ignore
             information, next = self.derive(information, start, function)  # type: ignore
+            value = reduce(value, start, function, self.rules[start][function])  # type: ignore
             for arg in args_P:
                 value, information, next = self.__reduce_derivations_rec__(
                     reduce, value, arg, start=next, information=information
                 )
             return value, information, next
         elif isinstance(program, (Primitive, Variable, Constant)):
-            value = reduce(value, start, program, self.rules[start][program])
             information, next = self.derive(information, start, program)
+            value = reduce(value, start, program, self.rules[start][program])
             return value, information, next
         return value, information, start
