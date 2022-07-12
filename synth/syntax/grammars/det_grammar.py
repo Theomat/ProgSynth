@@ -75,7 +75,7 @@ class DetGrammar(Grammar, ABC, Generic[U, V, W]):
         return type_req
 
     def __contains__(self, program: Program) -> bool:
-        return self.__contains_rec__(program, self.start, self._start_information_())[0]
+        return self.__contains_rec__(program, self.start, self.start_information())[0]
 
     def __contains_rec__(
         self, program: Program, start: Tuple[Type, U], information: W
@@ -127,7 +127,7 @@ class DetGrammar(Grammar, ABC, Generic[U, V, W]):
         pass
 
     @abstractmethod
-    def _start_information_(self) -> W:
+    def start_information(self) -> W:
         pass
 
     def reduce_derivations(
@@ -144,7 +144,7 @@ class DetGrammar(Grammar, ABC, Generic[U, V, W]):
         """
 
         return self.__reduce_derivations_rec__(
-            reduce, init, program, start or self.start, self._start_information_()
+            reduce, init, program, start or self.start, self.start_information()
         )[0]
 
     def __reduce_derivations_rec__(

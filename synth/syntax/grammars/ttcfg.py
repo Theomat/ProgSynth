@@ -131,7 +131,7 @@ class TTCFG(
     def _remove_non_producible_(self) -> None:
         pass
 
-    def _start_information_(self) -> List[Tuple[Type, S]]:
+    def start_information(self) -> List[Tuple[Type, S]]:
         return []
 
     def __rule_to_str__(
