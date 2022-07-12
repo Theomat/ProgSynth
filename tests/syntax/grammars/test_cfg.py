@@ -21,10 +21,17 @@ syntax = {
 }
 
 
-def test_from_dsl() -> None:
+def test_function_as_variable() -> None:
+    dsl = DSL(syntax)
+    max_depth = 5
+    cfg = CFG.depth_constraint(dsl, FunctionType(Arrow(INT, INT), INT), max_depth)
+    assert cfg.size() > 0
+
+
+def test_clean() -> None:
     dsl = DSL(syntax)
     for max_depth in [3, 7, 11]:
-        cfg = CFG.from_dsl(dsl, FunctionType(INT, INT), max_depth)
+        cfg = CFG.depth_constraint(dsl, FunctionType(INT, INT), max_depth)
         for rule in cfg.rules:
             assert rule[1][0][1] <= max_depth
             for P in cfg.rules[rule]:
@@ -32,28 +39,19 @@ def test_from_dsl() -> None:
                     assert P.primitive != "non_reachable"
                     assert P.primitive != "non_productive"
                     assert P.primitive != "head"
-                else:
-                    assert P.type == INT
 
 
-def test_function_as_variable() -> None:
-    dsl = DSL(syntax)
-    max_depth = 5
-    cfg = CFG.from_dsl(dsl, FunctionType(Arrow(INT, INT), INT), max_depth)
-    assert cfg.size() > 0
-
-
-def test_clean() -> None:
+def test_depth_constraint() -> None:
     dsl = DSL(syntax)
     for max_depth in [3, 7, 11]:
-        cfg = CFG.from_dsl(dsl, FunctionType(INT, INT), max_depth)
-        for rule in cfg.rules:
-            assert rule[1][0][1] <= max_depth
-            for P in cfg.rules[rule]:
-                if isinstance(P, Primitive):
-                    assert P.primitive != "non_reachable"
-                    assert P.primitive != "non_productive"
-
-        cpy = CFG.from_dsl(dsl, FunctionType(INT, INT), max_depth)
-        cpy.clean()
-        assert cfg == cpy
+        cfg = CFG.depth_constraint(dsl, FunctionType(INT, INT), max_depth)
+        res = dsl.parse_program("(+ 1 var0)", FunctionType(INT, INT))
+        print(cfg)
+        while res.depth() <= max_depth:
+            assert (
+                res in cfg
+            ), f"Program depth:{res.depth()} should be in the TTCFG max_depth:{max_depth}"
+            res = dsl.parse_program(f"(+ {res} var0)", FunctionType(INT, INT))
+        assert (
+            res not in cfg
+        ), f"Program depth:{res.depth()} should NOT be in the TTCFG max_depth:{max_depth}"

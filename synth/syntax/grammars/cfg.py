@@ -67,20 +67,11 @@ class CFG(TTCFG[CFGState, NoneType]):
         args = out[0]
         return "{}: {}".format(P, args)
 
-    def derive(
-        self,
-        information: List[Tuple[Type, CFGState]],
-        start: Tuple[Type, Tuple[CFGState, NoneType]],
-        program: DerivableProgram,
-    ) -> Tuple[List[Tuple[Type, CFGState]], Tuple[Type, Tuple[CFGState, NoneType]]]:
-        args, _ = self.rules[start][program]
-        if args:
-            return information, (args[0][0], (args[0][1], None))
-        else:
-            return information, (UnknownType(), start[1])
+    def name(self) -> str:
+        return "CFG"
 
     @classmethod
-    def from_dsl(
+    def depth_constraint(
         cls,
         dsl: DSL,
         type_request: Type,
