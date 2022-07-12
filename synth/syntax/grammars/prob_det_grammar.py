@@ -30,7 +30,7 @@ class ProbDetGrammar(DetGrammar[U, V, Tuple[W, float]]):
         self.ready_for_sampling = False
 
     def __hash__(self) -> int:
-        return hash((self.start, self.grammar, self.probabilities))
+        return hash((self.start, self.grammar, str(self.probabilities)))
 
     def __eq__(self, o: object) -> bool:
         return (
