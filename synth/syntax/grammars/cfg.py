@@ -1,115 +1,56 @@
 from collections import deque
 from math import prod
-from typing import Deque, Dict, Set, Tuple, List, Union
-from dataclasses import dataclass, field
+from typing import Deque, Dict, Literal, Set, Tuple, List
 
 from synth.syntax.dsl import DSL
+from synth.syntax.grammars.det_grammar import DerivableProgram
+from synth.syntax.grammars.ttcfg import TTCFG, NGram
 from synth.syntax.program import Constant, Primitive, Variable
-from synth.syntax.type_system import Arrow, Type
+from synth.syntax.type_system import Arrow, Type, UnknownType
 
 
-@dataclass(frozen=True)
-class NonTerminal:
-    type: Type
-    predecessors: List[Tuple[Union[Primitive, Variable], int]] = field(
-        default_factory=lambda: []
-    )
-    depth: int = field(default=0)
-
-    def __hash__(self) -> int:
-        return hash((self.type, tuple(self.predecessors), self.depth))
-
-    def __str__(self) -> str:
-        return f"({self.type}, {self.depth}, {self.predecessors})"
-
-    def __repr__(self) -> str:
-        return self.__str__()
+NoneType = Literal[None]
+CFGState = Tuple[NGram, int]
+CFGNonTerminal = Tuple[Type, Tuple[CFGState, NoneType]]
 
 
-class CFG:
+class CFG(TTCFG[CFGState, NoneType]):
     """
-    Object that represents a context-free grammar with normalised probabilites
-
-    start: a non-terminal
-
-    rules: a dictionary of type {S: D}
-    with S a non-terminal and D a dictionary {P : l} with P a program
-    and l a list of non-terminals representing the derivation S -> P(S1,S2,..)
-    with l = [S1,S2,...]
-
-    hash_table_programs: a dictionary {hash: P}
-    mapping hashes to programs
-    for all programs appearing in rules
-
+    Represents a deterministic Context Free Grammar (CFG).
     """
 
-    def __init__(
-        self,
-        start: NonTerminal,
-        rules: Dict[
-            NonTerminal, Dict[Union[Primitive, Variable, Constant], List[NonTerminal]]
-        ],
-        max_program_depth: int,
-        clean: bool = True,
-    ):
-        self.start = start
-        self.rules = rules
-        self.max_program_depth = max_program_depth
-
-        if clean:
-            self.clean()
-
-        # Find the type request
-        type_req = self.start.type
-        variables: List[Variable] = []
-        for S in self.rules:
-            for P in self.rules[S]:
-                if isinstance(P, Variable):
-                    if P not in variables:
-                        variables.append(P)
-        n = len(variables)
-        for i in range(n):
-            j = n - i - 1
-            for v in variables:
-                if v.variable == j:
-                    type_req = Arrow(v.type, type_req)
-        self.type_request = type_req
+    def max_program_depth(self) -> int:
+        return max(S[1][0][1] for S in self.rules) + 1
 
     def __hash__(self) -> int:
-        return hash((self.start, str(self.rules), self.max_program_depth))
+        return hash((self.start, str(self.rules)))
 
     def size(self) -> int:
-        total_programs: Dict[NonTerminal, int] = {}
-        for S in sorted(self.rules, key=lambda nt: nt.depth, reverse=True):
+        total_programs: Dict[Tuple[Type, Tuple[CFGState, NoneType]], int] = {}
+        for S in sorted(self.rules, key=lambda nt: nt[1][0][1], reverse=True):
             total = 0
+            print(S)
             for P in self.rules[S]:
-                args_P = self.rules[S][P]
+                args_P = self.rules[S][P][0]
                 if len(args_P) == 0:
                     total += 1
                 else:
-                    total += prod(total_programs[C] for C in args_P)
+                    total += prod(total_programs[(C[0], (C[1], None))] for C in args_P)
             total_programs[S] = total
         return total_programs[self.start]
 
-    def clean(self) -> None:
-        """
-        remove non-terminals which do not produce programs.
-        then remove non-terminals which are not reachable from the initial non-terminal.
-        """
-        self.__remove_non_productive__()
-        self.__remove_non_reachable__()
-
-    def __remove_non_productive__(self) -> None:
+    def _remove_non_productive_(self) -> None:
         """
         remove non-terminals which do not produce programs
         """
         new_rules: Dict[
-            NonTerminal, Dict[Union[Primitive, Variable, Constant], List[NonTerminal]]
+            CFGNonTerminal,
+            Dict[DerivableProgram, Tuple[List[Tuple[Type, CFGState]], NoneType]],
         ] = {}
         for S in reversed(self.rules):
             for P in self.rules[S]:
-                args_P = self.rules[S][P]
-                if all(arg in new_rules for arg in args_P):
+                args_P = self.rules[S][P][0]
+                if all((arg[0], (arg[1], None)) in new_rules for arg in args_P):
                     if S not in new_rules:
                         new_rules[S] = {}
                     new_rules[S][P] = self.rules[S][P]
@@ -120,47 +61,23 @@ class CFG:
             else:
                 del self.rules[S]
 
-    def __remove_non_reachable__(self) -> None:
-        """
-        remove non-terminals which are not reachable from the initial non-terminal
-        """
-        reachable: Set[NonTerminal] = set()
-        reachable.add(self.start)
+    def __rule_to_str__(
+        self, P: DerivableProgram, out: Tuple[List[Tuple[Type, CFGState]], NoneType]
+    ) -> str:
+        args = out[0]
+        return "{}: {}".format(P, args)
 
-        reach: Set[NonTerminal] = set()
-        new_reach: Set[NonTerminal] = set()
-        reach.add(self.start)
-
-        for _ in range(self.max_program_depth):
-            new_reach.clear()
-            for S in reach:
-                for P in self.rules[S]:
-                    args_P = self.rules[S][P]
-                    for arg in args_P:
-                        new_reach.add(arg)
-                        reachable.add(arg)
-            reach.clear()
-            reach = new_reach.copy()
-
-        for S in set(self.rules):
-            if S not in reachable:
-                del self.rules[S]
-
-    def __str__(self) -> str:
-        s = "Print a CFG\n"
-        s += "start: {}\n".format(self.start)
-        for S in reversed(self.rules):
-            s += "#\n {}\n".format(S)
-            for P in self.rules[S]:
-                s += "   {} - {}: {}\n".format(P, P.type, self.rules[S][P])
-        return s
-
-    def __eq__(self, o: object) -> bool:
-        return (
-            isinstance(o, CFG)
-            and o.type_request == self.type_request
-            and o.rules == self.rules
-        )
+    def derive(
+        self,
+        information: List[Tuple[Type, CFGState]],
+        start: Tuple[Type, Tuple[CFGState, NoneType]],
+        program: DerivableProgram,
+    ) -> Tuple[List[Tuple[Type, CFGState]], Tuple[Type, Tuple[CFGState, NoneType]]]:
+        args, _ = self.rules[start][program]
+        if args:
+            return information, (args[0][0], (args[0][1], None))
+        else:
+            return information, (UnknownType(), start[1])
 
     @classmethod
     def from_dsl(
@@ -203,18 +120,19 @@ class CFG:
             return_type = type_request
             args = []
 
-        rules: Dict[NonTerminal, Dict[Union[Variable, Primitive, Constant], List]] = {}
+        rules: Dict[
+            CFGNonTerminal,
+            Dict[DerivableProgram, Tuple[List[Tuple[Type, CFGState]], NoneType]],
+        ] = {}
 
-        list_to_be_treated: Deque[NonTerminal] = deque()
-        list_to_be_treated.append(NonTerminal(return_type, [], 0))
+        list_to_be_treated: Deque[CFGNonTerminal] = deque()
+        initital_ctx = (return_type, ((NGram(n_gram), 0), None))
+        list_to_be_treated.append(initital_ctx)
 
         while len(list_to_be_treated) > 0:
             non_terminal = list_to_be_treated.pop()
-            depth = non_terminal.depth
-            current_type = non_terminal.type
-            # a non-terminal is a triple (type, context, depth)
-            # context is a list of (primitive, number_argument)
-
+            depth = non_terminal[1][0][1]
+            current_type = non_terminal[0]
             # Create rule if non existent
             if non_terminal not in rules:
                 rules[non_terminal] = {}
@@ -225,21 +143,22 @@ class CFG:
                     for i in range(len(args)):
                         if current_type == args[i]:
                             var = Variable(i, current_type)
-                            rules[non_terminal][var] = []
+                            rules[non_terminal][var] = ([], None)
                     if current_type in constant_types:
                         cst = Constant(current_type)
-                        rules[non_terminal][cst] = []
+                        rules[non_terminal][cst] = ([], None)
                 # Try to add constants from the DSL
                 for P in dsl.list_primitives:
                     type_P = P.type
                     if not isinstance(type_P, Arrow) and type_P == current_type:
-                        rules[non_terminal][P] = []
+                        rules[non_terminal][P] = ([], None)
                 # Function call
                 if depth < max_depth - 1:
+                    predecessors = non_terminal[1][0][0]
+                    last_pred = predecessors.last() if len(predecessors) > 0 else None
                     forbidden = forbidden_sets.get(
-                        non_terminal.predecessors[0][0].primitive
-                        if len(non_terminal.predecessors) > 0
-                        and isinstance(non_terminal.predecessors[0][0], Primitive)
+                        last_pred[0].primitive
+                        if last_pred and isinstance(last_pred[0], Primitive)
                         else "",
                         set(),
                     )
@@ -252,20 +171,18 @@ class CFG:
                         if arguments_P is not None:
                             decorated_arguments_P = []
                             for i, arg in enumerate(arguments_P):
-                                addition: List[
-                                    Tuple[Union[Primitive, Variable], int]
-                                ] = [(P, i)]
-                                new_predecessors = addition + non_terminal.predecessors
-                                if len(new_predecessors) > n_gram - 1:
-                                    new_predecessors.pop()
-                                new_context = NonTerminal(
-                                    arg, new_predecessors, depth + 1
+                                new_predecessors = predecessors.successor((P, i))
+                                new_context = (
+                                    arg,
+                                    ((new_predecessors, depth + 1), None),
                                 )
-                                decorated_arguments_P.append(new_context)
+                                decorated_arguments_P.append(
+                                    (arg, (new_predecessors, depth + 1))
+                                )
                                 if new_context not in list_to_be_treated:
                                     list_to_be_treated.appendleft(new_context)
 
-                            rules[non_terminal][P] = decorated_arguments_P
+                            rules[non_terminal][P] = (decorated_arguments_P, None)
 
                     # Try to use variable as if there were functions
                     for vi, varg in enumerate(args):
@@ -274,18 +191,18 @@ class CFG:
                             V = Variable(vi, varg)
                             decorated_arguments_V = []
                             for i, arg in enumerate(arguments_V):
-                                addition = [(V, i)]
-                                new_predecessors = addition + non_terminal.predecessors
-                                if len(new_predecessors) > n_gram - 1:
-                                    new_predecessors.pop()
-                                new_context = NonTerminal(
-                                    arg, new_predecessors, depth + 1
+                                new_predecessors = predecessors.successor((V, i))
+                                new_context = (
+                                    arg,
+                                    ((new_predecessors, depth + 1), None),
                                 )
-                                decorated_arguments_V.append(new_context)
+                                decorated_arguments_V.append(
+                                    (arg, (new_predecessors, depth + 1))
+                                )
                                 if new_context not in list_to_be_treated:
                                     list_to_be_treated.appendleft(new_context)
 
-                            rules[non_terminal][V] = decorated_arguments_V
+                            rules[non_terminal][V] = (decorated_arguments_V, None)
                     # Try to call self
                     if recursive:
                         arguments_self = type_request.ends_with(current_type)
@@ -293,22 +210,20 @@ class CFG:
                             P = Primitive("@self", type_request)
                             decorated_arguments_self = []
                             for i, arg in enumerate(arguments_self):
-                                addition = [(P, i)]
-                                new_predecessors = addition + non_terminal.predecessors
-                                if len(new_predecessors) > n_gram - 1:
-                                    new_predecessors.pop()
-                                new_context = NonTerminal(
-                                    arg, new_predecessors, depth + 1
+                                new_predecessors = predecessors.successor((P, i))
+                                new_context = (
+                                    arg,
+                                    ((new_predecessors, depth + 1), None),
                                 )
-                                decorated_arguments_self.append(new_context)
+                                decorated_arguments_self.append(
+                                    (arg, (new_predecessors, depth + 1))
+                                )
                                 if new_context not in list_to_be_treated:
                                     list_to_be_treated.appendleft(new_context)
 
-                            rules[non_terminal][P] = decorated_arguments_self
+                            rules[non_terminal][P] = (decorated_arguments_self, None)
 
         return CFG(
-            start=NonTerminal(return_type, [], 0),
+            start=initital_ctx,
             rules=rules,
-            max_program_depth=max_depth,
-            clean=True,
         )
