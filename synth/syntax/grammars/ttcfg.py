@@ -135,6 +135,11 @@ class TTCFG(
     def start_information(self) -> List[Tuple[Type, S]]:
         return []
 
+    def arguments_length_for(
+        self, S: Tuple[Type, Tuple[S, T]], P: DerivableProgram
+    ) -> int:
+        return len(self.rules[S][P][0])
+
     def __rule_to_str__(
         self, P: DerivableProgram, out: Tuple[List[Tuple[Type, S]], T]
     ) -> str:

@@ -153,6 +153,10 @@ class DetGrammar(Grammar, ABC, Generic[U, V, W]):
         assert False
 
     @abstractmethod
+    def arguments_length_for(self, S: Tuple[Type, U], P: DerivableProgram) -> int:
+        pass
+
+    @abstractmethod
     def start_information(self) -> W:
         pass
 
