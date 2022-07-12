@@ -144,6 +144,7 @@ class DetGrammar(Grammar, ABC, Generic[U, V, W]):
 
         elif isinstance(P, Function):
             F = P.function
+            current.append(S)
             information, _ = self.derive_all(information, S, F, current)
             S = current[-1]
             for arg in P.arguments:
