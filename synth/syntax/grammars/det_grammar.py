@@ -126,6 +126,32 @@ class DetGrammar(Grammar, ABC, Generic[U, V, W]):
         """
         pass
 
+    def derive_all(
+        self,
+        information: W,
+        S: Tuple[Type, U],
+        P: Program,
+        current: Optional[List[Tuple[Type, U]]] = None,
+    ) -> Tuple[W, List[Tuple[Type, U]]]:
+        """
+        Given current information and context S, produces the new information and all the contexts the grammar went through to derive program P.
+        """
+        current = current or []
+        if isinstance(P, (Primitive, Variable, Constant)):
+            information, ctx = self.derive(information, S, P)
+            current.append(ctx)
+            return (information, current)
+
+        elif isinstance(P, Function):
+            F = P.function
+            information, _ = self.derive_all(information, S, F, current)
+            S = current[-1]
+            for arg in P.arguments:
+                information, _ = self.derive_all(information, S, arg, current)
+                S = current[-1]
+            return (information, current)
+        assert False
+
     @abstractmethod
     def start_information(self) -> W:
         pass
