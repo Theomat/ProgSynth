@@ -4,6 +4,7 @@ from typing import (
     Deque,
     Dict,
     List,
+    Optional,
     Tuple,
     TypeVar,
     Generic,
@@ -150,16 +151,16 @@ class TTCFG(
         type_request: Type,
         max_depth: int,
         min_variable_depth: int = 1,
-    ) -> "TTCFG[str, int]":
+    ) -> "TTCFG[Optional[Tuple[int, DerivableProgram]], int]":
         """
-        Constructs a TT CFG from a DSL imposing the maximum program depth.
+        Constructs a bigram TT CFG from a DSL imposing the maximum program depth.
 
         max_depth: int - is the maxium depth of programs allowed
         min_variable_depth: int - min depth at which variables and constants are allowed
         """
 
         def __transition__(
-            state: Tuple[Type, Tuple[str, int]],
+            state: Tuple[Type, Tuple[Optional[Tuple[int, DerivableProgram]], int]],
             derivation: Union[Primitive, Variable, Constant],
         ) -> Tuple[bool, int]:
             depth = state[1][1]
@@ -174,9 +175,9 @@ class TTCFG(
         return __saturation_build__(
             dsl,
             type_request,
-            ("start", 1),
+            (None, 1),
             __transition__,
-            lambda _, P, i, __: f"{P} arg n°{i}",
+            lambda _, P, i, __: (i, P),
         )
 
     @classmethod
@@ -185,15 +186,15 @@ class TTCFG(
         dsl: DSL,
         type_request: Type,
         max_size: int,
-    ) -> "TTCFG[str, int]":
+    ) -> "TTCFG[Optional[Tuple[int, DerivableProgram]], int]":
         """
-        Constructs a TT CFG from a DSL imposing the maximum program size.
+        Constructs a bigram TT CFG from a DSL imposing the maximum program size.
 
         max_size: int - is the maxium depth of programs allowed
         """
 
         def __transition__(
-            state: Tuple[Type, Tuple[str, int]],
+            state: Tuple[Type, Tuple[Optional[Tuple[int, DerivableProgram]], int]],
             derivation: Union[Primitive, Variable, Constant],
         ) -> Tuple[bool, int]:
             size = state[1][1]
@@ -206,9 +207,9 @@ class TTCFG(
         return __saturation_build__(
             dsl,
             type_request,
-            ("start", 0),
+            (None, 0),
             __transition__,
-            lambda _, P, i, __: f"{P} arg n°{i}",
+            lambda _, P, i, __: (i, P),
         )
 
     @classmethod
@@ -218,13 +219,13 @@ class TTCFG(
         type_request: Type,
         primitive: str,
         k: int,
-    ) -> "TTCFG[str, int]":
+    ) -> "TTCFG[Optional[Tuple[int, DerivableProgram]], int]":
         """
-        Constructs a TT CFG from a DSL imposing at most k occurences of a certain primitive.
+        Constructs a bigram TT CFG from a DSL imposing at most k occurences of a certain primitive.
         """
 
         def __transition__(
-            state: Tuple[Type, Tuple[str, int]],
+            state: Tuple[Type, Tuple[Optional[Tuple[int, DerivableProgram]], int]],
             derivation: Union[Primitive, Variable, Constant],
         ) -> Tuple[bool, int]:
             occ_left = state[1][1]
@@ -235,9 +236,9 @@ class TTCFG(
         return __saturation_build__(
             dsl,
             type_request,
-            ("start", k),
+            (None, k),
             __transition__,
-            lambda _, P, i, __: f"{P} arg n°{i}",
+            lambda _, P, i, __: (i, P),
         )
 
 
