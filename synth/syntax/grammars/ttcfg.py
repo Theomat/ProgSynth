@@ -177,43 +177,6 @@ class TTCFG(
         return "TTCFG"
 
     @classmethod
-    def depth_constraint(
-        cls,
-        dsl: DSL,
-        type_request: Type,
-        max_depth: int,
-        min_variable_depth: int = 1,
-        n_gram: int = 2,
-    ) -> "TTCFG[NGram, int]":
-        """
-        Constructs a n-gram TT CFG from a DSL imposing the maximum program depth.
-
-        max_depth: int - is the maxium depth of programs allowed
-        min_variable_depth: int - min depth at which variables and constants are allowed
-        """
-
-        def __transition__(
-            state: Tuple[Type, Tuple[NGram, int]],
-            derivation: Union[Primitive, Variable, Constant],
-        ) -> Tuple[bool, int]:
-            depth = state[1][1]
-            if depth > max_depth:
-                return False, 0
-            if not isinstance(derivation.type, Arrow):
-                if isinstance(derivation, (Variable, Constant)):
-                    return depth >= min_variable_depth, depth
-                return True, depth
-            return depth + 1 <= max_depth, depth + 1
-
-        return __saturation_build__(
-            dsl,
-            type_request,
-            (NGram(n_gram), 1),
-            __transition__,
-            lambda ctx, P, i, __: ctx[1][0].successor((P, i)),
-        )
-
-    @classmethod
     def size_constraint(
         cls, dsl: DSL, type_request: Type, max_size: int, n_gram: int = 2
     ) -> "TTCFG[NGram, int]":
