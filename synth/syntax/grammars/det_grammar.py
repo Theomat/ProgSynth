@@ -106,15 +106,15 @@ class DetGrammar(Grammar, ABC, Generic[U, V, W]):
         """
         Clean this deterministic grammar by removing non reachable, non producible.
         """
+        self._remove_non_productive_()
         self._remove_non_reachable_()
-        self._remove_non_producible_()
 
     @abstractmethod
     def _remove_non_reachable_(self) -> None:
         pass
 
     @abstractmethod
-    def _remove_non_producible_(self) -> None:
+    def _remove_non_productive_(self) -> None:
         pass
 
     @abstractmethod

@@ -156,7 +156,7 @@ class TTCFG(
             if rule not in reachable:
                 del self.rules[rule]
 
-    def _remove_non_producible_(self) -> None:
+    def _remove_non_productive_(self) -> None:
         pass
 
     def start_information(self) -> List[Tuple[Type, S]]:
