@@ -15,8 +15,8 @@ from typing import (
 from dataclasses import dataclass, field
 from abc import ABC, abstractmethod
 
-from synth.syntax.program import Primitive, Program, Function, Variable
-from synth.syntax.grammars.prob_det_grammar import ProbDetGrammar
+from synth.syntax.program import Program, Function, Variable
+from synth.syntax.grammars.tagged_det_grammar import ProbDetGrammar
 from synth.syntax.type_system import Type
 from synth.utils.ordered import Ordered
 

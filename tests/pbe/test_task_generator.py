@@ -2,7 +2,7 @@ from synth.generation.sampler import LexiconSampler
 from synth.pbe.task_generator import TaskGenerator, basic_output_validator
 from synth.semantic.evaluator import DSLEvaluator
 from synth.syntax.grammars.cfg import CFG
-from synth.syntax.grammars.prob_det_grammar import ProbDetGrammar
+from synth.syntax.grammars.tagged_det_grammar import ProbDetGrammar
 from synth.syntax.dsl import DSL
 from synth.syntax.type_system import (
     INT,

@@ -4,7 +4,7 @@ from synth.syntax.grammars.heap_search import (
     enumerate_bucket_prob_grammar,
 )
 from synth.syntax.grammars.cfg import CFG
-from synth.syntax.grammars.prob_det_grammar import ProbDetGrammar
+from synth.syntax.grammars.tagged_det_grammar import ProbDetGrammar
 from synth.syntax.dsl import DSL
 from synth.syntax.type_system import (
     INT,

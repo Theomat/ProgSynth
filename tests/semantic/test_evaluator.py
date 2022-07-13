@@ -1,5 +1,5 @@
 from synth.syntax.grammars.cfg import CFG
-from synth.syntax.grammars.prob_det_grammar import ProbDetGrammar
+from synth.syntax.grammars.tagged_det_grammar import ProbDetGrammar
 from synth.semantic.evaluator import DSLEvaluator, __tuplify__
 from synth.syntax.dsl import DSL
 from synth.syntax.type_system import (

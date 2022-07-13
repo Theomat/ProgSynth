@@ -18,10 +18,11 @@ from synth.syntax.type_system import (
 )
 from synth.syntax.grammars import (
     CFG,
-    # UPCFG,
     TTCFG,
     Grammar,
     DetGrammar,
+    ProbDetGrammar,
+    TaggedDetGrammar,
     enumerate_prob_grammar,
     enumerate_bucket_prob_grammar,
     # split,
