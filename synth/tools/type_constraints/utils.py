@@ -81,7 +81,7 @@ class Syntax:
 
         # Init equivalent primitives
         self.equivalents: Dict[str, Set[str]] = defaultdict(set)
-        for prim in self.syntax.keys():
+        for prim in self.syntax:
             self.equivalents[get_prefix(prim)].add(prim)
 
     def __getitem__(self, item: str) -> Type:
@@ -126,10 +126,10 @@ class Syntax:
     def replace_type(self, old_t: Type, new_t: Type) -> None:
         tmap = {old_t: new_t}
         for P, ptype in self.syntax.items():
+            self.syntax[P] = map_type(ptype, tmap)
             if P in self.producers_by_type[old_t]:
                 self.producers_by_type[old_t].remove(P)
                 self.producers_by_type[new_t].add(P)
-            self.syntax[P] = map_type(ptype, tmap)
 
     def duplicate_primitive(self, primitive: str, ntype: Type) -> str:
         new_name = __new_primitive_name__(primitive, self)
@@ -156,7 +156,7 @@ class Syntax:
         elif isinstance(base, PolymorphicType):
             # Not sure how relevant this is
             out = PolymorphicType(self.__new_type_name__(base.name))
-        assert out is not None
+        assert out is not None, f"Could not duplicate type:{base}"
         return out
 
     def add_cast(self, from_type: Type, to: Type) -> None:
@@ -189,8 +189,8 @@ def producers_of_using(syntax: Syntax, rtype: Type, consuming: Set[Type]) -> Set
     for atype in consuming:
         all_consumers |= set(syntax.consumers_of(atype))
     # Now we can go down
-    out = set(candidates).intersection(all_consumers)
-    current = [p for p in out]
+    out = candidates.intersection(all_consumers)
+    current = list(out)
     types_dones = {x for x in consuming}
     while current:
         p = current.pop()
@@ -264,17 +264,17 @@ def get_prefix(name: str) -> str:
     )
 
 
-def map_type(type: Type, map: Dict[Type, Type]) -> Type:
-    if type in map:
-        return map[type]
-    elif isinstance(type, List):
-        return List(map_type(type.element_type, map))
-    elif isinstance(type, Arrow):
+def map_type(old_type: Type, map: Dict[Type, Type]) -> Type:
+    if old_type in map:
+        return map[old_type]
+    elif isinstance(old_type, List):
+        return List(map_type(old_type.element_type, map))
+    elif isinstance(old_type, Arrow):
         return FunctionType(
-            *[map_type(arg, map) for arg in type.arguments()],
-            map_type(type.returns(), map),
+            *[map_type(arg, map) for arg in old_type.arguments()],
+            map_type(old_type.returns(), map),
         )
-    return type
+    return old_type
 
 
 # ========================================================================================
@@ -348,7 +348,7 @@ def __are_equivalent_types__(syntax: Syntax, t1: Type, t2: Type) -> bool:
 
 
 def __merge_for__(syntax: Syntax, primitive: str) -> bool:
-    candidates = list(syntax.equivalent_primitives(primitive))
+    candidates = sorted(syntax.equivalent_primitives(primitive))
     if len(candidates) <= 1:
         return False
 
@@ -405,11 +405,14 @@ def clean(
         prefix = get_prefix(str(t))
         if prefix in type_classes:
             continue
-        type_classes[prefix] = [
-            tt
-            for tt in interesting_types
-            if get_prefix(str(tt)) == prefix and tt not in var_types
-        ]
+        type_classes[prefix] = sorted(
+            [
+                tt
+                for tt in interesting_types
+                if get_prefix(str(tt)) == prefix and tt not in var_types
+            ],
+            key=str,
+        )
 
     merged_types = True
     while merged_types:

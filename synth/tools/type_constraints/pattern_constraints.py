@@ -39,14 +39,12 @@ def __add_variable_constraint__(
     # Always assume there are other variables of the same types
 
     to_duplicate = producers_of_using(syntax, arg_type, var_types)
-    # add constantsof same types
-    to_duplicate |= set(
-        [
-            p
-            for p, ptype in syntax.syntax.items()
-            if not isinstance(ptype, Arrow) and ptype in var_types
-        ]
-    )
+    # add constants of same types
+    to_duplicate |= {
+        p
+        for p, ptype in syntax.syntax.items()
+        if not isinstance(ptype, Arrow) and ptype in var_types
+    }
     types_to_duplicate = types_produced_directly_by(to_duplicate, syntax)
     # print("\t" * level,  "To duplicate:", to_duplicate)
     # print("\t" * level,  "Types to duplicate:", types_to_duplicate)
@@ -54,7 +52,7 @@ def __add_variable_constraint__(
     # Compute the mapping of types
     types_map = {}
     # variables first
-    for var_type in var_types:
+    for var_type in sorted(var_types, key=str):
         concerned = {i for i in variables if varno2type[i] == var_type}
         if any(nconstraints[f"var{i}"] > 0 for i in concerned):
             already_defined = [i for i in concerned if nconstraints[f"var{i}"] > 0]
@@ -63,11 +61,11 @@ def __add_variable_constraint__(
         else:
             types_map[var_type] = syntax.duplicate_type(var_type)
     # rest
-    for dtype in types_to_duplicate.difference(var_types):
+    for dtype in sorted(types_to_duplicate.difference(var_types), key=str):
         types_map[dtype] = syntax.duplicate_type(dtype)
 
     # Duplicate primitives
-    for primitive in to_duplicate:
+    for primitive in sorted(to_duplicate, key=str):
         syntax.duplicate_primitive(primitive, map_type(syntax[primitive], types_map))
 
     # Add casts
@@ -96,7 +94,7 @@ def __add_primitive_constraint__(
     level: int = 0,
 ) -> str:
     prim = content.strip("()")
-    for primitive in {p for p in syntax.equivalent_primitives(prim)}:
+    for primitive in sorted(syntax.equivalent_primitives(prim)):
         ptype = syntax[primitive]
         rtype = ptype.returns() if isinstance(ptype, Arrow) else ptype
         new_type_needed = any(
@@ -201,7 +199,7 @@ def __process__(
     # If one element then there is nothing to do.
     if len(constraint) == 1:
         return constraint, type_request
-    function = {p for p in syntax.equivalent_primitives(constraint.pop(0))}
+    function = sorted(syntax.equivalent_primitives(constraint.pop(0)))
     args = []
     # We need to process all arguments first
     for arg in constraint:
@@ -281,23 +279,25 @@ def produce_new_syntax_for_constraints(
 
 
 if __name__ == "__main__":
-    from synth.syntax import DSL, ConcreteCFG, INT, FunctionType, ConcretePCFG
-    from examples.pbe.towers.towers_base import syntax, BLOCK
+    from synth.syntax import DSL, CFG, INT, FunctionType, ProbDetGrammar
+    from synth.tools.type_constraints.utils import export_syntax_to_python
+
+    # from examples.pbe.towers.towers_base import syntax, BLOCK
 
     # type_request = FunctionType(INT, INT, BLOCK)
 
     # patterns = [
-    #     "and ^and *",
-    #     "or ^or,and ^and",
-    #     "+ ^+ *",
-    #     # "elif if elif,if,EMPTY",
-    #     "ifY * 1x3,3x1",
     #     "ifX $(var0) ifY,elifY",
+    #     "ifY * 1x3,3x1",
     #     "elifY ifY EMPTY,elifY",
     #     "elifX ifX EMPTY,elifX",
-    #     # "elif ^EMPTY elif,if,EMPTY",
-    #     # "elif ^elif *"
-    #     # "elif ^EMPTY,elif elif,if,EMPTY",
+    #     "not ^not,and",
+    #     "and ^and *",
+    #     "or ^or,and ^and",
+    #     "+ ^+,0 ^0",
+    #     "not ^not,and",
+    #     "* ^*,0,1 ^0,1",
+    #     "- * ^0",
     # ]
 
     from examples.pbe.deepcoder.deepcoder import dsl, List
@@ -311,17 +311,17 @@ if __name__ == "__main__":
         "COUNT[>0] ^MAP[*-1],MAP[**2]",
         "COUNT[EVEN] ^MAP[+1],MAP[*2]",
         "COUNT[ODD] ^MAP[+1],MAP[*2]",
-        "FILTER[EVEN] ^MAP[+1],MAP[*2]",
-        "FILTER[ODD] ^MAP[+1],MAP[*2]",
-        "ZIPWITH[+] ^SORT,REVERSE,ZIPWITH[+] ^SORT,REVERSE",
-        "ZIPWITH[-] ^SORT,REVERSE ^SORT,REVERSE",
-        # "ZIPWITH[*] ^SORT,REVERSE,ZIPWITH[*] ^SORT,REVERSE",
-        # "ZIPWITH[min] ^SORT,REVERSE,ZIPWITH[min] ^SORT,REVERSE",
-        # "ZIPWITH[max] ^SORT,REVERSE,ZIPWITH[max] ^SORT,REVERSE",
+        "FILTER[EVEN] ^MAP[+1],MAP[*2],FILTER[ODD]",
+        "FILTER[ODD] ^MAP[+1],MAP[*2],FILTER[EVEN]",
+        "ZIPWITH[+] ^ZIPWITH[+] *",
+        "ZIPWITH[*] ^ZIPWITH[*] *",
+        "ZIPWITH[min] ^ZIPWITH[min] *",
+        "ZIPWITH[max] ^ZIPWITH[max] *",
     ]
 
     max_depth = 4
-    original_size = ConcreteCFG.from_dsl(dsl, type_request, max_depth).size()
+    # original_size = CFG.depth_constraint(DSL(syntax), type_request, max_depth).size()
+    original_size = CFG.depth_constraint(dsl, type_request, max_depth).size()
 
     # test for patterns
     new_syntax = syntax
@@ -330,32 +330,30 @@ if __name__ == "__main__":
     )
 
     # Print
-    print(f"[BEF CLEAN][PATTERNS] New syntax ({len(new_syntax)} primitives):")
+    print(f"[PATTERNS] New syntax ({len(new_syntax)} primitives):")
     # for prim, type in new_syntax.items():
-    # print("\t", prim, ":", type)
-    new_size = ConcreteCFG.from_dsl(
-        DSL(new_syntax, dsl.forbidden_patterns), type_request, max_depth
+    #     print("\t", prim, ":", type)
+    new_size = CFG.depth_constraint(
+        DSL(new_syntax, dsl.forbidden_patterns),
+        type_request,
+        max_depth
+        # DSL(new_syntax),
+        # type_request,
+        # max_depth,
     ).size()
     pc = (original_size - new_size) / original_size
-    print("Removed", original_size - new_size, f"({pc:%}) programs at depth", max_depth)
+    print(
+        f"Removed {original_size - new_size:.2E} ({pc:%}) programs at depth", max_depth
+    )
+    print(f"New size {new_size:.2E} programs at depth", max_depth)
     print("New TR:", type_request)
 
-    clean(new_syntax, type_request)
-    print(f"[AFT CLEAN][PATTERNS] New syntax ({len(new_syntax)} primitives):")
-    # for prim, type in new_syntax.items():
-    # print("\t", prim, ":", type)
-
-    new_size = ConcreteCFG.from_dsl(
-        DSL(new_syntax, dsl.forbidden_patterns), type_request, max_depth
-    ).size()
-    pc = (original_size - new_size) / original_size
-    print("Removed", original_size - new_size, f"({pc:%}) programs at depth", max_depth)
-
-    # pcfg = ConcretePCFG.uniform(
-    #     ConcreteCFG.from_dsl(DSL(new_syntax), type_request, max_depth)
+    # pcfg = ProbDetGrammar.uniform(
+    #     CFG.from_dsl(DSL(new_syntax), type_request, max_depth)
     # )
     # pcfg.init_sampling(2)
     # for i in range(30):
     #     print(pcfg.sample_program())
 
-    # print(export_syntax_to_python(new_syntax))
+    # with open("deepcoder2.py", "w") as fd:
+    # fd.write(export_syntax_to_python(new_syntax))
