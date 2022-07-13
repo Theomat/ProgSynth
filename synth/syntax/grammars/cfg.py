@@ -29,7 +29,6 @@ class CFG(TTCFG[CFGState, NoneType]):
         total_programs: Dict[Tuple[Type, Tuple[CFGState, NoneType]], int] = {}
         for S in sorted(self.rules, key=lambda nt: nt[1][0][1], reverse=True):
             total = 0
-            print(S)
             for P in self.rules[S]:
                 args_P = self.rules[S][P][0]
                 if len(args_P) == 0:
