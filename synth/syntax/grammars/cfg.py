@@ -47,7 +47,7 @@ class CFG(TTCFG[CFGState, NoneType]):
             CFGNonTerminal,
             Dict[DerivableProgram, Tuple[List[Tuple[Type, CFGState]], NoneType]],
         ] = {}
-        for S in reversed(self.rules):
+        for S in sorted(self.rules, key=lambda rule: rule[1][0][1], reverse=True):
             for P in self.rules[S]:
                 args_P = self.rules[S][P][0]
                 if all((arg[0], (arg[1], None)) in new_rules for arg in args_P):
