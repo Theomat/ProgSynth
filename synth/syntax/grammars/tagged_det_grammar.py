@@ -60,12 +60,6 @@ class TaggedDetGrammar(DetGrammar[U, V, W], Generic[T, U, V, W]):
     def arguments_length_for(self, S: Tuple[Type, U], P: DerivableProgram) -> int:
         return self.grammar.arguments_length_for(S, P)
 
-    def _remove_non_productive_(self) -> None:
-        pass
-
-    def _remove_non_reachable_(self) -> None:
-        pass
-
     def derive(
         self, information: W, S: Tuple[Type, U], P: DerivableProgram
     ) -> Tuple[W, Tuple[Type, U]]:
