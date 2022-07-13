@@ -208,8 +208,8 @@ class GrammarPredictorLayer(nn.Module, Generic[A, U, V, W]):
         device: Union[torch.device, str, Literal[None]] = None,
     ) -> Tensor:
         out: Tensor = torch.zeros((self.output_size), device=device)
-        self.__encode__(program, type_request, out)
-
+        grammar = self.grammar_dictionary[type_request]
+        grammar.reduce_derivations(__reduce_encoder__, (self, out), program)
         return out
 
     def __normalize__(self, src: Tensor, dst: Tensor) -> None:
@@ -225,16 +225,6 @@ class GrammarPredictorLayer(nn.Module, Generic[A, U, V, W]):
                 dst[:, start : start + length] = F.log_softmax(
                     src[:, start : start + length], dim=-1
                 )
-
-    def __encode__(
-        self,
-        program: Program,
-        type_request: Type,
-        tensor: Tensor,
-    ) -> None:
-
-        grammar = self.grammar_dictionary[type_request]
-        grammar.reduce_derivations(__reduce_encoder__, (self, tensor), program)
 
     def loss_cross_entropy(
         self,
