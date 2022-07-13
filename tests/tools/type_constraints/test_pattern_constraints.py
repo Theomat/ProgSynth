@@ -35,11 +35,26 @@ type_request = FunctionType(INT, INT, INT)
 
 def test_produce() -> None:
     old_size = -1
+
     for _ in range(4):
-        new_syntax, _ = produce_new_syntax_for_constraints(
+        new_syntax, new_tr = produce_new_syntax_for_constraints(
             syntax, constraints, type_request, progress=False
         )
-        size = CFG.depth_constraint(DSL(new_syntax), type_request, depth).size()
+        size = CFG.depth_constraint(DSL(new_syntax), new_tr, depth).size()
         if old_size == -1:
             old_size = size
         assert old_size == size
+
+
+def test_constraints() -> None:
+    dsl = DSL(syntax)
+    p1 = dsl.parse_program("(+ var1 1)", type_request)
+    p2 = dsl.parse_program("(- var0 0)", type_request)
+    p3 = dsl.parse_program("(+ var0 0)", type_request)
+    new_syntax, new_tr = produce_new_syntax_for_constraints(
+        syntax, constraints, type_request, progress=False
+    )
+    cfg = CFG.depth_constraint(DSL(new_syntax), new_tr, depth)
+    assert p1 not in cfg
+    assert p2 not in cfg
+    assert p3 not in cfg
