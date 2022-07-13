@@ -9,8 +9,8 @@ from synth.pbe import reproduce_dataset
 from synth.pruning import UseAllVariablesPruner
 from synth.syntax import (
     CFG,
-    ConcretePCFG,
-    enumerate_pcfg,
+    ProbDetGrammar,
+    enumerate_prob_grammar,
     DSL,
     Function,
     Primitive,
@@ -223,11 +223,11 @@ with chrono.clock("search"):
             continue
         # Remove forbidden patterns to speed up search
         dsl.forbidden_patterns = syntaxic_restrictions[:]
-        cfg = CFG.from_dsl(dsl, primitive.type, max_depth + 1)
+        cfg = CFG.depth_constraint(dsl, primitive.type, max_depth + 1)
         cfg.rules[cfg.start] = {
             P: d for P, d in cfg.rules[cfg.start].items() if P == primitive
         }
-        pcfg = ConcretePCFG.uniform(cfg)
+        pcfg = ProbDetGrammar.uniform(cfg)
 
         with chrono.clock("search.input_sampling"):
             if primitive.type not in sampled_inputs:
@@ -284,7 +284,7 @@ with chrono.clock("search"):
         # Invariant part
         # ========================
         with chrono.clock("search.invariant.enumeration"):
-            for program in enumerate_pcfg(pcfg):
+            for program in enumerate_prob_grammar(pcfg):
                 if base_program == program:
                     continue
                 with chrono.clock("search.invariant.enumeration.pruning"):
@@ -319,10 +319,10 @@ with chrono.clock("constants"):
         }
         # Remove forbidden patterns to speed up search
         dsl.forbidden_patterns = syntaxic_restrictions[:]
-        cfg = CFG.from_dsl(dsl, primitive.type, max_depth + 1)
-        pcfg = ConcretePCFG.uniform(cfg)
+        cfg = CFG.depth_constraint(dsl, primitive.type, max_depth + 1)
+        pcfg = ProbDetGrammar.uniform(cfg)
         with chrono.clock("constants.enumeration"):
-            for program in enumerate_pcfg(pcfg):
+            for program in enumerate_prob_grammar(pcfg):
                 with chrono.clock("constants.enumeration.eval"):
                     out = evaluator.eval(program, [])
                 if out in all_evals:
@@ -351,10 +351,10 @@ print(f"Found {len(syntaxic_restrictions)} syntaxic restricions.")
 copied_dsl = DSL(
     {p.primitive: p.type for p in dsl.list_primitives}, syntaxic_restrictions
 )
-all_type_requests = set(task_generator.type2pcfg.keys())
+all_type_requests = set(task_generator.type2pgrammar.keys())
 dsl.forbidden_patterns = []
-cfgs = [CFG.from_dsl(dsl, t, 5) for t in all_type_requests]
-reduced_cfgs = [CFG.from_dsl(copied_dsl, t, 5) for t in all_type_requests]
+cfgs = [CFG.depth_constraint(dsl, t, 5) for t in all_type_requests]
+reduced_cfgs = [CFG.depth_constraint(copied_dsl, t, 5) for t in all_type_requests]
 ratio = np.mean(
     [
         (original.size() - red.size()) / original.size()
