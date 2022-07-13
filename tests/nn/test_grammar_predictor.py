@@ -161,3 +161,39 @@ def test_learning() -> None:
         assert mean_prob[i - 1] < mean_prob[i], f"{mean_prob}"
 
     assert mean_prob[-1] > 0.12
+
+
+def test_learning_cross_entropy() -> None:
+    layer = GrammarPredictorLayer(10, {cfg}, cfg_bigram_without_depth)
+    opti = torch.optim.AdamW(layer.parameters(), lr=1e-1)
+    steps = 10
+    mean_prob = []
+    batch_size = 10
+    programs = [
+        Function(
+            Primitive("+", FunctionType(INT, INT, INT)),
+            [Variable(0, INT), Primitive("1", INT)],
+        )
+    ] * batch_size
+    for step in range(steps):
+        inputs = torch.ones((batch_size, 10))
+        y = layer(inputs)
+        opti.zero_grad()
+        loss = layer.loss_cross_entropy(programs, y)
+        loss.backward()
+        opti.step()
+
+        with torch.no_grad():
+            pcfgs = [
+                layer.tensor2log_prob_grammar(y[i], cfg.type_request)
+                for i in range(batch_size)
+            ]
+            logprob = -layer.loss_negative_log_prob(
+                programs, pcfgs, length_normed=False
+            ).item()
+            mean_prob.append(np.exp(logprob))
+
+    for i in range(1, len(mean_prob)):
+        assert mean_prob[i - 1] < mean_prob[i], f"{mean_prob}"
+
+    assert mean_prob[-1] > 0.12
