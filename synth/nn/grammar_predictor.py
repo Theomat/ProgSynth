@@ -202,10 +202,13 @@ class GrammarPredictorLayer(nn.Module, Generic[A, U, V, W]):
         return grammar
 
     def encode(
-        self, program: Program, device: Union[torch.device, str, Literal[None]] = None
+        self,
+        program: Program,
+        type_request: Type,
+        device: Union[torch.device, str, Literal[None]] = None,
     ) -> Tensor:
         out: Tensor = torch.zeros((self.output_size), device=device)
-        self.__encode__(program, out)
+        self.__encode__(program, type_request, out)
 
         return out
 
@@ -226,20 +229,25 @@ class GrammarPredictorLayer(nn.Module, Generic[A, U, V, W]):
     def __encode__(
         self,
         program: Program,
+        type_request: Type,
         tensor: Tensor,
     ) -> None:
 
-        grammar = self.grammar_dictionary[program.type]
+        grammar = self.grammar_dictionary[type_request]
         grammar.reduce_derivations(__reduce_encoder__, (self, tensor), program)
 
     def loss_cross_entropy(
         self,
         programs: Iterable[Program],
+        type_requests: Iterable[Type],
         batch_outputs: Tensor,
         reduce: Optional[Callable[[Tensor], Tensor]] = torch.mean,
     ) -> Tensor:
         target = torch.stack(
-            [self.encode(prog, device=batch_outputs.device) for prog in programs]
+            [
+                self.encode(prog, tr, device=batch_outputs.device)
+                for prog, tr in zip(programs, type_requests)
+            ]
         ).to(device=batch_outputs.device)
         # Since we already do LogSoftmax we only have to do NNL to get cross entropy
         out = F.cross_entropy(batch_outputs, target)
@@ -280,7 +288,8 @@ def __reduce_encoder__(
     P: DerivableProgram,
     _: V,
 ) -> Tuple[GrammarPredictorLayer[A, U, V, W], Tensor]:
-    G, tensor = t
-    start, __, symbol2index = G.abs2index[G.real2abs[S]]
-    tensor[start + symbol2index[P]] = 1  # type: ignore
+    if isinstance(P, Primitive):
+        G, tensor = t
+        start, __, symbol2index = G.abs2index[G.real2abs[S]]
+        tensor[start + symbol2index[P]] = 1
     return t

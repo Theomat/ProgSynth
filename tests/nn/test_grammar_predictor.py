@@ -179,7 +179,9 @@ def test_learning_cross_entropy() -> None:
         inputs = torch.ones((batch_size, 10))
         y = layer(inputs)
         opti.zero_grad()
-        loss = layer.loss_cross_entropy(programs, y)
+        loss = layer.loss_cross_entropy(
+            programs, [cfg.type_request for _ in programs], y
+        )
         loss.backward()
         opti.step()
 
