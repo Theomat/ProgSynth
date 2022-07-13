@@ -14,14 +14,23 @@ from synth.semantic.evaluator import DSLEvaluatorWithConstant
 from synth.specification import PBE
 import math
 from synth.syntax import DSL
-from synth.nn.pcfg_predictor import CFG
-from synth.syntax.grammars.concrete_pcfg import ConcretePCFG
-from synth.syntax.program import Function, Primitive, Program
+from synth.syntax import (
+    Function,
+    Primitive,
+    Program,
+    CFG,
+    ProbDetGrammar,
+    enumerate_prob_grammar,
+)
 from synth.task import Dataset
 from synth.utils import chrono
-from synth.syntax import enumerate_pcfg
 from synth import Dataset, PBE, Task
-from synth.nn import BigramsPredictorLayer, Task2Tensor, free_pytorch_memory
+from synth.nn import (
+    GrammarPredictorLayer,
+    Task2Tensor,
+    free_pytorch_memory,
+    abstractions,
+)
 from synth.pbe import IOEncoder
 
 MAX_TESTS = 400000
@@ -31,7 +40,7 @@ def __log_e__(n: int):
     return math.log(n)
 
 
-def __count_programs__(solution: Program, pcfg: ConcretePCFG) -> int:
+def __count_programs__(solution: Program, pcfg: ProbDetGrammar) -> int:
     if solution is None:
         return {None: None}
     counters: Dict[Program, Tuple[int, int]] = {}
@@ -39,7 +48,7 @@ def __count_programs__(solution: Program, pcfg: ConcretePCFG) -> int:
         found: bool = False
         if isinstance(sub_program, Function):
             counter = 0
-            for program in enumerate_pcfg(pcfg):
+            for program in enumerate_prob_grammar(pcfg):
                 counter += 1
                 if program == sub_program or counter >= MAX_TESTS:
                     counters[str(sub_program)] = (counter, sub_program.depth())
@@ -55,7 +64,7 @@ def __count_programs__(solution: Program, pcfg: ConcretePCFG) -> int:
 def __analyse_primitives__(
     dsl: DSL,
     dataset: Dataset[PBE],
-    pcfg: ConcretePCFG,
+    pcfg: ProbDetGrammar,
     state: str,
     jsonobject: List[Dict[Primitive, Any]],
 ) -> None:
@@ -115,7 +124,7 @@ def load_dsl(dsl_name: str) -> Tuple[DSL, DSLEvaluatorWithConstant, List[int]]:
 
 def dataset_to_pcfg_bigram(
     full_dataset: Dataset[PBE], cfg: CFG, filter: bool = False
-) -> ConcretePCFG:
+) -> ProbDetGrammar:
     """
     - filter (bool, default=False) - compute pcfg only on tasks with the same type request as the cfg's
     """
@@ -124,16 +133,16 @@ def dataset_to_pcfg_bigram(
         for task in full_dataset.tasks
         if task.solution and (not filter or cfg.type_request == task.type_request)
     ]
-    return ConcretePCFG.from_samples_bigram(cfg, samples)
+    return ProbDetGrammar.pcfg_from_samples(cfg, samples)
 
 
-def produce_bigrams(full_dataset: Dataset[PBE], dsl: DSL) -> List[ConcretePCFG]:
+def produce_bigrams(full_dataset: Dataset[PBE], dsl: DSL) -> List[ProbDetGrammar]:
     all_type_requests = list(full_dataset.type_requests())
     if all(task.solution is not None for task in full_dataset):
         max_depth = max(task.solution.depth() for task in full_dataset)
     else:
         max_depth = 10
-    cfgs = [CFG.from_dsl(dsl, t, max_depth) for t in all_type_requests]
+    cfgs = [CFG.depth_constraint(dsl, t, max_depth) for t in all_type_requests]
     types_pcfgs = [dataset_to_pcfg_bigram(full_dataset, c) for c in cfgs]
     pcfgs = []
     for task in full_dataset.tasks:
@@ -171,7 +180,7 @@ def produce_pcfgs(
     )
     dataset_name = dataset_file[start_index : dataset_file.index(".", start_index)]
     file = os.path.join(dir, f"pcfgs_{dataset_name}_{model_name}.pickle")
-    pcfgs: List[ConcretePCFG] = []
+    pcfgs: List[ProbDetGrammar] = []
     if os.path.exists(file):
         with open(file, "rb") as fd:
             pcfgs = pickle.load(fd)
@@ -194,12 +203,14 @@ def produce_pcfgs(
         max_depth = max(task.solution.depth() for task in full_dataset)
     else:
         max_depth = 10  # TODO: set as parameter
-    cfgs = [CFG.from_dsl(dsl, t, max_depth) for t in all_type_requests]
+    cfgs = [CFG.depth_constraint(dsl, t, max_depth) for t in all_type_requests]
 
     class MyPredictor(nn.Module):
         def __init__(self, size: int) -> None:
             super().__init__()
-            self.bigram_layer = BigramsPredictorLayer(size, cfgs, variable_probability)
+            self.bigram_layer = GrammarPredictorLayer(
+                size, cfgs, abstractions.cfg_bigram_without_depth, variable_probability
+            )
 
             encoder = IOEncoder(encoding_dimension, lexicon)
             self.packer = Task2Tensor(
@@ -215,8 +226,8 @@ def produce_pcfgs(
 
         def forward(self, x: List[Task[PBE]]) -> Tensor:
             seq: PackedSequence = self.packer(x)
-            y0, _ = self.rnn(seq)
-            y = y0.data
+            _, (y, _) = self.rnn(seq)
+            y: Tensor = y.squeeze(0)
             return self.bigram_layer(self.end(y))
 
     predictor = MyPredictor(hidden_size)
@@ -242,7 +253,9 @@ def produce_pcfgs(
 
         for task, tensor in zip(batch, batch_outputs):
             pcfgs.append(
-                predictor.bigram_layer.tensor2pcfg(tensor, task.type_request).to_pcfg()
+                predictor.bigram_layer.tensor2log_prob_grammar(
+                    tensor, task.type_request
+                ).to_prob_det_grammar()
             )
     pbar.close()
     with open(file, "wb") as fd:
