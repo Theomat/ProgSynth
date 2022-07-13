@@ -16,7 +16,8 @@ import numpy as np
 
 from synth import Dataset, PBE, Task
 from synth.nn import (
-    BigramsPredictorLayer,
+    GrammarPredictorLayer,
+    abstractions,
     Task2Tensor,
     print_model_summary,
 )
@@ -202,7 +203,7 @@ if all(task.solution is not None for task in full_dataset):
 else:
     max_depth = 15  # TODO: set as parameter
 cfgs = [
-    CFG.from_dsl(
+    CFG.depth_constraint(
         dsl,
         t,
         max_depth,
@@ -218,7 +219,9 @@ print(f"Lexicon: [{min(lexicon)};{max(lexicon)}]")
 class MyPredictor(nn.Module):
     def __init__(self, size: int) -> None:
         super().__init__()
-        self.bigram_layer = BigramsPredictorLayer(size, cfgs, variable_probability)
+        self.bigram_layer = GrammarPredictorLayer(
+            size, cfgs, abstractions.cfg_bigram_without_depth, variable_probability
+        )
         encoder = IOEncoder(encoding_dimension, lexicon)
         self.packer = Task2Tensor(
             encoder, nn.Embedding(len(encoder.lexicon), size), size, device=device
@@ -260,6 +263,7 @@ def get_batch_of_tasks() -> List[Task[PBE]]:
 def do_batch(iter_number: int) -> None:
     batch = get_batch_of_tasks()
     batch_programs = [task.solution for task in batch]
+    batch_tr = [task.type_request for task in batch]
     # Logging
     if all([p is not None for p in batch_programs]):
         writer.add_scalar(
@@ -279,7 +283,7 @@ def do_batch(iter_number: int) -> None:
         optim.zero_grad()
         with chrono.clock("train.do_batch.loss.compute"):
             loss = predictor.bigram_layer.loss_cross_entropy(
-                batch_programs, batch_outputs
+                batch_programs, batch_tr, batch_outputs
             )
             # loss = predictor.bigram_layer.loss_negative_log_prob(batch_programs, batch_log_pcfg)
         with chrono.clock("train.do_batch.loss.backprop"):
