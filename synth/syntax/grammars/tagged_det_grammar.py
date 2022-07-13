@@ -22,7 +22,7 @@ V = TypeVar("V")
 W = TypeVar("W")
 
 
-class TaggedDetGrammar(DetGrammar[U, V, Tuple[W, T]], Generic[T, U, V, W]):
+class TaggedDetGrammar(DetGrammar[U, V, W], Generic[T, U, V, W]):
     def __init__(
         self,
         grammar: DetGrammar[U, V, W],
@@ -66,6 +66,14 @@ class TaggedDetGrammar(DetGrammar[U, V, Tuple[W, T]], Generic[T, U, V, W]):
     def _remove_non_reachable_(self) -> None:
         pass
 
+    def derive(
+        self, information: W, S: Tuple[Type, U], P: DerivableProgram
+    ) -> Tuple[W, Tuple[Type, U]]:
+        return self.grammar.derive(information, S, P)
+
+    def start_information(self) -> W:
+        return self.grammar.start_information()
+
 
 class ProbDetGrammar(TaggedDetGrammar[float, U, V, W]):
     def __init__(
@@ -82,17 +90,6 @@ class ProbDetGrammar(TaggedDetGrammar[float, U, V, W]):
 
     def name(self) -> str:
         return "P" + self.grammar.name()
-
-    def derive(
-        self, information: Tuple[W, float], S: Tuple[Type, U], P: DerivableProgram
-    ) -> Tuple[Tuple[W, float], Tuple[Type, U]]:
-        base_information, new_ctx = self.grammar.derive(information[0], S, P)
-        prob = self.probabilities[S][P]
-        old_prob = information[1]
-        return ((base_information, prob * old_prob), new_ctx)
-
-    def start_information(self) -> Tuple[W, float]:
-        return (self.grammar.start_information(), 1)
 
     def probability(
         self,
