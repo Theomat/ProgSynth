@@ -39,6 +39,37 @@ class CFG(TTCFG[CFGState, NoneType]):
             total_programs[S] = total
         return total_programs[self.start]
 
+    def clean(self) -> None:
+        self._remove_non_productive_()
+        self._remove_non_reachable_()
+
+    def _remove_non_reachable_(self) -> None:
+        """
+        remove non-terminals which are not reachable from the initial non-terminal
+        """
+        reachable: Set[CFGNonTerminal] = set()
+        reachable.add(self.start)
+
+        reach: Set[CFGNonTerminal] = set()
+        new_reach: Set[CFGNonTerminal] = set()
+        reach.add(self.start)
+
+        for _ in range(self.max_program_depth()):
+            new_reach.clear()
+            for S in reach:
+                for P in self.rules[S]:
+                    args_P = self.rules[S][P][0]
+                    for arg in args_P:
+                        nctx = (arg[0], (arg[1], None))
+                        new_reach.add(nctx)
+                        reachable.add(nctx)
+            reach.clear()
+            reach = new_reach.copy()
+
+        for S in set(self.rules):
+            if S not in reachable:
+                del self.rules[S]
+
     def _remove_non_productive_(self) -> None:
         """
         remove non-terminals which do not produce programs

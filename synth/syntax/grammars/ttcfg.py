@@ -124,43 +124,7 @@ class TTCFG(
 
         return TTCFG(start, rules, clean=True)
 
-    def _remove_non_reachable_(self) -> None:
-        """
-        remove non-terminals which are not reachable from the initial non-terminal
-        """
-        reachable = set([self.start])
-
-        # Compute the list of reachable
-        list_to_be_treated: Deque[
-            Tuple[Tuple[Type, Tuple[S, T]], List[Tuple[Type, S]]]
-        ] = deque()
-        list_to_be_treated.append((self.start, []))
-        while list_to_be_treated:
-            rule, stack = list_to_be_treated.pop()
-            if rule not in self.rules:
-                continue
-            for P in self.rules[rule]:
-                args, state = self.rules[rule][P]
-                if args:
-                    nstack = args + stack
-                    nrule = (nstack[0][0], (nstack[0][1], state))
-                    if nrule not in reachable:
-                        reachable.add(nrule)
-                        list_to_be_treated.append((nrule, nstack[1:]))
-                elif stack:
-                    nrule = (stack[0][0], (stack[0][1], state))
-                    if nrule not in reachable:
-                        reachable.add(nrule)
-                        list_to_be_treated.append((nrule, stack[1:]))
-
-        for rule in list(self.rules.keys()):
-            if rule not in reachable:
-                del self.rules[rule]
-
-    def _remove_non_productive_(self) -> None:
-        """
-        remove non-terminals which do not produce programs
-        """
+    def clean(self) -> None:
         new_rules: Dict[Tuple[Type, Tuple[S, T]], Set[DerivableProgram]] = {}
         list_to_be_treated: Deque[
             Tuple[Tuple[Type, S], T, List[Tuple[Type, S]]]
