@@ -2,7 +2,7 @@ from synth.generation.sampler import LexiconSampler
 from synth.pbe.task_generator import TaskGenerator, basic_output_validator
 from synth.semantic.evaluator import DSLEvaluator
 from synth.syntax.grammars.cfg import CFG
-from synth.syntax.grammars.concrete_pcfg import ConcretePCFG
+from synth.syntax.grammars.tagged_det_grammar import ProbDetGrammar
 from synth.syntax.dsl import DSL
 from synth.syntax.type_system import (
     INT,
@@ -34,7 +34,7 @@ validator = basic_output_validator(int_lexicon, -1)
 
 def test_gen() -> None:
     samples_lexicon = [2, 3, 4]
-    pcfg = ConcretePCFG.uniform(CFG.from_dsl(dsl, type_req, max_depth))
+    pcfg = ProbDetGrammar.uniform(CFG.depth_constraint(dsl, type_req, max_depth))
     pcfg.init_sampling(0)
     g = TaskGenerator(
         LexiconSampler(int_lexicon, seed=10),
@@ -57,7 +57,7 @@ def test_gen() -> None:
 
 
 def test_seed() -> None:
-    pcfg = ConcretePCFG.uniform(CFG.from_dsl(dsl, type_req, max_depth))
+    pcfg = ProbDetGrammar.uniform(CFG.depth_constraint(dsl, type_req, max_depth))
     pcfg.init_sampling(10)
     g1 = TaskGenerator(
         LexiconSampler(int_lexicon, seed=10),
@@ -67,7 +67,7 @@ def test_seed() -> None:
         {pcfg},
         validator,
     )
-    pcfg = ConcretePCFG.uniform(CFG.from_dsl(dsl, type_req, max_depth))
+    pcfg = ProbDetGrammar.uniform(CFG.depth_constraint(dsl, type_req, max_depth))
     pcfg.init_sampling(10)
     g2 = TaskGenerator(
         LexiconSampler(int_lexicon, seed=10),

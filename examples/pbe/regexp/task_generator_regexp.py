@@ -1,5 +1,4 @@
 from random import randint
-import re
 from typing import (
     Callable,
     Dict,
@@ -18,12 +17,19 @@ import numpy as np
 from synth.task import Dataset, Task
 from synth.specification import PBE, Example
 from synth.semantic.evaluator import Evaluator
-from synth.syntax.dsl import DSL
-from synth.syntax.program import Program
-from synth.syntax.type_system import BOOL, Arrow, List, Type, STRING, PrimitiveType
-from synth.syntax.grammars.cfg import CFG
-from synth.syntax.grammars.concrete_pcfg import ConcretePCFG
-from synth.generation.sampler import (
+from synth.syntax import (
+    BOOL,
+    Arrow,
+    List,
+    Type,
+    STRING,
+    PrimitiveType,
+    ProbDetGrammar,
+    CFG,
+    Program,
+    DSL,
+)
+from synth.generation import (
     LexiconSampler,
     ListSampler,
     RequestSampler,
@@ -47,7 +53,7 @@ class TaskGenerator:
         evaluator: Evaluator,
         gen_random_type_request: Sampler[Type],
         gen_random_sample_number: Sampler[str],
-        pcfgs: Iterable[ConcretePCFG],
+        pcfgs: Iterable[ProbDetGrammar],
         output_validator: Callable[[Any], bool],
         max_tries: int = 100,
         skip_exceptions: Optional[Set[PythonType]] = None,
@@ -260,11 +266,19 @@ def reproduce_dataset(
         max_depth = default_max_depth
     if uniform_pcfg:
         pcfgs = {
-            ConcretePCFG.uniform(CFG.from_dsl(dsl, t, max_depth)) for t in allowed_types
+            ProbDetGrammar.uniform(CFG.depth_constraint(dsl, t, max_depth))
+            for t in allowed_types
         }
     else:
         pcfgs = {
-            dataset.to_pcfg(CFG.from_dsl(dsl, t, max_depth), filter=True)
+            ProbDetGrammar.pcfg_from_samples(
+                CFG.depth_constraint(dsl, t, max_depth),
+                [
+                    task.solution
+                    for task in dataset
+                    if task.solution and (not filter or t == task.type_request)
+                ],
+            )
             for t in allowed_types
         }
     for pcfg in pcfgs:

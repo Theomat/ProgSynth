@@ -14,16 +14,21 @@ import torch.nn as nn
 from torch.nn.utils.rnn import PackedSequence
 
 from synth import Dataset, PBE, Task
-from synth.nn import BigramsPredictorLayer, Task2Tensor, free_pytorch_memory
+from synth.nn import (
+    GrammarPredictorLayer,
+    Task2Tensor,
+    abstractions,
+    free_pytorch_memory,
+)
 from synth.pbe import IOEncoder
 from synth.semantic import DSLEvaluator
 from synth.semantic.evaluator import DSLEvaluatorWithConstant
 from synth.specification import PBEWithConstants
 from synth.syntax import (
     CFG,
-    ConcretePCFG,
-    enumerate_pcfg,
-    enumerate_bucket_pcfg,
+    ProbDetGrammar,
+    enumerate_prob_grammar,
+    enumerate_bucket_prob_grammar,
     DSL,
     Program,
 )
@@ -125,9 +130,9 @@ elif not os.path.exists(dataset_file) or not os.path.isfile(dataset_file):
     sys.exit(1)
 
 if search_algo == "heap_search":
-    custom_enumerate = enumerate_pcfg
+    custom_enumerate = enumerate_prob_grammar
 elif search_algo == "bucket_search":
-    custom_enumerate = lambda x: enumerate_bucket_pcfg(x, 3)
+    custom_enumerate = lambda x: enumerate_bucket_prob_grammar(x, 3)
     # TODO: add parameter for bucket_search size
 else:
     print(
@@ -201,7 +206,7 @@ def produce_pcfgs(
     )
     model_name = model_file[start_index : model_file.index(".", start_index)]
     file = os.path.join(dir, f"pcfgs_{dataset_name}_{model_name}.pickle")
-    pcfgs: List[ConcretePCFG] = []
+    pcfgs: List[ProbDetGrammar] = []
     if os.path.exists(file):
         with open(file, "rb") as fd:
             pcfgs = pickle.load(fd)
@@ -224,12 +229,14 @@ def produce_pcfgs(
         max_depth = max(task.solution.depth() for task in full_dataset)
     else:
         max_depth = 10  # TODO: set as parameter
-    cfgs = [CFG.from_dsl(dsl, t, max_depth) for t in all_type_requests]
+    cfgs = [CFG.depth_constraint(dsl, t, max_depth) for t in all_type_requests]
 
     class MyPredictor(nn.Module):
         def __init__(self, size: int) -> None:
             super().__init__()
-            self.bigram_layer = BigramsPredictorLayer(size, cfgs, variable_probability)
+            self.bigram_layer = GrammarPredictorLayer(
+                size, cfgs, abstractions.cfg_bigram_without_depth, variable_probability
+            )
 
             encoder = IOEncoder(encoding_dimension, lexicon)
             self.packer = Task2Tensor(
@@ -272,7 +279,9 @@ def produce_pcfgs(
 
         for task, tensor in zip(batch, batch_outputs):
             pcfgs.append(
-                predictor.bigram_layer.tensor2pcfg(tensor, task.type_request).to_pcfg()
+                predictor.bigram_layer.tensor2log_prob_grammar(
+                    tensor, task.type_request
+                ).to_prob_det_grammar()
             )
     pbar.close()
     with open(file, "wb") as fd:
@@ -287,13 +296,13 @@ def produce_pcfgs(
 def enumerative_search(
     dataset: Dataset[PBE],
     evaluator: DSLEvaluatorWithConstant,
-    pcfgs: List[ConcretePCFG],
+    pcfgs: List[ProbDetGrammar],
     trace: List[Tuple[bool, float]],
     method: Callable[
-        [DSLEvaluatorWithConstant, Task[PBE], ConcretePCFG],
+        [DSLEvaluatorWithConstant, Task[PBE], ProbDetGrammar],
         Tuple[bool, float, int, Optional[Program]],
     ],
-    custom_enumerate: Callable[[ConcretePCFG], HSEnumerator],
+    custom_enumerate: Callable[[ProbDetGrammar], HSEnumerator],
 ) -> None:
 
     start = len(trace)
@@ -309,8 +318,8 @@ def enumerative_search(
 def base(
     evaluator: DSLEvaluator,
     task: Task[PBE],
-    pcfg: ConcretePCFG,
-    custom_enumerate: Callable[[ConcretePCFG], HSEnumerator],
+    pcfg: ProbDetGrammar,
+    custom_enumerate: Callable[[ProbDetGrammar], HSEnumerator],
 ) -> Tuple[bool, float, int, Optional[Program]]:
     time = 0.0
     programs = 0
@@ -340,8 +349,8 @@ def base(
 def constants_injector(
     evaluator: DSLEvaluatorWithConstant,
     task: Task[PBEWithConstants],
-    pcfg: ConcretePCFG,
-    custom_enumerate: Callable[[ConcretePCFG], HSEnumerator],
+    pcfg: ProbDetGrammar,
+    custom_enumerate: Callable[[ProbDetGrammar], HSEnumerator],
 ) -> Tuple[bool, float, int, Optional[Program]]:
     time = 0.0
     programs = 0

@@ -114,7 +114,8 @@ def cfg(*args: str) -> None:
     print_value("Max Depth", max_depth)
     max_len = max([len(str(t)) for t in all_type_requests])
     programs_no = {
-        t: f"{CFG.from_dsl(dsl, t, max_depth).size():,}" for t in all_type_requests
+        t: f"{CFG.depth_constraint(dsl, t, max_depth).size():,}"
+        for t in all_type_requests
     }
     max_len_programs_no = max(len(s) for s in programs_no.values())
     print_value(
@@ -126,7 +127,7 @@ def cfg(*args: str) -> None:
         ),
     )
     for type_req in all_type_requests:
-        cfg = CFG.from_dsl(dsl, type_req, max_depth)
+        cfg = CFG.depth_constraint(dsl, type_req, max_depth)
         print_value(
             f"{type_req!s:<{max_len}}",
             f"{programs_no[type_req]:>{max_len_programs_no}}   {len(cfg.rules)}",

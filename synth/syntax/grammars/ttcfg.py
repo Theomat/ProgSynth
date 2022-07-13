@@ -1,9 +1,11 @@
 from collections import deque
+from dataclasses import dataclass, field
 from typing import (
     Callable,
     Deque,
     Dict,
     List,
+    Set,
     Tuple,
     TypeVar,
     Generic,
@@ -19,6 +21,33 @@ T = TypeVar("T")
 U = TypeVar("U")
 S = TypeVar("S")
 V = TypeVar("V")
+
+
+@dataclass(frozen=True)
+class NGram:
+    n: int
+    predecessors: List[Tuple[DerivableProgram, int]] = field(default_factory=lambda: [])
+
+    def __hash__(self) -> int:
+        return hash((self.n, tuple(self.predecessors)))
+
+    def __str__(self) -> str:
+        return str(self.predecessors)
+
+    def __repr__(self) -> str:
+        return self.__str__()
+
+    def __len__(self) -> int:
+        return len(self.predecessors)
+
+    def successor(self, new_succ: Tuple[DerivableProgram, int]) -> "NGram":
+        new_pred = [new_succ] + self.predecessors
+        if len(new_pred) + 1 > self.n:
+            new_pred.pop()
+        return NGram(self.n, new_pred)
+
+    def last(self) -> Tuple[DerivableProgram, int]:
+        return self.predecessors[0]
 
 
 class TTCFG(
@@ -95,44 +124,60 @@ class TTCFG(
 
         return TTCFG(start, rules, clean=True)
 
-    def _remove_non_reachable_(self) -> None:
-        """
-        remove non-terminals which are not reachable from the initial non-terminal
-        """
-        reachable = set([self.start])
-
-        # Compute the list of reachable
+    def clean(self) -> None:
+        new_rules: Dict[Tuple[Type, Tuple[S, T]], Set[DerivableProgram]] = {}
         list_to_be_treated: Deque[
-            Tuple[Tuple[Type, Tuple[S, T]], List[Tuple[Type, S]]]
+            Tuple[Tuple[Type, S], T, List[Tuple[Type, S]]]
         ] = deque()
-        list_to_be_treated.append((self.start, []))
+        list_to_be_treated.append(
+            ((self.start[0], self.start[1][0]), self.start[1][1], [])
+        )
+
+        if isinstance(self.type_request, Arrow):
+            args = self.type_request.arguments()
+        else:
+            args = []
+
         while list_to_be_treated:
-            rule, stack = list_to_be_treated.pop()
-            if rule not in self.rules:
+            (current_type, non_terminal), current, stack = list_to_be_treated.pop()
+            rule = current_type, (non_terminal, current)
+            # Create rule if non existent
+            if rule not in new_rules:
+                new_rules[rule] = set()
+            else:
                 continue
+            # Try to add variables rules
+            for i in range(len(args)):
+                if current_type == args[i]:
+                    var = Variable(i, current_type)
+                    if var in self.rules[rule]:
+                        new_rules[rule].add(var)
+                        _, s = self.rules[rule][var]
+                        if stack:
+                            list_to_be_treated.append((stack[0], s, stack[1:]))
+            # DSL Primitives
             for P in self.rules[rule]:
-                args, state = self.rules[rule][P]
-                if args:
-                    nstack = args + stack
-                    nrule = (nstack[0][0], (nstack[0][1], state))
-                    if nrule not in reachable:
-                        reachable.add(nrule)
-                        list_to_be_treated.append((nrule, nstack[1:]))
-                elif stack:
-                    nrule = (stack[0][0], (stack[0][1], state))
-                    if nrule not in reachable:
-                        reachable.add(nrule)
-                        list_to_be_treated.append((nrule, stack[1:]))
+                type_P = P.type
+                arguments_P = type_P.ends_with(current_type)
+                if arguments_P is not None:
+                    if P in self.rules[rule]:
+                        decorated_arguments_P, new_el = self.rules[rule][P]
+                        new_rules[rule].add(P)
+                        tmp_stack = decorated_arguments_P + stack
+                        if tmp_stack:
+                            list_to_be_treated.append(
+                                (tmp_stack[0], new_el, tmp_stack[1:])
+                            )
 
-        for rule in list(self.rules.keys()):
-            if rule not in reachable:
-                del self.rules[rule]
+        self.rules = {S: {P: self.rules[S][P] for P in new_rules[S]} for S in new_rules}
 
-    def _remove_non_producible_(self) -> None:
-        pass
-
-    def _start_information_(self) -> List[Tuple[Type, S]]:
+    def start_information(self) -> List[Tuple[Type, S]]:
         return []
+
+    def arguments_length_for(
+        self, S: Tuple[Type, Tuple[S, T]], P: DerivableProgram
+    ) -> int:
+        return len(self.rules[S][P][0])
 
     def __rule_to_str__(
         self, P: DerivableProgram, out: Tuple[List[Tuple[Type, S]], T]
@@ -140,57 +185,21 @@ class TTCFG(
         args, state = out
         return "{}: {}\t\t{}".format(P, state, args)
 
-    @classmethod
-    def depth_constraint(
-        cls,
-        dsl: DSL,
-        type_request: Type,
-        max_depth: int,
-        min_variable_depth: int = 1,
-    ) -> "TTCFG[str, int]":
-        """
-        Constructs a TT CFG from a DSL imposing the maximum program depth.
-
-        max_depth: int - is the maxium depth of programs allowed
-        min_variable_depth: int - min depth at which variables and constants are allowed
-        """
-
-        def __transition__(
-            state: Tuple[Type, Tuple[str, int]],
-            derivation: Union[Primitive, Variable, Constant],
-        ) -> Tuple[bool, int]:
-            depth = state[1][1]
-            if depth > max_depth:
-                return False, 0
-            if not isinstance(derivation.type, Arrow):
-                if isinstance(derivation, (Variable, Constant)):
-                    return depth >= min_variable_depth, depth
-                return True, depth
-            return depth + 1 <= max_depth, depth + 1
-
-        return __saturation_build__(
-            dsl,
-            type_request,
-            ("start", 1),
-            __transition__,
-            lambda _, P, i, __: f"{P} arg n°{i}",
-        )
+    def name(self) -> str:
+        return "TTCFG"
 
     @classmethod
     def size_constraint(
-        cls,
-        dsl: DSL,
-        type_request: Type,
-        max_size: int,
-    ) -> "TTCFG[str, int]":
+        cls, dsl: DSL, type_request: Type, max_size: int, n_gram: int = 2
+    ) -> "TTCFG[NGram, int]":
         """
-        Constructs a TT CFG from a DSL imposing the maximum program size.
+        Constructs a n-gram TT CFG from a DSL imposing the maximum program size.
 
         max_size: int - is the maxium depth of programs allowed
         """
 
         def __transition__(
-            state: Tuple[Type, Tuple[str, int]],
+            state: Tuple[Type, Tuple[NGram, int]],
             derivation: Union[Primitive, Variable, Constant],
         ) -> Tuple[bool, int]:
             size = state[1][1]
@@ -203,25 +212,21 @@ class TTCFG(
         return __saturation_build__(
             dsl,
             type_request,
-            ("start", 0),
+            (NGram(n_gram), 0),
             __transition__,
-            lambda _, P, i, __: f"{P} arg n°{i}",
+            lambda ctx, P, i, __: ctx[1][0].successor((P, i)),
         )
 
     @classmethod
     def at_most_k(
-        cls,
-        dsl: DSL,
-        type_request: Type,
-        primitive: str,
-        k: int,
-    ) -> "TTCFG[str, int]":
+        cls, dsl: DSL, type_request: Type, primitive: str, k: int, n_gram: int = 2
+    ) -> "TTCFG[NGram, int]":
         """
-        Constructs a TT CFG from a DSL imposing at most k occurences of a certain primitive.
+        Constructs a n-gram TT CFG from a DSL imposing at most k occurences of a certain primitive.
         """
 
         def __transition__(
-            state: Tuple[Type, Tuple[str, int]],
+            state: Tuple[Type, Tuple[NGram, int]],
             derivation: Union[Primitive, Variable, Constant],
         ) -> Tuple[bool, int]:
             occ_left = state[1][1]
@@ -232,9 +237,9 @@ class TTCFG(
         return __saturation_build__(
             dsl,
             type_request,
-            ("start", k),
+            (NGram(n_gram), k),
             __transition__,
-            lambda _, P, i, __: f"{P} arg n°{i}",
+            lambda ctx, P, i, __: ctx[1][0].successor((P, i)),
         )
 
 
@@ -300,4 +305,4 @@ def __saturation_build__(
                     if tmp_stack:
                         list_to_be_treated.append((tmp_stack[0], new_el, tmp_stack[1:]))
 
-    return TTCFG((return_type, init), rules)
+    return TTCFG((return_type, init), rules, clean=False)

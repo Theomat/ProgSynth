@@ -1,5 +1,5 @@
 from synth.syntax.grammars.cfg import CFG
-from synth.syntax.grammars.concrete_pcfg import ConcretePCFG
+from synth.syntax.grammars.tagged_det_grammar import ProbDetGrammar
 from synth.semantic.evaluator import DSLEvaluator, __tuplify__
 from synth.syntax.dsl import DSL
 from synth.syntax.type_system import (
@@ -24,12 +24,12 @@ semantics = {
 }
 max_depth = 4
 dsl = DSL(syntax)
-cfg = CFG.from_dsl(dsl, FunctionType(INT, INT), max_depth)
+cfg = CFG.depth_constraint(dsl, FunctionType(INT, INT), max_depth)
 
 
 def test_eval() -> None:
     eval = DSLEvaluator(semantics)
-    pcfg = ConcretePCFG.uniform(cfg)
+    pcfg = ProbDetGrammar.uniform(cfg)
     pcfg.init_sampling(0)
     for _ in range(100):
         program = pcfg.sample_program()
@@ -42,7 +42,7 @@ def test_eval() -> None:
 
 def test_supports_list() -> None:
     eval = DSLEvaluator(semantics)
-    pcfg = ConcretePCFG.uniform(cfg)
+    pcfg = ProbDetGrammar.uniform(cfg)
     pcfg.init_sampling(0)
     for _ in range(100):
         program = pcfg.sample_program()
@@ -55,7 +55,7 @@ def test_supports_list() -> None:
 
 def test_use_cache() -> None:
     eval = DSLEvaluator(semantics)
-    pcfg = ConcretePCFG.uniform(cfg)
+    pcfg = ProbDetGrammar.uniform(cfg)
     pcfg.init_sampling(0)
     for _ in range(100):
         program = pcfg.sample_program()

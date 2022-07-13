@@ -1,4 +1,3 @@
-from re import X
 from typing import (
     Callable,
     Dict,
@@ -19,9 +18,9 @@ from synth.specification import PBE, Example
 from synth.semantic.evaluator import Evaluator
 from synth.syntax.dsl import DSL
 from synth.syntax.program import Program
-from synth.syntax.type_system import BOOL, INT, Arrow, List, Type, STRING
+from synth.syntax.type_system import BOOL, INT, Arrow, List, Type
 from synth.syntax.grammars.cfg import CFG
-from synth.syntax.grammars.concrete_pcfg import ConcretePCFG
+from synth.syntax.grammars.tagged_det_grammar import ProbDetGrammar
 from synth.generation.sampler import (
     LexiconSampler,
     ListSampler,
@@ -38,7 +37,7 @@ class TaskGenerator:
         evaluator: Evaluator,
         gen_random_type_request: Sampler[Type],
         gen_random_sample_number: Sampler[int],
-        pcfgs: Iterable[ConcretePCFG],
+        pgrammars: Iterable[ProbDetGrammar],
         output_validator: Callable[[Any], bool],
         max_tries: int = 100,
         uniques: bool = False,
@@ -48,7 +47,7 @@ class TaskGenerator:
         self.evaluator = evaluator
         self.gen_random_type_request = gen_random_type_request
         self.gen_random_sample_number = gen_random_sample_number
-        self.type2pcfg = {pcfg.type_request: pcfg for pcfg in pcfgs}
+        self.type2pgrammar = {pgrammar.type_request: pgrammar for pgrammar in pgrammars}
         self.max_tries = max_tries
         self.output_validator = output_validator
         self.skip_exceptions = skip_exceptions or set()
@@ -58,22 +57,22 @@ class TaskGenerator:
         self._failed_types: Set[Type] = set()
         # For statistics
         self.difficulty: Dict[Type, TList[int]] = {}
-        self.generated_types: Dict[Type, int] = {t: 0 for t in self.type2pcfg}
+        self.generated_types: Dict[Type, int] = {t: 0 for t in self.type2pgrammar}
 
     def __generate_program__(self, type_request: Type) -> Program:
         nargs: int = (
             0 if not isinstance(type_request, Arrow) else len(type_request.arguments())
         )
-        solution: Program = self.type2pcfg[type_request].sample_program()
+        solution: Program = self.type2pgrammar[type_request].sample_program()
         while solution in self.seen:
-            solution = self.type2pcfg[type_request].sample_program()
+            solution = self.type2pgrammar[type_request].sample_program()
         tries: int = 0
         var_used = len(solution.used_variables())
         best = solution
         while var_used < nargs and tries < self.max_tries:
-            solution = self.type2pcfg[type_request].sample_program()
+            solution = self.type2pgrammar[type_request].sample_program()
             while solution in self.seen:
-                solution = self.type2pcfg[type_request].sample_program()
+                solution = self.type2pgrammar[type_request].sample_program()
 
             tries += 1
             n = len(solution.used_variables())
@@ -167,7 +166,7 @@ def reproduce_dataset(
     dsl: DSL,
     evaluator: Evaluator,
     seed: Optional[int] = None,
-    uniform_pcfg: bool = True,
+    uniform_pgrammar: bool = True,
     max_tries: int = 100,
     int_bound: int = 1000,
     default_max_depth: int = 5,
@@ -237,17 +236,25 @@ def reproduce_dataset(
     int_lexicon = list(range(int_range[0], int_range[1] + 1))
     if max_depth == -1:
         max_depth = default_max_depth
-    if uniform_pcfg:
-        pcfgs = {
-            ConcretePCFG.uniform(CFG.from_dsl(dsl, t, max_depth)) for t in allowed_types
-        }
-    else:
-        pcfgs = {
-            dataset.to_pcfg(CFG.from_dsl(dsl, t, max_depth), filter=True)
+    if uniform_pgrammar:
+        pgrammars = {
+            ProbDetGrammar.uniform(CFG.depth_constraint(dsl, t, max_depth))
             for t in allowed_types
         }
-    for pcfg in pcfgs:
-        pcfg.init_sampling(seed)
+    else:
+        pgrammars = {
+            ProbDetGrammar.pcfg_from_samples(
+                CFG.depth_constraint(dsl, t, max_depth),
+                [
+                    task.solution
+                    for task in dataset
+                    if task.solution and (not filter or t == task.type_request)
+                ],
+            )
+            for t in allowed_types
+        }
+    for pgrammar in pgrammars:
+        pgrammar.init_sampling(seed)
 
     input_sampler = ListSampler(
         UnionSampler(
@@ -267,7 +274,7 @@ def reproduce_dataset(
             evaluator,
             type_sampler,
             no_samples_gen,
-            pcfgs,
+            pgrammars,
             basic_output_validator(
                 int_lexicon,
                 max_list_length

@@ -2,7 +2,7 @@ from typing import Generator, List
 import random
 
 from synth.syntax.program import Primitive, Function, Program, Variable
-from synth.syntax.type_system import BOOL, INT, STRING, Arrow, FunctionType
+from synth.syntax.type_system import BOOL, INT, FunctionType
 
 
 def __gen2list__(g: Generator) -> List:

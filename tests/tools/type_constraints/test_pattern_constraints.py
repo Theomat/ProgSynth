@@ -39,7 +39,7 @@ def test_produce() -> None:
         new_syntax, _ = produce_new_syntax_for_constraints(
             syntax, constraints, type_request, progress=False
         )
-        size = CFG.from_dsl(DSL(new_syntax), type_request, depth).size()
+        size = CFG.depth_constraint(DSL(new_syntax), type_request, depth).size()
         if old_size == -1:
             old_size = size
         assert old_size == size

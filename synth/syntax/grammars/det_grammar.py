@@ -31,9 +31,9 @@ class DetGrammar(Grammar, ABC, Generic[U, V, W]):
     ):
         self.start = start
         self.rules = rules
+        self.type_request = self._guess_type_request_()
         if clean:
             self.clean()
-        self.type_request = self._guess_type_request_()
 
     def __hash__(self) -> int:
         return hash((self.start, str(self.rules)))
@@ -42,7 +42,7 @@ class DetGrammar(Grammar, ABC, Generic[U, V, W]):
         return "{}: {}".format(P, out)
 
     def __str__(self) -> str:
-        s = f"Print a {self.__class__.__qualname__}\n"
+        s = f"Print a {self.name()}\n"
         s += "start: {}\n".format(self.start)
         for S in reversed(self.rules):
             s += "#\n {}\n".format(S)
@@ -75,7 +75,7 @@ class DetGrammar(Grammar, ABC, Generic[U, V, W]):
         return type_req
 
     def __contains__(self, program: Program) -> bool:
-        return self.__contains_rec__(program, self.start, self._start_information_())[0]
+        return self.__contains_rec__(program, self.start, self.start_information())[0]
 
     def __contains_rec__(
         self, program: Program, start: Tuple[Type, U], information: W
@@ -104,27 +104,52 @@ class DetGrammar(Grammar, ABC, Generic[U, V, W]):
 
     def clean(self) -> None:
         """
-        Clean this deterministic grammar by removing non reachable, non producible.
+        Clean this deterministic grammar by removing non reachable, non productive rules.
         """
-        self._remove_non_reachable_()
-        self._remove_non_producible_()
-
-    @abstractmethod
-    def _remove_non_reachable_(self) -> None:
-        pass
-
-    @abstractmethod
-    def _remove_non_producible_(self) -> None:
         pass
 
     @abstractmethod
     def derive(
         self, information: W, S: Tuple[Type, U], P: DerivableProgram
     ) -> Tuple[W, Tuple[Type, U]]:
+        """
+        Given the current information and the derivation S -> P, produces the new information state and the next S after this derivation.
+        """
+        pass
+
+    def derive_all(
+        self,
+        information: W,
+        S: Tuple[Type, U],
+        P: Program,
+        current: Optional[List[Tuple[Type, U]]] = None,
+    ) -> Tuple[W, List[Tuple[Type, U]]]:
+        """
+        Given current information and context S, produces the new information and all the contexts the grammar went through to derive program P.
+        """
+        current = current or []
+        if isinstance(P, (Primitive, Variable, Constant)):
+            information, ctx = self.derive(information, S, P)
+            current.append(ctx)
+            return (information, current)
+
+        elif isinstance(P, Function):
+            F = P.function
+            current.append(S)
+            information, _ = self.derive_all(information, S, F, current)
+            S = current[-1]
+            for arg in P.arguments:
+                information, _ = self.derive_all(information, S, arg, current)
+                S = current[-1]
+            return (information, current)
+        assert False
+
+    @abstractmethod
+    def arguments_length_for(self, S: Tuple[Type, U], P: DerivableProgram) -> int:
         pass
 
     @abstractmethod
-    def _start_information_(self) -> W:
+    def start_information(self) -> W:
         pass
 
     def reduce_derivations(
@@ -136,10 +161,12 @@ class DetGrammar(Grammar, ABC, Generic[U, V, W]):
     ) -> T:
         """
         Reduce the given program using the given reduce operator.
+
+        reduce is called after derivation.
         """
 
         return self.__reduce_derivations_rec__(
-            reduce, init, program, start or self.start, self._start_information_()
+            reduce, init, program, start or self.start, self.start_information()
         )[0]
 
     def __reduce_derivations_rec__(
@@ -154,15 +181,15 @@ class DetGrammar(Grammar, ABC, Generic[U, V, W]):
         if isinstance(program, Function):
             function = program.function
             args_P = program.arguments
-            value = reduce(value, start, function, self.rules[start][function])  # type: ignore
             information, next = self.derive(information, start, function)  # type: ignore
+            value = reduce(value, start, function, self.rules[start][function])  # type: ignore
             for arg in args_P:
                 value, information, next = self.__reduce_derivations_rec__(
                     reduce, value, arg, start=next, information=information
                 )
             return value, information, next
         elif isinstance(program, (Primitive, Variable, Constant)):
-            value = reduce(value, start, program, self.rules[start][program])
             information, next = self.derive(information, start, program)
+            value = reduce(value, start, program, self.rules[start][program])
             return value, information, next
         return value, information, start
