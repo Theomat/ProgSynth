@@ -5,6 +5,7 @@ from typing import (
     Deque,
     Dict,
     List,
+    Set,
     Tuple,
     TypeVar,
     Generic,
@@ -157,7 +158,54 @@ class TTCFG(
                 del self.rules[rule]
 
     def _remove_non_productive_(self) -> None:
-        pass
+        """
+        remove non-terminals which do not produce programs
+        """
+        new_rules: Dict[Tuple[Type, Tuple[S, T]], Set[DerivableProgram]] = {}
+        list_to_be_treated: Deque[
+            Tuple[Tuple[Type, S], T, List[Tuple[Type, S]]]
+        ] = deque()
+        list_to_be_treated.append(
+            ((self.start[0], self.start[1][0]), self.start[1][1], [])
+        )
+
+        if isinstance(self.type_request, Arrow):
+            args = self.type_request.arguments()
+        else:
+            args = []
+
+        while list_to_be_treated:
+            (current_type, non_terminal), current, stack = list_to_be_treated.pop()
+            rule = current_type, (non_terminal, current)
+            # Create rule if non existent
+            if rule not in new_rules:
+                new_rules[rule] = set()
+            else:
+                continue
+            # Try to add variables rules
+            for i in range(len(args)):
+                if current_type == args[i]:
+                    var = Variable(i, current_type)
+                    if var in self.rules[rule]:
+                        new_rules[rule].add(var)
+                        _, s = self.rules[rule][var]
+                        if stack:
+                            list_to_be_treated.append((stack[0], s, stack[1:]))
+            # DSL Primitives
+            for P in self.rules[rule]:
+                type_P = P.type
+                arguments_P = type_P.ends_with(current_type)
+                if arguments_P is not None:
+                    if P in self.rules[rule]:
+                        decorated_arguments_P, new_el = self.rules[rule][P]
+                        new_rules[rule].add(P)
+                        tmp_stack = decorated_arguments_P + stack
+                        if tmp_stack:
+                            list_to_be_treated.append(
+                                (tmp_stack[0], new_el, tmp_stack[1:])
+                            )
+
+        self.rules = {S: {P: self.rules[S][P] for P in new_rules[S]} for S in new_rules}
 
     def start_information(self) -> List[Tuple[Type, S]]:
         return []
@@ -293,4 +341,4 @@ def __saturation_build__(
                     if tmp_stack:
                         list_to_be_treated.append((tmp_stack[0], new_el, tmp_stack[1:]))
 
-    return TTCFG((return_type, init), rules)
+    return TTCFG((return_type, init), rules, clean=False)

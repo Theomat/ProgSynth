@@ -31,9 +31,9 @@ class DetGrammar(Grammar, ABC, Generic[U, V, W]):
     ):
         self.start = start
         self.rules = rules
+        self.type_request = self._guess_type_request_()
         if clean:
             self.clean()
-        self.type_request = self._guess_type_request_()
 
     def __hash__(self) -> int:
         return hash((self.start, str(self.rules)))
