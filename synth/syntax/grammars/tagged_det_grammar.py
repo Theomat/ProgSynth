@@ -1,6 +1,7 @@
 from typing import (
     Dict,
     Generator,
+    Generic,
     List,
     Optional,
     Tuple,
@@ -15,46 +16,72 @@ from synth.syntax.grammars.det_grammar import DerivableProgram, DetGrammar
 from synth.syntax.program import Function, Program
 from synth.syntax.type_system import Type
 
+T = TypeVar("T")
 U = TypeVar("U")
 V = TypeVar("V")
 W = TypeVar("W")
 
 
-class ProbDetGrammar(DetGrammar[U, V, Tuple[W, float]]):
+class TaggedDetGrammar(DetGrammar[U, V, Tuple[W, T]], Generic[T, U, V, W]):
     def __init__(
         self,
         grammar: DetGrammar[U, V, W],
-        probabilities: Dict[Tuple[Type, U], Dict[DerivableProgram, float]],
+        tags: Dict[Tuple[Type, U], Dict[DerivableProgram, T]],
     ):
         super().__init__(grammar.start, grammar.rules, clean=False)
         self.grammar = grammar
-        self.probabilities = probabilities
-        self.ready_for_sampling = False
+        self.tags = tags
 
     def __hash__(self) -> int:
-        return hash((self.start, self.grammar, str(self.probabilities)))
+        return hash((self.start, self.grammar, str(self.tags)))
 
     def __eq__(self, o: object) -> bool:
         return (
-            isinstance(o, ProbDetGrammar)
+            isinstance(o, TaggedDetGrammar)
             and self.grammar == o.grammar
-            and self.probabilities == o.probabilities
+            and self.tags == o.tags
         )
 
     def name(self) -> str:
-        return "P" + self.grammar.name()
+        return "tagged" + self.grammar.name()
 
     def __str__(self) -> str:
-        s = f"Print a P{self.grammar.__class__.__qualname__}\n"
+        s = f"Print a {self.name()}\n"
         s += "start: {}\n".format(self.grammar.start)
         for S in reversed(self.grammar.rules):
             s += "#\n {}\n".format(S)
             for P in self.grammar.rules[S]:
                 out = self.grammar.rules[S][P]
                 s += "   {} ~> {}\n".format(
-                    self.probabilities[S][P], self.grammar.__rule_to_str__(P, out)
+                    self.tags[S][P], self.grammar.__rule_to_str__(P, out)
                 )
         return s
+
+    def arguments_length_for(self, S: Tuple[Type, U], P: DerivableProgram) -> int:
+        return self.grammar.arguments_length_for(S, P)
+
+    def _remove_non_productive_(self) -> None:
+        pass
+
+    def _remove_non_reachable_(self) -> None:
+        pass
+
+
+class ProbDetGrammar(TaggedDetGrammar[float, U, V, W]):
+    def __init__(
+        self,
+        grammar: DetGrammar[U, V, W],
+        probabilities: Dict[Tuple[Type, U], Dict[DerivableProgram, float]],
+    ):
+        super().__init__(grammar, probabilities)
+        self.ready_for_sampling = False
+
+    @property
+    def probabilities(self) -> Dict[Tuple[Type, U], Dict[DerivableProgram, float]]:
+        return self.tags
+
+    def name(self) -> str:
+        return "P" + self.grammar.name()
 
     def derive(
         self, information: Tuple[W, float], S: Tuple[Type, U], P: DerivableProgram
@@ -67,22 +94,13 @@ class ProbDetGrammar(DetGrammar[U, V, Tuple[W, float]]):
     def start_information(self) -> Tuple[W, float]:
         return (self.grammar.start_information(), 1)
 
-    def arguments_length_for(self, S: Tuple[Type, U], P: DerivableProgram) -> int:
-        return self.grammar.arguments_length_for(S, P)
-
-    def _remove_non_productive_(self) -> None:
-        pass
-
-    def _remove_non_reachable_(self) -> None:
-        pass
-
     def probability(
         self,
         program: Program,
         start: Optional[Tuple[Type, U]] = None,
     ) -> float:
         return self.reduce_derivations(
-            lambda current, S, P, _: current * self.probabilities[S][P],
+            lambda current, S, P, _: current * self.tags[S][P],
             1.0,
             program,
             start,
@@ -97,10 +115,10 @@ class ProbDetGrammar(DetGrammar[U, V, Tuple[W, float]]):
         self.sampling_map = {}
 
         for i, S in enumerate(self.rules):
-            P_list = list(self.probabilities[S].keys())
+            P_list = list(self.tags[S].keys())
             self.vose_samplers[S] = vose.Sampler(
                 np.array(
-                    [self.probabilities[S][P] for P in P_list],
+                    [self.tags[S][P] for P in P_list],
                     dtype=float,
                 ),
                 seed=seed + i if seed else None,
@@ -108,11 +126,11 @@ class ProbDetGrammar(DetGrammar[U, V, Tuple[W, float]]):
             self.sampling_map[S] = P_list
 
     def normalise(self) -> None:
-        for S in self.probabilities:
-            s = sum(self.probabilities[S][P] for P in self.probabilities[S])
-            for P in list(self.probabilities[S].keys()):
-                w = self.probabilities[S][P]
-                self.probabilities[S][P] = w / s
+        for S in self.tags:
+            s = sum(self.tags[S][P] for P in self.tags[S])
+            for P in list(self.tags[S].keys()):
+                w = self.tags[S][P]
+                self.tags[S][P] = w / s
 
     def sampling(self) -> Generator[Program, None, None]:
         """
