@@ -215,7 +215,7 @@ def constant_program_analysis(program: Program):
 
 
 with chrono.clock("search"):
-    iterable = tqdm.tqdm(dsl.list_primitives) if progress else dsl.list_primitives
+    iterable = tqdm.tqdm(dsl.list_primitives, smoothing=1) if progress else dsl.list_primitives
 
     all_solutions = {}
     for primitive in dsl.list_primitives:
