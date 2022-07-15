@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Any, Optional, Dict, Iterable, Tuple, List as TList
+from typing import Any, Optional, Dict, Iterable, Set, Tuple, List as TList
 
 import tqdm
 
@@ -128,6 +128,8 @@ def __add_primitives_constraint__(
     level: int = 0,
 ) -> None:
     primitives = parse_choices(content)
+    if argno == 0:
+        primitives = syntax.filter_out_forbidden(parent, primitives)
     if len(primitives) <= 0:
         return
     # print("\t" * level, "\tcontent:", content)
@@ -177,6 +179,10 @@ def __add_forbidden_constraint__(
 ):
     # print("\t" * level, "\tcontent:", content)
     primitives = parse_choices(content[1:])
+    if argno == 0:
+        primitives = syntax.filter_out_forbidden(parent, primitives)
+    if len(primitives) == 0:
+        return
     all_forbidden = set()
     for p in primitives:
         all_forbidden |= syntax.equivalent_primitives(p)
@@ -245,6 +251,7 @@ def produce_new_syntax_for_constraints(
     syntax: Dict[str, Type],
     constraints: Iterable[str],
     type_request: Optional[Arrow] = None,
+    forbidden: Optional[Dict[str, Set[str]]] = None,
     progress: bool = True,
 ) -> Tuple[Dict[str, Type], Optional[Arrow]]:
     """
@@ -253,7 +260,7 @@ def produce_new_syntax_for_constraints(
     If no constraint depends on variables the type request is ignored.
     if progress is set to True use a tqdm progress bar.
     """
-    new_syntax = Syntax({k: v for k, v in syntax.items()})
+    new_syntax = Syntax({k: v for k, v in syntax.items()}, forbidden)
     constraint_plus = [(int("var" in c), c) for c in constraints]
     constraint_plus.sort(reverse=True)
     parsed_constraints = [
@@ -279,7 +286,7 @@ def produce_new_syntax_for_constraints(
 
 
 if __name__ == "__main__":
-    from synth.syntax import DSL, CFG, INT, FunctionType, ProbDetGrammar
+    from synth.syntax import DSL, CFG, INT, FunctionType, ProbDetGrammar, List
     from synth.tools.type_constraints.utils import export_syntax_to_python
 
     # from examples.pbe.towers.towers_base import syntax, BLOCK
@@ -300,41 +307,23 @@ if __name__ == "__main__":
     #     "- * ^0",
     # ]
 
-    from examples.pbe.deepcoder.deepcoder import dsl, List
+    from examples.pbe.deepcoder.deepcoder import pruned_version, dsl as old_dsl
 
     type_request = FunctionType(List(INT), List(INT))
 
-    syntax = {p.primitive: p.type for p in dsl.list_primitives}
-
-    patterns = [
-        "COUNT[<0] ^MAP[*-1],MAP[**2]",
-        "COUNT[>0] ^MAP[*-1],MAP[**2]",
-        "COUNT[EVEN] ^MAP[+1],MAP[*2]",
-        "COUNT[ODD] ^MAP[+1],MAP[*2]",
-        "FILTER[EVEN] ^MAP[+1],MAP[*2],FILTER[ODD]",
-        "FILTER[ODD] ^MAP[+1],MAP[*2],FILTER[EVEN]",
-        "ZIPWITH[+] ^ZIPWITH[+] *",
-        "ZIPWITH[*] ^ZIPWITH[*] *",
-        "ZIPWITH[min] ^ZIPWITH[min] *",
-        "ZIPWITH[max] ^ZIPWITH[max] *",
-    ]
-
     max_depth = 4
     # original_size = CFG.depth_constraint(DSL(syntax), type_request, max_depth).size()
-    original_size = CFG.depth_constraint(dsl, type_request, max_depth).size()
+    original_size = CFG.depth_constraint(old_dsl, type_request, max_depth).size()
 
-    # test for patterns
-    new_syntax = syntax
-    new_syntax, type_request = produce_new_syntax_for_constraints(
-        new_syntax, patterns, type_request
-    )
+    dsl, _ = pruned_version(True)
 
     # Print
-    print(f"[PATTERNS] New syntax ({len(new_syntax)} primitives):")
-    # for prim, type in new_syntax.items():
+    print(f"[PATTERNS] New syntax with {len(dsl.list_primitives)} primitives")
+    # for P in dsl.list_primitives:
+    #     prim, type = P.primitive, P.type
     #     print("\t", prim, ":", type)
     new_size = CFG.depth_constraint(
-        DSL(new_syntax, dsl.forbidden_patterns),
+        dsl,
         type_request,
         max_depth
         # DSL(new_syntax),

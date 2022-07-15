@@ -61,8 +61,13 @@ def parse_specification(spec: str) -> TList[str]:
 
 
 class Syntax:
-    def __init__(self, type_constraints: Dict[str, Type]) -> None:
+    def __init__(
+        self,
+        type_constraints: Dict[str, Type],
+        forbidden: Optional[Dict[str, Set[str]]] = None,
+    ) -> None:
         self.syntax = type_constraints
+        self.forbidden_patterns = forbidden
 
         self._new_types_index = defaultdict(int)
         for ttype in __all_types__(self.syntax):
@@ -163,6 +168,12 @@ class Syntax:
         name = f"{PREFIX_CAST}{from_type}->{to}"
         self.syntax[name] = Arrow(from_type, to)
         self.producers_by_type[to].add(name)
+
+    def filter_out_forbidden(
+        self, parent: str, all_forbidden: Iterable[str]
+    ) -> TList[str]:
+        forbidden = self.forbidden_patterns.get(parent, set())
+        return [P for P in all_forbidden if get_prefix(P) not in forbidden]
 
 
 def producers_of_using(syntax: Syntax, rtype: Type, consuming: Set[Type]) -> Set[str]:
