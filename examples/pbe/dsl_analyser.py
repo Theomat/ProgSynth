@@ -20,7 +20,6 @@ from synth.syntax import (
     Arrow,
     Type,
 )
-from synth.syntax.type_system import FunctionType
 from synth.utils import chrono
 
 # ================================
@@ -34,8 +33,8 @@ dataset = DEEPCODER
 # Tunable parameters
 # ================================
 max_depth = 2
-input_checks = 1000
-in_depth_equivalence_check = False
+input_checks = 500
+in_depth_equivalence_check = True
 progress = True
 # ================================
 # Initialisation
@@ -125,78 +124,18 @@ def add_syntaxic(program: Program):
     syntaxic_restrictions[pattern[0]].add(pattern[1])
 
 
-def program_analysis(program: Program, solutions, category: str):
+def add_constraint_for(program: Program, category: str):
     prog_vars = vars(program)
     max_vars = len(prog_vars)
     stats[category]["total"] += 1
-    # Now more variables have been used
-    type_request = FunctionType(*[var.type for var in prog_vars], program.type)
-    assert isinstance(type_request, Arrow)
-    arguments = type_request.arguments()
     # If only one variable used, this is easy
     if max_vars == 1:
         add_syntaxic(program)
         stats[category]["syntaxic"] += 1
         return
 
-    # Consider all possibilities
-    arguments_per_type: Dict[Type, List[Variable]] = {}
-    for i, arg_type in enumerate(arguments):
-        if arg_type not in arguments_per_type:
-            arguments_per_type[arg_type] = []
-        arguments_per_type[arg_type].append(Variable(i, arg_type))
-    # Enumerate all combinations
-    invariant = set()
-    identity = set()
-    total: int = 0
-
-    # Get inputs
-    with chrono.clock("search.input_sampling"):
-        if type_request not in sampled_inputs:
-            sampled_inputs[type_request] = [
-                [input_sampler.sample(type=arg) for arg in arguments]
-                for _ in range(input_checks)
-            ]
-        inputs = sampled_inputs[type_request]
-
-    original = program
-    program = copy.deepcopy(original)
-    prog_vars = vars(program)
-    for i, var in enumerate(prog_vars):
-        var.variable = i
-    for args in produce_all_variants([arguments_per_type[t] for t in arguments]):
-        total += 1
-        # Modify program
-        for var, arg in zip(prog_vars, args):
-            var.variable = arg.variable
-        # Init booleans
-        is_invariant = original != program
-        varno = args[0].variable
-        is_identity = all(args[i].variable == varno for i in range(len(arguments)))
-        # Check
-        for inp, sol in zip(inputs, solutions):
-            with chrono.clock("eval"):
-                out = evaluator.eval(program, inp)
-            if is_invariant and out != sol:
-                is_invariant = False
-            if is_identity and out != inp[varno]:
-                is_identity = False
-            if not is_identity and not is_invariant:
-                break
-        if is_invariant:
-            invariant.add(copy.deepcopy(program))
-        if is_identity:
-            identity.add(copy.deepcopy(program))
-
-    if len(invariant) == total:
-        # Then this instead can be thought of as a syntaxic restriction
-        add_syntaxic(original)
-        stats[category]["syntaxic"] += 1
-        print("ADDED THROUGH THIS")
-    else:
-        global specific_restrictions
-        specific_restrictions |= invariant
-        specific_restrictions |= identity
+    global specific_restrictions
+    specific_restrictions.add(program)
 
 
 def constant_program_analysis(program: Program):
@@ -221,7 +160,9 @@ with chrono.clock("search"):
         tqdm.tqdm(dsl.list_primitives, smoothing=1) if progress else dsl.list_primitives
     )
 
-    all_solutions = {}
+    all_solutions = defaultdict(dict)
+    programs_done = set()
+    # Pre Sample Inputs + Pre Execute base primitives
     for primitive in dsl.list_primitives:
         arguments = (
             [] if not isinstance(primitive.type, Arrow) else primitive.type.arguments()
@@ -241,8 +182,9 @@ with chrono.clock("search"):
                 [Variable(i, arg_type) for i, arg_type in enumerate(arguments)],
             )
             solutions = [evaluator.eval(base_program, inp) for inp in inputs]
-            all_solutions[primitive] = solutions
+            all_solutions[primitive.type.returns()][primitive] = solutions
 
+    # Check for symmetry
     for primitive in iterable:
         arguments = (
             [] if not isinstance(primitive.type, Arrow) else primitive.type.arguments()
@@ -250,14 +192,7 @@ with chrono.clock("search"):
         if len(arguments) == 0:
             continue
         if progress:
-            iterable.set_postfix_str(primitive.primitive + " 0/2")
-        # Add forbidden patterns to speed up search
-        dsl.forbidden_patterns = copy.deepcopy(syntaxic_restrictions)
-        cfg = CFG.depth_constraint(dsl, primitive.type, max_depth + 1)
-        cfg.rules[cfg.start] = {
-            P: d for P, d in cfg.rules[cfg.start].items() if P == primitive
-        }
-        pcfg = ProbDetGrammar.uniform(cfg)
+            iterable.set_postfix_str(primitive.primitive)
 
         base_program = Function(
             primitive,
@@ -284,36 +219,44 @@ with chrono.clock("search"):
                     primitive,
                     args,
                 )
+                programs_done.add(current_prog)
                 is_symmetric = current_prog != base_program
                 varno = args[0].variable
-                is_identity = all(
-                    args[i].variable == varno for i in range(len(arguments))
-                )
                 for inp, sol in zip(inputs, solutions):
                     with chrono.clock("search.variants.enumeration.eval"):
                         out = evaluator.eval(current_prog, inp)
                     if is_symmetric and out != sol:
                         is_symmetric = False
-                    if is_identity and out != inp[varno]:
-                        is_identity = False
-                    if not is_identity and not is_symmetric:
                         break
                 if is_symmetric:
-                    program_analysis(current_prog, solutions, "symmetry")
-                if is_identity:
-                    program_analysis(current_prog, solutions, "identity")
+                    add_constraint_for(current_prog, "symmetry")
+
+    ftypes = tqdm.tqdm(sampled_inputs.keys()) if progress else sampled_inputs.keys()
+    for ftype in ftypes:
+        # Add forbidden patterns to speed up search
+        dsl.forbidden_patterns = copy.deepcopy(syntaxic_restrictions)
+        cfg = CFG.depth_constraint(dsl, ftype, max_depth + 1)
+        pcfg = ProbDetGrammar.uniform(cfg)
+        inputs = sampled_inputs[ftype]
+
+        all_sol = all_solutions[ftype.returns()]
+
+        cfg_size = cfg.size()
+        done = 0
         if progress:
-            iterable.set_postfix_str(primitive.primitive + " 1/2")
+            ftypes.set_postfix_str(f"{done / cfg_size:.0%}")
+
         # ========================
-        # Invariant part
+        # Check all programs starting with max depth
         # ========================
         with chrono.clock("search.invariant.enumeration"):
             for program in enumerate_prob_grammar(pcfg):
-                if base_program == program:
+                done += 1
+                if program in programs_done:
                     continue
                 is_constant = True
                 my_outputs = []
-                candidates = set(p for p in all_solutions.keys())
+                candidates = set(all_sol.keys())
                 with chrono.clock("search.invariant.enumeration.pruning"):
                     if not simpler_pruner.accept((primitive.type, program)):
                         continue
@@ -322,13 +265,13 @@ with chrono.clock("search"):
                 for i, inp in enumerate(inputs):
                     with chrono.clock("search.invariant.enumeration.eval"):
                         out = evaluator.eval(program, inp)
-                    my_outputs.append(out)
                     # Update candidates
-                    candidates = {c for c in candidates if all_solutions[c][i] == out}
+                    candidates = {c for c in candidates if all_sol[c][i] == out}
                     if is_identity and out != inp[0]:
                         is_identity = False
                     if is_constant and len(my_outputs) > 0 and my_outputs[-1] != out:
                         is_constant = False
+                    my_outputs.append(out)
                     if (
                         not is_constant
                         and not is_identity
@@ -336,19 +279,19 @@ with chrono.clock("search"):
                         and not in_depth_equivalence_check
                     ):
                         break
-
                 if is_identity:
-                    program_analysis(program, solutions, "identity")
+                    add_constraint_for(program, "identity")
                 if is_constant:
-                    program_analysis(program, solutions, "constant")
+                    add_constraint_for(program, "constant")
                 if len(candidates) > 0:
                     if any(c == primitive for c in candidates):
-                        program_analysis(program, solutions, "invariant")
+                        add_constraint_for(program, "invariant")
                     else:
-                        program_analysis(program, solutions, "equivalent")
-                elif in_depth_equivalence_check:
-                    all_solutions[program] = my_outputs
-
+                        add_constraint_for(program, "equivalent")
+                elif in_depth_equivalence_check and not is_identity and not is_constant:
+                    all_sol[program] = my_outputs
+                if done & 256 == 0:
+                    ftypes.set_postfix_str(f"{done / cfg_size:.0%}")
 
 with chrono.clock("constants"):
     types = set(
