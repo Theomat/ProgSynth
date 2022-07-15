@@ -6,7 +6,7 @@ from synth.syntax.dsl import DSL
 from synth.syntax.grammars.det_grammar import DerivableProgram
 from synth.syntax.grammars.ttcfg import TTCFG, NGram
 from synth.syntax.program import Constant, Primitive, Variable
-from synth.syntax.type_system import Arrow, Type, UnknownType
+from synth.syntax.type_system import Arrow, Type
 
 
 NoneType = Literal[None]
@@ -125,14 +125,7 @@ class CFG(TTCFG[CFGState, NoneType]):
         """
         dsl.instantiate_polymorphic_types(upper_bound_type_size)
 
-        forbidden_sets: Dict[str, Set[str]] = {}
-        for pattern in dsl.forbidden_patterns:
-            if len(pattern) != 2:
-                continue
-            source, end = pattern[0], pattern[1]
-            if source not in forbidden_sets:
-                forbidden_sets[source] = set()
-            forbidden_sets[source].add(end)
+        forbidden_sets = dsl.compute_forbidden_sets()
 
         if isinstance(type_request, Arrow):
             return_type = type_request.returns()

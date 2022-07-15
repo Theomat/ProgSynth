@@ -197,14 +197,7 @@ class TTCFG(
 
         max_size: int - is the maxium depth of programs allowed
         """
-        forbidden_sets: Dict[str, Set[str]] = {}
-        for pattern in dsl.forbidden_patterns:
-            if len(pattern) != 2:
-                continue
-            source, end = pattern[0], pattern[1]
-            if source not in forbidden_sets:
-                forbidden_sets[source] = set()
-            forbidden_sets[source].add(end)
+        forbidden_sets = dsl.compute_forbidden_sets()
 
         def __transition__(
             state: Tuple[Type, Tuple[NGram, int]],
@@ -241,14 +234,7 @@ class TTCFG(
         """
         Constructs a n-gram TT CFG from a DSL imposing at most k occurences of a certain primitive.
         """
-        forbidden_sets: Dict[str, Set[str]] = {}
-        for pattern in dsl.forbidden_patterns:
-            if len(pattern) != 2:
-                continue
-            source, end = pattern[0], pattern[1]
-            if source not in forbidden_sets:
-                forbidden_sets[source] = set()
-            forbidden_sets[source].add(end)
+        forbidden_sets = dsl.compute_forbidden_sets()
 
         def __transition__(
             state: Tuple[Type, Tuple[NGram, int]],

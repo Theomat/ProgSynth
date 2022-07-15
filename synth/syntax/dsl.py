@@ -1,5 +1,5 @@
 import copy
-from typing import Mapping, Optional, List as TList, Set
+from typing import Dict, Mapping, Optional, List as TList, Set, Union
 
 from synth.syntax.type_system import Type, Arrow, List
 from synth.syntax.program import Function, Primitive, Program, Variable
@@ -10,6 +10,10 @@ class DSL:
     Object that represents a domain specific language
 
     list_primitives: a list of primitives.
+
+    Primitives can be considered equivalent with @:
+        + and +@3 are considered to be both '+'
+    This enables us to add specific constraints on some + versions.
 
     """
 
@@ -130,3 +134,28 @@ class DSL:
                     vart = type_request.arguments()[varno]
                 return Variable(varno, vart)
             assert False, f"can't parse: {program}"
+
+    def compute_forbidden_sets(self) -> Dict[str, Set[str]]:
+        forbidden_sets: Dict[str, Set[str]] = {}
+        for pattern in self.forbidden_patterns:
+            if len(pattern) != 2:
+                continue
+            source, end = pattern[0], pattern[1]
+            if source not in forbidden_sets:
+                forbidden_sets[source] = set()
+            forbidden_sets[source].add(end)
+
+        for source, forbid_set in forbidden_sets.items():
+            for P1 in list(forbid_set):
+                for P2 in self.list_primitives:
+                    if are_equivalent_primitives(P1, P2):
+                        forbid_set.add(P2)
+        return forbidden_sets
+
+
+def are_equivalent_primitives(
+    p1: Union[str, Primitive], p2: Union[str, Primitive]
+) -> bool:
+    name1 = p1 if isinstance(p1, str) else p1.primitive
+    name2 = p2 if isinstance(p2, str) else p2.primitive
+    return name1[: name1.find("@")] == name2[: name2.find("@")]
