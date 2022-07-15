@@ -57,7 +57,7 @@ with chrono.clock("dataset.load") as c:
 print("Reproducing dataset...", end="")
 with chrono.clock("dataset.reproduce") as c:
     task_generator, lexicon = reproduce_dataset(
-        full_dataset, dsl, evaluator, 0, uniform_pcfg=True
+        full_dataset, dsl, evaluator, 0, uniform_pgrammar=True
     )
     print("done in", c.elapsed_time(), "s")
 # We only get a task generator for the input generator
