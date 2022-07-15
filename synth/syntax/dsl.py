@@ -158,4 +158,8 @@ def are_equivalent_primitives(
 ) -> bool:
     name1 = p1 if isinstance(p1, str) else p1.primitive
     name2 = p2 if isinstance(p2, str) else p2.primitive
-    return name1[: name1.find("@")] == name2[: name2.find("@")]
+    if "@" in name1:
+        name1 = name1[: name1.find("@")]
+    if "@" in name2:
+        name2 = name2[: name2.find("@")]
+    return name1 == name2
