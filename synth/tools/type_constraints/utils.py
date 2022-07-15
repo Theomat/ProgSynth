@@ -5,7 +5,7 @@ from typing import Generator, List as TList, Optional, Tuple, Dict, Set, Iterabl
 from synth.syntax import Type, Arrow, List, PrimitiveType, PolymorphicType, FunctionType
 
 
-SYMBOL_ANYTHING = "*"
+SYMBOL_ANYTHING = "_"
 SYMBOL_VAR_EXPR = "$"
 SYMBOL_FORBIDDEN = "^"
 SYMBOL_DUPLICATA = "@"
