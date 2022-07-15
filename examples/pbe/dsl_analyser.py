@@ -1,4 +1,5 @@
-from typing import Dict, Generator, Iterable, List, TypeVar
+from collections import defaultdict
+from typing import Dict, Generator, Iterable, List, Set, TypeVar
 import copy
 
 import tqdm
@@ -70,7 +71,7 @@ simpler_pruner = UseAllVariablesPruner()
 
 sampled_inputs = {}
 
-syntaxic_restrictions = []
+syntaxic_restrictions: Dict[str, Set[str]] = defaultdict(set)
 specific_restrictions = set()
 
 stats = {
@@ -120,7 +121,7 @@ def add_syntaxic(program: Program):
     for p in program.depth_first_iter():
         if isinstance(p, Primitive):
             pattern.append(p.primitive)
-    syntaxic_restrictions.append(pattern)
+    syntaxic_restrictions[pattern[0]].add(pattern[1])
 
 
 def program_analysis(program: Program, solutions, category: str):
@@ -245,7 +246,7 @@ with chrono.clock("search"):
         if len(arguments) == 0:
             continue
         # Remove forbidden patterns to speed up search
-        dsl.forbidden_patterns = syntaxic_restrictions[:]
+        dsl.forbidden_patterns = copy.deepcopy(syntaxic_restrictions)
         cfg = CFG.depth_constraint(dsl, primitive.type, max_depth + 1)
         cfg.rules[cfg.start] = {
             P: d for P, d in cfg.rules[cfg.start].items() if P == primitive
@@ -346,7 +347,7 @@ with chrono.clock("constants"):
             evaluator.eval(p, []) for p in dsl.list_primitives if primitive.type == ty
         }
         # Remove forbidden patterns to speed up search
-        dsl.forbidden_patterns = syntaxic_restrictions[:]
+        dsl.forbidden_patterns = copy.deepcopy(syntaxic_restrictions)
         cfg = CFG.depth_constraint(dsl, primitive.type, max_depth + 1)
         pcfg = ProbDetGrammar.uniform(cfg)
         with chrono.clock("constants.enumeration"):
@@ -381,7 +382,7 @@ copied_dsl = DSL(
 )
 max_depth = 4
 all_type_requests = set(task_generator.type2pgrammar.keys())
-dsl.forbidden_patterns = []
+dsl.forbidden_patterns = {}
 cfgs = [CFG.depth_constraint(dsl, t, max_depth) for t in all_type_requests]
 reduced_cfgs = [
     CFG.depth_constraint(copied_dsl, t, max_depth) for t in all_type_requests
@@ -392,8 +393,8 @@ ratio = np.mean(
         for original, red in zip(cfgs, reduced_cfgs)
     ]
 )
-print(f"At depth {max_depth}, it is an average reduction of {ratio:.1%} of CFG size")
-print(sorted(syntaxic_restrictions))
+print(f"At depth {max_depth}, it is an average reduction of {ratio:.2%} of CFG size")
+print({k: sorted(v) for k, v in syntaxic_restrictions.items()})
 print()
 print(f"Found {len(specific_restrictions)} specific restricions, impact not computed.")
 print(specific_restrictions)
