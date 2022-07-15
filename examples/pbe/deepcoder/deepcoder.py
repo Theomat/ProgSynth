@@ -1,5 +1,8 @@
+from typing import Tuple
 from synth.semantic import DSLEvaluator
+from synth.semantic.evaluator import auto_complete_semantics
 from synth.syntax import DSL, INT, Arrow, PolymorphicType, List
+from synth.tools.type_constraints import produce_new_syntax_for_constraints
 
 t0 = PolymorphicType("t0")
 t1 = PolymorphicType("t1")
@@ -198,3 +201,26 @@ dsl = DSL(__primitive_types, __forbidden_patterns)
 evaluator = DSLEvaluator(__semantics)
 evaluator.skip_exceptions.add(OverflowError)
 lexicon = list(range(-256, 256 + 1))
+
+
+def pruned_version(probress_bar: bool = False) -> Tuple[DSL, DSLEvaluator]:
+    patterns = [
+        "COUNT[<0] ^MAP[*-1],MAP[**2]",
+        "COUNT[>0] ^MAP[*-1],MAP[**2]",
+        "COUNT[EVEN] ^MAP[+1],MAP[*2]",
+        "COUNT[ODD] ^MAP[+1],MAP[*2]",
+        "FILTER[EVEN] ^MAP[+1],MAP[*2],FILTER[ODD]",
+        "FILTER[ODD] ^MAP[+1],MAP[*2],FILTER[EVEN]",
+        "ZIPWITH[+] ^ZIPWITH[+] *",
+        "ZIPWITH[*] ^ZIPWITH[*] *",
+        "ZIPWITH[min] ^ZIPWITH[min] *",
+        "ZIPWITH[max] ^ZIPWITH[max] *",
+    ]
+    new_syntax, _ = produce_new_syntax_for_constraints(
+        __primitive_types, patterns, progress=probress_bar
+    )
+    new_dsl = DSL(new_syntax, __forbidden_patterns)
+    new_semantics = auto_complete_semantics(__primitive_types.keys(), __semantics)
+    new_evaluator = DSLEvaluator(new_semantics)
+    new_evaluator.skip_exceptions.add(OverflowError)
+    return new_dsl, new_evaluator
