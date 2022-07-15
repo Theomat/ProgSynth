@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Dict, Generator, Iterable, List, Set, TypeVar
+from typing import Dict, Generator, List, Set, TypeVar
 import copy
 
 import tqdm
@@ -35,6 +35,7 @@ dataset = DEEPCODER
 # ================================
 max_depth = 2
 input_checks = 1000
+in_depth_equivalence_check = False
 progress = True
 # ================================
 # Initialisation
@@ -191,6 +192,7 @@ def program_analysis(program: Program, solutions, category: str):
         # Then this instead can be thought of as a syntaxic restriction
         add_syntaxic(original)
         stats[category]["syntaxic"] += 1
+        print("ADDED THROUGH THIS")
     else:
         global specific_restrictions
         specific_restrictions |= invariant
@@ -215,7 +217,9 @@ def constant_program_analysis(program: Program):
 
 
 with chrono.clock("search"):
-    iterable = tqdm.tqdm(dsl.list_primitives, smoothing=1) if progress else dsl.list_primitives
+    iterable = (
+        tqdm.tqdm(dsl.list_primitives, smoothing=1) if progress else dsl.list_primitives
+    )
 
     all_solutions = {}
     for primitive in dsl.list_primitives:
@@ -307,8 +311,9 @@ with chrono.clock("search"):
             for program in enumerate_prob_grammar(pcfg):
                 if base_program == program:
                     continue
-                diff_outputs = set()
-                candidates = set(p for p in dsl.list_primitives)
+                is_constant = True
+                my_outputs = []
+                candidates = set(p for p in all_solutions.keys())
                 with chrono.clock("search.invariant.enumeration.pruning"):
                     if not simpler_pruner.accept((primitive.type, program)):
                         continue
@@ -317,27 +322,32 @@ with chrono.clock("search"):
                 for i, inp in enumerate(inputs):
                     with chrono.clock("search.invariant.enumeration.eval"):
                         out = evaluator.eval(program, inp)
-                    diff_outputs.add(tuple(out) if isinstance(out, Iterable) else out)
+                    my_outputs.append(out)
                     # Update candidates
                     candidates = {c for c in candidates if all_solutions[c][i] == out}
                     if is_identity and out != inp[0]:
                         is_identity = False
+                    if is_constant and len(my_outputs) > 0 and my_outputs[-1] != out:
+                        is_constant = False
                     if (
-                        not is_identity
-                        and len(diff_outputs) > 1
+                        not is_constant
+                        and not is_identity
                         and len(candidates) == 0
+                        and not in_depth_equivalence_check
                     ):
                         break
 
                 if is_identity:
                     program_analysis(program, solutions, "identity")
-                if len(diff_outputs) == 1:
+                if is_constant:
                     program_analysis(program, solutions, "constant")
                 if len(candidates) > 0:
                     if any(c == primitive for c in candidates):
                         program_analysis(program, solutions, "invariant")
                     else:
                         program_analysis(program, solutions, "equivalent")
+                elif in_depth_equivalence_check:
+                    all_solutions[program] = my_outputs
 
 
 with chrono.clock("constants"):
