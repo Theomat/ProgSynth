@@ -197,11 +197,28 @@ class TTCFG(
 
         max_size: int - is the maxium depth of programs allowed
         """
+        forbidden_sets: Dict[str, Set[str]] = {}
+        for pattern in dsl.forbidden_patterns:
+            if len(pattern) != 2:
+                continue
+            source, end = pattern[0], pattern[1]
+            if source not in forbidden_sets:
+                forbidden_sets[source] = set()
+            forbidden_sets[source].add(end)
 
         def __transition__(
             state: Tuple[Type, Tuple[NGram, int]],
             derivation: Union[Primitive, Variable, Constant],
         ) -> Tuple[bool, int]:
+            predecessors = state[1][0]
+            last_pred = predecessors.last() if len(predecessors) > 0 else None
+            if derivation in forbidden_sets.get(
+                last_pred[0].primitive
+                if last_pred and isinstance(last_pred[0], Primitive)
+                else "",
+                set(),
+            ):
+                return False, 0
             size = state[1][1]
             if size > max_size:
                 return False, 0
@@ -224,11 +241,28 @@ class TTCFG(
         """
         Constructs a n-gram TT CFG from a DSL imposing at most k occurences of a certain primitive.
         """
+        forbidden_sets: Dict[str, Set[str]] = {}
+        for pattern in dsl.forbidden_patterns:
+            if len(pattern) != 2:
+                continue
+            source, end = pattern[0], pattern[1]
+            if source not in forbidden_sets:
+                forbidden_sets[source] = set()
+            forbidden_sets[source].add(end)
 
         def __transition__(
             state: Tuple[Type, Tuple[NGram, int]],
             derivation: Union[Primitive, Variable, Constant],
         ) -> Tuple[bool, int]:
+            predecessors = state[1][0]
+            last_pred = predecessors.last() if len(predecessors) > 0 else None
+            if derivation in forbidden_sets.get(
+                last_pred[0].primitive
+                if last_pred and isinstance(last_pred[0], Primitive)
+                else "",
+                set(),
+            ):
+                return False, occ_left
             occ_left = state[1][1]
             if str(derivation) != primitive:
                 return True, occ_left
