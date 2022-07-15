@@ -250,7 +250,7 @@ class TTCFG(
                 else "",
                 set(),
             ):
-                return False, occ_left
+                return False, 0
             occ_left = state[1][1]
             if str(derivation) != primitive:
                 return True, occ_left
