@@ -245,6 +245,8 @@ with chrono.clock("search"):
         )
         if len(arguments) == 0:
             continue
+        if progress:
+            iterable.set_postfix_str(primitive.primitive + " 0/2")
         # Remove forbidden patterns to speed up search
         dsl.forbidden_patterns = copy.deepcopy(syntaxic_restrictions)
         cfg = CFG.depth_constraint(dsl, primitive.type, max_depth + 1)
@@ -296,6 +298,8 @@ with chrono.clock("search"):
                     program_analysis(current_prog, solutions, "symmetry")
                 if is_identity:
                     program_analysis(current_prog, solutions, "identity")
+        if progress:
+            iterable.set_postfix_str(primitive.primitive + " 1/2")
         # ========================
         # Invariant part
         # ========================
