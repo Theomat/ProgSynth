@@ -1,4 +1,4 @@
-from typing import Dict, Generator, List, TypeVar
+from typing import Dict, Generator, Iterable, List, TypeVar
 import copy
 
 import tqdm
@@ -33,7 +33,7 @@ dataset = DEEPCODER
 # Tunable parameters
 # ================================
 max_depth = 2
-input_checks = 100
+input_checks = 1000
 progress = True
 # ================================
 # Initialisation
@@ -75,7 +75,7 @@ specific_restrictions = set()
 
 stats = {
     s: {"total": 0, "syntaxic": 0}
-    for s in ["identity", "symmetry", "invariant", "constant"]
+    for s in ["identity", "symmetry", "constant", "equivalent", "invariant"]
 }
 
 
@@ -215,6 +215,29 @@ def constant_program_analysis(program: Program):
 
 with chrono.clock("search"):
     iterable = tqdm.tqdm(dsl.list_primitives) if progress else dsl.list_primitives
+
+    all_solutions = {}
+    for primitive in dsl.list_primitives:
+        arguments = (
+            [] if not isinstance(primitive.type, Arrow) else primitive.type.arguments()
+        )
+        if len(arguments) == 0:
+            continue
+        with chrono.clock("search.input_sampling"):
+            if primitive.type not in sampled_inputs:
+                sampled_inputs[primitive.type] = [
+                    [input_sampler.sample(type=arg) for arg in arguments]
+                    for _ in range(input_checks)
+                ]
+            inputs = sampled_inputs[primitive.type]
+        with chrono.clock("search.solutions"):
+            base_program = Function(
+                primitive,
+                [Variable(i, arg_type) for i, arg_type in enumerate(arguments)],
+            )
+            solutions = [evaluator.eval(base_program, inp) for inp in inputs]
+            all_solutions[primitive] = solutions
+
     for primitive in iterable:
         arguments = (
             [] if not isinstance(primitive.type, Arrow) else primitive.type.arguments()
@@ -229,20 +252,12 @@ with chrono.clock("search"):
         }
         pcfg = ProbDetGrammar.uniform(cfg)
 
-        with chrono.clock("search.input_sampling"):
-            if primitive.type not in sampled_inputs:
-                sampled_inputs[primitive.type] = [
-                    [input_sampler.sample(type=arg) for arg in arguments]
-                    for _ in range(input_checks)
-                ]
-            inputs = sampled_inputs[primitive.type]
-
-        with chrono.clock("search.solutions"):
-            base_program = Function(
-                primitive,
-                [Variable(i, arg_type) for i, arg_type in enumerate(arguments)],
-            )
-            solutions = [evaluator.eval(base_program, inp) for inp in inputs]
+        base_program = Function(
+            primitive,
+            [Variable(i, arg_type) for i, arg_type in enumerate(arguments)],
+        )
+        inputs = sampled_inputs[primitive.type]
+        solutions = all_solutions[primitive]
 
         # ========================
         # Symmetry+Identity part
@@ -287,25 +302,38 @@ with chrono.clock("search"):
             for program in enumerate_prob_grammar(pcfg):
                 if base_program == program:
                     continue
+                diff_outputs = set()
+                candidates = set(p for p in dsl.list_primitives)
                 with chrono.clock("search.invariant.enumeration.pruning"):
                     if not simpler_pruner.accept((primitive.type, program)):
                         continue
                 is_invariant = True
                 is_identity = len(arguments) == 1
-                for inp, sol in zip(inputs, solutions):
+                for i, inp in enumerate(inputs):
                     with chrono.clock("search.invariant.enumeration.eval"):
                         out = evaluator.eval(program, inp)
-                    if is_invariant and out != sol:
-                        is_invariant = False
+                    diff_outputs.add(tuple(out) if isinstance(out, Iterable) else out)
+                    # Update candidates
+                    candidates = {c for c in candidates if all_solutions[c][i] == out}
                     if is_identity and out != inp[0]:
                         is_identity = False
-                    if not is_identity and not is_invariant:
+                    if (
+                        not is_identity
+                        and len(diff_outputs) > 1
+                        and len(candidates) == 0
+                    ):
                         break
 
-                if is_invariant:
-                    program_analysis(program, solutions, "invariant")
                 if is_identity:
                     program_analysis(program, solutions, "identity")
+                if len(diff_outputs) == 1:
+                    program_analysis(program, solutions, "constant")
+                if len(candidates) > 0:
+                    if any(c == primitive for c in candidates):
+                        program_analysis(program, solutions, "invariant")
+                    else:
+                        program_analysis(program, solutions, "equivalent")
+
 
 with chrono.clock("constants"):
     types = set(
@@ -351,22 +379,21 @@ print(f"Found {len(syntaxic_restrictions)} syntaxic restricions.")
 copied_dsl = DSL(
     {p.primitive: p.type for p in dsl.list_primitives}, syntaxic_restrictions
 )
+max_depth = 4
 all_type_requests = set(task_generator.type2pgrammar.keys())
 dsl.forbidden_patterns = []
-cfgs = [CFG.depth_constraint(dsl, t, 5) for t in all_type_requests]
-reduced_cfgs = [CFG.depth_constraint(copied_dsl, t, 5) for t in all_type_requests]
+cfgs = [CFG.depth_constraint(dsl, t, max_depth) for t in all_type_requests]
+reduced_cfgs = [
+    CFG.depth_constraint(copied_dsl, t, max_depth) for t in all_type_requests
+]
 ratio = np.mean(
     [
         (original.size() - red.size()) / original.size()
         for original, red in zip(cfgs, reduced_cfgs)
     ]
 )
-mean_ori = np.mean([original.size() for original in cfgs])
-mean_red = np.mean([red.size() for red in reduced_cfgs])
-print(
-    f"This gives an average reduction of CFG size of {ratio * 100:.1%} from {mean_ori:.0f} to {mean_red:.0f}"
-)
-print(syntaxic_restrictions)
+print(f"At depth {max_depth}, it is an average reduction of {ratio:.1%} of CFG size")
+print(sorted(syntaxic_restrictions))
 print()
 print(f"Found {len(specific_restrictions)} specific restricions, impact not computed.")
 print(specific_restrictions)
