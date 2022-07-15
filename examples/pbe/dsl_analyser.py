@@ -247,7 +247,7 @@ with chrono.clock("search"):
             continue
         if progress:
             iterable.set_postfix_str(primitive.primitive + " 0/2")
-        # Remove forbidden patterns to speed up search
+        # Add forbidden patterns to speed up search
         dsl.forbidden_patterns = copy.deepcopy(syntaxic_restrictions)
         cfg = CFG.depth_constraint(dsl, primitive.type, max_depth + 1)
         cfg.rules[cfg.start] = {
@@ -350,7 +350,7 @@ with chrono.clock("constants"):
         all_evals = {
             evaluator.eval(p, []) for p in dsl.list_primitives if primitive.type == ty
         }
-        # Remove forbidden patterns to speed up search
+        # Add forbidden patterns to speed up search
         dsl.forbidden_patterns = copy.deepcopy(syntaxic_restrictions)
         cfg = CFG.depth_constraint(dsl, primitive.type, max_depth + 1)
         pcfg = ProbDetGrammar.uniform(cfg)
