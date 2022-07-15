@@ -401,16 +401,14 @@ cfgs = [CFG.depth_constraint(dsl, t, max_depth) for t in all_type_requests]
 reduced_cfgs = [
     CFG.depth_constraint(copied_dsl, t, max_depth) for t in all_type_requests
 ]
-ratio = np.mean(
-    [
-        (original.size() - red.size()) / original.size()
-        for original, red in zip(cfgs, reduced_cfgs)
-    ]
-)
-print(f"At depth {max_depth}, it is an average reduction of {ratio:.2%} of CFG size")
+ratios = [
+    (original.size() - red.size()) / original.size()
+    for original, red in zip(cfgs, reduced_cfgs)
+]
+print(f"At depth {max_depth}, it is an average reduction of {np.mean(ratios):.2%} [{np.min(ratios):.1%} -> {np.max(ratios):.1%}] of CFG size")
 print("{", end="")
-for k, v in syntaxic_restrictions.items():
-    print(f'"{k}": ', '{ "' + '", "'.join(sorted(v)) + '"}')
-print("}")
+for k, v in sorted(syntaxic_restrictions.items()):
+    print(f'"{k}": ', '{ "' + '", "'.join(sorted(v)) + '"},', end=" ")
+print("}\n")
 print(f"Found {len(specific_restrictions)} specific restricions, impact not computed.")
-print(specific_restrictions)
+# print(specific_restrictions)
