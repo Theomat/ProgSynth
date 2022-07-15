@@ -398,7 +398,9 @@ ratio = np.mean(
     ]
 )
 print(f"At depth {max_depth}, it is an average reduction of {ratio:.2%} of CFG size")
-print({k: sorted(v) for k, v in syntaxic_restrictions.items()})
-print()
+print("{", end="")
+for k, v in syntaxic_restrictions.items():
+    print(f'"{k}": ', "{" + ", ".join(sorted(v)) + "}")
+print("}")
 print(f"Found {len(specific_restrictions)} specific restricions, impact not computed.")
 print(specific_restrictions)
