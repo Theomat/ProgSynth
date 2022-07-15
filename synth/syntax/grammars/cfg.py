@@ -200,24 +200,25 @@ class CFG(TTCFG[CFGState, NoneType]):
                             rules[non_terminal][P] = (decorated_arguments_P, None)
 
                     # Try to use variable as if there were functions
-                    for vi, varg in enumerate(args):
-                        arguments_V = varg.ends_with(current_type)
-                        if arguments_V is not None:
-                            V = Variable(vi, varg)
-                            decorated_arguments_V = []
-                            for i, arg in enumerate(arguments_V):
-                                new_predecessors = predecessors.successor((V, i))
-                                new_context = (
-                                    arg,
-                                    ((new_predecessors, depth + 1), None),
-                                )
-                                decorated_arguments_V.append(
-                                    (arg, (new_predecessors, depth + 1))
-                                )
-                                if new_context not in list_to_be_treated:
-                                    list_to_be_treated.appendleft(new_context)
+                    if depth >= min_variable_depth:
+                        for vi, varg in enumerate(args):
+                            arguments_V = varg.ends_with(current_type)
+                            if arguments_V is not None:
+                                V = Variable(vi, varg)
+                                decorated_arguments_V = []
+                                for i, arg in enumerate(arguments_V):
+                                    new_predecessors = predecessors.successor((V, i))
+                                    new_context = (
+                                        arg,
+                                        ((new_predecessors, depth + 1), None),
+                                    )
+                                    decorated_arguments_V.append(
+                                        (arg, (new_predecessors, depth + 1))
+                                    )
+                                    if new_context not in list_to_be_treated:
+                                        list_to_be_treated.appendleft(new_context)
 
-                            rules[non_terminal][V] = (decorated_arguments_V, None)
+                                rules[non_terminal][V] = (decorated_arguments_V, None)
                     # Try to call self
                     if recursive:
                         arguments_self = type_request.ends_with(current_type)
