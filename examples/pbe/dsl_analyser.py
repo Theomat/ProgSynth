@@ -1,5 +1,6 @@
 from collections import defaultdict
-from typing import Dict, Generator, List, Set, TypeVar
+import itertools
+from typing import Dict, Generator, List, Set, Tuple, TypeVar
 import copy
 
 import tqdm
@@ -20,6 +21,7 @@ from synth.syntax import (
     Arrow,
     Type,
 )
+from synth.tools.type_constraints.utils import SYMBOL_ANYTHING, SYMBOL_FORBIDDEN
 from synth.utils import chrono
 
 # ================================
@@ -73,6 +75,7 @@ sampled_inputs = {}
 
 syntaxic_restrictions: Dict[str, Set[str]] = defaultdict(set)
 specific_restrictions = set()
+pattern_constraints = []
 
 stats = {
     s: {"total": 0, "syntaxic": 0}
@@ -115,12 +118,17 @@ def constants(program: Program) -> List[Variable]:
     return consts
 
 
-def add_syntaxic(program: Program):
+def dump_primitives(program: Program) -> List[str]:
     pattern = []
     # Find all variables
     for p in program.depth_first_iter():
         if isinstance(p, Primitive):
             pattern.append(p.primitive)
+    return pattern
+
+
+def add_syntaxic(program: Program):
+    pattern = dump_primitives(program)
     syntaxic_restrictions[pattern[0]].add(pattern[1])
 
 
@@ -134,8 +142,32 @@ def add_constraint_for(program: Program, category: str):
         stats[category]["syntaxic"] += 1
         return
 
-    global specific_restrictions
-    specific_restrictions.add(program)
+    if category == "symmetry":
+        # global pattern_constraints
+        variables = vars(program)
+        varnos = [v.variable for v in variables]
+        arguments = [v.type for v in sorted(variables, key=lambda k: k.variable)]
+        rtype = program.type
+        swap_indices = {
+            varnos[i] != i and arg_type == rtype for i, arg_type in enumerate(arguments)
+        }
+        if len(swap_indices) == len(varnos):
+            return
+
+        primitive = dump_primitives(program)[0]
+        pattern_constraints.append(
+            f"{primitive} "
+            + " ".join(
+                SYMBOL_ANYTHING
+                if i not in swap_indices
+                else f"{SYMBOL_FORBIDDEN}{primitive}"
+                for i in varnos
+            )
+        )
+
+    else:
+        global specific_restrictions
+        specific_restrictions.add(program)
 
 
 def constant_program_analysis(program: Program):
@@ -314,6 +346,26 @@ with chrono.clock("constants"):
                 if out in all_evals:
                     constant_program_analysis(program)
 
+specific_reused = 0
+with chrono.clock("pattern"):
+    with chrono.clock("pattern.encode"):
+        all_found: Dict[Tuple, Set[Tuple]] = defaultdict(set)
+        for program in specific_restrictions:
+            prims = tuple(dump_primitives(program))
+            all_found[prims].add(tuple([v.variable for v in vars(program)]))
+    with chrono.clock("pattern.find"):
+        for derivations, all_variants in all_found.items():
+            print("For", derivations, "=>", all_variants)
+            nvars = len(list(all_variants)[0])
+            good = True
+            for comb in itertools.permutations(list(range(nvars))):
+                if comb not in all_variants:
+                    good = False
+                    break
+            if good:
+                specific_reused += len(all_variants)
+                pattern_constraints.append(0)
+
 
 print(
     "Done",
@@ -348,10 +400,16 @@ ratios = [
     (original.size() - red.size()) / original.size()
     for original, red in zip(cfgs, reduced_cfgs)
 ]
-print(f"At depth {max_depth}, it is an average reduction of {np.mean(ratios):.2%} [{np.min(ratios):.1%} -> {np.max(ratios):.1%}] of CFG size")
+print(
+    f"At depth {max_depth}, it is an average reduction of {np.mean(ratios):.2%} [{np.min(ratios):.1%} -> {np.max(ratios):.1%}] of CFG size"
+)
 print("{", end="")
 for k, v in sorted(syntaxic_restrictions.items()):
     print(f'"{k}": ', '{ "' + '", "'.join(sorted(v)) + '"},', end=" ")
 print("}\n")
-print(f"Found {len(specific_restrictions)} specific restricions, impact not computed.")
+print(f"Found {len(pattern_constraints)} type constraints:")
+print(pattern_constraints)
+print(
+    f"Found {len(specific_restrictions) - specific_reused} specific restricions that could not be added as constraint, impact not computed."
+)
 # print(specific_restrictions)
