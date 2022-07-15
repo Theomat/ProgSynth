@@ -145,11 +145,18 @@ class DSL:
                 forbidden_sets[source] = set()
             forbidden_sets[source].add(end)
 
+        # Complete sets
         for source, forbid_set in forbidden_sets.items():
             for P1 in list(forbid_set):
                 for P2 in self.list_primitives:
                     if are_equivalent_primitives(P1, P2):
-                        forbid_set.add(P2)
+                        forbid_set.add(P2.primitive)
+
+        # Now we have to complete keys
+        for source, forbid_set in list(forbidden_sets.items()):
+            for P in self.list_primitives:
+                if are_equivalent_primitives(P, source):
+                    forbidden_sets[P.primitive] = forbidden_sets[source]
         return forbidden_sets
 
 
