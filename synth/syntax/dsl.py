@@ -20,12 +20,13 @@ class DSL:
     def __init__(
         self,
         syntax: Mapping[str, Type],
-        forbidden_patterns: Optional[TList[TList[str]]] = None,
+        forbidden_patterns: Optional[Dict[str, Set[str]]] = None,
     ):
         self.list_primitives = [
             Primitive(primitive=p, type=t) for p, t in syntax.items()
         ]
-        self.forbidden_patterns = forbidden_patterns or []
+        self.forbidden_patterns = forbidden_patterns or {}
+        self._forbidden_computed = False
 
     def __str__(self) -> str:
         s = "Print a DSL\n"
@@ -135,15 +136,11 @@ class DSL:
                 return Variable(varno, vart)
             assert False, f"can't parse: {program}"
 
-    def compute_forbidden_sets(self) -> Dict[str, Set[str]]:
-        forbidden_sets: Dict[str, Set[str]] = {}
-        for pattern in self.forbidden_patterns:
-            if len(pattern) != 2:
-                continue
-            source, end = pattern[0], pattern[1]
-            if source not in forbidden_sets:
-                forbidden_sets[source] = set()
-            forbidden_sets[source].add(end)
+    def instantiate_forbidden(self) -> None:
+        if self._forbidden_computed:
+            return
+        self._forbidden_computed = True
+        forbidden_sets = self.forbidden_patterns
 
         # Complete sets
         for source, forbid_set in forbidden_sets.items():
@@ -157,7 +154,6 @@ class DSL:
             for P in self.list_primitives:
                 if are_equivalent_primitives(P, source):
                     forbidden_sets[P.primitive] = forbidden_sets[source]
-        return forbidden_sets
 
 
 def are_equivalent_primitives(
