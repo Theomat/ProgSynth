@@ -1,27 +1,22 @@
+import argparse
 import sys
+
+from dsl_loader import add_dsl_choice_arg, load_DSL
 
 from synth import Dataset, PBE
 from synth.utils import chrono, gen_take
 
 DREAMCODER = "dreamcoder"
-DEEPCODER = "deepcoder"
 REGEXP = "regexp"
 CALCULATOR = "calculator"
 TRANSDUCTION = "transduction"
 
 
-import argparse
-
 parser = argparse.ArgumentParser(
     description="Generate a dataset copying the original distribution of another dataset"
 )
-parser.add_argument(
-    "--dsl",
-    type=str,
-    default=DEEPCODER,
-    help="dsl (default: deepcoder)",
-    choices=[DEEPCODER, DREAMCODER, REGEXP, CALCULATOR, TRANSDUCTION],
-)
+add_dsl_choice_arg(parser)
+
 parser.add_argument(
     "--dataset",
     type=str,
@@ -54,30 +49,19 @@ gen_dataset_size: int = parameters.size
 # Load constants specific to DSL
 # ================================
 max_list_length = None
-if dsl_name == DEEPCODER:
-    from synth.pbe import reproduce_dataset
-    from deepcoder.deepcoder import dsl, evaluator, lexicon
-    from synth.pbe import reproduce_dataset
+dsl_module = load_DSL(dsl_name)
+dsl, evaluator, lexicon = dsl_module.dsl, dsl_module.evaluator, dsl_module.lexicon
 
-elif dsl_name == DREAMCODER:
-    from synth.pbe import reproduce_dataset
-    from dreamcoder.dreamcoder import dsl, evaluator, lexicon
+if dsl_name == DREAMCODER:
     from synth.pbe import reproduce_dataset
 
     max_list_length = 10
-
 elif dsl_name == REGEXP:
     from regexp.task_generator_regexp import reproduce_dataset
-    from regexp.regexp import dsl, evaluator, lexicon
-
-    # max_list_length = 10
-
 elif dsl_name == CALCULATOR:
     from calculator.calculator_task_generator import reproduce_dataset
-    from calculator.calculator import dsl, evaluator, lexicon
 elif dsl_name == TRANSDUCTION:
     from transduction.transduction_task_generator import reproduce_dataset
-    from transduction.transduction import dsl, evaluator, lexicon
 else:
     print("Unknown dsl:", dsl_name, file=sys.stderr)
     sys.exit(1)

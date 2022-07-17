@@ -14,6 +14,9 @@ from torch.utils.tensorboard import SummaryWriter
 
 import numpy as np
 
+from dsl_loader import add_dsl_choice_arg, load_DSL
+
+
 from synth import Dataset, PBE, Task
 from synth.nn import (
     GrammarPredictorLayer,
@@ -35,14 +38,14 @@ TRANSDUCTION = "transduction"
 import argparse
 
 parser = argparse.ArgumentParser(description="Evaluate model prediction")
-parser.add_argument("--dataset", type=str, help="dataset (default: none)")
 parser.add_argument(
-    "--dsl",
+    "-d",
+    "--dataset",
     type=str,
-    default=DEEPCODER,
-    help="dsl (default: deepcoder)",
-    choices=[DEEPCODER, DREAMCODER, REGEXP, CALCULATOR, TRANSDUCTION],
+    default="{dsl_name}.pickle",
+    help="dataset (default: {dsl_name}}.pickle)",
 )
+add_dsl_choice_arg(parser)
 parser.add_argument(
     "-o",
     "--output",
@@ -122,7 +125,7 @@ g.add_argument(
 g.add_argument("-s", "--seed", type=int, default=0, help="seed (default: 0)")
 
 parameters = parser.parse_args()
-dataset_file: str = parameters.dataset
+dataset_file: str = parameters.dataset.format(dsl_name=dsl_name)
 dsl_name: str = parameters.dsl
 output_file: str = parameters.output
 variable_probability: float = parameters.var_prob
@@ -146,30 +149,19 @@ torch.manual_seed(seed)
 max_list_length = None
 upper_bound_type_size = 10
 dsl_constant_types = set()
-if dsl_name == DEEPCODER:
-    from deepcoder.deepcoder import dsl, evaluator, lexicon
-
-elif dsl_name == DREAMCODER:
-    from dreamcoder.dreamcoder import dsl, evaluator, lexicon
-
+dsl_module = load_DSL(dsl_name)
+dsl, evaluator, lexicon = dsl_module.dsl, dsl_module.evaluator, dsl_module.lexicon
+if dsl_name == DREAMCODER:
     max_list_length = 10
-
 elif dsl_name == REGEXP:
-    from regexp.regexp import dsl, evaluator, lexicon
-
     max_list_length = 10
 elif dsl_name == CALCULATOR:
-    from calculator.calculator import dsl, lexicon
-
     upper_bound_type_size = 5
 elif dsl_name == TRANSDUCTION:
-    from transduction.transduction import dsl, lexicon, constant_types
-
     upper_bound_type_size = 5
-    dsl_constant_types = constant_types
-else:
-    print("Unknown dsl:", dsl_name, file=sys.stderr)
-    sys.exit(1)
+
+if hasattr(dsl_module, "constant_types"):
+    dsl_constant_types = dsl_module.constant_types
 # ================================
 # Load dataset & Task Generator
 # ================================

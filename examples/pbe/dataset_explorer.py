@@ -1,4 +1,3 @@
-import sys
 from typing import Optional
 
 from colorama import Fore as F
@@ -8,23 +7,12 @@ from synth.syntax import CFG
 from synth.task import Task
 from synth.utils import chrono
 
-DREAMCODER = "dreamcoder"
-DEEPCODER = "deepcoder"
-REGEXP = "regexp"
-CALCULATOR = "calculator"
-TRANSDUCTION = "transduction"
-
+from dsl_loader import add_dsl_choice_arg, load_DSL
 
 import argparse
 
 parser = argparse.ArgumentParser(description="Explore a dataset")
-parser.add_argument(
-    "--dsl",
-    type=str,
-    default=DEEPCODER,
-    help="dsl (default: deepcoder)",
-    choices=[DEEPCODER, DREAMCODER, REGEXP, CALCULATOR, TRANSDUCTION],
-)
+add_dsl_choice_arg(parser)
 parser.add_argument(
     "--dataset",
     type=str,
@@ -46,28 +34,12 @@ def pretty_print_inputs(str: str):
     return str
 
 
-if dsl_name == DEEPCODER:
-    from deepcoder.deepcoder import dsl, lexicon
-
-elif dsl_name == DREAMCODER:
-    from dreamcoder.dreamcoder import dsl, lexicon
-
-elif dsl_name == REGEXP:
-    from regexp.regexp import (
-        dsl,
-        lexicon,
-        pretty_print_solution,
-        pretty_print_inputs,
-    )
-elif dsl_name == CALCULATOR:
-    from calculator.calculator import dsl, lexicon
-
-elif dsl_name == TRANSDUCTION:
-    from transduction.transduction import dsl, lexicon
-
-else:
-    print(F.LIGHTRED_EX + "Unknown dsl:", dsl_name + F.RESET, file=sys.stderr)
-    sys.exit(1)
+dsl_module = load_DSL(dsl_name)
+dsl, lexicon = dsl_module.dsl, dsl_module.lexicon
+if hasattr(dsl_module, "pretty_print_solution"):
+    pretty_print_solution = dsl_module.pretty_print_solution
+if hasattr(dsl_module, "pretty_print_inputs"):
+    pretty_print_inputs = dsl_module.pretty_print_inputs
 # ================================
 # Load dataset & Task Generator
 # ================================

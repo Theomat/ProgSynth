@@ -1,25 +1,16 @@
 import argparse
 import csv
-import sys
+
+from dsl_loader import add_dsl_choice_arg, load_DSL
 
 from synth import Dataset, PBE
 from synth.utils import chrono
-
-DREAMCODER = "dreamcoder"
-DEEPCODER = "deepcoder"
-CALCULATOR = "calculator"
 
 
 parser = argparse.ArgumentParser(
     description="Generate a new dataset by replacing solutions found if they are shorter than the original's"
 )
-parser.add_argument(
-    "--dsl",
-    type=str,
-    default=DEEPCODER,
-    help="dsl (default: deepcoder)",
-    choices=[DEEPCODER, DREAMCODER, CALCULATOR],
-)
+add_dsl_choice_arg(parser)
 parser.add_argument(
     "--dataset",
     type=str,
@@ -40,19 +31,8 @@ solution_file: str = parameters.solution
 # ================================
 # Load constants specific to DSL
 # ================================
-max_list_length = None
-if dsl_name == DEEPCODER:
-    from deepcoder.deepcoder import dsl, evaluator, lexicon
-
-elif dsl_name == DREAMCODER:
-    from dreamcoder.dreamcoder import dsl, evaluator, lexicon
-
-    max_list_length = 10
-elif dsl_name == CALCULATOR:
-    from calculator.calculator import dsl, evaluator, lexicon
-else:
-    print("Unknown dsl:", dsl_name, file=sys.stderr)
-    sys.exit(1)
+dsl_module = load_DSL(dsl_name)
+dsl, evaluator, lexicon = dsl_module.dsl, dsl_module.evaluator, dsl_module.lexicon
 # ================================
 # Load dataset & Task Generator
 # ================================

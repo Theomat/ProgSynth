@@ -13,6 +13,8 @@ from torch import Tensor
 import torch.nn as nn
 from torch.nn.utils.rnn import PackedSequence
 
+from dsl_loader import add_dsl_choice_arg, load_DSL
+
 from synth import Dataset, PBE, Task
 from synth.nn import (
     GrammarPredictorLayer,
@@ -35,13 +37,6 @@ from synth.syntax import (
 from synth.syntax.grammars.heap_search import HSEnumerator
 from synth.utils import chrono
 
-
-DREAMCODER = "dreamcoder"
-DEEPCODER = "deepcoder"
-REGEXP = "regexp"
-CALCULATOR = "calculator"
-TRANSDUCTION = "transduction"
-
 import argparse
 
 parser = argparse.ArgumentParser(description="Evaluate model prediction")
@@ -53,8 +48,8 @@ parser.add_argument(
     "-d",
     "--dataset",
     type=str,
-    default=DEEPCODER + ".pickle",
-    help="dataset (default: deepcoder.pickle)",
+    default="{dsl_name}.pickle",
+    help="dataset (default: {dsl_name}}.pickle)",
 )
 parser.add_argument(
     "-s",
@@ -63,13 +58,7 @@ parser.add_argument(
     default="heap_search",
     help="enumeration algorithm (default: heap_search)",
 )
-parser.add_argument(
-    "--dsl",
-    type=str,
-    default=DEEPCODER,
-    choices=[DEEPCODER, DREAMCODER, REGEXP, CALCULATOR, TRANSDUCTION],
-    help="dsl (default: deepcoder)",
-)
+add_dsl_choice_arg(parser)
 parser.add_argument(
     "-o", "--output", type=str, default="./", help="output folder (default: './')"
 )
@@ -109,8 +98,8 @@ parser.add_argument(
 
 
 parameters = parser.parse_args()
-dataset_file: str = parameters.dataset
 dsl_name: str = parameters.dsl
+dataset_file: str = parameters.dataset.format(dsl_name=dsl_name)
 search_algo: str = parameters.search
 output_folder: str = parameters.output
 model_file: str = parameters.model
@@ -156,19 +145,8 @@ dataset_name = dataset_file[start_index : dataset_file.index(".", start_index)]
 def load_dataset() -> Tuple[
     Dataset[PBE], DSL, DSLEvaluatorWithConstant, List[int], str
 ]:
-    if dsl_name == DEEPCODER:
-        from deepcoder.deepcoder import dsl, evaluator, lexicon
-    elif dsl_name == DREAMCODER:
-        from dreamcoder.dreamcoder import dsl, evaluator, lexicon
-    elif dsl_name == REGEXP:
-        from regexp.regexp import dsl, evaluator, lexicon
-    elif dsl_name == CALCULATOR:
-        from calculator.calculator import dsl, evaluator, lexicon
-    elif dsl_name == TRANSDUCTION:
-        from transduction.transduction import dsl, evaluator, lexicon
-    else:
-        print("Unknown dsl:", dsl_name, file=sys.stderr)
-        sys.exit(0)
+    dsl_module = load_DSL(dsl_name)
+    dsl, evaluator, lexicon = dsl_module.dsl, dsl_module.evaluator, dsl_module.lexicon
     # ================================
     # Load dataset
     # ================================
