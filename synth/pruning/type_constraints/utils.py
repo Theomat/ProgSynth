@@ -67,7 +67,7 @@ class Syntax:
         forbidden: Optional[Dict[str, Set[str]]] = None,
     ) -> None:
         self.syntax = type_constraints
-        self.forbidden_patterns = forbidden
+        self.forbidden_patterns = forbidden or {}
 
         self._new_types_index = defaultdict(int)
         for ttype in __all_types__(self.syntax):

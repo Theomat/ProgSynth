@@ -2,7 +2,7 @@ from typing import Tuple
 from synth.semantic import DSLEvaluator
 from synth.semantic.evaluator import auto_complete_semantics
 from synth.syntax import DSL, INT, Arrow, PolymorphicType, List
-from synth.tools.type_constraints import produce_new_syntax_for_constraints
+from synth.pruning import produce_new_syntax_for_constraints
 
 t0 = PolymorphicType("t0")
 t1 = PolymorphicType("t1")

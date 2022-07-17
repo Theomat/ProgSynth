@@ -1,5 +1,5 @@
 from synth.syntax.type_system import BOOL, INT, FunctionType, PrimitiveType
-from synth.tools.type_constraints.utils import clean, export_syntax_to_python
+from synth.pruning.type_constraints.utils import clean, export_syntax_to_python
 
 BOOL_0 = PrimitiveType("bool@0")
 syntax = {

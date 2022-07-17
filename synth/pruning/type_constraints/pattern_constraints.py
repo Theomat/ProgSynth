@@ -4,7 +4,7 @@ from typing import Any, Optional, Dict, Iterable, Set, Tuple, List as TList
 import tqdm
 
 from synth.syntax import Type, Arrow, FunctionType
-from synth.tools.type_constraints.utils import (
+from synth.pruning.type_constraints.utils import (
     SYMBOL_VAR_EXPR,
     Syntax,
     map_type,
