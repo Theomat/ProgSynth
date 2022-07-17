@@ -1,3 +1,7 @@
+"""
+Module to change to add your own DSL easily in all scripts.
+Some constants may need to be chnaged directly in the script. 
+"""
 from argparse import ArgumentParser
 import importlib
 from types import SimpleNamespace
@@ -7,6 +11,12 @@ from typing import Callable, Dict, Iterable, List, Optional
 def __base_loader(
     name: str, keys: Iterable[str] = ["dsl", "evaluator", "lexicon"]
 ) -> Callable[[bool], Optional[SimpleNamespace]]:
+    """
+    Utility function that creates a simple loader for you if you only need
+    > from name.name import X, Y, ...
+    where "X, Y, ..." are elements of keys
+    """
+
     def loader(fully_load: bool = True) -> Optional[SimpleNamespace]:
         if not fully_load:
             return importlib.util.find_spec(name + "." + name)
@@ -20,6 +30,16 @@ def __base_loader(
     return loader
 
 
+# ======================================================================================
+# ADD your line "my_dsl": my_loading_func
+#   when the parameter to your loading_func is:
+#       - False, we just want to check we CAN import
+#       - True, we want to import everything and return it in a NameSpace
+# /!\ Convention for names in your namespace:
+#   dsl: DSL - the actual DSL
+#   evaluator: Evaluator - the DSL's evaluator
+#   lexicon: List - the DSL's lexicon
+# =======================================================================================
 __dsl_funcs: Dict[str, Callable[[bool], Optional[SimpleNamespace]]] = {
     "deepcoder": __base_loader("deepcoder"),
     "dreamcoder": __base_loader("deepcoder"),
@@ -32,6 +52,10 @@ __dsl_funcs: Dict[str, Callable[[bool], Optional[SimpleNamespace]]] = {
     ),
     "calculator": __base_loader("calculator"),
 }
+# =======================================================================================
+# Nothing to change after this
+# =======================================================================================
+
 __buffer: Dict[str, Optional[SimpleNamespace]] = {}
 
 
