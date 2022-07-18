@@ -1,6 +1,7 @@
 from typing import Any, Generator, List, TypeVar
 
 from tqdm import trange
+
 T = TypeVar("T")
 
 
