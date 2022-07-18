@@ -22,6 +22,12 @@ class Type(ABC):
     def __repr__(self) -> str:
         return self.__str__()
 
+    def returns(self) -> "Type":
+        return self
+
+    def arguments(self) -> TList["Type"]:
+        return []
+
     def __contains__(self, t: "Type") -> bool:
         return self == t
 
