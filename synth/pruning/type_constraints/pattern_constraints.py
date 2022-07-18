@@ -83,7 +83,7 @@ def __add_variable_constraint__(
         args[i] = map_type(args[i], types_map)
         # Add constraints
         nconstraints[f"var{i}"] += 1
-    return FunctionType(*args, type_request.returns()) #type: ignore
+    return FunctionType(*args, type_request.returns())  # type: ignore
 
 
 def __add_primitive_constraint__(
