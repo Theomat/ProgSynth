@@ -46,6 +46,7 @@ max_time, max_programs = 0, 0
 max_tasks = 0
 for file in glob(os.path.join(output_folder, "*.csv")):
     file = os.path.relpath(file, output_folder)
+    print("File:", file)
     if not file.startswith(dataset_name):
         continue
     name = file[len(dataset_name) : -4]
@@ -53,7 +54,7 @@ for file in glob(os.path.join(output_folder, "*.csv")):
         continue
     name = name[name.index("_") + 1 :].replace("_", " ")
     trace = []
-    with open(file, "r") as fd:
+    with open(os.path.join(output_folder, file), "r") as fd:
         reader = csv.reader(fd)
         trace = [tuple(row) for row in reader]
         trace.pop(0)
