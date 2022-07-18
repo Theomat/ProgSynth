@@ -83,7 +83,7 @@ def __add_variable_constraint__(
         args[i] = map_type(args[i], types_map)
         # Add constraints
         nconstraints[f"var{i}"] += 1
-    return FunctionType(*args, type_request.returns())
+    return FunctionType(*args, type_request.returns()) #type: ignore
 
 
 def __add_primitive_constraint__(
@@ -176,7 +176,7 @@ def __add_forbidden_constraint__(
     *args: Any,
     level: int = 0,
     **kwargs: Any,
-):
+) -> None:
     # print("\t" * level, "\tcontent:", content)
     primitives = parse_choices(content[1:])
     if argno == 0:
@@ -199,9 +199,9 @@ def __process__(
     constraint: TList[str],
     syntax: Syntax,
     nconstraints: Dict[str, int],
-    type_request: Arrow,
+    type_request: Optional[Arrow],
     level: int = 0,
-) -> Tuple[TList[str], Arrow]:
+) -> Tuple[TList[str], Optional[Arrow]]:
     # If one element then there is nothing to do.
     if len(constraint) == 1:
         return constraint, type_request
@@ -287,7 +287,7 @@ def produce_new_syntax_for_constraints(
 
 if __name__ == "__main__":
     from synth.syntax import DSL, CFG, INT, FunctionType, ProbDetGrammar, List
-    from synth.tools.type_constraints.utils import export_syntax_to_python
+    from synth.pruning.type_constraints.utils import export_syntax_to_python
 
     # from examples.pbe.towers.towers_base import syntax, BLOCK
 
@@ -307,7 +307,7 @@ if __name__ == "__main__":
     #     "- * ^0",
     # ]
 
-    from examples.pbe.deepcoder.deepcoder import pruned_version, dsl as old_dsl
+    from examples.pbe.deepcoder.deepcoder import pruned_version, dsl as old_dsl  # type: ignore
 
     type_request = FunctionType(List(INT), List(INT))
 

@@ -69,7 +69,7 @@ class Syntax:
         self.syntax = type_constraints
         self.forbidden_patterns = forbidden or {}
 
-        self._new_types_index = defaultdict(int)
+        self._new_types_index: Dict[str, int] = defaultdict(int)
         for ttype in __all_types__(self.syntax):
             name = str(ttype)
             if "@" in name and not name.startswith(PREFIX_CAST):
@@ -77,7 +77,7 @@ class Syntax:
                 self._new_types_index[get_prefix(name)] = id + 1
 
         # Init producers by type
-        self.producers_by_type = defaultdict(set)
+        self.producers_by_type: Dict[Type, Set[str]] = defaultdict(set)
         for prim, ptype in self.syntax.items():
             if isinstance(ptype, Arrow):
                 self.producers_by_type[ptype.returns()].add(prim)
@@ -117,7 +117,7 @@ class Syntax:
 
         self.syntax[item] = new_t
 
-    def producers_of(self, rtype: Type) -> Set[Type]:
+    def producers_of(self, rtype: Type) -> Set[str]:
         return self.producers_by_type[rtype]
 
     def consumers_of(self, atype: Type) -> Generator[str, None, None]:
@@ -153,7 +153,7 @@ class Syntax:
         return f"{prefix}{SYMBOL_DUPLICATA}{id}"
 
     def duplicate_type(self, base: Type) -> Type:
-        out = None
+        out: Optional[Type] = None
         if isinstance(base, PrimitiveType):
             out = PrimitiveType(self.__new_type_name__(base.type_name))
         elif isinstance(base, List):
@@ -189,19 +189,20 @@ def producers_of_using(syntax: Syntax, rtype: Type, consuming: Set[Type]) -> Set
         for prod in syntax.producers_of(atype):
             if prod not in candidates:
                 candidates.add(prod)
-                if isinstance(syntax[prod], Arrow):
-                    for a in syntax[prod].arguments():
+                ptype = syntax[prod]
+                if isinstance(ptype, Arrow):
+                    for a in ptype.arguments():
                         if a not in types_dones:
                             types_dones.add(a)
                             queue.append(a)
 
     # Compute all consumers
-    all_consumers = set()
+    all_consumers: Set[str] = set()
     for atype in consuming:
         all_consumers |= set(syntax.consumers_of(atype))
     # Now we can go down
-    out = candidates.intersection(all_consumers)
-    current = list(out)
+    out: Set[str] = candidates.intersection(all_consumers)
+    current: TList[str] = list(out)
     types_dones = {x for x in consuming}
     while current:
         p = current.pop()
@@ -293,8 +294,8 @@ def map_type(old_type: Type, map: Dict[Type, Type]) -> Type:
 # ========================================================================================
 
 
-def __all_types__(syntax: Dict[str, Type]) -> Set[Type]:
-    all_types = set()
+def __all_types__(syntax: Dict[str, Type]) -> Set[PrimitiveType]:
+    all_types: Set[PrimitiveType] = set()
     for t in syntax.values():
         for tt in t.decompose_type()[0]:
             all_types.add(tt)
@@ -327,12 +328,14 @@ def __are_equivalent_types__(syntax: Syntax, t1: Type, t2: Type) -> bool:
         for i, p2 in enumerate(t2_producers):
             if get_prefix(p1) != get_prefix(p2):
                 continue
-            if isinstance(syntax[p1], Arrow) and isinstance(syntax[p2], Arrow):
-                found_match = syntax[p1].arguments() == syntax[p2].arguments()
+            tp1 = syntax[p1]
+            tp2 = syntax[p2]
+            if isinstance(tp1, Arrow) and isinstance(tp2, Arrow):
+                found_match = tp1.arguments() == tp2.arguments()
                 if found_match:
                     marked[i] = True
                     break
-            if not isinstance(syntax[p1], Arrow) and not isinstance(syntax[p2], Arrow):
+            if not isinstance(tp1, Arrow) and not isinstance(tp2, Arrow):
                 found_match = True
                 marked[i] = True
                 break
@@ -346,11 +349,13 @@ def __are_equivalent_types__(syntax: Syntax, t1: Type, t2: Type) -> bool:
         for p2 in t1_producers:
             if get_prefix(p1) != get_prefix(p2):
                 continue
-            if isinstance(syntax[p1], Arrow) and isinstance(syntax[p2], Arrow):
-                found_match = syntax[p1].arguments() == syntax[p2].arguments()
+            tp1 = syntax[p1]
+            tp2 = syntax[p2]
+            if isinstance(tp1, Arrow) and isinstance(tp2, Arrow):
+                found_match = tp1.arguments() == tp2.arguments()
                 if found_match:
                     break
-            if not isinstance(syntax[p1], Arrow) and not isinstance(syntax[p2], Arrow):
+            if not isinstance(tp1, Arrow) and not isinstance(tp2, Arrow):
                 found_match = True
                 break
         if not found_match:
@@ -459,6 +464,7 @@ def __export_type__(ptype: Type) -> str:
         return f"List({__export_type__(ptype.element_type)})"
     elif isinstance(ptype, PolymorphicType):
         return f"PolymorphicType({ptype.name})"
+    assert False
 
 
 def export_syntax_to_python(syntax: Dict[str, Type], varname: str = "syntax") -> str:
