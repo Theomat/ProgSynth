@@ -30,7 +30,7 @@ mkdir -p $EXPERIMENT_FOLDER
 # Make train dataset
 if [  ! -f "$TRAIN_DATASET" ]; then
     echo "[Generation] Creating the train dataset."
-    python examples/pbe/dataset_generator.py --dsl deepcoder --dataset $DEEPCODER_DATASET --seed $SEED --size $TRAIN_SIZE
+    python examples/pbe/dataset_generator.py --dsl deepcoder --dataset $DEEPCODER_DATASET --seed $SEED --size $TRAIN_SIZE -o $TRAIN_DATASET
     if [ $? != "0" ]; then
         exit 1
     fi
