@@ -1,5 +1,4 @@
 import argparse
-
 from dsl_loader import add_dsl_choice_arg, load_DSL
 
 from synth import Dataset, PBE
@@ -95,7 +94,7 @@ task_generator.uniques = True
 print("Generating dataset...", end="", flush=True)
 with chrono.clock("dataset.generate") as c:
     gen_dataset = Dataset(
-        gen_take(task_generator.generator(), gen_dataset_size),
+        gen_take(task_generator.generator(), gen_dataset_size, progress=True),
         {
             "seed": seed,
             "max_depth": max_depth,
