@@ -125,8 +125,8 @@ g.add_argument(
 g.add_argument("-s", "--seed", type=int, default=0, help="seed (default: 0)")
 
 parameters = parser.parse_args()
-dataset_file: str = parameters.dataset.format(dsl_name=dsl_name)
 dsl_name: str = parameters.dsl
+dataset_file: str = parameters.dataset.format(dsl_name=dsl_name)
 output_file: str = parameters.output
 variable_probability: float = parameters.var_prob
 batch_size: int = parameters.batch_size
