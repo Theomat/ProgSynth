@@ -2,6 +2,7 @@ from typing import (
     Dict,
     Generator,
     Generic,
+    Iterable,
     List,
     Optional,
     Tuple,
@@ -163,7 +164,7 @@ class ProbDetGrammar(TaggedDetGrammar[float, U, V, W]):
 
     @classmethod
     def pcfg_from_samples(
-        cls, cfg: CFG, samples: List[Program]
+        cls, cfg: CFG, samples: Iterable[Program]
     ) -> "ProbDetGrammar[Tuple[CFGState, NoneType], Tuple[List[Tuple[Type, CFGState]], NoneType], List[Tuple[Type, CFGState]]]":
         rules_cnt: Dict[CFGNonTerminal, Dict[DerivableProgram, int]] = {}
         for S in cfg.rules:
