@@ -35,12 +35,12 @@ fi
 # Train raw model
 if [  ! -f "$MODEL_RAW_FILE" ]; then
     echo "[Training] Creating the model from the raw DSL."
-    python examples/pbe/pcfg_prediction.py --dsl deepcoder.raw --dataset $TRAIN_DATASET --seed $SEED --b $BATCH_SIZE -o $MODEL_RAW_FILE -e $EPOCHS
+    python examples/pbe/model_trainer.py --dsl deepcoder.raw --dataset $TRAIN_DATASET --seed $SEED --b $BATCH_SIZE -o $MODEL_RAW_FILE -e $EPOCHS
 fi
 # Train pruned model
 if [  ! -f "$MODEL_PRUNED_FILE" ]; then
     echo "[Training] Creating the model from the pruned DSL."
-    python examples/pbe/pcfg_prediction.py --dsl deepcoder.pruned --dataset $TRAIN_DATASET --seed $SEED --b $BATCH_SIZE -o $MODEL_PRUNED_FILE -e $EPOCHS
+    python examples/pbe/model_trainer.py --dsl deepcoder.pruned --dataset $TRAIN_DATASET --seed $SEED --b $BATCH_SIZE -o $MODEL_PRUNED_FILE -e $EPOCHS
 fi
 # Train raw model
 echo "[Evaluation] Evaluating the model from the raw DSL."
@@ -48,5 +48,5 @@ python examples/pbe/evaluate.py --dsl deepcoder.raw --dataset $DEEPCODER_DATASET
 # Train pruned model
 echo "[Evaluation] Evaluating the model from the pruned DSL."
 python examples/pbe/evaluate.py --dsl deepcoder.pruned --dataset $DEEPCODER_DATASET --b $BATCH_SIZE --model $MODEL_PRUNED_FILE -o $EXPERIMENT_FOLDER -t $TIMEOUT
-
 # Plotting
+python examples/pbe/plot_results.py --dataset $DEEPCODER_DATASET --folder $EXPERIMENT_FOLDER
