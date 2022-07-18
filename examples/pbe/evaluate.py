@@ -1,6 +1,5 @@
 import atexit
 import os
-from glob import glob
 import sys
 from typing import Callable, List, Optional, Tuple
 import csv
@@ -41,9 +40,6 @@ import argparse
 
 parser = argparse.ArgumentParser(description="Evaluate model prediction")
 parser.add_argument("-m", "--model", default="", type=str, help="model file")
-parser.add_argument(
-    "-p", "--plot", default=False, action="store_true", help="only plot results"
-)
 parser.add_argument(
     "-d",
     "--dataset",
@@ -108,10 +104,9 @@ encoding_dimension: int = parameters.encoding_dimension
 hidden_size: int = parameters.hidden_size
 task_timeout: float = parameters.timeout
 batch_size: int = parameters.batch_size
-plot_only: bool = parameters.plot
 
 
-if not plot_only and (not os.path.exists(model_file) or not os.path.isfile(model_file)):
+if not os.path.exists(model_file) or not os.path.isfile(model_file):
     print("Model must be a valid model file!", file=sys.stderr)
     sys.exit(1)
 elif not os.path.exists(dataset_file) or not os.path.isfile(dataset_file):
@@ -405,114 +400,41 @@ if __name__ == "__main__":
         method = constants_injector
         name = "constants_injector"
 
-    if not plot_only:
-        pcfgs = produce_pcfgs(full_dataset, dsl, lexicon)
-        file = os.path.join(
-            output_folder, f"{dataset_name}_{model_name}_{search_algo}_{name}.csv"
-        )
-        trace = []
-        print("Working on:", name)
-        if os.path.exists(file):
-            with open(file, "r") as fd:
-                reader = csv.reader(fd)
-                trace = [tuple(row) for row in reader]
-                trace.pop(0)
-                print(
-                    "\tLoaded",
-                    len(trace),
-                    "/",
-                    len(full_dataset),
-                    "(",
-                    int(len(trace) * 100 / len(full_dataset)),
-                    "%)",
-                )
-        try:
-            enumerative_search(
-                full_dataset, evaluator, pcfgs, trace, method, custom_enumerate
-            )
-        except Exception as e:
-            print(e)
-        with open(file, "w") as fd:
-            writer = csv.writer(fd)
-            writer.writerow(
-                [
-                    "Solved",
-                    "Time (in s)",
-                    "Programs Generated",
-                    "Solution found",
-                    "Program probability",
-                ]
-            )
-            writer.writerows(trace)
-        print("csv file is saved.")
-
-    import numpy as np
-    import matplotlib.pyplot as plt
-
-    import pltpublish as pub
-
-    pub.setup()
-
-    ax1 = plt.subplot(1, 2, 1)
-    plt.xlabel("Time (in s)")
-    plt.ylabel("Tasks Completed")
-    plt.grid()
-
-    ax2 = plt.subplot(1, 2, 2)
-    plt.xlabel("# Programs")
-    plt.ylabel("Tasks Completed")
-    plt.grid()
-
-    max_time, max_programs = 0, 0
-    for file in glob(os.path.join(output_folder, "*.csv")):
-        file = os.path.relpath(file, output_folder)
-        if not file.startswith(dataset_name):
-            continue
-        name = file[len(dataset_name) : -4]
-        if "_" not in name:
-            continue
-        name = name[name.index("_") + 1 :].replace("_", " ")
-        trace = []
+    pcfgs = produce_pcfgs(full_dataset, dsl, lexicon)
+    file = os.path.join(
+        output_folder, f"{dataset_name}_{model_name}_{search_algo}_{name}.csv"
+    )
+    trace = []
+    if os.path.exists(file):
         with open(file, "r") as fd:
             reader = csv.reader(fd)
             trace = [tuple(row) for row in reader]
             trace.pop(0)
-            trace = [(row[0] == "True", float(row[1]), int(row[2])) for row in trace]
-        # Plot tasks wrt time
-        trace_time = sorted(trace, key=lambda x: x[1])
-        cum_sol1, cum_time = np.cumsum([row[0] for row in trace_time]), np.cumsum(
-            [row[1] for row in trace_time]
+            print(
+                "\tLoaded",
+                len(trace),
+                "/",
+                len(full_dataset),
+                "(",
+                int(len(trace) * 100 / len(full_dataset)),
+                "%)",
+            )
+    try:
+        enumerative_search(
+            full_dataset, evaluator, pcfgs, trace, method, custom_enumerate
         )
-        max_time = max(max_time, cum_time[-1])
-        ax1.plot(cum_time, cum_sol1, label=name.capitalize())
-        # Plot tasks wrt programs
-        trace_programs = sorted(trace, key=lambda x: x[2])
-        cum_sol2, cum_programs = np.cumsum(
-            [row[0] for row in trace_programs]
-        ), np.cumsum([row[2] for row in trace_programs])
-        max_programs = max(max_programs, cum_programs[-1])
-        ax2.plot(cum_programs, cum_sol2, label=name.capitalize())
-        print(name, "solved", cum_sol2[-1], "/", len(trace))
-    ax1.hlines(
-        [len(full_dataset)],
-        xmin=0,
-        xmax=max_time,
-        label="All tasks",
-        color="k",
-        linestyles="dashed",
-    )
-    ax1.set_xlim(0, max_time)
-    ax1.set_ylim(0, len(full_dataset) + 10)
-    ax2.hlines(
-        [len(full_dataset)],
-        xmin=0,
-        xmax=max_programs,
-        label="All tasks",
-        color="k",
-        linestyles="dashed",
-    )
-    ax2.set_xlim(0, max_programs)
-    ax2.set_ylim(0, len(full_dataset) + 10)
-    ax1.legend()
-    ax2.legend()
-    plt.show()
+    except Exception as e:
+        print(e)
+    with open(file, "w") as fd:
+        writer = csv.writer(fd)
+        writer.writerow(
+            [
+                "Solved",
+                "Time (in s)",
+                "Programs Generated",
+                "Solution found",
+                "Program probability",
+            ]
+        )
+        writer.writerows(trace)
+    print("csv file is saved.")
