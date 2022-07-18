@@ -5,11 +5,12 @@ Some constants may need to be chnaged directly in the script.
 from argparse import ArgumentParser
 import importlib
 from types import SimpleNamespace
-from typing import Callable, Dict, Iterable, List, Optional
+from typing import Callable, Dict, Iterable, List, Optional, Tuple, Union
 
 
 def __base_loader(
-    name: str, keys: Iterable[str] = ["dsl", "evaluator", "lexicon"]
+    name: str,
+    keys: Iterable[Union[str, Tuple[str, str]]] = ["dsl", "evaluator", "lexicon"],
 ) -> Callable[[bool], Optional[SimpleNamespace]]:
     """
     Utility function that creates a simple loader for you if you only need
@@ -19,12 +20,13 @@ def __base_loader(
 
     def loader(fully_load: bool = True) -> Optional[SimpleNamespace]:
         if not fully_load:
-            return importlib.util.find_spec(name + "." + name)
+            return importlib.util.find_spec(name)
 
-        module = importlib.import_module(name + "." + name)
+        module = importlib.import_module(name)
         out = {}
         for key in keys:
-            out[key] = module.__getattribute__(key)
+            get, set = key if isinstance(key, tuple) else (key, key)
+            out[set] = module.__getattribute__(get)
         return SimpleNamespace(**out)
 
     return loader
@@ -41,16 +43,20 @@ def __base_loader(
 #   lexicon: List - the DSL's lexicon
 # =======================================================================================
 __dsl_funcs: Dict[str, Callable[[bool], Optional[SimpleNamespace]]] = {
-    "deepcoder": __base_loader("deepcoder"),
-    "dreamcoder": __base_loader("deepcoder"),
+    "deepcoder": __base_loader("deepcoder.deepcoder"),
+    "deepcoder.raw": __base_loader(
+        "deepcoder.deepcoder", [("dsl_raw", "dsl"), "evaluator", "lexicon"]
+    ),
+    "deepcoder.pruned": __base_loader("deepcoder.deepcoder_pruned"),
+    "dreamcoder": __base_loader("dreamcoder.dreamcoder"),
     "regexp": __base_loader(
-        "regexp",
+        "regexp.regexp",
         ["dsl", "evaluator", "lexicon", "pretty_print_inputs", "pretty_print_inputs"],
     ),
     "transduction": __base_loader(
-        "transduction", ["dsl", "evaluator", "lexicon", "constant_types"]
+        "transduction.transdudction", ["dsl", "evaluator", "lexicon", "constant_types"]
     ),
-    "calculator": __base_loader("calculator"),
+    "calculator": __base_loader("calculator.calculator"),
 }
 # =======================================================================================
 # Nothing to change after this
