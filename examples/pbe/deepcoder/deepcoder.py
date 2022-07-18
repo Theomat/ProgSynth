@@ -413,7 +413,11 @@ if __name__ == "__main__":
         fd.write("from synth.semantic.evaluator import auto_complete_semantics\n")
         fd.write("from synth.syntax import PrimitiveType\n")
         fd.write(content[:p_index])
-        fd.write(export_syntax_to_python(new_syntax, "__primitive_types").replace("int", "INT"))
+        fd.write(
+            export_syntax_to_python(new_syntax, "__primitive_types").replace(
+                "int", "INT"
+            )
+        )
         forbidden_index = content.index("__forbidden", p_index)
         ev_index = content.index("evaluator = ", forbidden_index)
         fd.write("\n")

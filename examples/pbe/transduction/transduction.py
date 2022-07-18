@@ -1,26 +1,16 @@
-from ctypes.wintypes import PBYTE
-import sys
 from typing import Set
 from examples.pbe.regexp.evaluator_regexp import get_regexp
 from synth.semantic.evaluator import DSLEvaluatorWithConstant
-from synth.specification import PBE
 
-from synth.task import Dataset
-from synth.semantic import DSLEvaluator
-from synth.syntax import DSL, PrimitiveType, Arrow, List, INT, STRING
+from synth.syntax import DSL, PrimitiveType, Arrow, STRING
 
 
-import string
 import re
 from examples.pbe.regexp.type_regex import (
-    regex_findall,
-    regex_match,
     Raw,
     REGEXP,
     regex_search,
 )
-
-from synth.syntax.type_system import BOOL, PolymorphicType
 
 CSTE_IN = PrimitiveType("CST_STR_INPUT")
 CSTE_OUT = PrimitiveType("CST_STR_OUTPUT")
@@ -126,7 +116,7 @@ __primitive_types = {
     "except_end": Arrow(CSTE_IN, REGEXP),
 }
 
-__forbidden_patterns = []
+__forbidden_patterns = {}
 
 dsl = DSL(__primitive_types, __forbidden_patterns)
 constant_types: Set[PrimitiveType] = set()

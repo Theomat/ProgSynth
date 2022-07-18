@@ -1,13 +1,7 @@
-from ctypes.wintypes import PBYTE
-import sys
-from synth.specification import PBE
-
-from synth.task import Dataset
 from synth.semantic import DSLEvaluator
-from synth.syntax import DSL, PrimitiveType, Arrow, List, INT, STRING
+from synth.syntax import DSL, PrimitiveType, Arrow, List, STRING
 
 
-import string
 import re
 from examples.pbe.regexp.type_regex import regex_match, Raw, REGEXP
 from examples.pbe.regexp.evaluator_regexp import RegexpEvaluator, get_regexp
@@ -99,20 +93,12 @@ __primitive_types = {
     "eval": Arrow(List(STRING), Arrow(REGEXP, BOOL)),
 }
 
-__forbidden_patterns = [
-    ["*", "?"],
-    ["*", "+"],
-    ["*", "*"],
-    ["?", "?"],
-    ["?", "+"],
-    ["?", "*"],
-    ["+", "?"],
-    ["+", "+"],
-    ["+", "*"],
-    ["W", "?"],
-    ["W", "+"],
-    ["W", "*"],
-]
+__forbidden_patterns = {
+    "*": {"?", "+", "*"},
+    "?": {"?", "+", "*"},
+    "+": {"?", "+", "*"},
+    "W": {"?", "+", "*"},
+}
 
 dsl = DSL(__primitive_types, __forbidden_patterns)
 evaluator = DSLEvaluator(__semantics)
