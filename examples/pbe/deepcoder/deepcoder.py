@@ -1,8 +1,5 @@
-from typing import Tuple
 from synth.semantic import DSLEvaluator
-from synth.semantic.evaluator import auto_complete_semantics
 from synth.syntax import DSL, INT, Arrow, PolymorphicType, List
-from synth.pruning import produce_new_syntax_for_constraints
 
 t0 = PolymorphicType("t0")
 t1 = PolymorphicType("t1")
@@ -378,12 +375,26 @@ __forbidden_patterns = {
 
 
 dsl = DSL(__primitive_types, __forbidden_patterns)
+dsl_raw = DSL(__primitive_types)
 evaluator = DSLEvaluator(__semantics)
 evaluator.skip_exceptions.add(OverflowError)
 lexicon = list(range(-256, 256 + 1))
 
 
-def pruned_version(probress_bar: bool = False) -> Tuple[DSL, DSLEvaluator]:
+if __name__ == "__main__":
+    import os
+    from synth.pruning import (
+        produce_new_syntax_for_constraints,
+        export_syntax_to_python,
+    )
+
+    file_path = os.path.realpath(__file__)
+
+    content = ""
+    with open(file_path) as fd:
+        content = fd.read()
+
+    new_dsl_file = os.path.join(os.path.dirname(file_path), "deepcoder_pruned.py")
     patterns = [
         "ZIPWITH[+] ^ZIPWITH[+] _",
         "ZIPWITH[-] ^ZIPWITH[-] _",
@@ -395,10 +406,20 @@ def pruned_version(probress_bar: bool = False) -> Tuple[DSL, DSLEvaluator]:
         __primitive_types,
         patterns,
         forbidden=__forbidden_patterns,
-        progress=probress_bar,
+        progress=True,
     )
-    new_dsl = DSL(new_syntax, __forbidden_patterns)
-    new_semantics = auto_complete_semantics(__primitive_types.keys(), __semantics)
-    new_evaluator = DSLEvaluator(new_semantics)
-    new_evaluator.skip_exceptions.add(OverflowError)
-    return new_dsl, new_evaluator
+    with open(new_dsl_file, "w") as fd:
+        p_index = content.index("__primitive_types")
+        fd.write("from synth.semantic.evaluator import auto_complete_semantics\n")
+        fd.write("from synth.syntax import PrimitiveType\n")
+        fd.write(content[:p_index])
+        fd.write(export_syntax_to_python(new_syntax, "__primitive_types").replace("int", "INT"))
+        forbidden_index = content.index("__forbidden", p_index)
+        ev_index = content.index("evaluator = ", forbidden_index)
+        fd.write("\n")
+        fd.write(content[forbidden_index:ev_index])
+        fd.write(
+            "__semantics=auto_complete_semantics(__primitive_types.keys(), __semantics)\n"
+        )
+        end_index = content.index('if __name__ == "__main__":', ev_index)
+        fd.write(content[ev_index:end_index])
