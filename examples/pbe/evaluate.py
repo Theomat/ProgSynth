@@ -415,7 +415,7 @@ def constants_injector(
 if __name__ == "__main__":
     full_dataset, dsl, evaluator, lexicon, model_name = load_dataset()
     method = base
-    name = " base"
+    name = "base"
     if isinstance(evaluator, DSLEvaluatorWithConstant):
         method = constants_injector
         name = "constants_injector"
