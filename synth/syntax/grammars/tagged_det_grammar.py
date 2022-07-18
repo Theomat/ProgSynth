@@ -109,7 +109,7 @@ class ProbDetGrammar(TaggedDetGrammar[float, U, V, W]):
         self.vose_samplers = {}
         self.sampling_map = {}
 
-        for i, S in enumerate(self.rules):
+        for i, S in enumerate(self.tags):
             P_list = list(self.tags[S].keys())
             self.vose_samplers[S] = vose.Sampler(
                 np.array(
