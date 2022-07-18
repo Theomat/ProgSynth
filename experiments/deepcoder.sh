@@ -31,22 +31,37 @@ mkdir -p $EXPERIMENT_FOLDER
 if [  ! -f "$TRAIN_DATASET" ]; then
     echo "[Generation] Creating the train dataset."
     python examples/pbe/dataset_generator.py --dsl deepcoder --dataset $DEEPCODER_DATASET --seed $SEED --size $TRAIN_SIZE
+    if [ $? != "0" ]; then
+        exit 1
+    fi
 fi
 # Train raw model
 if [  ! -f "$MODEL_RAW_FILE" ]; then
     echo "[Training] Creating the model from the raw DSL."
     python examples/pbe/model_trainer.py --dsl deepcoder.raw --dataset $TRAIN_DATASET --seed $SEED --b $BATCH_SIZE -o $MODEL_RAW_FILE -e $EPOCHS
+    if [ $? != "0" ]; then
+        exit 2
+    fi
 fi
 # Train pruned model
 if [  ! -f "$MODEL_PRUNED_FILE" ]; then
     echo "[Training] Creating the model from the pruned DSL."
     python examples/pbe/model_trainer.py --dsl deepcoder.pruned --dataset $TRAIN_DATASET --seed $SEED --b $BATCH_SIZE -o $MODEL_PRUNED_FILE -e $EPOCHS
+    if [ $? != "0" ]; then
+        exit 3
+    fi
 fi
 # Train raw model
 echo "[Evaluation] Evaluating the model from the raw DSL."
 python examples/pbe/evaluate.py --dsl deepcoder.raw --dataset $DEEPCODER_DATASET --b $BATCH_SIZE --model $MODEL_RAW_FILE -o $EXPERIMENT_FOLDER -t $TIMEOUT
+if [ $? != "0" ]; then
+    exit 4
+fi
 # Train pruned model
 echo "[Evaluation] Evaluating the model from the pruned DSL."
 python examples/pbe/evaluate.py --dsl deepcoder.pruned --dataset $DEEPCODER_DATASET --b $BATCH_SIZE --model $MODEL_PRUNED_FILE -o $EXPERIMENT_FOLDER -t $TIMEOUT
+if [ $? != "0" ]; then
+    exit 5
+fi
 # Plotting
 python examples/pbe/plot_results.py --dataset $DEEPCODER_DATASET --folder $EXPERIMENT_FOLDER
