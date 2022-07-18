@@ -62,9 +62,6 @@ elif dsl_name == CALCULATOR:
     from calculator.calculator_task_generator import reproduce_dataset
 elif dsl_name == TRANSDUCTION:
     from transduction.transduction_task_generator import reproduce_dataset
-else:
-    print("Unknown dsl:", dsl_name, file=sys.stderr)
-    sys.exit(1)
 
 # ================================
 # Load dataset & Task Generator
