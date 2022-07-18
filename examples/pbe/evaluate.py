@@ -1,7 +1,7 @@
 import atexit
 import os
 import sys
-from typing import Callable, List, Optional, Tuple
+from typing import Callable, Iterable, List, Optional, Tuple
 import csv
 import pickle
 
@@ -262,6 +262,21 @@ def produce_pcfgs(
     return pcfgs
 
 
+def save(trace: Iterable) -> None:
+    with open(file, "w") as fd:
+        writer = csv.writer(fd)
+        writer.writerow(
+            [
+                "Solved",
+                "Time (in s)",
+                "Programs Generated",
+                "Solution found",
+                "Program probability",
+            ]
+        )
+        writer.writerows(trace)
+
+
 # Enumeration methods =====================================================
 def enumerative_search(
     dataset: Dataset[PBE],
@@ -277,11 +292,19 @@ def enumerative_search(
 
     start = len(trace)
     pbar = tqdm.tqdm(total=len(pcfgs) - start, desc="Tasks", smoothing=0)
+    i = 0
     for task, pcfg in zip(dataset.tasks[start:], pcfgs[start:]):
-        trace.append(method(evaluator, task, pcfg, custom_enumerate))
+        try:
+            trace.append(method(evaluator, task, pcfg, custom_enumerate))
+        except KeyboardInterrupt:
+            break
         pbar.update(1)
         # print("Cache hit:", evaluator.cache_hit_rate)
         # print("Programs tried:", trace[len(trace) - 1][2])
+        if i % 10 == 0:
+            pbar.set_postfix_str("Saving...")
+            save(trace)
+            pbar.set_postfix_str("")
     pbar.close()
 
 
@@ -422,16 +445,5 @@ if __name__ == "__main__":
         )
     except Exception as e:
         print(e)
-    with open(file, "w") as fd:
-        writer = csv.writer(fd)
-        writer.writerow(
-            [
-                "Solved",
-                "Time (in s)",
-                "Programs Generated",
-                "Solution found",
-                "Program probability",
-            ]
-        )
-        writer.writerows(trace)
+    save(trace)
     print("csv file is saved.")
