@@ -91,12 +91,15 @@ class ProbDetGrammar(TaggedDetGrammar[float, U, V, W]):
         program: Program,
         start: Optional[Tuple[Type, U]] = None,
     ) -> float:
-        return self.reduce_derivations(
-            lambda current, S, P, _: current * self.tags[S][P],
-            1.0,
-            program,
-            start,
-        )
+        try:
+            return self.reduce_derivations(
+                lambda current, S, P, _: current * self.tags[S][P],
+                1.0,
+                program,
+                start,
+            )
+        except:
+            return 0
 
     def init_sampling(self, seed: Optional[int] = None) -> None:
         """
