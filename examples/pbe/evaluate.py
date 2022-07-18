@@ -398,57 +398,53 @@ def constants_injector(
 # Main ====================================================================
 
 if __name__ == "__main__":
-    methods = [
-        ("constants_injector", constants_injector),
-    ]
-
     full_dataset, dsl, evaluator, lexicon, model_name = load_dataset()
+    method = base
+    name = " base"
+    if isinstance(evaluator, DSLEvaluatorWithConstant):
+        method = constants_injector
+        name = "constants_injector"
 
     if not plot_only:
         pcfgs = produce_pcfgs(full_dataset, dsl, lexicon)
-        should_exit = False
-        for name, method in methods:
-            file = os.path.join(
-                output_folder, f"{dataset_name}_{model_name}_{search_algo}_{name}.csv"
+        file = os.path.join(
+            output_folder, f"{dataset_name}_{model_name}_{search_algo}_{name}.csv"
+        )
+        trace = []
+        print("Working on:", name)
+        if os.path.exists(file):
+            with open(file, "r") as fd:
+                reader = csv.reader(fd)
+                trace = [tuple(row) for row in reader]
+                trace.pop(0)
+                print(
+                    "\tLoaded",
+                    len(trace),
+                    "/",
+                    len(full_dataset),
+                    "(",
+                    int(len(trace) * 100 / len(full_dataset)),
+                    "%)",
+                )
+        try:
+            enumerative_search(
+                full_dataset, evaluator, pcfgs, trace, method, custom_enumerate
             )
-            trace = []
-            print("Working on:", name)
-            if os.path.exists(file):
-                with open(file, "r") as fd:
-                    reader = csv.reader(fd)
-                    trace = [tuple(row) for row in reader]
-                    trace.pop(0)
-                    print(
-                        "\tLoaded",
-                        len(trace),
-                        "/",
-                        len(full_dataset),
-                        "(",
-                        int(len(trace) * 100 / len(full_dataset)),
-                        "%)",
-                    )
-            try:
-                enumerative_search(
-                    full_dataset, evaluator, pcfgs, trace, method, custom_enumerate
-                )
-            except Exception as e:
-                print(e)
-                should_exit = True
-            with open(file, "w") as fd:
-                writer = csv.writer(fd)
-                writer.writerow(
-                    [
-                        "Solved",
-                        "Time (in s)",
-                        "Programs Generated",
-                        "Solution found",
-                        "Program probability",
-                    ]
-                )
-                writer.writerows(trace)
-            print("csv file is saved.")
-            if should_exit:
-                break
+        except Exception as e:
+            print(e)
+        with open(file, "w") as fd:
+            writer = csv.writer(fd)
+            writer.writerow(
+                [
+                    "Solved",
+                    "Time (in s)",
+                    "Programs Generated",
+                    "Solution found",
+                    "Program probability",
+                ]
+            )
+            writer.writerows(trace)
+        print("csv file is saved.")
 
     import numpy as np
     import matplotlib.pyplot as plt
