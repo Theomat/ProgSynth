@@ -2,6 +2,7 @@ from typing import (
     Dict,
     Generator,
     Generic,
+    Iterable,
     List,
     Optional,
     Tuple,
@@ -90,12 +91,15 @@ class ProbDetGrammar(TaggedDetGrammar[float, U, V, W]):
         program: Program,
         start: Optional[Tuple[Type, U]] = None,
     ) -> float:
-        return self.reduce_derivations(
-            lambda current, S, P, _: current * self.tags[S][P],
-            1.0,
-            program,
-            start,
-        )
+        try:
+            return self.reduce_derivations(
+                lambda current, S, P, _: current * self.tags[S][P],
+                1.0,
+                program,
+                start,
+            )
+        except:
+            return 0
 
     def init_sampling(self, seed: Optional[int] = None) -> None:
         """
@@ -105,7 +109,7 @@ class ProbDetGrammar(TaggedDetGrammar[float, U, V, W]):
         self.vose_samplers = {}
         self.sampling_map = {}
 
-        for i, S in enumerate(self.rules):
+        for i, S in enumerate(self.tags):
             P_list = list(self.tags[S].keys())
             self.vose_samplers[S] = vose.Sampler(
                 np.array(
@@ -163,7 +167,7 @@ class ProbDetGrammar(TaggedDetGrammar[float, U, V, W]):
 
     @classmethod
     def pcfg_from_samples(
-        cls, cfg: CFG, samples: List[Program]
+        cls, cfg: CFG, samples: Iterable[Program]
     ) -> "ProbDetGrammar[Tuple[CFGState, NoneType], Tuple[List[Tuple[Type, CFGState]], NoneType], List[Tuple[Type, CFGState]]]":
         rules_cnt: Dict[CFGNonTerminal, Dict[DerivableProgram, int]] = {}
         for S in cfg.rules:

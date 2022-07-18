@@ -9,6 +9,8 @@ from typing import (
     Generic,
     Union,
 )
+import copy
+from synth.syntax.dsl import are_equivalent_primitives
 
 from synth.syntax.grammars.grammar import Grammar
 from synth.syntax.program import Constant, Function, Primitive, Program, Variable
@@ -193,3 +195,52 @@ class DetGrammar(Grammar, ABC, Generic[U, V, W]):
             value = reduce(value, start, program, self.rules[start][program])
             return value, information, next
         return value, information, start
+
+    def embed(self, program: Program) -> Optional[Program]:
+        """
+        If the DSL has equivalent primitives, try to embed a program without equivalent primtives into this grammar.
+        """
+        p = self.__embed__(program, self.start, self.start_information())
+        return p
+
+    def __embed__(
+        self, program: Program, start: Tuple[Type, U], information: W, level: int = 0
+    ) -> Optional[Program]:
+        if isinstance(program, Function):
+            assert isinstance(program.function, Primitive)
+            possible_choices = [
+                P
+                for P in self.rules[start]
+                if isinstance(P, Primitive)
+                and are_equivalent_primitives(P, program.function)
+            ]
+            for function in possible_choices:
+                args_P = program.arguments
+                new_information, next = self.derive(
+                    copy.deepcopy(information), start, function
+                )
+                nargs = []
+                for arg in args_P:
+                    narg = self.__embed__(arg, next, new_information, level + 1)
+                    if narg is None:
+                        break
+                    nargs.append(narg)
+                    new_information, lst = self.derive_all(new_information, next, narg)
+                    next = lst[-1]
+                if len(nargs) != len(args_P):
+                    continue
+                return Function(function, nargs)
+            return None
+        elif isinstance(program, Primitive):
+            possible_choices = [
+                P
+                for P in self.rules[start]
+                if isinstance(P, Primitive) and are_equivalent_primitives(P, program)
+            ]
+            if len(possible_choices) == 0:
+                return None
+            elif len(possible_choices) == 1:
+                return possible_choices[0]
+            assert False, f"Ambigous possibilities: {possible_choices} from {start}"
+        else:
+            return program if program in self.rules[start] else None

@@ -56,13 +56,13 @@ class TaskGenerator:
 
         self._failed_types: Set[Type] = set()
         # For statistics
-        self.difficulty: Dict[Type, TList[int]] = {}
+        self.difficulty: Dict[Type, TList[int]] = {
+            t: [0, 0] for t in self.type2pgrammar
+        }
         self.generated_types: Dict[Type, int] = {t: 0 for t in self.type2pgrammar}
 
     def __generate_program__(self, type_request: Type) -> Program:
-        nargs: int = (
-            0 if not isinstance(type_request, Arrow) else len(type_request.arguments())
-        )
+        nargs: int = len(type_request.arguments())
         solution: Program = self.type2pgrammar[type_request].sample_program()
         while solution in self.seen:
             solution = self.type2pgrammar[type_request].sample_program()
@@ -82,62 +82,60 @@ class TaskGenerator:
         return best
 
     def generate_task(self) -> Task[PBE]:
-        type_request = self.gen_random_type_request.sample()
-        i = 0
-        while type_request in self._failed_types and i <= self.max_tries:
+        self._failed_types.clear()
+        while True:
             type_request = self.gen_random_type_request.sample()
-            i += 1
-        arguments = (
-            [] if not isinstance(type_request, Arrow) else type_request.arguments()
-        )
-        if type_request not in self.difficulty:
-            self.difficulty[type_request] = [0, 0]
+            i = 0
+            while type_request in self._failed_types and i <= self.max_tries:
+                type_request = self.gen_random_type_request.sample()
+                i += 1
+            arguments = type_request.arguments()
 
-        # Generate correct program that makes use of all variables
-        solution = self.__generate_program__(type_request)
-        # Try to generate the required number of samples
-        samples = self.gen_random_sample_number.sample(type=type_request)
-        inputs: TList = []
-        outputs = []
-        tries = 0
-        # has_enough_tries_to_reach_desired_no_of_samples and has_remaining_tries
-        while (self.max_tries - tries) + len(
-            inputs
-        ) >= samples and tries < self.max_tries:
-            tries += 1
-            new_input = [
-                self.input_generator.sample(type=arg_type) for arg_type in arguments
-            ]
-            try:
-                output = self.evaluator.eval(solution, new_input)
-            except Exception as e:
-                if type(e) in self.skip_exceptions:
-                    continue
-                else:
-                    raise e
-            if self.output_validator(output) and output not in outputs:
-                inputs.append(new_input)
-                outputs.append(output)
-                if len(inputs) >= samples:
-                    break
+            # Generate correct program that makes use of all variables
+            solution = self.__generate_program__(type_request)
+            # Try to generate the required number of samples
+            samples = self.gen_random_sample_number.sample(type=type_request)
+            inputs: TList = []
+            outputs = []
+            tries = 0
+            # has_enough_tries_to_reach_desired_no_of_samples and has_remaining_tries
+            while (self.max_tries - tries) + len(
+                inputs
+            ) >= samples and tries < self.max_tries:
+                tries += 1
+                new_input = [
+                    self.input_generator.sample(type=arg_type) for arg_type in arguments
+                ]
+                try:
+                    output = self.evaluator.eval(solution, new_input)
+                except Exception as e:
+                    if type(e) in self.skip_exceptions:
+                        continue
+                    else:
+                        raise e
+                if self.output_validator(output) and output not in outputs:
+                    inputs.append(new_input)
+                    outputs.append(output)
+                    if len(inputs) >= samples:
+                        break
 
-        self.difficulty[type_request][0] += tries
-        self.difficulty[type_request][1] += tries - len(inputs)
+            self.difficulty[type_request][0] += tries
+            self.difficulty[type_request][1] += tries - len(inputs)
 
-        # Sample another task if failed
-        if len(inputs) < samples:
-            self._failed_types.add(type_request)
-            return self.generate_task()
-        self._failed_types = set()
-        self.generated_types[type_request] += 1
-        if self.uniques:
-            self.seen.add(solution)
-        return Task(
-            type_request,
-            PBE([Example(inp, out) for inp, out in zip(inputs, outputs)]),
-            solution,
-            {"generated": True, "tries": tries},
-        )
+            # Sample another task if failed
+            if len(inputs) < samples:
+                self._failed_types.add(type_request)
+                continue
+            self._failed_types = set()
+            self.generated_types[type_request] += 1
+            if self.uniques:
+                self.seen.add(solution)
+            return Task(
+                type_request,
+                PBE([Example(inp, out) for inp, out in zip(inputs, outputs)]),
+                solution,
+                {"generated": True, "tries": tries},
+            )
 
     def generator(self) -> Generator[Task[PBE], None, None]:
         while True:
@@ -242,14 +240,20 @@ def reproduce_dataset(
             for t in allowed_types
         }
     else:
+        type2grammar = {
+            t: CFG.depth_constraint(dsl, t, max_depth) for t in allowed_types
+        }
+        type2samples = {
+            t: [
+                type2grammar[t].embed(task.solution)
+                for task in dataset
+                if task.solution and (t == task.type_request)
+            ]
+            for t in allowed_types
+        }
         pgrammars = {
             ProbDetGrammar.pcfg_from_samples(
-                CFG.depth_constraint(dsl, t, max_depth),
-                [
-                    task.solution
-                    for task in dataset
-                    if task.solution and (not filter or t == task.type_request)
-                ],
+                type2grammar[t], [sol for sol in type2samples[t] if sol]
             )
             for t in allowed_types
         }

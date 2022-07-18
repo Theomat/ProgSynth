@@ -422,8 +422,6 @@ if __name__ == "__main__":
         ev_index = content.index("evaluator = ", forbidden_index)
         fd.write("\n")
         fd.write(content[forbidden_index:ev_index])
-        fd.write(
-            "__semantics=auto_complete_semantics(__primitive_types.keys(), __semantics)\n"
-        )
+        fd.write("auto_complete_semantics(__primitive_types.keys(), __semantics)\n")
         end_index = content.index('if __name__ == "__main__":', ev_index)
         fd.write(content[ev_index:end_index])

@@ -204,6 +204,7 @@ cfgs = [
     )
     for t in all_type_requests
 ]
+type2cfg = {cfg.type_request: cfg for cfg in cfgs}
 print(f"{len(all_type_requests)} type requests supported.")
 print(f"Lexicon: [{min(lexicon)};{max(lexicon)}]")
 
@@ -270,6 +271,11 @@ def do_batch(iter_number: int) -> None:
     #         predictor.bigram_layer.tensor2pcfg(batch_outputs[i], task.type_request)
     #         for i, task in enumerate(batch)
     #     ]
+    with chrono.clock("train.do_batch.embed"):
+        batch_programs = [
+            type2cfg[task.type_request].embed(task.solution) for task in batch
+        ]
+
     # Gradient descent
     with chrono.clock("train.do_batch.loss"):
         optim.zero_grad()
