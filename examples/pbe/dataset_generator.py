@@ -1,5 +1,4 @@
 import argparse
-import sys
 
 from dsl_loader import add_dsl_choice_arg, load_DSL
 
@@ -37,6 +36,9 @@ parser.add_argument(
 parser.add_argument(
     "--max-depth", type=int, default=5, help="solutions max depth (default: 5)"
 )
+parser.add_argument(
+    "--uniform", action="store_true", default=False, help="use uniform PCFGs"
+)
 
 parameters = parser.parse_args()
 dsl_name: str = parameters.dsl
@@ -45,6 +47,7 @@ output_file: str = parameters.output
 seed: int = parameters.seed
 max_depth: int = parameters.max_depth
 gen_dataset_size: int = parameters.size
+uniform: bool = parameters.uniform
 # ================================
 # Load constants specific to DSL
 # ================================
@@ -83,6 +86,7 @@ with chrono.clock("dataset.reproduce") as c:
         seed,
         max_list_length=max_list_length,
         default_max_depth=max_depth,
+        uniform_pgrammar=uniform,
     )
     print("done in", c.elapsed_time(), "s")
 # Add some exceptions that are ignored during task generation
