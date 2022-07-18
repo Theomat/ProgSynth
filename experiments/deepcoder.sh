@@ -63,15 +63,15 @@ if [  ! -f "$MODEL_PRUNED_FILE" ]; then
 fi
 # Train raw model
 echo "[Evaluation] Evaluating the model from the raw DSL."
-python examples/pbe/evaluate.py --dsl deepcoder.raw --dataset $DEEPCODER_DATASET --b $BATCH_SIZE --model $MODEL_RAW_FILE -o $EXPERIMENT_FOLDER -t $TIMEOUT
+python examples/pbe/evaluate.py --dsl deepcoder.raw --dataset $TEST_DATASET --b $BATCH_SIZE --model $MODEL_RAW_FILE -o $EXPERIMENT_FOLDER -t $TIMEOUT
 if [ $? != "0" ]; then
     exit 4
 fi
 # Train pruned model
 echo "[Evaluation] Evaluating the model from the pruned DSL."
-python examples/pbe/evaluate.py --dsl deepcoder.pruned --dataset $DEEPCODER_DATASET --b $BATCH_SIZE --model $MODEL_PRUNED_FILE -o $EXPERIMENT_FOLDER -t $TIMEOUT
+python examples/pbe/evaluate.py --dsl deepcoder.pruned --dataset $TEST_DATASET --b $BATCH_SIZE --model $MODEL_PRUNED_FILE -o $EXPERIMENT_FOLDER -t $TIMEOUT
 if [ $? != "0" ]; then
     exit 5
 fi
 # Plotting
-python examples/pbe/plot_results.py --dataset $DEEPCODER_DATASET --folder $EXPERIMENT_FOLDER
+python examples/pbe/plot_results.py --dataset $TEST_DATASET --folder $EXPERIMENT_FOLDER
