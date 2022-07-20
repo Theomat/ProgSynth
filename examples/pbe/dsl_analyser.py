@@ -1,6 +1,7 @@
 from collections import defaultdict
 import itertools
-from typing import Dict, Generator, List, Set, Tuple, TypeVar
+import sys
+from typing import Any, Dict, Generator, List, Set, Tuple, TypeVar
 import copy
 import argparse
 
@@ -254,10 +255,20 @@ programs_done = set()
 
 
 def init_base_primitives() -> None:
+    primitives: List[Primitive] = dsl.list_primitives
+    # Check forbidden types
+    all_types = set()
+    for primitive in primitives:
+        all_types |= primitive.type.decompose_type()[0]
+    for arg_type in all_types:
+        try:
+            input_sampler.sample(type=arg_type)
+        except:
+            forbidden_types.add(arg_type)
     # Pre Sample Inputs + Pre Execute base primitives
-    for primitive in dsl.list_primitives:
+    for primitive in primitives:
         arguments = primitive.type.arguments()
-        if len(arguments) == 0:
+        if len(arguments) == 0 or any(arg in forbidden_types for arg in arguments):
             continue
         if primitive.type not in sampled_inputs:
             sampled_inputs[primitive.type] = [
