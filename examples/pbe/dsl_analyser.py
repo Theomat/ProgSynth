@@ -398,7 +398,6 @@ with chrono.clock("pattern"):
             all_found[prims].add(tuple([v.variable for v in vars(program)]))
     with chrono.clock("pattern.find"):
         for derivations, all_variants in all_found.items():
-            print("For", derivations, "=>", all_variants)
             nvars = len(list(all_variants)[0])
             good = True
             for comb in itertools.permutations(list(range(nvars))):
