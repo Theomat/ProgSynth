@@ -1,4 +1,4 @@
-from typing import Optional, Tuple
+from typing import Any, Optional, Tuple
 from synth.syntax.grammars.cfg import CFGState, NoneType
 from synth.syntax.grammars.det_grammar import DerivableProgram
 from synth.syntax.program import Primitive
@@ -33,4 +33,11 @@ def cfg_bigram_without_depth_and_equi_prim(
         if isinstance(P, Primitive) and "@" in P.primitive:
             return Primitive(P.primitive[: P.primitive.find("@")], P.type), i
         return P, i
+    return None
+
+
+def primitive_presence(*args: Any) -> None:
+    """
+    Abstract away a grammar into just the presence or absence of a primitive.
+    """
     return None
