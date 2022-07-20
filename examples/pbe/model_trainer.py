@@ -65,6 +65,12 @@ parser.add_argument(
     default=False,
     help="do not delete intermediary model files",
 )
+parser.add_argument(
+    "--no-stats",
+    action="store_true",
+    default=False,
+    help="do not produce stats increasing speed",
+)
 gg = parser.add_argument_group("model parameters")
 gg.add_argument(
     "-v",
@@ -139,6 +145,7 @@ hidden_size: int = parameters.hidden_size
 cpu_only: bool = parameters.cpu
 no_clean: bool = parameters.no_clean
 no_shuffle: bool = parameters.no_shuffle
+no_stats: bool = parameters.no_stats
 should_generate_dataset: bool = False
 
 random.seed(seed)
@@ -289,13 +296,22 @@ def do_batch(iter_number: int) -> None:
             optim.step()
     # Logging
     writer.add_scalar("train/loss", loss.item(), iter_number)
-    # with torch.no_grad():
-    #     loss = loss_negative_log_prob(
-    #         batch_programs, batch_log_pcfg, length_normed=False
-    #     )
-    #     writer.add_scalar(
-    #         "train/program_probability", np.exp(-loss.item()), iter_number
-    #     )
+    if not no_stats:
+        with chrono.clock("train.do_batch.stats"):
+            with torch.no_grad():
+                batch_logprobs = torch.stack(
+                    [
+                        predictor.bigram_layer.tensor2log_prob_grammar(
+                            batch_outputs[i], task.type_request
+                        ).log_probability(task.solution)
+                        for i, task in enumerate(batch)
+                    ]
+                )
+                writer.add_scalar(
+                    "train/program_probability",
+                    torch.mean(torch.exp(batch_logprobs)),
+                    iter_number,
+                )
 
 
 def do_epoch(j: int) -> int:
