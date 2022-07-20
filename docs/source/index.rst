@@ -8,7 +8,6 @@ Contents
 ---------
 .. toctree::
     introduction
-    installation
     usage
     tutorial
     contributing

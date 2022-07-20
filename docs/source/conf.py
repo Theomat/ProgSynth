@@ -2,7 +2,7 @@
 
 # -- Project information
 
-project = "AutoSynth"
+project = "ProgSynth"
 copyright = "2022, Nathanaël Fijalkow & Théo Matricon"
 author = "Nathanaël Fijalkow & Théo Matricon"
 
@@ -18,6 +18,7 @@ extensions = [
     "sphinx.ext.autosummary",
     "sphinx.ext.intersphinx",
     "sphinx.ext.autosectionlabel",
+    "myst_parser",
 ]
 
 intersphinx_mapping = {
@@ -34,6 +35,10 @@ html_theme = "sphinx_rtd_theme"
 
 # -- Options for EPUB output
 epub_show_urls = "footnote"
-
+source_suffix = {
+    ".rst": "restructuredtext",
+    ".txt": "markdown",
+    ".md": "markdown",
+}
 # Make sure the target is unique
 autosectionlabel_prefix_document = True
