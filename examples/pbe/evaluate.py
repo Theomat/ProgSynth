@@ -299,6 +299,7 @@ def enumerative_search(
         except KeyboardInterrupt:
             break
         pbar.update(1)
+        evaluator.clear_cache()
         # print("Cache hit:", evaluator.cache_hit_rate)
         # print("Programs tried:", trace[len(trace) - 1][2])
         if i % 10 == 0:
