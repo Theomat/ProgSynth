@@ -244,7 +244,7 @@ class MyPredictor(nn.Module):
 predictor = MyPredictor(hidden_size).to(device)
 print_model_summary(predictor)
 optim = torch.optim.AdamW(predictor.parameters(), lr, weight_decay=weight_decay)
-scheduler = torch.optim.ReduceLROnPlateau(optim, 'min')
+scheduler = torch.optim.ReduceLROnPlateau(optim, "min")
 dataset_index = 0
 
 
