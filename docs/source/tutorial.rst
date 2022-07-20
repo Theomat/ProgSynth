@@ -37,7 +37,7 @@ A method is logically represented by arrows, indicating the parameters of the pr
 **Example**::
     :code:`int2float` takes an int as input and will return a float. Thus, its type is :code:`int -> float`
 
-ProgSynth uses custom-defined types, that can be
+ProgSynth uses custom-defined types:
 
 * :code:`PrimitiveType`, where the type is solely defined by its name.
   
@@ -53,40 +53,27 @@ A DSL is defined inside a specific lexicon. To avoid overflow or underflow, we l
 
 Forbidden patterns (Optional)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-In some cases, we wish to stop the DSL to derive a specific primitive from another one::
-    For instance, let us say that we want to extend the `calculator` DSL with a primitive to `add1` to an integer and another one to `sub1` to an integer.
-    Because doing `(add1 (sub1 x))` or `(sub1 (add1 x))` is the same as doing nothing, we can create a list of pairs of patterns where the second pattern cannot be derived from the first one, in that case the patterns would be :code:`[["add1", "sub1"], ["sub1", "add1"]]`.
+In some cases, we wish to stop the DSL to derive a specific primitive from another one:
+For instance, let us say that we want to extend the `calculator` DSL with a primitive to `add1` to an integer and another one to `sub1` to an integer.
+Because doing `(add1 (sub1 x))` or `(sub1 (add1 x))` is the same as doing nothing, we can forbid the second pattern from being derived from the first one, in that case the patterns would be :code:`{ "add1": {"sub1}, "sub1": {"add1"}`.
 
 
 Creating a dataset (:code:`calculator/convert_calculator.py`)
 --------------------------------------------------------------
 To use PBE, we need to create a dataset. For this example, we created a short JSON file named :code:`dataset/calculator_dataset.json` that is built with the following fields
 
-* *program*, that contains the stack representing the program with its inputs and its primitives. Each part of the program is separated by a pipe :code:`|`
-  
-  - :code:`INT` or :code:`FLOAT` are our :code:`PrimitiveType` and represent the inputs of the program
-  - The other words are the primitives of the program. If the primitives are functions and require inputs, we indicate where to find the inputs. For instance, let our program be the program that removes 2 to a float be :code:`FLOAT|2|int2float,1|-,0,2`
-  
-    + :code:`int2float` will convert the element at position 1: our primitive :code:`2`
-    + :code:`-` will substract to the element at position 0 (an input of type :code:`FLOAT`) the element at position 2 (the converted value of the primitive :code:`2`)
+* *program*, that contains therepresentation of the program, the parsing is done automatically from the DSL object so you don't need to parse it yourself. Here ia representation of a program that computes :code:`f(x, y)= x + y * x` in our DSL: :code:`(+ var0 (* var0 var1))`.
 
 * *examples*, displaying what are the expected inputs and outputs of the program.
 
 Once the dataset is done, we need to create a file converting it to the ProgSynth format, done here in :code:`convert_calculator.py`.
 An important point to note is that we need to develop the :code:`PolymorphicType`, as described in the previous sub-section.
 
-It is done automatically by calling the method :code:`dsl.instantiate_polymorphic_types()` or when the DSL icompiled into a context free grammar.
+It is done automatically by calling the method :code:`dsl.instantiate_polymorphic_types(upper_bound)`.
 As we only want to develop :code:`+` and :code:`-` as methods with a size of 5 (INT -> INT -> INT or FLOAT -> FLOAT -> FLOAT, as we consider each arrow in the size), we define its upper bound type size to 5.
 
 
-Structures used
-~~~~~~~~~~~~~~~
-
-If you want to adapt the code of :code:`calculator/convert_calculator` for your own custom DSL, the part that will need to be changed is stored inside :code:`__calculator_str2prog()`, that returns the final program and its type (inputs and outputs).
-
-To do so, useful structures defined by the file :code:`synth/syntax/program.py` are available. At the moment, please refrain from using classes :code:`Lambda` and :code:`Constant`, as they are not fully implemented in the framework yet.
-
-In order to properly construct the returned type, it is important to add to :code:`type_stack` only the methods and the inputs of the program, as hinted in the section :ref:`Types of the DSL`.
+If you want to adapt the code of :code:`calculator/convert_calculator` for your own custom DSL, it should work almost out of the box with ProgSynth, some point that may hinder you is that ProgSynth needs to guess your type request, it does so from your examples. If you are manipulating types that are not guess by ProgSynth, it wil fill them with UnknownType silently, in that case you may need to add your own function to guess type request or modify the one from ProgSynth.
 
 
 Usage
@@ -128,4 +115,4 @@ The dataset generated can be explored using :code:`dataset_explorer.py`.
 
 Conclusion
 ----------
-Once the dataset and the DSL are done, we simple need to adapt the imports of :code:`pcfg_prediction.py`, :code:`evaluate.py` and :code:`dsl_analyser.py`. Then, the usage is the same as describe in the section :doc:`usage`.
+Once the dataset and the DSL are done, we simple need to add our DSL to the :code:`dsl_loader.py` script, in-depth instructions are provided in the file. Then, the usage is the same as describe in the section :doc:`usage`.
