@@ -241,11 +241,12 @@ def dump_primitives(program: Program) -> List[str]:
 # =========================================================================================
 
 
-def forbid_first_derivation(program: Program) -> None:
+def forbid_first_derivation(program: Program) -> bool:
     pattern = dump_primitives(program)
-    if len(pattern) < 2:
-        return
+    if len(pattern) != 2:
+        return False
     syntaxic_restrictions[pattern[0]].add(pattern[1])
+    return True
 
 
 def add_symmetric(program: Program) -> None:
@@ -269,8 +270,7 @@ def add_constraint_for(program: Program, category: str):
     max_vars = len(prog_vars)
     stats[category]["total"] += 1
     # If only one variable used, this is easy
-    if max_vars == 1:
-        forbid_first_derivation(program)
+    if max_vars == 1 and forbid_first_derivation(program):
         stats[category]["syntaxic"] += 1
         return
     global specific_restrictions
@@ -284,8 +284,7 @@ def constant_program_analysis(program: Program):
     stats[category]["total"] += 1
 
     # If only one constant used, this is easy
-    if max_consts == 1:
-        forbid_first_derivation(program)
+    if max_consts == 1 and forbid_first_derivation(program):
         stats[category]["syntaxic"] += 1
         return
     else:
@@ -480,14 +479,14 @@ print("[=== Report ===]")
 for stat_name in stats:
     total = stats[stat_name]["total"]
     if total == 0:
-        print(f"Found no {stat_name} program")
+        print(f"Found no {stat_name} program.")
         continue
     ratio = stats[stat_name]["syntaxic"] / total
     print(
         "Found",
         total,
         stat_name,
-        f"{ratio:.1%} of which were translated into constraints",
+        f"{ratio:.1%} of which were translated into constraints.",
     )
 if len(symmetrics) > 0:
     print(
