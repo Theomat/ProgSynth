@@ -2,11 +2,15 @@ from collections import defaultdict
 import itertools
 from typing import Dict, Generator, List, Set, Tuple, TypeVar
 import copy
+import argparse
 
 import tqdm
 import numpy as np
 
+from dsl_loader import add_dsl_choice_arg, load_DSL
+
 from synth import Dataset, PBE
+from synth.generation.sampler import ListSampler, UnionSampler
 from synth.pbe import reproduce_dataset
 from synth.pruning import UseAllVariablesPruner
 from synth.syntax import (
@@ -21,32 +25,62 @@ from synth.syntax import (
     Arrow,
     Type,
 )
-from synth.tools.type_constraints.utils import SYMBOL_ANYTHING, SYMBOL_FORBIDDEN
+from synth.pruning.type_constraints.utils import SYMBOL_ANYTHING, SYMBOL_FORBIDDEN
+from synth.syntax.type_system import STRING
 from synth.utils import chrono
 
+
+parser = argparse.ArgumentParser(
+    description="Generate a dataset copying the original distribution of another dataset"
+)
+add_dsl_choice_arg(parser)
+
+parser.add_argument(
+    "--dataset",
+    type=str,
+    default="{dsl_name}.pickle",
+    help="dataset file (default: {dsl_name}.pickle)",
+)
+parser.add_argument("-s", "--seed", type=int, default=0, help="seed (default: 0)")
+parser.add_argument(
+    "--n", type=int, default=500, help="number of examples to be sampled (default: 500)"
+)
+parser.add_argument(
+    "--max-depth",
+    type=int,
+    default=2,
+    help="max depth of programs to check for (default: 2)",
+)
+
+
+parameters = parser.parse_args()
+dsl_name: str = parameters.dsl
+dataset_file: str = parameters.dataset.format(dsl_name=dsl_name)
+input_checks: int = parameters.n
+max_depth: int = parameters.max_depth
 # ================================
-# Change dataset
+# Constants
 # ================================
 DREAMCODER = "dreamcoder"
-DEEPCODER = "deepcoder"
-
-dataset = DEEPCODER
-# ================================
-# Tunable parameters
-# ================================
-max_depth = 2
-input_checks = 500
+REGEXP = "regexp"
+CALCULATOR = "calculator"
+TRANSDUCTION = "transduction"
 in_depth_equivalence_check = True
 progress = True
 # ================================
 # Initialisation
 # ================================
-dataset_file = f"{dataset}.pickle"
-if dataset == DEEPCODER:
-    from deepcoder.deepcoder import dsl, evaluator
+dsl_module = load_DSL(dsl_name)
+dsl, evaluator = dsl_module.dsl, dsl_module.evaluator
 
-elif dataset == DREAMCODER:
-    from dreamcoder.dreamcoder import dsl, evaluator
+if dsl_name == REGEXP:
+    from regexp.task_generator_regexp import reproduce_dataset
+elif dsl_name == CALCULATOR:
+    from calculator.calculator_task_generator import reproduce_dataset
+elif dsl_name == TRANSDUCTION:
+    from transduction.transduction_task_generator import reproduce_dataset
+else:
+    from synth.pbe import reproduce_dataset
 
 # ================================
 # Load dataset & Task Generator
@@ -57,14 +91,23 @@ with chrono.clock("dataset.load") as c:
     full_dataset: Dataset[PBE] = Dataset.load(dataset_file)
     print("done in", c.elapsed_time(), "s")
 # Reproduce dataset distribution
-print("Reproducing dataset...", end="")
+print("Reproducing dataset...", end="", flush=True)
 with chrono.clock("dataset.reproduce") as c:
-    task_generator, lexicon = reproduce_dataset(
-        full_dataset, dsl, evaluator, 0, uniform_pgrammar=True
+    task_generator, _ = reproduce_dataset(
+        full_dataset,
+        dsl,
+        evaluator,
+        0,
+        default_max_depth=max_depth,
+        uniform_pgrammar=True,
     )
     print("done in", c.elapsed_time(), "s")
 # We only get a task generator for the input generator
 input_sampler = task_generator.input_generator
+if dsl_name == TRANSDUCTION:
+    l_s: ListSampler = input_sampler
+    un_s: UnionSampler = l_s.element_sampler
+    un_s.fallback = un_s.samplers[STRING]
 
 # ================================
 # Load dataset & Task Generator
