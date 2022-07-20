@@ -141,10 +141,18 @@ else:
     input_sampler = SamplesSampler(inputs_from_type, seed=seed)
 
     if isinstance(evaluator, DSLEvaluatorWithConstant):
-        our_eval = lambda prog, inp: evaluator.eval_with_constant(
-            prog, inp, input_sampler.sample(CSTE_IN), input_sampler.sample(CSTE_OUT)
-        )
+        cstes_mapper = {}
 
+        def the_our_eval(prog: Program, inp: List[Any]) -> Any:
+            key = tuple(inp)
+            if key not in cstes_mapper:
+                cstes_mapper[key] = input_sampler.sample(CSTE_IN), input_sampler.sample(
+                    CSTE_OUT
+                )
+            c_in, c_out = cstes_mapper[key]
+            return evaluator.eval_with_constant(prog, inp, c_in, c_out)
+
+        our_eval = the_our_eval
 
 # ================================
 # Load dataset & Task Generator
