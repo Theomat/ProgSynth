@@ -244,7 +244,7 @@ class MyPredictor(nn.Module):
 predictor = MyPredictor(hidden_size).to(device)
 print_model_summary(predictor)
 optim = torch.optim.AdamW(predictor.parameters(), lr, weight_decay=weight_decay)
-
+scheduler = torch.optim.ReduceLROnPlateau(optim, 'min')
 dataset_index = 0
 
 
@@ -273,11 +273,6 @@ def do_batch(iter_number: int) -> None:
         writer.add_scalar("program/length", mean_length, iter_number)
     with chrono.clock("train.do_batch.inference"):
         batch_outputs: Tensor = predictor(batch)
-    # with chrono.clock("train.do_batch.tensor2pcfg"):
-    #     batch_log_pcfg = [
-    #         predictor.bigram_layer.tensor2pcfg(batch_outputs[i], task.type_request)
-    #         for i, task in enumerate(batch)
-    #     ]
     with chrono.clock("train.do_batch.embed"):
         batch_programs = [
             type2cfg[task.type_request].embed(task.solution) for task in batch
@@ -290,10 +285,11 @@ def do_batch(iter_number: int) -> None:
             loss = predictor.bigram_layer.loss_cross_entropy(
                 batch_programs, batch_tr, batch_outputs
             )
-            # loss = predictor.bigram_layer.loss_negative_log_prob(batch_programs, batch_log_pcfg)
         with chrono.clock("train.do_batch.loss.backprop"):
             loss.backward()
             optim.step()
+            # Should be called on val_loss but we don't have one here
+            scheduler.step(loss.item())
     # Logging
     writer.add_scalar("train/loss", loss.item(), iter_number)
     if not no_stats:
