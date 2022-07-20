@@ -11,9 +11,11 @@ import numpy as np
 from dsl_loader import add_dsl_choice_arg, load_DSL
 
 from synth import Dataset, PBE
-from synth.generation.sampler import ListSampler, UnionSampler
+from synth.generation.sampler import ListSampler, Sampler
 from synth.pbe import reproduce_dataset
 from synth.pruning import UseAllVariablesPruner
+from synth.semantic.evaluator import DSLEvaluatorWithConstant
+from synth.specification import PBEWithConstants
 from synth.syntax import (
     CFG,
     ProbDetGrammar,
@@ -27,7 +29,7 @@ from synth.syntax import (
     Type,
 )
 from synth.pruning.type_constraints.utils import SYMBOL_ANYTHING, SYMBOL_FORBIDDEN
-from synth.syntax.type_system import STRING
+from synth.syntax.type_system import STRING, PrimitiveType
 from synth.utils import chrono
 
 
@@ -41,6 +43,12 @@ parser.add_argument(
     type=str,
     default="{dsl_name}.pickle",
     help="dataset file (default: {dsl_name}.pickle)",
+)
+parser.add_argument(
+    "--no-reproduce",
+    action="store_true",
+    default=False,
+    help="instead of trying to sample new inputs, scrap inputs from the dataset",
 )
 parser.add_argument("-s", "--seed", type=int, default=0, help="seed (default: 0)")
 parser.add_argument(
@@ -59,6 +67,8 @@ dsl_name: str = parameters.dsl
 dataset_file: str = parameters.dataset.format(dsl_name=dsl_name)
 input_checks: int = parameters.n
 max_depth: int = parameters.max_depth
+no_reproduce: bool = parameters.no_reproduce
+seed: int = parameters.seed
 # ================================
 # Constants
 # ================================
@@ -72,41 +82,69 @@ TRANSDUCTION = "transduction"
 dsl_module = load_DSL(dsl_name)
 dsl, evaluator = dsl_module.dsl, dsl_module.evaluator
 
-if dsl_name == REGEXP:
-    from regexp.task_generator_regexp import reproduce_dataset
-elif dsl_name == CALCULATOR:
-    from calculator.calculator_task_generator import reproduce_dataset
-elif dsl_name == TRANSDUCTION:
-    from transduction.transduction_task_generator import reproduce_dataset
-else:
-    from synth.pbe import reproduce_dataset
-
-# ================================
-# Load dataset & Task Generator
-# ================================
 # Load dataset
 print(f"Loading {dataset_file}...", end="")
 with chrono.clock("dataset.load") as c:
     full_dataset: Dataset[PBE] = Dataset.load(dataset_file)
     print("done in", c.elapsed_time(), "s")
-# Reproduce dataset distribution
-print("Reproducing dataset...", end="", flush=True)
-with chrono.clock("dataset.reproduce") as c:
-    task_generator, _ = reproduce_dataset(
-        full_dataset,
-        dsl,
-        evaluator,
-        0,
-        default_max_depth=max_depth,
-        uniform_pgrammar=True,
-    )
-    print("done in", c.elapsed_time(), "s")
-# We only get a task generator for the input generator
-input_sampler = task_generator.input_generator
-if dsl_name == TRANSDUCTION:
-    l_s: ListSampler = input_sampler
-    un_s: UnionSampler = l_s.element_sampler
-    un_s.fallback = un_s.samplers[STRING]
+
+our_eval = lambda *args: evaluator.eval(*args)
+
+if not no_reproduce:
+    if dsl_name == REGEXP:
+        from regexp.task_generator_regexp import reproduce_dataset
+    elif dsl_name == CALCULATOR:
+        from calculator.calculator_task_generator import reproduce_dataset
+    elif dsl_name == TRANSDUCTION:
+        print("Transductions cannot be reproduced! Please run with --no-reproduce")
+        sys.exit(1)
+    else:
+        from synth.pbe import reproduce_dataset
+
+    # Reproduce dataset distribution
+    print("Reproducing dataset...", end="", flush=True)
+    with chrono.clock("dataset.reproduce") as c:
+        task_generator, _ = reproduce_dataset(
+            full_dataset,
+            dsl,
+            evaluator,
+            0,
+            default_max_depth=max_depth,
+            uniform_pgrammar=True,
+        )
+        print("done in", c.elapsed_time(), "s")
+    # We only get a task generator for the input generator
+    input_sampler = task_generator.input_generator
+else:
+    inputs_from_type = defaultdict(list)
+    CSTE_IN = PrimitiveType("CST_STR_INPUT")
+    CSTE_OUT = PrimitiveType("CST_STR_OUTPUT")
+    for task in full_dataset:
+        for ex in task.specification.examples:
+            for inp, arg in zip(ex.inputs, task.type_request.arguments()):
+                inputs_from_type[arg].append(inp)
+        # Manage input/output constants
+        if isinstance(task.specification, PBEWithConstants):
+            for c_in in task.specification.constants_in:
+                inputs_from_type[CSTE_IN].append(c_in)
+            for c_out in task.specification.constants_out:
+                inputs_from_type[CSTE_OUT].append(c_out)
+
+    class SamplesSampler(Sampler):
+        def __init__(self, samples: Dict[Type, List[Any]], seed: int) -> None:
+            self._gen = np.random.default_rng(seed=seed)
+            self.samples = samples
+
+        def sample(self, type: Type, **kwargs: Any) -> Any:
+            return self._gen.choice(self.samples[type])
+
+    input_sampler = SamplesSampler(inputs_from_type, seed=seed)
+
+    if isinstance(evaluator, DSLEvaluatorWithConstant):
+        our_eval = lambda prog, inp: evaluator.eval_with_constant(
+            prog, inp, input_sampler.sample(CSTE_IN), input_sampler.sample(CSTE_OUT)
+        )
+
 
 # ================================
 # Load dataset & Task Generator
@@ -195,8 +233,10 @@ def dump_primitives(program: Program) -> List[str]:
 # =========================================================================================
 
 
-def forbid_first_derivation(program: Program):
+def forbid_first_derivation(program: Program) -> None:
     pattern = dump_primitives(program)
+    if len(pattern) < 2:
+        return
     syntaxic_restrictions[pattern[0]].add(pattern[1])
 
 
@@ -252,6 +292,7 @@ def constant_program_analysis(program: Program):
 sampled_inputs = {}
 all_solutions = defaultdict(dict)
 programs_done = set()
+forbidden_types = set()
 
 
 def init_base_primitives() -> None:
@@ -280,7 +321,7 @@ def init_base_primitives() -> None:
             primitive,
             [Variable(i, arg_type) for i, arg_type in enumerate(arguments)],
         )
-        solutions = [evaluator.eval(base_program, inp) for inp in inputs]
+        solutions = [our_eval(base_program, inp) for inp in inputs]
         all_solutions[base_program.type.returns()][base_program] = solutions
         new_equivalence_class(base_program)
 
@@ -289,7 +330,7 @@ def check_symmetries() -> None:
     iterable = tqdm.tqdm(dsl.list_primitives)
     for primitive in iterable:
         arguments = primitive.type.arguments()
-        if len(arguments) == 0:
+        if len(arguments) == 0 or any(arg in forbidden_types for arg in arguments):
             continue
         iterable.set_postfix_str(primitive.primitive)
 
@@ -320,7 +361,7 @@ def check_symmetries() -> None:
             is_symmetric = current_prog != base_program
             outputs = []
             for inp, sol in zip(inputs, solutions):
-                out = evaluator.eval(current_prog, inp)
+                out = our_eval(current_prog, inp)
                 outputs.append(out)
                 if is_symmetric and out != sol:
                     is_symmetric = False
@@ -358,7 +399,7 @@ def check_equivalent() -> None:
             candidates = set(all_sol.keys())
             is_identity = len(program.used_variables()) == 1
             for i, inp in enumerate(inputs):
-                out = evaluator.eval(program, inp)
+                out = our_eval(program, inp)
                 # Update candidates
                 candidates = {c for c in candidates if all_sol[c][i] == out}
                 if is_identity and out != inp[0]:
@@ -387,13 +428,13 @@ def check_constants() -> None:
         if not isinstance(primitive.type, Arrow)
     )
     for ty in types:
-        all_evals = {evaluator.eval(p, []) for p in dsl.list_primitives if p.type == ty}
+        all_evals = {our_eval(p, []) for p in dsl.list_primitives if p.type == ty}
         # Add forbidden patterns to speed up search
         dsl.forbidden_patterns = copy.deepcopy(syntaxic_restrictions)
         cfg = CFG.depth_constraint(dsl, ty, max_depth + 1)
         pcfg = ProbDetGrammar.uniform(cfg)
         for program in enumerate_prob_grammar(pcfg):
-            out = evaluator.eval(program, [])
+            out = our_eval(program, [])
             if out in all_evals:
                 constant_program_analysis(program)
 
