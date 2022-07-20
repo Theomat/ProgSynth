@@ -119,6 +119,7 @@ sampled_inputs = {}
 syntaxic_restrictions: Dict[str, Set[str]] = defaultdict(set)
 specific_restrictions = set()
 pattern_constraints = []
+symmetrics: List[Tuple[str, Set[int]]] = []
 
 stats = {
     s: {"total": 0, "syntaxic": 0}
@@ -198,15 +199,7 @@ def add_constraint_for(program: Program, category: str):
             return
 
         primitive = dump_primitives(program)[0]
-        pattern_constraints.append(
-            f"{primitive} "
-            + " ".join(
-                SYMBOL_ANYTHING
-                if i not in swap_indices
-                else f"{SYMBOL_FORBIDDEN}{primitive}"
-                for i in varnos
-            )
-        )
+        symmetrics.append((primitive, swap_indices))
 
     else:
         global specific_restrictions
@@ -407,6 +400,25 @@ with chrono.clock("pattern"):
             if good:
                 specific_reused += len(all_variants)
                 pattern_constraints.append(0)
+    with chrono.clock("pattern.symmetrics"):
+        sym_types = defaultdict(set)
+        name2P = {}
+        for P in dsl.list_primitives:
+            for name, _ in symmetrics:
+                if P.primitive == name:
+                    sym_types[P.type.returns()].add(name)
+                    name2P[name] = P
+                    break
+        for name, forbid_indices in symmetrics:
+            elements = [name]
+            P: Primitive = name2P[name]
+            for i, arg in enumerate(P.type.arguments()):
+                if i in forbid_indices:
+                    to_forbid = SYMBOL_FORBIDDEN + ",".join(sym_types[arg])
+                    elements.append(to_forbid)
+                else:
+                    elements.append(SYMBOL_ANYTHING)
+            pattern_constraints.append(" ".join(elements))
 
 
 print(
