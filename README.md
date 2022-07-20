@@ -72,7 +72,7 @@ You might want to generate html pages of the documentation locally, where usage,
 In which case, you will need to use [Sphinx](https://www.sphinx-doc.org/en/master/). 
 
 ```bash
-pip install sphinx
+pip install sphinx sphinx-rtd-theme
 ```
 
 If Sphinx installation was successful, then use the following command line to generate html pages that you can view by opening the file `docs/build/html/index.html` in your favorite web browser.
