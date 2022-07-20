@@ -201,7 +201,7 @@ def reproduce_dataset(
     dsl: DSL,
     evaluator: Evaluator,
     seed: Optional[int] = None,
-    uniform_pcfg: bool = True,
+    uniform_pgrammar: bool = True,
     max_tries: int = 100,
     default_max_depth: int = 10,
     max_list_length: Optional[int] = None,
@@ -264,7 +264,7 @@ def reproduce_dataset(
 
     if max_depth == -1:
         max_depth = default_max_depth
-    if uniform_pcfg:
+    if uniform_pgrammar:
         pcfgs = {
             ProbDetGrammar.uniform(CFG.depth_constraint(dsl, t, max_depth))
             for t in allowed_types
