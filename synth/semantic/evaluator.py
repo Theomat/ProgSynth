@@ -10,6 +10,13 @@ class Evaluator(ABC):
     def eval(self, program: Program, input: Any) -> Any:
         pass
 
+    @abstractmethod
+    def clear_cache(self) -> None:
+        """
+        Clear any cache this evaluator might use.
+        """
+        pass
+
 
 def __tuplify__(element: Any) -> Any:
     if isinstance(element, List):
@@ -122,6 +129,10 @@ class DSLEvaluator(Evaluator):
         if flush:
             self._cache[key] = {}
         return evaluations[program]
+
+    def clear_cache(self) -> None:
+        self._cache = {}
+        self._cons_cache = {}
 
     @property
     def cache_hit_rate(self) -> float:
@@ -242,6 +253,11 @@ class DSLEvaluatorWithConstant(Evaluator):
                 raise e
 
         return evaluations[program]
+
+    def clear_cache(self) -> None:
+        self._cache = {}
+        self._cons_cache = {}
+        self._invariant_cache = {}
 
     @property
     def cache_hit_rate(self) -> float:

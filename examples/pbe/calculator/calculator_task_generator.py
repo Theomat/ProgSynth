@@ -160,7 +160,7 @@ def reproduce_dataset(
     dsl: DSL,
     evaluator: Evaluator,
     seed: Optional[int] = None,
-    uniform_pcfg: bool = True,
+    uniform_pgrammar: bool = True,
     max_tries: int = 100,
     int_bound: int = 1000,
     default_max_depth: int = 5,
@@ -240,7 +240,7 @@ def reproduce_dataset(
     ]
     if max_depth == -1:
         max_depth = default_max_depth
-    if uniform_pcfg:
+    if uniform_pgrammar:
         pcfgs = {
             ConcretePCFG.uniform(CFG.from_dsl(dsl, t, max_depth)) for t in allowed_types
         }

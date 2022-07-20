@@ -69,6 +69,20 @@ class TaggedDetGrammar(DetGrammar[U, V, W], Generic[T, U, V, W]):
     def start_information(self) -> W:
         return self.grammar.start_information()
 
+    def __add__(
+        self, other: "TaggedDetGrammar[T, U, V, W]"
+    ) -> "TaggedDetGrammar[T, U, V, W]":
+        new_probs: Dict[Tuple[Type, U], Dict[DerivableProgram, T]] = {}
+        for S in set(self.tags.keys()).union(other.tags.keys()):
+            new_probs[S] = {}
+            for P in set(self.tags.get(S, {})).union(other.tags.get(S, {})):
+                if S in self.tags and P in self.tags[S]:
+                    safe = {P: self.tags[S][P]}
+                else:
+                    safe = {P: other.tags[S][P]}
+                new_probs[S][P] = self.tags.get(S, safe)[P] + other.tags.get(S, safe)[P]  # type: ignore
+        return TaggedDetGrammar(self.grammar, new_probs)
+
 
 class ProbDetGrammar(TaggedDetGrammar[float, U, V, W]):
     def __init__(
@@ -85,6 +99,15 @@ class ProbDetGrammar(TaggedDetGrammar[float, U, V, W]):
 
     def name(self) -> str:
         return "P" + self.grammar.name()
+
+    def __mul__(self, other: float) -> "ProbDetGrammar[U, V, W]":
+        return ProbDetGrammar(
+            self.grammar,
+            {S: {P: other * p for P, p in v.items()} for S, v in self.tags.items()},
+        )
+
+    def __rmul__(self, other: float) -> "ProbDetGrammar[U, V, W]":
+        return self.__mul__(other)
 
     def probability(
         self,

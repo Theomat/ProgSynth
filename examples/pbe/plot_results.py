@@ -20,11 +20,25 @@ parser.add_argument(
     default="./",
     help="folder in which to look for CSV files (default: './')",
 )
+parser.add_argument(
+    "--no-show",
+    action="store_true",
+    default=False,
+    help="just save the image does not show it",
+)
+parser.add_argument(
+    "--no-sort",
+    action="store_true",
+    default=False,
+    help="does not sort tasks by time taken",
+)
 
 
 parameters = parser.parse_args()
 dataset_file: str = parameters.dataset
 output_folder: str = parameters.folder
+no_show: bool = parameters.no_show
+no_sort: bool = parameters.no_sort
 
 start_index = (
     0
@@ -46,7 +60,6 @@ max_time, max_programs = 0, 0
 max_tasks = 0
 for file in glob(os.path.join(output_folder, "*.csv")):
     file = os.path.relpath(file, output_folder)
-    print("File:", file)
     if not file.startswith(dataset_name):
         continue
     name = file[len(dataset_name) : -4]
@@ -61,14 +74,14 @@ for file in glob(os.path.join(output_folder, "*.csv")):
         trace = [(row[0] == "True", float(row[1]), int(row[2])) for row in trace]
         max_tasks = max(len(trace), max_tasks)
     # Plot tasks wrt time
-    trace_time = sorted(trace, key=lambda x: x[1])
+    trace_time = trace if no_sort else sorted(trace, key=lambda x: x[1])
     cum_sol1, cum_time = np.cumsum([row[0] for row in trace_time]), np.cumsum(
         [row[1] for row in trace_time]
     )
     max_time = max(max_time, cum_time[-1])
     ax1.plot(cum_time, cum_sol1, label=name.capitalize())
     # Plot tasks wrt programs
-    trace_programs = sorted(trace, key=lambda x: x[2])
+    trace_programs = trace if no_sort else sorted(trace, key=lambda x: x[2])
     cum_sol2, cum_programs = np.cumsum([row[0] for row in trace_programs]), np.cumsum(
         [row[2] for row in trace_programs]
     )
@@ -98,4 +111,5 @@ ax2.set_ylim(0, max_tasks + 10)
 ax1.legend()
 ax2.legend()
 pub.save_fig(os.path.join(output_folder, "results.png"))
-plt.show()
+if not no_show:
+    plt.show()

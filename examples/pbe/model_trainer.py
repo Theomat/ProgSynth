@@ -65,6 +65,12 @@ parser.add_argument(
     default=False,
     help="do not delete intermediary model files",
 )
+parser.add_argument(
+    "--no-stats",
+    action="store_true",
+    default=False,
+    help="do not produce stats increasing speed",
+)
 gg = parser.add_argument_group("model parameters")
 gg.add_argument(
     "-v",
@@ -139,6 +145,7 @@ hidden_size: int = parameters.hidden_size
 cpu_only: bool = parameters.cpu
 no_clean: bool = parameters.no_clean
 no_shuffle: bool = parameters.no_shuffle
+no_stats: bool = parameters.no_stats
 should_generate_dataset: bool = False
 
 random.seed(seed)
@@ -213,7 +220,10 @@ class MyPredictor(nn.Module):
     def __init__(self, size: int) -> None:
         super().__init__()
         self.bigram_layer = GrammarPredictorLayer(
-            size, cfgs, abstractions.cfg_bigram_without_depth, variable_probability
+            size,
+            cfgs,
+            abstractions.cfg_bigram_without_depth_and_equi_prim,
+            variable_probability,
         )
         encoder = IOEncoder(encoding_dimension, lexicon)
         self.packer = Task2Tensor(
@@ -237,7 +247,7 @@ class MyPredictor(nn.Module):
 predictor = MyPredictor(hidden_size).to(device)
 print_model_summary(predictor)
 optim = torch.optim.AdamW(predictor.parameters(), lr, weight_decay=weight_decay)
-
+scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optim, "min")
 dataset_index = 0
 
 
@@ -266,11 +276,6 @@ def do_batch(iter_number: int) -> None:
         writer.add_scalar("program/length", mean_length, iter_number)
     with chrono.clock("train.do_batch.inference"):
         batch_outputs: Tensor = predictor(batch)
-    # with chrono.clock("train.do_batch.tensor2pcfg"):
-    #     batch_log_pcfg = [
-    #         predictor.bigram_layer.tensor2pcfg(batch_outputs[i], task.type_request)
-    #         for i, task in enumerate(batch)
-    #     ]
     with chrono.clock("train.do_batch.embed"):
         batch_programs = [
             type2cfg[task.type_request].embed(task.solution) for task in batch
@@ -283,19 +288,29 @@ def do_batch(iter_number: int) -> None:
             loss = predictor.bigram_layer.loss_cross_entropy(
                 batch_programs, batch_tr, batch_outputs
             )
-            # loss = predictor.bigram_layer.loss_negative_log_prob(batch_programs, batch_log_pcfg)
         with chrono.clock("train.do_batch.loss.backprop"):
             loss.backward()
             optim.step()
+            # Should be called on val_loss but we don't have one here
+            scheduler.step(loss.item())
     # Logging
     writer.add_scalar("train/loss", loss.item(), iter_number)
-    # with torch.no_grad():
-    #     loss = loss_negative_log_prob(
-    #         batch_programs, batch_log_pcfg, length_normed=False
-    #     )
-    #     writer.add_scalar(
-    #         "train/program_probability", np.exp(-loss.item()), iter_number
-    #     )
+    if not no_stats:
+        with chrono.clock("train.do_batch.stats"):
+            with torch.no_grad():
+                batch_logprobs = torch.stack(
+                    [
+                        predictor.bigram_layer.tensor2log_prob_grammar(
+                            batch_outputs[i], task.type_request
+                        ).log_probability(task.solution)
+                        for i, task in enumerate(batch)
+                    ]
+                )
+                writer.add_scalar(
+                    "train/program_probability",
+                    torch.mean(torch.exp(batch_logprobs)),
+                    iter_number,
+                )
 
 
 def do_epoch(j: int) -> int:

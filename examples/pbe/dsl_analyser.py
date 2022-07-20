@@ -1,14 +1,21 @@
 from collections import defaultdict
 import itertools
-from typing import Dict, Generator, List, Set, Tuple, TypeVar
+import sys
+from typing import Any, Dict, Generator, List, Set, Tuple, TypeVar
 import copy
+import argparse
 
 import tqdm
 import numpy as np
 
+from dsl_loader import add_dsl_choice_arg, load_DSL
+
 from synth import Dataset, PBE
+from synth.generation.sampler import ListSampler, Sampler
 from synth.pbe import reproduce_dataset
 from synth.pruning import UseAllVariablesPruner
+from synth.semantic.evaluator import DSLEvaluatorWithConstant
+from synth.specification import PBEWithConstants
 from synth.syntax import (
     CFG,
     ProbDetGrammar,
@@ -21,67 +28,170 @@ from synth.syntax import (
     Arrow,
     Type,
 )
-from synth.tools.type_constraints.utils import SYMBOL_ANYTHING, SYMBOL_FORBIDDEN
+from synth.pruning.type_constraints.utils import SYMBOL_ANYTHING, SYMBOL_FORBIDDEN
+from synth.syntax.type_system import STRING, PrimitiveType
 from synth.utils import chrono
 
+
+parser = argparse.ArgumentParser(
+    description="Generate a dataset copying the original distribution of another dataset"
+)
+add_dsl_choice_arg(parser)
+
+parser.add_argument(
+    "--dataset",
+    type=str,
+    default="{dsl_name}.pickle",
+    help="dataset file (default: {dsl_name}.pickle)",
+)
+parser.add_argument(
+    "--no-reproduce",
+    action="store_true",
+    default=False,
+    help="instead of trying to sample new inputs, scrap inputs from the dataset",
+)
+parser.add_argument("-s", "--seed", type=int, default=0, help="seed (default: 0)")
+parser.add_argument(
+    "--n", type=int, default=500, help="number of examples to be sampled (default: 500)"
+)
+parser.add_argument(
+    "--max-depth",
+    type=int,
+    default=2,
+    help="max depth of programs to check for (default: 2)",
+)
+
+
+parameters = parser.parse_args()
+dsl_name: str = parameters.dsl
+dataset_file: str = parameters.dataset.format(dsl_name=dsl_name)
+input_checks: int = parameters.n
+max_depth: int = parameters.max_depth
+no_reproduce: bool = parameters.no_reproduce
+seed: int = parameters.seed
 # ================================
-# Change dataset
+# Constants
 # ================================
 DREAMCODER = "dreamcoder"
-DEEPCODER = "deepcoder"
-
-dataset = DEEPCODER
-# ================================
-# Tunable parameters
-# ================================
-max_depth = 2
-input_checks = 500
-in_depth_equivalence_check = True
-progress = True
+REGEXP = "regexp"
+CALCULATOR = "calculator"
+TRANSDUCTION = "transduction"
 # ================================
 # Initialisation
 # ================================
-dataset_file = f"{dataset}.pickle"
-if dataset == DEEPCODER:
-    from deepcoder.deepcoder import dsl, evaluator
+dsl_module = load_DSL(dsl_name)
+dsl, evaluator = dsl_module.dsl, dsl_module.evaluator
 
-elif dataset == DREAMCODER:
-    from dreamcoder.dreamcoder import dsl, evaluator
-
-# ================================
-# Load dataset & Task Generator
-# ================================
 # Load dataset
 print(f"Loading {dataset_file}...", end="")
 with chrono.clock("dataset.load") as c:
     full_dataset: Dataset[PBE] = Dataset.load(dataset_file)
     print("done in", c.elapsed_time(), "s")
-# Reproduce dataset distribution
-print("Reproducing dataset...", end="")
-with chrono.clock("dataset.reproduce") as c:
-    task_generator, lexicon = reproduce_dataset(
-        full_dataset, dsl, evaluator, 0, uniform_pgrammar=True
-    )
-    print("done in", c.elapsed_time(), "s")
-# We only get a task generator for the input generator
-input_sampler = task_generator.input_generator
+
+our_eval = lambda *args: evaluator.eval(*args)
+
+if not no_reproduce:
+    if dsl_name == REGEXP:
+        from regexp.task_generator_regexp import reproduce_dataset
+    elif dsl_name == CALCULATOR:
+        from calculator.calculator_task_generator import reproduce_dataset
+    elif dsl_name == TRANSDUCTION:
+        print("Transductions cannot be reproduced! Please run with --no-reproduce")
+        sys.exit(1)
+    else:
+        from synth.pbe import reproduce_dataset
+
+    # Reproduce dataset distribution
+    print("Reproducing dataset...", end="", flush=True)
+    with chrono.clock("dataset.reproduce") as c:
+        task_generator, _ = reproduce_dataset(
+            full_dataset,
+            dsl,
+            evaluator,
+            0,
+            default_max_depth=max_depth,
+            uniform_pgrammar=True,
+        )
+        print("done in", c.elapsed_time(), "s")
+    # We only get a task generator for the input generator
+    input_sampler = task_generator.input_generator
+else:
+    inputs_from_type = defaultdict(list)
+    CSTE_IN = PrimitiveType("CST_STR_INPUT")
+    CSTE_OUT = PrimitiveType("CST_STR_OUTPUT")
+    for task in full_dataset:
+        for ex in task.specification.examples:
+            for inp, arg in zip(ex.inputs, task.type_request.arguments()):
+                inputs_from_type[arg].append(inp)
+        # Manage input/output constants
+        if isinstance(task.specification, PBEWithConstants):
+            for c_in in task.specification.constants_in:
+                inputs_from_type[CSTE_IN].append(c_in)
+            for c_out in task.specification.constants_out:
+                inputs_from_type[CSTE_OUT].append(c_out)
+
+    class SamplesSampler(Sampler):
+        def __init__(self, samples: Dict[Type, List[Any]], seed: int) -> None:
+            self._gen = np.random.default_rng(seed=seed)
+            self.samples = samples
+
+        def sample(self, type: Type, **kwargs: Any) -> Any:
+            return self._gen.choice(self.samples[type])
+
+    input_sampler = SamplesSampler(inputs_from_type, seed=seed)
+
+    if isinstance(evaluator, DSLEvaluatorWithConstant):
+        cstes_mapper = {}
+
+        def the_our_eval(prog: Program, inp: List[Any]) -> Any:
+            key = tuple(inp)
+            if key not in cstes_mapper:
+                cstes_mapper[key] = input_sampler.sample(CSTE_IN), input_sampler.sample(
+                    CSTE_OUT
+                )
+            c_in, c_out = cstes_mapper[key]
+            return evaluator.eval_with_constant(prog, inp, c_in, c_out)
+
+        our_eval = the_our_eval
 
 # ================================
 # Load dataset & Task Generator
 # ================================
-simpler_pruner = UseAllVariablesPruner()
-
-sampled_inputs = {}
-
 syntaxic_restrictions: Dict[str, Set[str]] = defaultdict(set)
 specific_restrictions = set()
 pattern_constraints = []
 
-stats = {
-    s: {"total": 0, "syntaxic": 0}
-    for s in ["identity", "symmetry", "constant", "equivalent", "invariant"]
-}
+symmetrics: List[Tuple[str, Set[int]]] = []
 
+
+stats = {s: {"total": 0, "syntaxic": 0} for s in ["identity", "constant", "equivalent"]}
+
+
+# =========================================================================================
+# Equivalence classes
+# =========================================================================================
+
+equivalence_classes = defaultdict(dict)
+n_equiv_classes = 0
+
+
+def new_equivalence_class(program: Program) -> None:
+    global n_equiv_classes
+    equivalence_classes[program] = n_equiv_classes
+    n_equiv_classes += 1
+
+
+def merge_equivalence_classes(program: Program, representative: Program) -> None:
+    equivalence_classes[program] = equivalence_classes[representative]
+
+
+def get_equivalence_class(num: int) -> Set[Program]:
+    return {p for p, v in equivalence_classes.items() if v == num}
+
+
+# =========================================================================================
+# UTILS
+# =========================================================================================
 
 T = TypeVar("T")
 
@@ -127,9 +237,32 @@ def dump_primitives(program: Program) -> List[str]:
     return pattern
 
 
-def add_syntaxic(program: Program):
+# =========================================================================================
+# =========================================================================================
+
+
+def forbid_first_derivation(program: Program) -> bool:
     pattern = dump_primitives(program)
+    if len(pattern) != 2:
+        return False
     syntaxic_restrictions[pattern[0]].add(pattern[1])
+    return True
+
+
+def add_symmetric(program: Program) -> None:
+    # global pattern_constraints
+    variables = vars(program)
+    varnos = [v.variable for v in variables]
+    arguments = [v.type for v in sorted(variables, key=lambda k: k.variable)]
+    rtype = program.type
+    swap_indices = {
+        varnos[i] != i and arg_type == rtype for i, arg_type in enumerate(arguments)
+    }
+    if len(swap_indices) == len(varnos):
+        return
+
+    primitive = dump_primitives(program)[0]
+    symmetrics.append((primitive, swap_indices))
 
 
 def add_constraint_for(program: Program, category: str):
@@ -137,37 +270,11 @@ def add_constraint_for(program: Program, category: str):
     max_vars = len(prog_vars)
     stats[category]["total"] += 1
     # If only one variable used, this is easy
-    if max_vars == 1:
-        add_syntaxic(program)
+    if max_vars == 1 and forbid_first_derivation(program):
         stats[category]["syntaxic"] += 1
         return
-
-    if category == "symmetry":
-        # global pattern_constraints
-        variables = vars(program)
-        varnos = [v.variable for v in variables]
-        arguments = [v.type for v in sorted(variables, key=lambda k: k.variable)]
-        rtype = program.type
-        swap_indices = {
-            varnos[i] != i and arg_type == rtype for i, arg_type in enumerate(arguments)
-        }
-        if len(swap_indices) == len(varnos):
-            return
-
-        primitive = dump_primitives(program)[0]
-        pattern_constraints.append(
-            f"{primitive} "
-            + " ".join(
-                SYMBOL_ANYTHING
-                if i not in swap_indices
-                else f"{SYMBOL_FORBIDDEN}{primitive}"
-                for i in varnos
-            )
-        )
-
-    else:
-        global specific_restrictions
-        specific_restrictions.add(program)
+    global specific_restrictions
+    specific_restrictions.add(program)
 
 
 def constant_program_analysis(program: Program):
@@ -177,8 +284,7 @@ def constant_program_analysis(program: Program):
     stats[category]["total"] += 1
 
     # If only one constant used, this is easy
-    if max_consts == 1:
-        add_syntaxic(program)
+    if max_consts == 1 and forbid_first_derivation(program):
         stats[category]["syntaxic"] += 1
         return
     else:
@@ -187,51 +293,61 @@ def constant_program_analysis(program: Program):
         specific_restrictions.add(program)
 
 
-with chrono.clock("search"):
-    iterable = (
-        tqdm.tqdm(dsl.list_primitives, smoothing=1) if progress else dsl.list_primitives
-    )
+# =========================================================================================
+# =========================================================================================
 
-    all_solutions = defaultdict(dict)
-    programs_done = set()
+sampled_inputs = {}
+all_solutions = defaultdict(dict)
+programs_done = set()
+forbidden_types = set()
+
+
+def init_base_primitives() -> None:
+    primitives: List[Primitive] = dsl.list_primitives
+    # Check forbidden types
+    all_types = set()
+    for primitive in primitives:
+        all_types |= primitive.type.decompose_type()[0]
+    for arg_type in all_types:
+        try:
+            input_sampler.sample(type=arg_type)
+        except:
+            forbidden_types.add(arg_type)
     # Pre Sample Inputs + Pre Execute base primitives
-    for primitive in dsl.list_primitives:
-        arguments = (
-            [] if not isinstance(primitive.type, Arrow) else primitive.type.arguments()
-        )
-        if len(arguments) == 0:
+    for primitive in primitives:
+        arguments = primitive.type.arguments()
+        if len(arguments) == 0 or any(arg in forbidden_types for arg in arguments):
             continue
-        with chrono.clock("search.input_sampling"):
-            if primitive.type not in sampled_inputs:
-                sampled_inputs[primitive.type] = [
-                    [input_sampler.sample(type=arg) for arg in arguments]
-                    for _ in range(input_checks)
-                ]
-            inputs = sampled_inputs[primitive.type]
-        with chrono.clock("search.solutions"):
-            base_program = Function(
-                primitive,
-                [Variable(i, arg_type) for i, arg_type in enumerate(arguments)],
-            )
-            solutions = [evaluator.eval(base_program, inp) for inp in inputs]
-            all_solutions[primitive.type.returns()][primitive] = solutions
+        if primitive.type not in sampled_inputs:
+            sampled_inputs[primitive.type] = [
+                [input_sampler.sample(type=arg) for arg in arguments]
+                for _ in range(input_checks)
+            ]
+        inputs = sampled_inputs[primitive.type]
+        base_program = Function(
+            primitive,
+            [Variable(i, arg_type) for i, arg_type in enumerate(arguments)],
+        )
+        solutions = [our_eval(base_program, inp) for inp in inputs]
+        all_solutions[base_program.type.returns()][base_program] = solutions
+        new_equivalence_class(base_program)
 
-    # Check for symmetry
+
+def check_symmetries() -> None:
+    iterable = tqdm.tqdm(dsl.list_primitives)
     for primitive in iterable:
-        arguments = (
-            [] if not isinstance(primitive.type, Arrow) else primitive.type.arguments()
-        )
-        if len(arguments) == 0:
+        arguments = primitive.type.arguments()
+        if len(arguments) == 0 or any(arg in forbidden_types for arg in arguments):
             continue
-        if progress:
-            iterable.set_postfix_str(primitive.primitive)
+        iterable.set_postfix_str(primitive.primitive)
 
         base_program = Function(
             primitive,
             [Variable(i, arg_type) for i, arg_type in enumerate(arguments)],
         )
         inputs = sampled_inputs[primitive.type]
-        solutions = all_solutions[primitive]
+        all_sol = all_solutions[base_program.type.returns()]
+        solutions = all_sol[base_program]
 
         # ========================
         # Symmetry+Identity part
@@ -243,173 +359,156 @@ with chrono.clock("search"):
                 arguments_per_type[arg_type] = []
             arguments_per_type[arg_type].append(Variable(i, arg_type))
         # Enumerate all combinations
-        with chrono.clock("search.variants.enumeration"):
-            for args in produce_all_variants(
-                [arguments_per_type[t] for t in arguments]
-            ):
-                current_prog = Function(
-                    primitive,
-                    args,
-                )
-                programs_done.add(current_prog)
-                is_symmetric = current_prog != base_program
-                varno = args[0].variable
-                for inp, sol in zip(inputs, solutions):
-                    with chrono.clock("search.variants.enumeration.eval"):
-                        out = evaluator.eval(current_prog, inp)
-                    if is_symmetric and out != sol:
-                        is_symmetric = False
-                        break
-                if is_symmetric:
-                    add_constraint_for(current_prog, "symmetry")
+        for args in produce_all_variants([arguments_per_type[t] for t in arguments]):
+            current_prog = Function(
+                primitive,
+                args,
+            )
+            programs_done.add(current_prog)
+            is_symmetric = current_prog != base_program
+            outputs = []
+            for inp, sol in zip(inputs, solutions):
+                out = our_eval(current_prog, inp)
+                outputs.append(out)
+                if is_symmetric and out != sol:
+                    is_symmetric = False
+            if is_symmetric:
+                add_symmetric(current_prog)
+                merge_equivalence_classes(current_prog, base_program)
+            else:
+                new_equivalence_class(base_program)
+                all_sol[current_prog] = outputs
 
-    ftypes = tqdm.tqdm(sampled_inputs.keys()) if progress else sampled_inputs.keys()
+
+def check_equivalent() -> None:
+    simpler_pruner = UseAllVariablesPruner()
+    ftypes = tqdm.tqdm(sampled_inputs.keys())
     for ftype in ftypes:
         # Add forbidden patterns to speed up search
         dsl.forbidden_patterns = copy.deepcopy(syntaxic_restrictions)
         cfg = CFG.depth_constraint(dsl, ftype, max_depth + 1)
         pcfg = ProbDetGrammar.uniform(cfg)
-        inputs = sampled_inputs[ftype]
 
+        inputs = sampled_inputs[ftype]
         all_sol = all_solutions[ftype.returns()]
 
         cfg_size = cfg.size()
-        done = 0
-        if progress:
-            ftypes.set_postfix_str(f"{done / cfg_size:.0%}")
+        ftypes.set_postfix_str(f"{0 / cfg_size:.0%}")
 
         # ========================
         # Check all programs starting with max depth
         # ========================
-        with chrono.clock("search.invariant.enumeration"):
-            for program in enumerate_prob_grammar(pcfg):
-                done += 1
-                if program in programs_done:
-                    continue
-                is_constant = True
-                my_outputs = []
-                candidates = set(all_sol.keys())
-                with chrono.clock("search.invariant.enumeration.pruning"):
-                    if not simpler_pruner.accept((primitive.type, program)):
-                        continue
-                is_invariant = True
-                is_identity = len(arguments) == 1
-                for i, inp in enumerate(inputs):
-                    with chrono.clock("search.invariant.enumeration.eval"):
-                        out = evaluator.eval(program, inp)
-                    # Update candidates
-                    candidates = {c for c in candidates if all_sol[c][i] == out}
-                    if is_identity and out != inp[0]:
-                        is_identity = False
-                    if is_constant and len(my_outputs) > 0 and my_outputs[-1] != out:
-                        is_constant = False
-                    my_outputs.append(out)
-                    if (
-                        not is_constant
-                        and not is_identity
-                        and len(candidates) == 0
-                        and not in_depth_equivalence_check
-                    ):
-                        break
-                if is_identity:
-                    add_constraint_for(program, "identity")
-                if is_constant:
-                    add_constraint_for(program, "constant")
-                if len(candidates) > 0:
-                    if any(c == primitive for c in candidates):
-                        add_constraint_for(program, "invariant")
-                    else:
-                        add_constraint_for(program, "equivalent")
-                elif in_depth_equivalence_check and not is_identity and not is_constant:
-                    all_sol[program] = my_outputs
-                if done & 256 == 0:
-                    ftypes.set_postfix_str(f"{done / cfg_size:.0%}")
+        for done, program in enumerate(enumerate_prob_grammar(pcfg)):
+            if program in programs_done or not simpler_pruner.accept((ftype, program)):
+                continue
+            is_constant = True
+            my_outputs = []
+            candidates = set(all_sol.keys())
+            is_identity = len(program.used_variables()) == 1
+            for i, inp in enumerate(inputs):
+                out = our_eval(program, inp)
+                # Update candidates
+                candidates = {c for c in candidates if all_sol[c][i] == out}
+                if is_identity and out != inp[0]:
+                    is_identity = False
+                if is_constant and len(my_outputs) > 0 and my_outputs[-1] != out:
+                    is_constant = False
+                my_outputs.append(out)
+            if is_identity:
+                add_constraint_for(program, "identity")
+            elif is_constant:
+                add_constraint_for(program, "constant")
+            elif len(candidates) > 0:
+                merge_equivalence_classes(program, list(candidates)[0])
+                add_constraint_for(program, "equivalent")
+            else:
+                new_equivalence_class(program)
+                all_sol[program] = my_outputs
+            if done & 256 == 0:
+                ftypes.set_postfix_str(f"{done / cfg_size:.0%}")
 
-with chrono.clock("constants"):
+
+def check_constants() -> None:
     types = set(
         primitive.type
         for primitive in dsl.list_primitives
         if not isinstance(primitive.type, Arrow)
     )
     for ty in types:
-        all_evals = {
-            evaluator.eval(p, []) for p in dsl.list_primitives if primitive.type == ty
-        }
+        all_evals = {our_eval(p, []) for p in dsl.list_primitives if p.type == ty}
         # Add forbidden patterns to speed up search
         dsl.forbidden_patterns = copy.deepcopy(syntaxic_restrictions)
-        cfg = CFG.depth_constraint(dsl, primitive.type, max_depth + 1)
+        cfg = CFG.depth_constraint(dsl, ty, max_depth + 1)
         pcfg = ProbDetGrammar.uniform(cfg)
-        with chrono.clock("constants.enumeration"):
-            for program in enumerate_prob_grammar(pcfg):
-                with chrono.clock("constants.enumeration.eval"):
-                    out = evaluator.eval(program, [])
-                if out in all_evals:
-                    constant_program_analysis(program)
-
-specific_reused = 0
-with chrono.clock("pattern"):
-    with chrono.clock("pattern.encode"):
-        all_found: Dict[Tuple, Set[Tuple]] = defaultdict(set)
-        for program in specific_restrictions:
-            prims = tuple(dump_primitives(program))
-            all_found[prims].add(tuple([v.variable for v in vars(program)]))
-    with chrono.clock("pattern.find"):
-        for derivations, all_variants in all_found.items():
-            print("For", derivations, "=>", all_variants)
-            nvars = len(list(all_variants)[0])
-            good = True
-            for comb in itertools.permutations(list(range(nvars))):
-                if comb not in all_variants:
-                    good = False
-                    break
-            if good:
-                specific_reused += len(all_variants)
-                pattern_constraints.append(0)
+        for program in enumerate_prob_grammar(pcfg):
+            out = our_eval(program, [])
+            if out in all_evals:
+                constant_program_analysis(program)
 
 
-print(
-    "Done",
-    chrono.summary(
-        time_formatter=lambda t: f"{int(t*1000)}ms" if not np.isnan(t) else "nan"
-    ),
-)
+def exploit_symmetries() -> None:
+    sym_types = defaultdict(set)
+    name2P = {}
+    for P in dsl.list_primitives:
+        for name, _ in symmetrics:
+            if P.primitive == name:
+                sym_types[P.type.returns()].add(name)
+                name2P[name] = P
+                break
+    for name, forbid_indices in symmetrics:
+        elements = [name]
+        P: Primitive = name2P[name]
+        for i, arg in enumerate(P.type.arguments()):
+            if i in forbid_indices:
+                to_forbid = SYMBOL_FORBIDDEN + ",".join(sym_types[arg])
+                elements.append(to_forbid)
+            else:
+                elements.append(SYMBOL_ANYTHING)
+        pattern_constraints.append(" ".join(elements))
+
+
+init_base_primitives()
+check_symmetries()
+check_equivalent()
+check_constants()
+exploit_symmetries()
+
 print(f"Cache hit rate: {evaluator.cache_hit_rate:.1%}")
 print()
 print("[=== Report ===]")
 for stat_name in stats:
     total = stats[stat_name]["total"]
     if total == 0:
-        print(f"Found no {stat_name} simplification")
+        print(f"Found no {stat_name} program.")
         continue
     ratio = stats[stat_name]["syntaxic"] / total
-    print("Found", total, stat_name, f"with {ratio:.1%} syntaxic")
-
+    print(
+        "Found",
+        total,
+        stat_name,
+        f"{ratio:.1%} of which were translated into constraints.",
+    )
+if len(symmetrics) > 0:
+    print(
+        f"Found {len(symmetrics)} symmetries of which 100% were translated into constraints."
+    )
+else:
+    print("Found no symmetries.")
 print("[=== Results ===]")
-print(f"Found {len(syntaxic_restrictions)} syntaxic restricions.")
-copied_dsl = DSL(
-    {p.primitive: p.type for p in dsl.list_primitives}, syntaxic_restrictions
-)
-max_depth = 4
-all_type_requests = set(task_generator.type2pgrammar.keys())
-dsl.forbidden_patterns = {}
-cfgs = [CFG.depth_constraint(dsl, t, max_depth) for t in all_type_requests]
-reduced_cfgs = [
-    CFG.depth_constraint(copied_dsl, t, max_depth) for t in all_type_requests
-]
-ratios = [
-    (original.size() - red.size()) / original.size()
-    for original, red in zip(cfgs, reduced_cfgs)
-]
 print(
-    f"At depth {max_depth}, it is an average reduction of {np.mean(ratios):.2%} [{np.min(ratios):.1%} -> {np.max(ratios):.1%}] of CFG size"
+    f"Produced {sum(len(x) for x in syntaxic_restrictions.values())} forbidden patterns."
 )
-print("{", end="")
-for k, v in sorted(syntaxic_restrictions.items()):
-    print(f'"{k}": ', '{ "' + '", "'.join(sorted(v)) + '"},', end=" ")
-print("}\n")
-print(f"Found {len(pattern_constraints)} type constraints:")
-print(pattern_constraints)
+print(f"Produced {len(pattern_constraints)} type constraints.")
+
+# SAving
+with open(f"constraints_{dsl_name}.py", "w") as fd:
+    fd.write("forbidden_patterns = {")
+    for k, v in sorted(syntaxic_restrictions.items()):
+        fd.write(f'"{k}":  {{ "' + '", "'.join(sorted(v)) + '"}, ')
+    fd.write("}\n")
+    fd.write("\n")
+    fd.write("pattern_constraints = ")
+    fd.write(str(pattern_constraints))
 print(
-    f"Found {len(specific_restrictions) - specific_reused} specific restricions that could not be added as constraint, impact not computed."
+    f"Found {n_equiv_classes} equivalence classes of which 0% were translated into constraints."
 )
-# print(specific_restrictions)

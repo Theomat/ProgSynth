@@ -396,11 +396,11 @@ if __name__ == "__main__":
 
     new_dsl_file = os.path.join(os.path.dirname(file_path), "deepcoder_pruned.py")
     patterns = [
-        "ZIPWITH[+] ^ZIPWITH[+] _",
-        "ZIPWITH[-] ^ZIPWITH[-] _",
-        "ZIPWITH[*] ^ZIPWITH[*] _",
-        "ZIPWITH[min] ^ZIPWITH[min] _",
-        "ZIPWITH[max] ^ZIPWITH[max] _",
+        "ZIPWITH[+] _ ^ZIPWITH[max],ZIPWITH[-],ZIPWITH[+],ZIPWITH[min],ZIPWITH[*]",
+        "ZIPWITH[-] _ ^ZIPWITH[max],ZIPWITH[-],ZIPWITH[+],ZIPWITH[min],ZIPWITH[*]",
+        "ZIPWITH[*] _ ^ZIPWITH[max],ZIPWITH[-],ZIPWITH[+],ZIPWITH[min],ZIPWITH[*]",
+        "ZIPWITH[min] _ ^ZIPWITH[max],ZIPWITH[-],ZIPWITH[+],ZIPWITH[min],ZIPWITH[*]",
+        "ZIPWITH[max] _ ^ZIPWITH[max],ZIPWITH[-],ZIPWITH[+],ZIPWITH[min],ZIPWITH[*]",
     ]
     new_syntax, _ = produce_new_syntax_for_constraints(
         __primitive_types,

@@ -205,7 +205,10 @@ def produce_pcfgs(
         def __init__(self, size: int) -> None:
             super().__init__()
             self.bigram_layer = GrammarPredictorLayer(
-                size, cfgs, abstractions.cfg_bigram_without_depth, variable_probability
+                size,
+                cfgs,
+                abstractions.cfg_bigram_without_depth_and_equi_prim,
+                variable_probability,
             )
 
             encoder = IOEncoder(encoding_dimension, lexicon)
@@ -299,6 +302,7 @@ def enumerative_search(
         except KeyboardInterrupt:
             break
         pbar.update(1)
+        evaluator.clear_cache()
         # print("Cache hit:", evaluator.cache_hit_rate)
         # print("Programs tried:", trace[len(trace) - 1][2])
         if i % 10 == 0:

@@ -42,9 +42,10 @@ class TensorLogProbDetGrammar(TaggedDetGrammar[Tensor, U, V, W]):
         program: Program,
         start: Optional[Tuple[Type, U]] = None,
     ) -> Tensor:
+        device = self.tags[self.start][list(self.tags[self.start].keys())[0]].device
         return self.reduce_derivations(
             lambda current, S, P, _: current + self.tags[S][P],
-            torch.zeros((1,)),
+            torch.zeros((1,)).to(device),
             program,
             start,
         )
