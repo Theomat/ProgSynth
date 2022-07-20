@@ -10,5 +10,7 @@ Contents
     introduction
     usage
     tutorial
+    examples
+    PBE <examples_pbe>
     contributing
     license
