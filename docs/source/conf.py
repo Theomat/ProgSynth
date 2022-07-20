@@ -18,7 +18,7 @@ extensions = [
     "sphinx.ext.autosummary",
     "sphinx.ext.intersphinx",
     "sphinx.ext.autosectionlabel",
-    "myst_parser"
+    "myst_parser",
 ]
 
 intersphinx_mapping = {
@@ -36,9 +36,9 @@ html_theme = "sphinx_rtd_theme"
 # -- Options for EPUB output
 epub_show_urls = "footnote"
 source_suffix = {
-    '.rst': 'restructuredtext',
-    '.txt': 'markdown',
-    '.md': 'markdown',
+    ".rst": "restructuredtext",
+    ".txt": "markdown",
+    ".md": "markdown",
 }
 # Make sure the target is unique
 autosectionlabel_prefix_document = True
