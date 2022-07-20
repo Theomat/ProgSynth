@@ -205,7 +205,10 @@ def produce_pcfgs(
         def __init__(self, size: int) -> None:
             super().__init__()
             self.bigram_layer = GrammarPredictorLayer(
-                size, cfgs, abstractions.cfg_bigram_without_depth, variable_probability
+                size,
+                cfgs,
+                abstractions.cfg_bigram_without_depth_and_equi_prim,
+                variable_probability,
             )
 
             encoder = IOEncoder(encoding_dimension, lexicon)
