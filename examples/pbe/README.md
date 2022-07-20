@@ -1,4 +1,4 @@
-# Examples
+# PBE Examples
 
 This folder contains ready to use scripts and files that you can leverage to reproduce results from papers for example or to test your new ideas.
 
@@ -14,10 +14,8 @@ This folder contains ready to use scripts and files that you can leverage to rep
   - [Transductions](#transductions)
     - [Downloading SyGus](#downloading-sygus)
 
-
 <!-- tocstop -->
 
-## Programming By Example
 
 - The `dataset_generator.py` loads a dataset, reproduces the task distribution, and generate a new synthetic dataset from scratch.
 - The `dataset_explorer.py` loads a dataset and will provide you with an interactive prompt to explore the dataset. Use `help` to see the list of commands in the interactive prompt.
