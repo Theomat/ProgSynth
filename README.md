@@ -50,7 +50,7 @@ Computing is now done at a large scale in a parallelilized fashion.
 As such frameworks should also adapt: they should scale with more computing power but also leverage the power of parallelization.
 This was taken into account and this is why for most algorithms we provide, we also provide a way to scale with the number of available processors.
 
-For example, the `ConcretePCFG` can be split into disjoint sub `ConcretePCFG` to split the enumeration of the grammar into multiple jobs thus enabling to scale linearly with the numbers of workers.
+For example, you can split probabilistic grammars into disjoint sub grammars to split the enumeration of the grammar into multiple jobs thus enabling to scale linearly with the numbers of workers.
 
 ## Installation
 
@@ -84,8 +84,10 @@ sphinx-build -b html docs/source docs/build/html
 ## Troubleshooting
 
 There are some known issues:
+
 - **seed = 0** is the **same as no seeding**.
 - if you get an error after installation try to update/upgrade ``numpy``, it is often due to a discrepancy between the version with which ``vose`` is compiled and the version the environment is running.
+- some dependencies may be missing depending on the DSL you want to use, running any example script with -h will ist you the list of available DSL with your current installation.
 
 ## The Team
 
