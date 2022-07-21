@@ -214,7 +214,7 @@ def __process__(
         )
         args.append(new_el)
     # If there are only stars there's nothing to do at our level
-    if all(len(arg) == 1 and arg[0] == "*" for arg in args):
+    if all(len(arg) == 1 and arg[0] == SYMBOL_ANYTHING for arg in args):
         return function, type_request
 
     # print("\t" * level, "processing:", constraint)
