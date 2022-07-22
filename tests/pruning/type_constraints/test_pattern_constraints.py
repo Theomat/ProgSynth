@@ -56,6 +56,3 @@ def test_constraints() -> None:
     assert p1 not in cfg
     assert p2 not in cfg
     assert p3 not in cfg
-
-
-test_produce()
