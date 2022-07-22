@@ -25,20 +25,18 @@ constraints = [
     "or ^or,and ^and",
     "+ ^+,0 ^0",
     "+ $(var0) *",
-    "not ^not,and",
-    "* ^*,0,1 ^0,1",
     "- * ^0",
 ]
-depth = 5
+depth = 4
 type_request = FunctionType(INT, INT, INT)
 
 
 def test_produce() -> None:
     old_size = -1
 
-    for _ in range(4):
+    for _ in range(2):
         new_syntax, new_tr = produce_new_syntax_for_constraints(
-            syntax, constraints, type_request, progress=False
+            syntax, constraints, type_request, progress=True
         )
         size = CFG.depth_constraint(DSL(new_syntax), new_tr, depth).size()
         if old_size == -1:
@@ -58,3 +56,6 @@ def test_constraints() -> None:
     assert p1 not in cfg
     assert p2 not in cfg
     assert p3 not in cfg
+
+
+test_produce()
