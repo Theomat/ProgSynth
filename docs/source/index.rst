@@ -12,5 +12,6 @@ Contents
     tutorial
     examples
     PBE <examples_pbe>
+    pruning
     contributing
     license
