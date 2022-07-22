@@ -428,6 +428,10 @@ def clean(
     for P in deletable_candidates:
         del syntax[P]
 
+    # Do one merge for each primitive (only useful if no type merge occurs)
+    for p in all_primitives:
+        __merge_for__(syntax, p)
+
     # Gather equivalent type (by name up to @) in groups
     type_classes = {}
     for t in interesting_types:
@@ -442,7 +446,7 @@ def clean(
             ],
             key=str,
         )
-
+    # Try merging types
     merged_types = True
     while merged_types:
         merged_types = False
