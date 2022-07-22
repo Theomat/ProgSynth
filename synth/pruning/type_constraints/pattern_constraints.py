@@ -5,6 +5,7 @@ import tqdm
 
 from synth.syntax import Type, Arrow, FunctionType
 from synth.pruning.type_constraints.utils import (
+    SYMBOL_DUPLICATA,
     SYMBOL_VAR_EXPR,
     Syntax,
     map_type,
@@ -94,9 +95,12 @@ def __add_primitive_constraint__(
     level: int = 0,
 ) -> str:
     prim = content.strip("()")
-    for primitive in sorted(syntax.equivalent_primitives(prim)):
+    equiv = [prim]
+    if SYMBOL_DUPLICATA not in prim:
+        equiv = sorted(syntax.equivalent_primitives(prim))
+    for primitive in equiv:
         ptype = syntax[primitive]
-        rtype = ptype.returns() if isinstance(ptype, Arrow) else ptype
+        rtype = ptype.returns()
         new_type_needed = any(
             get_prefix(p) != get_prefix(prim) for p in syntax.producers_of(rtype)
         )
@@ -106,7 +110,12 @@ def __add_primitive_constraint__(
             ntype = new_return_type
             if isinstance(ptype, Arrow):
                 ntype = FunctionType(*ptype.arguments(), new_return_type)
-            new_primitive = syntax.duplicate_primitive(primitive, ntype)
+            # We do not need a duplicate
+            if SYMBOL_DUPLICATA in prim:
+                new_primitive = primitive
+                syntax[primitive] = ntype
+            else:
+                new_primitive = syntax.duplicate_primitive(primitive, ntype)
 
             if primitive == prim:
                 prim = new_primitive
@@ -132,17 +141,15 @@ def __add_primitives_constraint__(
         primitives = syntax.filter_out_forbidden(parent, primitives)
     if len(primitives) <= 0:
         return
-    # print("\t" * level, "\tcontent:", content)
-    # print("\t" * level, "\tprimitives:", primitives)
+    # print("\t" * level, "content:", content)
+    # print("\t" * level, "primitives:", primitives)
     # 1) Simply do it for all primitives in the list
     new_primitives = [
-        __add_primitive_constraint__(p, parent, argno, syntax, level)
+        __add_primitive_constraint__(p, parent, argno, syntax, level + 1)
         for p in primitives
     ]
     # 2) Make them coherent
-    ttype = syntax[new_primitives[0]]
-    if isinstance(ttype, Arrow):
-        ttype = ttype.returns()
+    ttype = syntax[new_primitives[0]].returns()
     for new_primitive in new_primitives:
         ntype = syntax[new_primitive]
         syntax[new_primitive] = (
@@ -150,22 +157,24 @@ def __add_primitives_constraint__(
             if isinstance(ntype, Arrow)
             else ttype
         )
+        # print("\t" * level, "\tCoherent:", new_primitive, ":", syntax[new_primitive])
+
     # Update parent signature
     parent_type = syntax[parent]
-    assert isinstance(parent_type, Arrow)
     old_types = parent_type.arguments() + [parent_type.returns()]
     old_types[argno] = ttype
     syntax[parent] = FunctionType(*old_types)
+    # print("\t" * level, "parent:", parent, ":", syntax[parent])
 
     # Now small thing to take into account
     # if parent is the same as one of our primitive we need to fix the children
     for p in new_primitives:
-        if get_prefix(p) == get_prefix(parent):
+        if get_prefix(p) == parent:
             ptype = syntax[p]
-            assert isinstance(ptype, Arrow)
             old_types = ptype.arguments() + [ptype.returns()]
             old_types[argno] = ttype
             syntax[p] = FunctionType(*old_types)
+            # print("\t" * level, "\tRefix:", p, ":", syntax[p])
 
 
 def __add_forbidden_constraint__(
@@ -199,31 +208,43 @@ def __process__(
     constraint: TList[str],
     syntax: Syntax,
     nconstraints: Dict[str, int],
+    parents: TList[str],
     type_request: Optional[Arrow],
     level: int = 0,
 ) -> Tuple[TList[str], Optional[Arrow]]:
     # If one element then there is nothing to do.
     if len(constraint) == 1:
         return constraint, type_request
+    # If we have parents then we need to keep the original use of all of these primitives and make a copy of them that can only be used the right way
     function = sorted(syntax.equivalent_primitives(constraint.pop(0)))
+    if len(parents) > 0:
+        function = [syntax.duplicate_primitive(f, syntax[f]) for f in function]
     args = []
     # We need to process all arguments first
     for arg in constraint:
         new_el, type_request = __process__(
-            parse_specification(arg), syntax, nconstraints, type_request, level + 1
+            parse_specification(arg),
+            syntax,
+            nconstraints,
+            function,
+            type_request,
+            level + 1,
         )
         args.append(new_el)
     # If there are only stars there's nothing to do at our level
     if all(len(arg) == 1 and arg[0] == SYMBOL_ANYTHING for arg in args):
         return function, type_request
 
-    # print("\t" * level, "processing:", constraint)
+    # print("\t" * level, "functions:", function)
+    # print("\t" * level, "processing:", args)
     for parent in function:
         fun_tr = syntax[get_prefix(parent)]
         assert isinstance(fun_tr, Arrow)
         for argno, (eq_args, arg_type) in enumerate(zip(args, fun_tr.arguments())):
             if len(eq_args) > 1:
-                __add_primitives_constraint__(content, parent, argno, syntax, level)
+                __add_primitives_constraint__(
+                    SYMBOL_SEPARATOR.join(eq_args), parent, argno, syntax, level
+                )
             else:
                 content: str = eq_args[0]
                 if content == SYMBOL_ANYTHING:
@@ -272,7 +293,7 @@ def produce_new_syntax_for_constraints(
 
     for constraint in parsed_constraints:
         _, type_request = __process__(
-            constraint, new_syntax, defaultdict(int), type_request
+            constraint, new_syntax, defaultdict(int), [], type_request
         )
         if progress:
             pbar.update(1)
