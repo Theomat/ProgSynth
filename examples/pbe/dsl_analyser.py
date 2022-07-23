@@ -156,7 +156,7 @@ else:
 # ================================
 # Load dataset & Task Generator
 # ================================
-syntaxic_restrictions: Dict[str, Set[str]] = defaultdict(set)
+syntaxic_restrictions: Dict[Tuple[str, int], Set[str]] = defaultdict(set)
 specific_restrictions = set()
 pattern_constraints = []
 
@@ -244,7 +244,7 @@ def forbid_first_derivation(program: Program) -> bool:
     pattern = dump_primitives(program)
     if len(pattern) != 2:
         return False
-    syntaxic_restrictions[pattern[0]].add(pattern[1])
+    syntaxic_restrictions[(pattern[0], 0)].add(pattern[1])
     return True
 
 
@@ -455,15 +455,10 @@ def exploit_symmetries() -> None:
                 name2P[name] = P
                 break
     for name, forbid_indices in symmetrics:
-        elements = [name]
         P: Primitive = name2P[name]
         for i, arg in enumerate(P.type.arguments()):
             if i in forbid_indices:
-                to_forbid = SYMBOL_FORBIDDEN + ",".join(sym_types[arg])
-                elements.append(to_forbid)
-            else:
-                elements.append(SYMBOL_ANYTHING)
-        pattern_constraints.append(" ".join(elements))
+                syntaxic_restrictions[(P.primitive, i)] |= sym_types[arg]
 
 
 init_base_primitives()

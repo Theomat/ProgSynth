@@ -137,8 +137,7 @@ def __add_primitives_constraint__(
     level: int = 0,
 ) -> None:
     primitives = parse_choices(content)
-    if argno == 0:
-        primitives = syntax.filter_out_forbidden(parent, primitives)
+    primitives = syntax.filter_out_forbidden(parent, argno, primitives)
     if len(primitives) <= 0:
         return
     # print("\t" * level, "content:", content)
@@ -188,8 +187,7 @@ def __add_forbidden_constraint__(
 ) -> None:
     # print("\t" * level, "\tcontent:", content)
     primitives = parse_choices(content[1:])
-    if argno == 0:
-        primitives = syntax.filter_out_forbidden(parent, primitives)
+    primitives = syntax.filter_out_forbidden(parent, argno, primitives)
     if len(primitives) == 0:
         return
     all_forbidden = set()
@@ -272,7 +270,7 @@ def produce_new_syntax_for_constraints(
     syntax: Dict[str, Type],
     constraints: Iterable[str],
     type_request: Optional[Arrow] = None,
-    forbidden: Optional[Dict[str, Set[str]]] = None,
+    forbidden: Optional[Dict[Tuple[str, int], Set[str]]] = None,
     progress: bool = True,
 ) -> Tuple[Dict[str, Type], Optional[Arrow]]:
     """

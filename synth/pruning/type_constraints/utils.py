@@ -64,7 +64,7 @@ class Syntax:
     def __init__(
         self,
         type_constraints: Dict[str, Type],
-        forbidden: Optional[Dict[str, Set[str]]] = None,
+        forbidden: Optional[Dict[Tuple[str, int], Set[str]]] = None,
     ) -> None:
         self.syntax = type_constraints
         self.forbidden_patterns = forbidden or {}
@@ -170,9 +170,9 @@ class Syntax:
         self.producers_by_type[to].add(name)
 
     def filter_out_forbidden(
-        self, parent: str, all_forbidden: Iterable[str]
+        self, parent: str, argno: int, all_forbidden: Iterable[str]
     ) -> TList[str]:
-        forbidden = self.forbidden_patterns.get(parent, set())
+        forbidden = self.forbidden_patterns.get((parent, argno), set())
         return [P for P in all_forbidden if get_prefix(P) not in forbidden]
 
 

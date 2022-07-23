@@ -94,7 +94,7 @@ def produce_new_syntax_for_sketch(
     syntax: Dict[str, Type],
     sketch: str,
     type_request: Arrow,
-    forbidden: Optional[Dict[str, Set[str]]] = None,
+    forbidden: Optional[Dict[Tuple[str, int], Set[str]]] = None,
 ) -> Tuple[Dict[str, Type], Arrow]:
     """
     Add type constraints on the specified syntax in order to enforce the given sketch.
@@ -104,7 +104,6 @@ def produce_new_syntax_for_sketch(
     _, type_request = __process__(
         sketch_spec, new_syntax, defaultdict(int), type_request
     )
-    print(type_request)
     clean(new_syntax, type_request)
     return new_syntax.syntax, type_request
 

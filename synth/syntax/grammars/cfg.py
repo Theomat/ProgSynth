@@ -172,9 +172,9 @@ class CFG(TTCFG[CFGState, NoneType]):
                     predecessors = non_terminal[1][0][0]
                     last_pred = predecessors.last() if len(predecessors) > 0 else None
                     forbidden = forbidden_sets.get(
-                        last_pred[0].primitive
+                        (last_pred[0].primitive, last_pred[1])
                         if last_pred and isinstance(last_pred[0], Primitive)
-                        else "",
+                        else ("", 0),
                         set(),
                     )
                     # DSL Primitives
