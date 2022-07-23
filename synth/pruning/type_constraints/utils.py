@@ -64,7 +64,7 @@ class Syntax:
     def __init__(
         self,
         type_constraints: Dict[str, Type],
-        forbidden: Optional[Dict[str, Set[str]]] = None,
+        forbidden: Optional[Dict[Tuple[str, int], Set[str]]] = None,
     ) -> None:
         self.syntax = type_constraints
         self.forbidden_patterns = forbidden or {}
@@ -170,9 +170,9 @@ class Syntax:
         self.producers_by_type[to].add(name)
 
     def filter_out_forbidden(
-        self, parent: str, all_forbidden: Iterable[str]
+        self, parent: str, argno: int, all_forbidden: Iterable[str]
     ) -> TList[str]:
-        forbidden = self.forbidden_patterns.get(parent, set())
+        forbidden = self.forbidden_patterns.get((parent, argno), set())
         return [P for P in all_forbidden if get_prefix(P) not in forbidden]
 
 
@@ -405,17 +405,34 @@ def clean(
     var_types = set()
     if type_request and isinstance(type_request, Arrow):
         var_types = set(type_request.arguments())
+        var_types.add(type_request.returns())
     interesting_types |= var_types
-    for P in list(syntax.syntax.keys()):
-        ptype = syntax[P]
-        if isinstance(ptype, Arrow) and (
-            any(tt not in interesting_types for tt in ptype.arguments())
-            or ptype.returns() not in interesting_types
-        ):
-            del syntax[P]
-        elif not isinstance(ptype, Arrow) and ptype not in interesting_types:
-            del syntax[P]
-    # Gather equivalent(by name up to @) in groups
+    deletable_candidates = set(syntax.syntax.keys())
+    ntypes = len(interesting_types)
+    old_n = 0
+    while ntypes > old_n:
+        old_n = ntypes
+        new_deletable = set()
+        for P in deletable_candidates:
+            ptype = syntax[P]
+            # P cannot be used
+            if any(tt not in interesting_types for tt in ptype.arguments()):
+                new_deletable.add(P)
+            else:
+                for tt in ptype.arguments():
+                    interesting_types.add(tt)
+                interesting_types.add(ptype.returns())
+        deletable_candidates = new_deletable
+        ntypes = len(interesting_types)
+    # Now we are sure that these primitives can be deleted
+    for P in deletable_candidates:
+        del syntax[P]
+
+    # Do one merge for each primitive (only useful if no type merge occurs)
+    for p in all_primitives:
+        __merge_for__(syntax, p)
+
+    # Gather equivalent type (by name up to @) in groups
     type_classes = {}
     for t in interesting_types:
         prefix = get_prefix(str(t))
@@ -429,7 +446,7 @@ def clean(
             ],
             key=str,
         )
-
+    # Try merging types
     merged_types = True
     while merged_types:
         merged_types = False

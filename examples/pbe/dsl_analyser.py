@@ -1,5 +1,5 @@
 from collections import defaultdict
-import itertools
+import json
 import sys
 from typing import Any, Dict, Generator, List, Set, Tuple, TypeVar
 import copy
@@ -11,7 +11,7 @@ import numpy as np
 from dsl_loader import add_dsl_choice_arg, load_DSL
 
 from synth import Dataset, PBE
-from synth.generation.sampler import ListSampler, Sampler
+from synth.generation.sampler import Sampler
 from synth.pbe import reproduce_dataset
 from synth.pruning import UseAllVariablesPruner
 from synth.semantic.evaluator import DSLEvaluatorWithConstant
@@ -20,7 +20,7 @@ from synth.syntax import (
     CFG,
     ProbDetGrammar,
     enumerate_prob_grammar,
-    DSL,
+    PrimitiveType,
     Function,
     Primitive,
     Program,
@@ -29,7 +29,6 @@ from synth.syntax import (
     Type,
 )
 from synth.pruning.type_constraints.utils import SYMBOL_ANYTHING, SYMBOL_FORBIDDEN
-from synth.syntax.type_system import STRING, PrimitiveType
 from synth.utils import chrono
 
 
@@ -157,7 +156,7 @@ else:
 # ================================
 # Load dataset & Task Generator
 # ================================
-syntaxic_restrictions: Dict[str, Set[str]] = defaultdict(set)
+syntaxic_restrictions: Dict[Tuple[str, int], Set[str]] = defaultdict(set)
 specific_restrictions = set()
 pattern_constraints = []
 
@@ -245,7 +244,7 @@ def forbid_first_derivation(program: Program) -> bool:
     pattern = dump_primitives(program)
     if len(pattern) != 2:
         return False
-    syntaxic_restrictions[pattern[0]].add(pattern[1])
+    syntaxic_restrictions[(pattern[0], 0)].add(pattern[1])
     return True
 
 
@@ -456,15 +455,10 @@ def exploit_symmetries() -> None:
                 name2P[name] = P
                 break
     for name, forbid_indices in symmetrics:
-        elements = [name]
         P: Primitive = name2P[name]
         for i, arg in enumerate(P.type.arguments()):
             if i in forbid_indices:
-                to_forbid = SYMBOL_FORBIDDEN + ",".join(sym_types[arg])
-                elements.append(to_forbid)
-            else:
-                elements.append(SYMBOL_ANYTHING)
-        pattern_constraints.append(" ".join(elements))
+                syntaxic_restrictions[(P.primitive, i)] |= sym_types[arg]
 
 
 init_base_primitives()
@@ -500,7 +494,7 @@ print(
 )
 print(f"Produced {len(pattern_constraints)} type constraints.")
 
-# SAving
+# Saving
 with open(f"constraints_{dsl_name}.py", "w") as fd:
     fd.write("forbidden_patterns = {")
     for k, v in sorted(syntaxic_restrictions.items()):
@@ -509,6 +503,16 @@ with open(f"constraints_{dsl_name}.py", "w") as fd:
     fd.write("\n")
     fd.write("pattern_constraints = ")
     fd.write(str(pattern_constraints))
+
+classes = [get_equivalence_class(i) for i in range(n_equiv_classes)]
+classes = [l for l in classes if len(l) > 1]
+with open("equivalent_classes_{dsl_name}.json", "w") as fd:
+    my_list = [list(map(str, l)) for l in classes]
+    json.dump(my_list, fd)
+
 print(
-    f"Found {n_equiv_classes} equivalence classes of which 0% were translated into constraints."
+    f"Found {len(classes)} equivalence classes of which 0% were translated into constraints."
+)
+print(
+    f"Produced:\n\t- constraints_{dsl_name}.py: which contains the encoded constraints\n\t- equivalent_classes_{dsl_name}.json: which contains the equivalence classes"
 )

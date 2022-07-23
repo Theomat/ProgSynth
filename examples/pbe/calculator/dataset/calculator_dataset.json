@@ -1,6 +1,6 @@
 [
     {
-        "program": "INT|INT|+,0,1",
+        "program": "(+ var0 var1)",
         "examples": [
             {
                 "inputs": [2, 6],
@@ -33,7 +33,7 @@
         ]
     },
     {
-        "program": "INT|2|+,0,1",
+        "program": "(+ var0 2)",
         "examples": [
             {
                 "inputs": [0, 45.0],
@@ -59,7 +59,7 @@
         ]
     },
     {
-        "program": "FLOAT|2|int2float,1|-,0,2",
+        "program": "(- var0 (int2float 2))",
         "examples": [
             {
                 "inputs": [0.0, 0],
@@ -85,7 +85,7 @@
         ]
     },
     {
-        "program": "FLOAT|FLOAT|-,0,1",
+        "program": "(- var0 var1)",
         "examples": [
             {
                 "inputs": [0.0, 0.1],
@@ -111,7 +111,7 @@
         ]
     },
     {
-        "program": "INT|FLOAT|int2float,0|-,2,1",
+        "program": "(- (int2float var0) var1)",
         "examples": [
             {
                 "inputs": [2, 4.1],
@@ -137,7 +137,7 @@
         ]
     },
     {
-        "program": "FLOAT|INT|int2float,1|-,2,0",
+        "program": "(- (int2float var1) var0)",
         "examples": [
             {
                 "inputs": [2.0, 4],
@@ -163,7 +163,7 @@
         ]
     },
     {
-        "program": "INT|INT|-,0,1",
+        "program": "(- var0 var1)",
         "examples": [
             {
                 "inputs": [2, 4],

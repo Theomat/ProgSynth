@@ -47,7 +47,6 @@ __dsl_funcs: Dict[str, Callable[[bool], Optional[SimpleNamespace]]] = {
     "deepcoder.raw": __base_loader(
         "deepcoder.deepcoder", [("dsl_raw", "dsl"), "evaluator", "lexicon"]
     ),
-    "deepcoder.pruned": __base_loader("deepcoder.deepcoder_pruned"),
     "dreamcoder": __base_loader("dreamcoder.dreamcoder"),
     "regexp": __base_loader(
         "regexp.regexp",

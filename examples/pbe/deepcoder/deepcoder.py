@@ -120,7 +120,7 @@ __primitive_types = {
 
 
 __forbidden_patterns = {
-    "COUNT[<0]": {
+    "('COUNT[<0]', 0)": {
         "FILTER[<0]",
         "FILTER[>0]",
         "MAP[**2]",
@@ -132,7 +132,7 @@ __forbidden_patterns = {
         "REVERSE",
         "SORT",
     },
-    "COUNT[>0]": {
+    "('COUNT[>0]', 0)": {
         "FILTER[<0]",
         "FILTER[>0]",
         "MAP[**2]",
@@ -144,23 +144,7 @@ __forbidden_patterns = {
         "REVERSE",
         "SORT",
     },
-    "COUNT[EVEN]": {
-        "FILTER[<0]",
-        "FILTER[>0]",
-        "FILTER[EVEN]",
-        "FILTER[ODD]",
-        "MAP[**2]",
-        "MAP[*-1]",
-        "MAP[*2]",
-        "MAP[*3]",
-        "MAP[*4]",
-        "MAP[+1]",
-        "MAP[-1]",
-        "REVERSE",
-        "SCAN1L[+]",
-        "SORT",
-    },
-    "COUNT[ODD]": {
+    "('COUNT[EVEN]', 0)": {
         "FILTER[<0]",
         "FILTER[>0]",
         "FILTER[EVEN]",
@@ -176,7 +160,23 @@ __forbidden_patterns = {
         "SCAN1L[+]",
         "SORT",
     },
-    "FILTER[<0]": {
+    "('COUNT[ODD]', 0)": {
+        "FILTER[<0]",
+        "FILTER[>0]",
+        "FILTER[EVEN]",
+        "FILTER[ODD]",
+        "MAP[**2]",
+        "MAP[*-1]",
+        "MAP[*2]",
+        "MAP[*3]",
+        "MAP[*4]",
+        "MAP[+1]",
+        "MAP[-1]",
+        "REVERSE",
+        "SCAN1L[+]",
+        "SORT",
+    },
+    "('FILTER[<0]', 0)": {
         "FILTER[<0]",
         "FILTER[>0]",
         "FILTER[EVEN]",
@@ -186,8 +186,8 @@ __forbidden_patterns = {
         "MAP[*3]",
         "SORT",
     },
-    "FILTER[>0]": {"FILTER[<0]", "FILTER[>0]", "MAP[**2]", "MAP[*2]", "SORT"},
-    "FILTER[EVEN]": {
+    "('FILTER[>0]', 0)": {"FILTER[<0]", "FILTER[>0]", "MAP[**2]", "MAP[*2]", "SORT"},
+    "('FILTER[EVEN]', 0)": {
         "FILTER[>0]",
         "FILTER[EVEN]",
         "FILTER[ODD]",
@@ -196,7 +196,7 @@ __forbidden_patterns = {
         "MAP[*4]",
         "SORT",
     },
-    "FILTER[ODD]": {
+    "('FILTER[ODD]', 0)": {
         "FILTER[<0]",
         "FILTER[>0]",
         "FILTER[EVEN]",
@@ -210,7 +210,7 @@ __forbidden_patterns = {
         "REVERSE",
         "SORT",
     },
-    "HEAD": {
+    "('HEAD', 0)": {
         "MAP[**2]",
         "MAP[*2]",
         "REVERSE",
@@ -221,7 +221,7 @@ __forbidden_patterns = {
         "SCAN1L[min]",
         "SORT",
     },
-    "LENGTH": {
+    "('LENGTH', 0)": {
         "FILTER[<0]",
         "FILTER[>0]",
         "FILTER[EVEN]",
@@ -244,8 +244,8 @@ __forbidden_patterns = {
         "SCAN1L[min]",
         "SORT",
     },
-    "MAP[**2]": {"FILTER[EVEN]", "MAP[**2]", "MAP[*-1]", "MAP[*2]"},
-    "MAP[*-1]": {
+    "('MAP[**2]', 0)": {"FILTER[EVEN]", "MAP[**2]", "MAP[*-1]", "MAP[*2]"},
+    "('MAP[*-1]', 0)": {
         "FILTER[<0]",
         "FILTER[EVEN]",
         "MAP[**2]",
@@ -257,7 +257,7 @@ __forbidden_patterns = {
         "SCAN1L[max]",
         "SCAN1L[min]",
     },
-    "MAP[*2]": {
+    "('MAP[*2]', 0)": {
         "FILTER[<0]",
         "FILTER[>0]",
         "MAP[**2]",
@@ -271,8 +271,8 @@ __forbidden_patterns = {
         "SCAN1L[min]",
         "SORT",
     },
-    "MAP[*3]": {"FILTER[>0]", "FILTER[EVEN]", "MAP[**2]", "MAP[*2]", "SORT"},
-    "MAP[*4]": {
+    "('MAP[*3]', 0)": {"FILTER[>0]", "FILTER[EVEN]", "MAP[**2]", "MAP[*2]", "SORT"},
+    "('MAP[*4]', 0)": {
         "FILTER[<0]",
         "FILTER[>0]",
         "MAP[**2]",
@@ -285,7 +285,7 @@ __forbidden_patterns = {
         "SCAN1L[min]",
         "SORT",
     },
-    "MAP[+1]": {
+    "('MAP[+1]', 0)": {
         "FILTER[ODD]",
         "MAP[**2]",
         "MAP[*-1]",
@@ -296,7 +296,7 @@ __forbidden_patterns = {
         "SCAN1L[min]",
         "SORT",
     },
-    "MAP[-1]": {
+    "('MAP[-1]', 0)": {
         "FILTER[EVEN]",
         "FILTER[ODD]",
         "MAP[**2]",
@@ -308,7 +308,7 @@ __forbidden_patterns = {
         "SCAN1L[min]",
         "SORT",
     },
-    "MAP[/2]": {
+    "('MAP[/2]', 0)": {
         "MAP[**2]",
         "MAP[*2]",
         "MAP[*4]",
@@ -317,7 +317,7 @@ __forbidden_patterns = {
         "SCAN1L[min]",
         "SORT",
     },
-    "MAP[/3]": {
+    "('MAP[/3]', 0)": {
         "MAP[**2]",
         "MAP[*-1]",
         "MAP[*2]",
@@ -329,7 +329,7 @@ __forbidden_patterns = {
         "SCAN1L[min]",
         "SORT",
     },
-    "MAP[/4]": {
+    "('MAP[/4]', 0)": {
         "MAP[**2]",
         "MAP[*-1]",
         "MAP[*2]",
@@ -339,9 +339,23 @@ __forbidden_patterns = {
         "SCAN1L[min]",
         "SORT",
     },
-    "MAXIMUM": {"MAP[**2]", "MAP[*2]", "REVERSE", "SCAN1L[max]", "SCAN1L[min]", "SORT"},
-    "MINIMUM": {"MAP[**2]", "MAP[*2]", "REVERSE", "SCAN1L[max]", "SCAN1L[min]", "SORT"},
-    "REVERSE": {
+    "('MAXIMUM', 0)": {
+        "MAP[**2]",
+        "MAP[*2]",
+        "REVERSE",
+        "SCAN1L[max]",
+        "SCAN1L[min]",
+        "SORT",
+    },
+    "('MINIMUM', 0)": {
+        "MAP[**2]",
+        "MAP[*2]",
+        "REVERSE",
+        "SCAN1L[max]",
+        "SCAN1L[min]",
+        "SORT",
+    },
+    "('REVERSE', 0)": {
         "FILTER[<0]",
         "FILTER[>0]",
         "FILTER[EVEN]",
@@ -355,14 +369,20 @@ __forbidden_patterns = {
         "REVERSE",
         "SCAN1L[min]",
     },
-    "SCAN1L[*]": {"MAP[**2]", "MAP[*2]"},
-    "SCAN1L[+]": {"MAP[**2]", "MAP[*-1]", "MAP[*2]", "MAP[*3]"},
-    "SCAN1L[-]": {"MAP[**2]", "MAP[*2]", "MAP[*3]"},
-    "SCAN1L[max]": {"MAP[**2]", "MAP[*2]", "MAP[*3]", "SCAN1L[max]", "SORT"},
-    "SCAN1L[min]": {"MAP[**2]", "MAP[*2]", "MAP[*3]", "SCAN1L[max]", "SCAN1L[min]"},
-    "SORT": {"MAP[**2]", "MAP[*2]", "REVERSE", "SCAN1L[max]", "SORT"},
-    "SUM": {"MAP[**2]", "MAP[*2]", "REVERSE", "SORT"},
-    "TAIL": {
+    "('SCAN1L[*]', 0)": {"MAP[**2]", "MAP[*2]"},
+    "('SCAN1L[+]', 0)": {"MAP[**2]", "MAP[*-1]", "MAP[*2]", "MAP[*3]"},
+    "('SCAN1L[-]', 0)": {"MAP[**2]", "MAP[*2]", "MAP[*3]"},
+    "('SCAN1L[max]', 0)": {"MAP[**2]", "MAP[*2]", "MAP[*3]", "SCAN1L[max]", "SORT"},
+    "('SCAN1L[min]', 0)": {
+        "MAP[**2]",
+        "MAP[*2]",
+        "MAP[*3]",
+        "SCAN1L[max]",
+        "SCAN1L[min]",
+    },
+    "('SORT', 0)": {"MAP[**2]", "MAP[*2]", "REVERSE", "SCAN1L[max]", "SORT"},
+    "('SUM', 0)": {"MAP[**2]", "MAP[*2]", "REVERSE", "SORT"},
+    "('TAIL', 0)": {
         "MAP[**2]",
         "MAP[*2]",
         "REVERSE",
@@ -371,9 +391,11 @@ __forbidden_patterns = {
         "SCAN1L[min]",
         "SORT",
     },
+    "('ZIPWITH[*]', 1)": {"ZIPWITH[*]", "ZIPWITH[+]", "ZIPWITH[max]", "ZIPWITH[min]"},
+    "('ZIPWITH[+]', 1)": {"ZIPWITH[*]", "ZIPWITH[+]", "ZIPWITH[max]", "ZIPWITH[min]"},
+    "('ZIPWITH[max]', 1)": {"ZIPWITH[*]", "ZIPWITH[+]", "ZIPWITH[max]", "ZIPWITH[min]"},
+    "('ZIPWITH[min]', 1)": {"ZIPWITH[*]", "ZIPWITH[+]", "ZIPWITH[max]", "ZIPWITH[min]"},
 }
-
-
 dsl = DSL(__primitive_types, __forbidden_patterns)
 dsl_raw = DSL(__primitive_types)
 evaluator = DSLEvaluator(__semantics)
@@ -381,47 +403,47 @@ evaluator.skip_exceptions.add(OverflowError)
 lexicon = list(range(-256, 256 + 1))
 
 
-if __name__ == "__main__":
-    import os
-    from synth.pruning import (
-        produce_new_syntax_for_constraints,
-        export_syntax_to_python,
-    )
+# if __name__ == "__main__":
+#     import os
+#     from synth.pruning import (
+#         produce_new_syntax_for_constraints,
+#         export_syntax_to_python,
+#     )
 
-    file_path = os.path.realpath(__file__)
+#     file_path = os.path.realpath(__file__)
 
-    content = ""
-    with open(file_path) as fd:
-        content = fd.read()
+#     content = ""
+#     with open(file_path) as fd:
+#         content = fd.read()
 
-    new_dsl_file = os.path.join(os.path.dirname(file_path), "deepcoder_pruned.py")
-    patterns = [
-        "ZIPWITH[+] _ ^ZIPWITH[max],ZIPWITH[-],ZIPWITH[+],ZIPWITH[min],ZIPWITH[*]",
-        "ZIPWITH[-] _ ^ZIPWITH[max],ZIPWITH[-],ZIPWITH[+],ZIPWITH[min],ZIPWITH[*]",
-        "ZIPWITH[*] _ ^ZIPWITH[max],ZIPWITH[-],ZIPWITH[+],ZIPWITH[min],ZIPWITH[*]",
-        "ZIPWITH[min] _ ^ZIPWITH[max],ZIPWITH[-],ZIPWITH[+],ZIPWITH[min],ZIPWITH[*]",
-        "ZIPWITH[max] _ ^ZIPWITH[max],ZIPWITH[-],ZIPWITH[+],ZIPWITH[min],ZIPWITH[*]",
-    ]
-    new_syntax, _ = produce_new_syntax_for_constraints(
-        __primitive_types,
-        patterns,
-        forbidden=__forbidden_patterns,
-        progress=True,
-    )
-    with open(new_dsl_file, "w") as fd:
-        p_index = content.index("__primitive_types")
-        fd.write("from synth.semantic.evaluator import auto_complete_semantics\n")
-        fd.write("from synth.syntax import PrimitiveType\n")
-        fd.write(content[:p_index])
-        fd.write(
-            export_syntax_to_python(new_syntax, "__primitive_types").replace(
-                "int", "INT"
-            )
-        )
-        forbidden_index = content.index("__forbidden", p_index)
-        ev_index = content.index("evaluator = ", forbidden_index)
-        fd.write("\n")
-        fd.write(content[forbidden_index:ev_index])
-        fd.write("auto_complete_semantics(__primitive_types.keys(), __semantics)\n")
-        end_index = content.index('if __name__ == "__main__":', ev_index)
-        fd.write(content[ev_index:end_index])
+#     new_dsl_file = os.path.join(os.path.dirname(file_path), "deepcoder_pruned.py")
+#     patterns = [
+#         "ZIPWITH[+] _ ^ZIPWITH[max],ZIPWITH[-],ZIPWITH[+],ZIPWITH[min],ZIPWITH[*]",
+#         "ZIPWITH[-] _ ^ZIPWITH[max],ZIPWITH[-],ZIPWITH[+],ZIPWITH[min],ZIPWITH[*]",
+#         "ZIPWITH[*] _ ^ZIPWITH[max],ZIPWITH[-],ZIPWITH[+],ZIPWITH[min],ZIPWITH[*]",
+#         "ZIPWITH[min] _ ^ZIPWITH[max],ZIPWITH[-],ZIPWITH[+],ZIPWITH[min],ZIPWITH[*]",
+#         "ZIPWITH[max] _ ^ZIPWITH[max],ZIPWITH[-],ZIPWITH[+],ZIPWITH[min],ZIPWITH[*]",
+#     ]
+#     new_syntax, _ = produce_new_syntax_for_constraints(
+#         __primitive_types,
+#         patterns,
+#         forbidden=__forbidden_patterns,
+#         progress=True,
+#     )
+#     with open(new_dsl_file, "w") as fd:
+#         p_index = content.index("__primitive_types")
+#         fd.write("from synth.semantic.evaluator import auto_complete_semantics\n")
+#         fd.write("from synth.syntax import PrimitiveType\n")
+#         fd.write(content[:p_index])
+#         fd.write(
+#             export_syntax_to_python(new_syntax, "__primitive_types").replace(
+#                 "int", "INT"
+#             )
+#         )
+#         forbidden_index = content.index("__forbidden", p_index)
+#         ev_index = content.index("evaluator = ", forbidden_index)
+#         fd.write("\n")
+#         fd.write(content[forbidden_index:ev_index])
+#         fd.write("auto_complete_semantics(__primitive_types.keys(), __semantics)\n")
+#         end_index = content.index('if __name__ == "__main__":', ev_index)
+#         fd.write(content[ev_index:end_index])

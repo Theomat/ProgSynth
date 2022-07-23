@@ -207,9 +207,9 @@ class TTCFG(
             predecessors = state[1][0]
             last_pred = predecessors.last() if len(predecessors) > 0 else None
             if derivation in forbidden_sets.get(
-                last_pred[0].primitive
+                (last_pred[0].primitive, last_pred[1])
                 if last_pred and isinstance(last_pred[0], Primitive)
-                else "",
+                else ("", 0),
                 set(),
             ):
                 return False, 0
@@ -245,9 +245,9 @@ class TTCFG(
             predecessors = state[1][0]
             last_pred = predecessors.last() if len(predecessors) > 0 else None
             if derivation in forbidden_sets.get(
-                last_pred[0].primitive
+                (last_pred[0].primitive, last_pred[1])
                 if last_pred and isinstance(last_pred[0], Primitive)
-                else "",
+                else ("", 0),
                 set(),
             ):
                 return False, 0

@@ -1,5 +1,5 @@
 import copy
-from typing import Dict, Mapping, Optional, List as TList, Set, Union
+from typing import Dict, Mapping, Optional, List as TList, Set, Tuple, Union
 
 from synth.syntax.type_system import Type, Arrow, List
 from synth.syntax.program import Function, Primitive, Program, Variable
@@ -20,7 +20,7 @@ class DSL:
     def __init__(
         self,
         syntax: Mapping[str, Type],
-        forbidden_patterns: Optional[Dict[str, Set[str]]] = None,
+        forbidden_patterns: Optional[Dict[Tuple[str, int], Set[str]]] = None,
     ):
         self.list_primitives = [
             Primitive(primitive=p, type=t) for p, t in syntax.items()
@@ -152,8 +152,8 @@ class DSL:
         # Now we have to complete keys
         for source, forbid_set in list(forbidden_sets.items()):
             for P in self.list_primitives:
-                if are_equivalent_primitives(P, source):
-                    forbidden_sets[P.primitive] = forbidden_sets[source]
+                if are_equivalent_primitives(P, source[0]):
+                    forbidden_sets[(P.primitive, source[1])] = forbidden_sets[source]
 
 
 def are_equivalent_primitives(

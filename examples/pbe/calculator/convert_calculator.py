@@ -19,6 +19,7 @@ from synth.syntax import (
 )
 
 from calculator import dsl, evaluator, FLOAT
+from synth.syntax.type_system import UnknownType, guess_type
 
 # this dictionary contains the primitives as defined in the dsl
 name2type: Dict[str, Type] = {p.primitive: p.type for p in dsl.list_primitives}
@@ -57,8 +58,16 @@ def convert_calculator(
                 raw_examples: TList[Dict[str, Any]] = raw_task["examples"]
                 inputs = [raw_example["inputs"] for raw_example in raw_examples]
                 outputs: TList = [raw_example["output"] for raw_example in raw_examples]
-
-                prog, type_request = __calculator_str2prog(name)
+                args_types = [guess_type(arg) for arg in inputs[0]] + [
+                    guess_type(outputs[0])
+                ]
+                # guess_type doesn't recognise FLOAT but since it is the only type not recognised we know that Unknown TYpe is acutally FLOAT
+                args_types = [
+                    at if not isinstance(at, UnknownType) else FLOAT
+                    for at in args_types
+                ]
+                type_request = FunctionType(*args_types)
+                prog = dsl.parse_program(name, type_request)
                 examples = [
                     Example(inp, out)
                     for inp, out in zip(inputs, outputs)

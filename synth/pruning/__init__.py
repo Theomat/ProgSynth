@@ -11,4 +11,5 @@ from synth.pruning.syntactic_pruner import (
 from synth.pruning.type_constraints import (
     export_syntax_to_python,
     produce_new_syntax_for_constraints,
+    produce_new_syntax_for_sketch,
 )

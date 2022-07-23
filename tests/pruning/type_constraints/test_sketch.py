@@ -5,8 +5,8 @@ from synth.syntax.grammars.cfg import CFG, CFGState
 from synth.syntax.dsl import DSL
 from synth.syntax.program import Primitive
 from synth.syntax.type_system import INT, FunctionType, Type
-from synth.pruning.type_constraints.pattern_constraints import (
-    produce_new_syntax_for_constraints,
+from synth.pruning.type_constraints import (
+    produce_new_syntax_for_sketch,
 )
 
 
@@ -18,7 +18,6 @@ syntax = {
     "1": INT,
     "2": INT,
 }
-constraints = ["+ $(var0) _", "- (+ (+ _ _) _) _", "* ^+,-,* _"]
 depth = 4
 type_request = FunctionType(INT, INT, INT)
 
@@ -27,8 +26,8 @@ def test_produce() -> None:
     old_size = -1
 
     for _ in range(2):
-        new_syntax, new_tr = produce_new_syntax_for_constraints(
-            syntax, constraints, type_request, progress=True
+        new_syntax, new_tr = produce_new_syntax_for_sketch(
+            syntax, "+ _ _", type_request
         )
         size = CFG.depth_constraint(DSL(new_syntax), new_tr, depth).size()
         if old_size == -1:
@@ -38,11 +37,11 @@ def test_produce() -> None:
 
 def test_var_constraints() -> None:
     dsl = DSL(syntax)
-    p1 = dsl.parse_program("(+ var1 1)", type_request)
-    p2 = dsl.parse_program("(- var0 0)", type_request)
-    p3 = dsl.parse_program("(+ var0 0)", type_request)
-    new_syntax, new_tr = produce_new_syntax_for_constraints(
-        syntax, constraints[:1], type_request, progress=False
+    p1 = dsl.parse_program("(+ var0 1)", type_request)
+    p2 = dsl.parse_program("(- 1 var0)", type_request)
+    p3 = dsl.parse_program("(+ (+ 1 var0) 0)", type_request)
+    new_syntax, new_tr = produce_new_syntax_for_sketch(
+        syntax, "(+ 1 $(var0))", type_request
     )
     cfg = CFG.depth_constraint(DSL(new_syntax), new_tr, depth)
     assert p1 not in cfg
@@ -55,8 +54,8 @@ def test_forbid_constraints() -> None:
     p1 = dsl.parse_program("(* (+ 0 1) 1)", type_request)
     p2 = dsl.parse_program("(* 0 (+ 1 1))", type_request)
     p3 = dsl.parse_program("(* 2 (* (* 1 2) 2))", type_request)
-    new_syntax, new_tr = produce_new_syntax_for_constraints(
-        syntax, constraints[2:], type_request, progress=False
+    new_syntax, new_tr = produce_new_syntax_for_sketch(
+        syntax, "* ^+,-,* _", type_request
     )
     cfg = CFG.depth_constraint(DSL(new_syntax), new_tr, depth)
     p2 = cfg.embed(p2)
@@ -70,8 +69,8 @@ def test_nested_constraints() -> None:
     p1 = dsl.parse_program("(- (+ 0 1) 1)", type_request)
     p2 = dsl.parse_program("(- 0 (+ (+ 1 1) 1))", type_request)
     p3 = dsl.parse_program("(- (+ (+ 1 2) 2) 2)", type_request)
-    new_syntax, new_tr = produce_new_syntax_for_constraints(
-        syntax, constraints[1:2], type_request, progress=False
+    new_syntax, new_tr = produce_new_syntax_for_sketch(
+        syntax, "- (+ (+ _ _) _) _", type_request
     )
     cfg = CFG.depth_constraint(DSL(new_syntax), new_tr, depth)
     assert p1 not in cfg
@@ -120,8 +119,8 @@ def __exist_equivalent_path__(
 
 
 def test_unambiguous() -> None:
-    new_syntax, new_tr = produce_new_syntax_for_constraints(
-        syntax, constraints[1:2], type_request, progress=False
+    new_syntax, new_tr = produce_new_syntax_for_sketch(
+        syntax, "- (+ (+ _ _) _) _", type_request
     )
     cfg = CFG.depth_constraint(DSL(new_syntax), new_tr, depth)
     equivalents = defaultdict(set)
