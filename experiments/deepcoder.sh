@@ -32,7 +32,7 @@ mkdir -p $EXPERIMENT_FOLDER
 # Make test dataset
 if [  ! -f "$TEST_DATASET" ]; then
     echo "[Generation] Creating the test dataset."
-    python examples/pbe/dataset_generator.py --dsl deepcoder.pruned --dataset $DEEPCODER_DATASET --seed $SEED --size $TEST_SIZE -o $TEST_DATASET --uniform
+    python examples/pbe/dataset_generator.py --dsl deepcoder --dataset $DEEPCODER_DATASET --seed $SEED --size $TEST_SIZE -o $TEST_DATASET --uniform
     if [ $? != "0" ]; then
         exit 1
     fi
@@ -40,7 +40,7 @@ fi
 # Make train dataset
 if [  ! -f "$TRAIN_DATASET" ]; then
     echo "[Generation] Creating the train dataset."
-    python examples/pbe/dataset_generator.py --dsl deepcoder.pruned --dataset $TEST_DATASET --seed $SEED --size $TRAIN_SIZE -o $TRAIN_DATASET --uniform
+    python examples/pbe/dataset_generator.py --dsl deepcoder --dataset $TEST_DATASET --seed $SEED --size $TRAIN_SIZE -o $TRAIN_DATASET --uniform
     if [ $? != "0" ]; then
         exit 1
     fi
@@ -56,7 +56,7 @@ fi
 # Train pruned model
 if [  ! -f "$MODEL_PRUNED_FILE" ]; then
     echo "[Training] Creating the model from the pruned DSL."
-    python examples/pbe/model_trainer.py --dsl deepcoder.pruned --dataset $TRAIN_DATASET --seed $SEED --b $BATCH_SIZE -o $MODEL_PRUNED_FILE -e $EPOCHS
+    python examples/pbe/model_trainer.py --dsl deepcoder --dataset $TRAIN_DATASET --seed $SEED --b $BATCH_SIZE -o $MODEL_PRUNED_FILE -e $EPOCHS
     if [ $? != "0" ]; then
         exit 3
     fi
@@ -69,7 +69,7 @@ if [ $? != "0" ]; then
 fi
 # Train pruned model
 echo "[Evaluation] Evaluating the model from the pruned DSL."
-python examples/pbe/evaluate.py --dsl deepcoder.pruned --dataset $TEST_DATASET --b $BATCH_SIZE --model $MODEL_PRUNED_FILE -o $EXPERIMENT_FOLDER -t $TIMEOUT
+python examples/pbe/evaluate.py --dsl deepcoder --dataset $TEST_DATASET --b $BATCH_SIZE --model $MODEL_PRUNED_FILE -o $EXPERIMENT_FOLDER -t $TIMEOUT
 if [ $? != "0" ]; then
     exit 5
 fi
