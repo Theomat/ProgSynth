@@ -11,6 +11,7 @@ from typing import (
     Type as PythonType,
     TypeVar,
 )
+from collections.abc import Container
 
 import numpy as np
 
@@ -19,7 +20,7 @@ from synth.specification import PBE, Example
 from synth.semantic.evaluator import Evaluator
 from synth.syntax.dsl import DSL
 from synth.syntax.program import Program
-from synth.syntax.type_system import BOOL, INT, Arrow, List, Type
+from synth.syntax.type_system import BOOL, INT, List, Type
 from synth.syntax.grammars.cfg import CFG
 from synth.syntax.grammars.tagged_det_grammar import ProbDetGrammar
 from synth.generation.sampler import (
@@ -166,17 +167,15 @@ class TaskGenerator:
 
 
 def basic_output_validator(
-    int_lexicon: TList[int], max_list_length: int
+    dico: Dict[PythonType, Container], max_list_length: int
 ) -> Callable[[Any], bool]:
     def validate_output(output: Any) -> bool:
-        if isinstance(output, bool):
-            return True
-        elif isinstance(output, int):
-            return output in int_lexicon
-        elif isinstance(output, list):
+        if isinstance(output, list):
             return (max_list_length < 0 or len(output) <= max_list_length) and all(
                 validate_output(x) for x in output
             )
+        else:
+            return output in dico.get(type(output), [])
         return False
 
     return validate_output
@@ -213,7 +212,9 @@ def reproduce_int_dataset(
 
     def get_validator(start: None, max_list_length: int) -> Callable[[Any], bool]:
         int_lexicon = list(range(int_range[0], int_range[1] + 1))
-        return basic_output_validator(int_lexicon, max_list_length)
+        return basic_output_validator(
+            {int: int_lexicon, bool: {True, False}}, max_list_length
+        )
 
     def get_lexicon(start: None) -> TList[int]:
         return list(range(int_range[0], int_range[1] + 1))
