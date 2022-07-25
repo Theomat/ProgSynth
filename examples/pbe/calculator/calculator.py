@@ -88,7 +88,13 @@ def reproduce_calculator_dataset(
 
     def get_validator(start: None, max_list_length: int) -> Callable[[Any], bool]:
         return basic_output_validator(
-            [round(x, 1) for x in np.arange(float_range[0], float_range[1] + 1, 0.1)],
+            {
+                int: list(range(int_range[0], int_range[1] + 1)),
+                float: [
+                    round(x, 1)
+                    for x in np.arange(float_range[0], float_range[1] + 1, 0.1)
+                ],
+            },
             max_list_length,
         )
 

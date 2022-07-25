@@ -162,48 +162,46 @@ def reproduce_transduction_dataset(
         pass
 
     str_lexicon = list([chr(i) for i in range(32, 126)])
+    regexp_symbols = [
+        "_",
+        ")",
+        "{",
+        "+",
+        ";",
+        "=",
+        "$",
+        "\\",
+        "^",
+        ",",
+        "!",
+        "*",
+        "'",
+        " ",
+        ">",
+        "}",
+        "<",
+        "[",
+        '"',
+        "#",
+        "|",
+        "`",
+        "%",
+        "?",
+        ":",
+        "]",
+        "&",
+        "(",
+        "@",
+        ".",
+        "/",
+        "-",
+    ]
 
     def get_sampler(start: None) -> UnionSampler:
         return UnionSampler(
             {
                 STRING: LexiconSampler(str_lexicon, seed=seed),
-                REGEXP: LexiconSampler(
-                    [
-                        "_",
-                        ")",
-                        "{",
-                        "+",
-                        ";",
-                        "=",
-                        "$",
-                        "\\",
-                        "^",
-                        ",",
-                        "!",
-                        "*",
-                        "'",
-                        " ",
-                        ">",
-                        "}",
-                        "<",
-                        "[",
-                        '"',
-                        "#",
-                        "|",
-                        "`",
-                        "%",
-                        "?",
-                        ":",
-                        "]",
-                        "&",
-                        "(",
-                        "@",
-                        ".",
-                        "/",
-                        "-",
-                    ],
-                    seed=seed,
-                ),
+                REGEXP: LexiconSampler(regexp_symbols, seed=seed),
             }
         )
 
@@ -214,8 +212,10 @@ def reproduce_transduction_dataset(
         None,
         lambda _, __: None,
         get_sampler,
-        lambda _, max_list_length: basic_output_validator(str_lexicon, max_list_length),
-        lambda _: str_lexicon,
+        lambda _, max_list_length: basic_output_validator(
+            {str: str_lexicon + regexp_symbols}, max_list_length
+        ),
+        lambda _: str_lexicon + regexp_symbols,
         seed,
         *args,
         **kwargs
