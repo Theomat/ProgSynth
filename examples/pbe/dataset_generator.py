@@ -54,18 +54,14 @@ max_list_length = None
 dsl_module = load_DSL(dsl_name)
 dsl, evaluator, lexicon = dsl_module.dsl, dsl_module.evaluator, dsl_module.lexicon
 
-if dsl_name == DREAMCODER:
-    from synth.pbe import reproduce_dataset
-
-    max_list_length = 10
-elif dsl_name == REGEXP:
-    from regexp.task_generator_regexp import reproduce_dataset
-elif dsl_name == CALCULATOR:
-    from calculator.calculator_task_generator import reproduce_dataset
-elif dsl_name == TRANSDUCTION:
-    from transduction.transduction_task_generator import reproduce_dataset
+if hasattr(dsl, "reproduce_dataset"):
+    reproduce_dataset = dsl.reproduce_dataset
 else:
-    from synth.pbe import reproduce_dataset
+    from synth.pbe.task_generator import reproduce_int_dataset as reproduce_dataset
+
+
+if dsl_name == DREAMCODER:
+    max_list_length = 10
 
 # ================================
 # Load dataset & Task Generator

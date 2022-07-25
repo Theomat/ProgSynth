@@ -9,6 +9,7 @@ from typing import (
     Set,
     Tuple,
     Type as PythonType,
+    TypeVar,
 )
 
 import numpy as np
@@ -175,7 +176,7 @@ def basic_output_validator(
     return validate_output
 
 
-def reproduce_dataset(
+def reproduce_int_dataset(
     dataset: Dataset[PBE],
     dsl: DSL,
     evaluator: Evaluator,
@@ -187,6 +188,77 @@ def reproduce_dataset(
     max_list_length: Optional[int] = None,
 ) -> Tuple[TaskGenerator, TList[int]]:
 
+    int_range: TList[int] = [999999999, 0]
+    int_range[1] = -int_range[0]
+
+    def analyser(start: None, element: int) -> None:
+        int_range[0] = min(int_range[0], max(-int_bound, element))
+        int_range[1] = max(int_range[1], min(int_bound, element))
+
+    def get_element_sampler(start: None) -> UnionSampler:
+        int_lexicon = list(range(int_range[0], int_range[1] + 1))
+
+        return UnionSampler(
+            {
+                INT: LexiconSampler(int_lexicon, seed=seed),
+                BOOL: LexiconSampler([True, False], seed=seed),
+            }
+        )
+
+    def get_validator(start: None, max_list_length: int) -> Callable[[Any], bool]:
+        int_lexicon = list(range(int_range[0], int_range[1] + 1))
+        return basic_output_validator(int_lexicon, max_list_length)
+
+    def get_lexicon(start: None) -> TList[int]:
+        return list(range(int_range[0], int_range[1] + 1))
+
+    return reproduce_dataset(
+        dataset,
+        dsl,
+        evaluator,
+        None,
+        analyser,
+        get_element_sampler,
+        get_validator,
+        get_lexicon,
+        seed,
+        uniform_pgrammar,
+        max_tries,
+        default_max_depth,
+        max_list_length,
+    )
+
+
+T = TypeVar("T")
+
+
+def reproduce_dataset(
+    dataset: Dataset[PBE],
+    dsl: DSL,
+    evaluator: Evaluator,
+    start: T,
+    element_analyser: Callable[[T, Any], T],
+    get_element_sampler: Callable[[T], Sampler],
+    get_validator: Callable[[T, int], Callable[[Any], bool]],
+    get_lexicon: Callable[[T], TList],
+    seed: Optional[int] = None,
+    uniform_pgrammar: bool = True,
+    max_tries: int = 100,
+    default_max_depth: int = 5,
+    max_list_length: Optional[int] = None,
+) -> Tuple[TaskGenerator, TList]:
+    """
+
+    start = element_analyser(start, element)
+        called when encountering a base element (not a list)
+    get_element_sampler(start)
+        produces the sampler used for base types (not list)
+    get_validator(start, max_list_length)
+        produces the output validator
+    get_lexicon(start)
+        produces the lexicon
+    """
+
     max_depth = -1
     allowed_types: TList[Type] = []
     types_probs_list: TList[float] = []
@@ -195,8 +267,7 @@ def reproduce_dataset(
     no_samples: Dict[Type, Dict[int, int]] = {}
     max_list_depth = [0]
 
-    int_range: TList[int] = [999999999, 0]
-    int_range[1] = -int_range[0]
+    out = [start]
 
     def analyze(element: Any, type: Type, depth: int = 1) -> None:
         if depth > max_list_depth[0]:
@@ -208,8 +279,7 @@ def reproduce_dataset(
                 for el in element:
                     analyze(el, elt_type, depth + 1)
         elif element:
-            int_range[0] = min(int_range[0], max(-int_bound, element))
-            int_range[1] = max(int_range[1], min(int_bound, element))
+            out[0] = element_analyser(out[0], element)
 
     # Capture all information in one dataset pass
     for task in dataset:
@@ -229,8 +299,8 @@ def reproduce_dataset(
         )
 
         t = task.type_request
-        args = [] if not isinstance(t, Arrow) else t.arguments()
-        r = t if not isinstance(t, Arrow) else t.returns()
+        args = t.arguments()
+        r = t.returns()
 
         # Input data analysis
         for ex in task.specification.examples:
@@ -247,7 +317,6 @@ def reproduce_dataset(
     )
     no_samples_gen = __multi_discrete_to_gen__(no_samples, seed=seed)
 
-    int_lexicon = list(range(int_range[0], int_range[1] + 1))
     if max_depth == -1:
         max_depth = default_max_depth
     if uniform_pgrammar:
@@ -277,12 +346,7 @@ def reproduce_dataset(
         pgrammar.init_sampling(seed)
 
     input_sampler = ListSampler(
-        UnionSampler(
-            {
-                INT: LexiconSampler(int_lexicon, seed=seed),
-                BOOL: LexiconSampler([True, False], seed=seed),
-            }
-        ),
+        get_element_sampler(out[0]),
         list_length_gen,
         max_depth=max_list_depth[0],
         seed=seed,
@@ -295,16 +359,15 @@ def reproduce_dataset(
             type_sampler,
             no_samples_gen,
             pgrammars,
-            basic_output_validator(
-                int_lexicon,
+            get_validator(
+                out[0],
                 max_list_length
-                or max(
-                    (max(l.keys()) for l in list_length.values()), default=-1
-                ),  # type:ignore
+                or max((max(l.keys()) for l in list_length.values()), default=-1)
+                or -1,
             ),
             max_tries,
         ),
-        int_lexicon,
+        get_lexicon(out[0]),
     )
 
 
