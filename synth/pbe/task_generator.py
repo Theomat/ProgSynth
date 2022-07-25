@@ -102,6 +102,33 @@ class TaskGenerator:
             self.difficulty[type_request] = [0, 0]
         return type_request
 
+    def __sample_input__(self, arguments: TList[Type]) -> TList:
+        return [self.input_generator.sample(type=arg_type) for arg_type in arguments]
+
+    def __eval_input__(self, solution: Program, input: TList) -> Any:
+        try:
+            return self.evaluator.eval(solution, input)
+        except Exception as e:
+            if type(e) in self.skip_exceptions:
+                return None
+            else:
+                raise e
+
+    def __make_task__(
+        self,
+        type_request: Type,
+        solution: Program,
+        inputs: TList,
+        outputs: TList,
+        **kwargs: Any
+    ) -> Task[PBE]:
+        return Task(
+            type_request,
+            PBE([Example(inp, out) for inp, out in zip(inputs, outputs)]),
+            solution,
+            {"generated": True, **kwargs},
+        )
+
     def generate_task(self) -> Task[PBE]:
         self._failed_types.clear()
         while True:
@@ -120,16 +147,9 @@ class TaskGenerator:
                 inputs
             ) >= samples and tries < self.max_tries:
                 tries += 1
-                new_input = [
-                    self.input_generator.sample(type=arg_type) for arg_type in arguments
-                ]
-                try:
-                    output = self.evaluator.eval(solution, new_input)
-                except Exception as e:
-                    if type(e) in self.skip_exceptions:
-                        continue
-                    else:
-                        raise e
+                new_input = self.__sample_input__(arguments)
+                output = self.__eval_input__(solution, new_input)
+
                 if self.output_validator(output) and output not in outputs:
                     inputs.append(new_input)
                     outputs.append(output)
@@ -154,11 +174,13 @@ class TaskGenerator:
                     "program:",
                     solution,
                 )
-            return Task(
+            return self.__make_task__(
                 type_request,
-                PBE([Example(inp, out) for inp, out in zip(inputs, outputs)]),
                 solution,
-                {"generated": True, "tries": tries},
+                inputs,
+                outputs,
+                tries=tries,
+                unique=is_unique,
             )
 
     def generator(self) -> Generator[Task[PBE], None, None]:
