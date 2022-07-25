@@ -5,15 +5,18 @@ from typing import (
     Tuple,
 )
 
+import numpy as np
+
 from examples.pbe.regexp.type_regex import REGEXP
 
+from synth.generation.sampler import ListSampler
 from synth.pbe.task_generator import (
     TaskGenerator,
     basic_output_validator,
     reproduce_dataset,
 )
 from synth.syntax.program import Program
-from synth.syntax.type_system import Type
+from synth.syntax.type_system import List, Type
 
 from synth.task import Dataset, Task
 from synth.specification import PBE, Example, PBEWithConstants
@@ -107,11 +110,24 @@ def reproduce_transduction_dataset(
         "/",
         "-",
     ]
+    probabilities = np.array([0.5**i for i in range(6)])
+    probabilities /= np.sum(probabilities)
+    STR_list = List(STRING)
+    string_sampler = (
+        ListSampler(
+            LexiconSampler(str_lexicon, seed=seed),
+            [(i + 4, probabilities[i]) for i in range(len(probabilities))],
+            max_depth=1,
+            seed=seed,
+        )
+        .compose_with_type_mapper(lambda _: STR_list)
+        .compose(lambda el: el if isinstance(el, str) else "".join(el))
+    )
 
     def get_sampler(start: None) -> UnionSampler:
         return UnionSampler(
             {
-                STRING: LexiconSampler(str_lexicon, seed=seed),
+                STRING: string_sampler,
                 REGEXP: LexiconSampler(regexp_symbols, seed=seed),
             }
         )
