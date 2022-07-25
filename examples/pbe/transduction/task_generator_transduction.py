@@ -5,6 +5,8 @@ from typing import (
     Tuple,
 )
 
+from examples.pbe.regexp.type_regex import REGEXP
+
 from synth.pbe.task_generator import (
     TaskGenerator,
     basic_output_validator,
