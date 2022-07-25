@@ -38,7 +38,12 @@ parser.add_argument(
 parser.add_argument(
     "--uniform", action="store_true", default=False, help="use uniform PCFGs"
 )
-
+parser.add_argument(
+    "--no-unique",
+    action="store_true",
+    default=False,
+    help="does not try to generate unique tasks",
+)
 parameters = parser.parse_args()
 dsl_name: str = parameters.dsl
 dataset_file: str = parameters.dataset.format(dsl_name=dsl_name)
@@ -47,6 +52,7 @@ seed: int = parameters.seed
 max_depth: int = parameters.max_depth
 gen_dataset_size: int = parameters.size
 uniform: bool = parameters.uniform
+no_unique: bool = parameters.no_unique
 # ================================
 # Load constants specific to DSL
 # ================================
@@ -85,10 +91,10 @@ with chrono.clock("dataset.reproduce") as c:
     )
     print("done in", c.elapsed_time(), "s")
 # Add some exceptions that are ignored during task generation
-task_generator.skip_exceptions.add(TypeError)
-task_generator.uniques = True
+# task_generator.skip_exceptions.add(TypeError)
+task_generator.uniques = not no_unique
 task_generator.verbose = True
-print("Generating dataset...", end="", flush=True)
+print("Generating dataset...", gen_dataset_size, end="", flush=True)
 with chrono.clock("dataset.generate") as c:
     gen_dataset = Dataset(
         gen_take(task_generator.generator(), gen_dataset_size, progress=True),

@@ -11,6 +11,8 @@ from synth.pbe.task_generator import (
     basic_output_validator,
     reproduce_dataset,
 )
+from synth.syntax.program import Program
+from synth.syntax.type_system import Type
 
 from synth.task import Dataset, Task
 from synth.specification import PBE, Example
@@ -36,84 +38,55 @@ repeated_primitives = {"*": (0, 3), "+": (1, 3), "?": (0, 1)}
 
 
 class RegexpTaskGenerator(TaskGenerator):
-    def generate_task(self) -> Task[PBE]:
-        while True:
-            type_request = type_request = self.__generate_type_request__()
-            arguments = type_request.arguments()
+    def __generate_program__(self, type_request: Type) -> Tuple[Program, bool]:
+        """
+        (program, is_unique)
+        """
+        program, is_unique = super().__generate_program__(type_request)
+        self.__successful_tries = 0
+        self.__regexp = "".join(program.__str__().split("(")[2:]).split(" ")
+        return program, is_unique
 
-            # Generate correct program that makes use of all variables
-            solution, is_unique = self.__generate_program__(type_request)
-            regexp = "".join(solution.__str__().split("(")[2:]).split(" ")
-            # Try to generate the required number of samples
-            samples = self.gen_random_sample_number.sample(type=type_request)
-            inputs: TList = []
-            outputs = []
-            tries = 0
-            successful_tries = 0
-            # has_enough_tries_to_reach_desired_no_of_samples and has_remaining_tries
-            while (self.max_tries - tries) + len(
-                inputs
-            ) >= samples and tries < self.max_tries:
-                tries += 1
-                new_input = [""]
-                # true examples
-                if successful_tries < 3:
+    def __sample_input__(self, arguments: TList[Type]) -> TList:
+        new_input = [""]
+        # true examples
+        if self.__successful_tries < 3:
+            repeated = None
+            for r in self.__regexp:
+                times = 1
+                if repeated:
+                    left, right = repeated_primitives[repeated]
+                    times = randint(left, right)
                     repeated = None
-                    for r in regexp:
-                        times = 1
-                        if repeated:
-                            left, right = repeated_primitives[repeated]
-                            times = randint(left, right)
-                            repeated = None
-                        if r in primitives.keys():
-                            [
-                                new_input.insert(
-                                    0, self.input_generator.sample(type=primitives[r])
-                                )
-                                for _ in range(0, times)
-                            ]
-                        elif r == "W":
-                            [new_input.insert(0, " ") for _ in range(0, times)]
-                        elif r in repeated_primitives.keys():
-                            repeated = r
-                    new_input = [new_input]
-                else:
-                    new_input = [
-                        self.input_generator.sample(type=arg_type)
-                        for arg_type in arguments
+                if r in primitives.keys():
+                    [
+                        new_input.insert(
+                            0, self.input_generator.sample(type=primitives[r])
+                        )
+                        for _ in range(0, times)
                     ]
-                try:
-                    output = self.evaluator.eval(solution, new_input)
-                    if successful_tries < 3 and output:
-                        successful_tries += 1
-                    elif output is None:
-                        return self.generate_task()
-                except Exception as e:
-                    if type(e) in self.skip_exceptions:
-                        continue
-                    else:
-                        raise e
-                if self.output_validator(output):
-                    inputs.append(new_input)
-                    outputs.append(output)
-                    if len(inputs) >= samples:
-                        break
+                elif r == "W":
+                    [new_input.insert(0, " ") for _ in range(0, times)]
+                elif r in repeated_primitives.keys():
+                    repeated = r
+            new_input = [new_input]
+        else:
+            new_input = [
+                self.input_generator.sample(type=arg_type) for arg_type in arguments
+            ]
+        return new_input
 
-            self.difficulty[type_request][0] += tries
-            self.difficulty[type_request][1] += tries - len(inputs)
-
-            # Sample another task if failed
-            if len(inputs) < samples:
-                self._failed_types.add(type_request)
-                continue
-            self._failed_types = set()
-            self.generated_types[type_request] += 1
-            return Task(
-                type_request,
-                PBE([Example(inp, out) for inp, out in zip(inputs, outputs)]),
-                solution,
-                {"generated": True, "tries": tries},
-            )
+    def __eval_input__(self, solution: Program, new_input: TList) -> Any:
+        try:
+            output = self.evaluator.eval(solution, new_input)
+            if self.__successful_tries < 3 and output:
+                self.__successful_tries += 1
+            return output
+        except Exception as e:
+            if type(e) in self.skip_exceptions:
+                return None
+            else:
+                raise e
 
 
 def reproduce_regexp_dataset(
