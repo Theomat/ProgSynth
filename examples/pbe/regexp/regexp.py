@@ -1,13 +1,11 @@
-from synth.semantic import DSLEvaluator
-from synth.syntax import DSL, PrimitiveType, Arrow, List, STRING
-
-
 import re
+
 from examples.pbe.regexp.type_regex import regex_match, Raw, REGEXP
 from examples.pbe.regexp.evaluator_regexp import RegexpEvaluator, get_regexp
+from examples.pbe.regexp.task_generator_regexp import reproduce_regexp_dataset
 
-
-from synth.syntax.type_system import BOOL
+from synth.semantic import DSLEvaluator
+from synth.syntax import DSL, PrimitiveType, Arrow, List, STRING, BOOL
 
 
 def pretty_print_solution(regexp: str) -> str:

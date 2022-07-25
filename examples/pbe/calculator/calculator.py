@@ -1,8 +1,17 @@
-from synth.semantic import DSLEvaluator
-from synth.syntax import DSL, INT, Arrow, PolymorphicType
+from typing import Any, Callable, Optional, Tuple, List as TList, Union
+
 import numpy as np
 
-from synth.syntax.type_system import PrimitiveType
+from synth.generation.sampler import LexiconSampler, UnionSampler
+from synth.pbe.task_generator import (
+    TaskGenerator,
+    basic_output_validator,
+    reproduce_dataset,
+)
+from synth.semantic import DSLEvaluator, Evaluator
+from synth.specification import PBE
+from synth.syntax import DSL, INT, Arrow, PolymorphicType, PrimitiveType, BOOL
+from synth.task import Dataset
 
 # a type representing either an int or a float
 type = PolymorphicType("int/float")
@@ -37,3 +46,65 @@ _forbidden_patterns = {
 dsl = DSL(__primitive_types, forbidden_patterns=_forbidden_patterns)
 evaluator = DSLEvaluator(__semantics)
 lexicon = [round(x, 1) for x in np.arange(-256, 256 + 1, 0.1)]
+
+
+def reproduce_calculator_dataset(
+    dataset: Dataset[PBE],
+    dsl: DSL,
+    evaluator: Evaluator,
+    seed: Optional[int] = None,
+    int_bound: int = 1000,
+    *args: Any,
+    **kwargs: Any
+) -> Tuple[TaskGenerator, TList[int]]:
+
+    int_range: TList[int] = [int_bound, 0]
+    int_range[1] = -int_range[0]
+
+    float_range: TList[float] = [float(int_bound), 0]
+    float_range[1] = -float_range[0]
+    float_bound = float(int_bound)
+
+    def analyser(start: None, element: Union[int, float]) -> None:
+        if isinstance(element, int):
+            int_range[0] = min(int_range[0], max(-int_bound, element))
+            int_range[1] = max(int_range[1], min(int_bound, element))
+        elif isinstance(element, float):
+            float_range[0] = min(float_range[0], max(-float_bound, element))
+            float_range[1] = max(float_range[1], min(float_bound, element))
+
+    def get_element_sampler(start: None) -> UnionSampler:
+        int_lexicon = list(range(int_range[0], int_range[1] + 1))
+        float_lexicon = [
+            round(x, 1) for x in np.arange(float_range[0], float_range[1] + 1, 0.1)
+        ]
+        return UnionSampler(
+            {
+                INT: LexiconSampler(int_lexicon, seed=seed),
+                BOOL: LexiconSampler([True, False], seed=seed),
+                FLOAT: LexiconSampler(float_lexicon, seed=seed),
+            }
+        )
+
+    def get_validator(start: None, max_list_length: int) -> Callable[[Any], bool]:
+        return basic_output_validator(
+            [round(x, 1) for x in np.arange(float_range[0], float_range[1] + 1, 0.1)],
+            max_list_length,
+        )
+
+    def get_lexicon(start: None) -> TList[float]:
+        return [round(x, 1) for x in np.arange(float_range[0], float_range[1] + 1, 0.1)]
+
+    return reproduce_dataset(
+        dataset,
+        dsl,
+        evaluator,
+        None,
+        analyser,
+        get_element_sampler,
+        get_validator,
+        get_lexicon,
+        seed,
+        *args,
+        **kwargs
+    )

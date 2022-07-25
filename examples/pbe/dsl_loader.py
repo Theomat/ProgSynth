@@ -50,12 +50,34 @@ __dsl_funcs: Dict[str, Callable[[bool], Optional[SimpleNamespace]]] = {
     "dreamcoder": __base_loader("dreamcoder.dreamcoder"),
     "regexp": __base_loader(
         "regexp.regexp",
-        ["dsl", "evaluator", "lexicon", "pretty_print_inputs", "pretty_print_inputs"],
+        [
+            "dsl",
+            "evaluator",
+            "lexicon",
+            "pretty_print_inputs",
+            "pretty_print_inputs",
+            ("reproduce_regexp_dataset", "reproduce_dataset"),
+        ],
     ),
     "transduction": __base_loader(
-        "transduction.transduction", ["dsl", "evaluator", "lexicon", "constant_types"]
+        "transduction.transduction",
+        [
+            "dsl",
+            "evaluator",
+            "lexicon",
+            "constant_types",
+            ("reproduce_transduction_dataset", "reproduce_dataset"),
+        ],
     ),
-    "calculator": __base_loader("calculator.calculator"),
+    "calculator": __base_loader(
+        "calculator.calculator",
+        [
+            "dsl",
+            "evaluator",
+            "lexicon",
+            ("reproduce_calculator_dataset", "reproduce_dataset"),
+        ],
+    ),
 }
 # =======================================================================================
 # Nothing to change after this

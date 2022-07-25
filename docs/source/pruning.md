@@ -12,6 +12,7 @@ There are currently three ways to do pruning and a script for the PBE specificat
   - [Syntax](#syntax)
 - [Sketch](#sketch)
 - [Automatic Discovery](#automatic-discovery)
+- [Converting programs from DSL to pruned DSL and vice-versa](#converting-programs-from-dsl-to-pruned-dsl-and-vice-versa)
 
 <!-- tocstop -->
 
@@ -55,6 +56,9 @@ new_syntax, new_type_request = produce_new_syntax_for_constraints(syntax, my_con
 
 pruned_dsl = DSL(new_syntax, forbidden_patterns)
 ```
+
+Note that in the pruned DSL they may be duplicated primitives and types you can notice these with the ``@`` in their name. For example you may have ``+`` and ``+@0: int@0 -> int -> int``, they have the same semantic however the express different constraints.
+You may use ``from synth.semantic.evaluator import auto_complete_semantics`` to automatically complete your semantis dictionnary for the evaluator.
 
 ### Pattern
 
@@ -126,5 +130,17 @@ The script works by either reproducing the distriution from a given dataset or j
 It then evaluates programs up to depth 2 of the grammar and builds sets of semantically equivalent programs with respect to this set of inputs.
 Some of these programs can then be forbidden using different types of constraints either local type constraints or forbidden patterns.
 The script produces two files:
+
 - a python file containing the local type constraints and the forbidden patterns it produced;
 - a JSON file containing all semantically equivalent classes of programs et depth 2.
+
+## Converting programs from DSL to pruned DSL and vice-versa
+
+Type
+When using ``dsl.parse("(+ (- 1 var0) (+ 1 var1))")`` you will get a ``Program`` expressed in the current DSL but with the original primitives.
+That is since there may be duplicated primitives and types with the ``@`` in their name, they will not be parsed as such since we didn't use ``+@0``.
+Writing the programs with the ``@`` would depend on the constraints and be a rather long and tedious process.
+Instead after a ``DetGrammar`` has been produced you can use ``grammar.embed(program)`` which will return the embedded program.
+This enables the conversion from DSL to pruned DSL and vice-versa.
+However, the ``program`` must be in the given ``grammar``, it implies that it is always the case that you can embed a program from the pruned DSL to the DSL but not the other way around.
+If the ``program`` is in the original DSL but in the pruned DSL then ``grammar.embed(program)`` returns ``None``.

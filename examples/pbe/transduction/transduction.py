@@ -1,11 +1,34 @@
-from typing import Set
-from examples.pbe.regexp.evaluator_regexp import get_regexp
-from synth.semantic.evaluator import DSLEvaluatorWithConstant
-
-from synth.syntax import DSL, PrimitiveType, Arrow, STRING
-
-
+from typing import (
+    Set,
+    List as TList,
+    Any,
+    Optional,
+    Tuple,
+)
 import re
+
+from synth.pbe.task_generator import (
+    basic_output_validator,
+    reproduce_dataset,
+    TaskGenerator,
+)
+from synth.semantic.evaluator import DSLEvaluatorWithConstant
+from synth.task import Dataset
+from synth.specification import PBE
+from synth.semantic import Evaluator
+from synth.syntax import (
+    DSL,
+    Arrow,
+    STRING,
+    PrimitiveType,
+)
+from synth.generation.sampler import (
+    LexiconSampler,
+    UnionSampler,
+)
+
+from examples.pbe.regexp.evaluator_regexp import get_regexp
+from examples.pbe.regexp.type_regex import REGEXP
 from examples.pbe.regexp.type_regex import (
     Raw,
     REGEXP,
@@ -125,3 +148,75 @@ constant_types.add(CSTE_OUT)
 evaluator = DSLEvaluatorWithConstant(__semantics, constant_types)
 evaluator.skip_exceptions.add(re.error)
 lexicon = list([chr(i) for i in range(32, 126)])
+
+
+def reproduce_transduction_dataset(
+    dataset: Dataset[PBE],
+    dsl: DSL,
+    evaluator: Evaluator,
+    seed: Optional[int] = None,
+    *args: Any,
+    **kwargs: Any
+) -> Tuple[TaskGenerator, TList[int]]:
+    def analyser(start: None, elment: Any) -> None:
+        pass
+
+    str_lexicon = list([chr(i) for i in range(32, 126)])
+
+    def get_sampler(start: None) -> UnionSampler:
+        return UnionSampler(
+            {
+                STRING: LexiconSampler(str_lexicon, seed=seed),
+                REGEXP: LexiconSampler(
+                    [
+                        "_",
+                        ")",
+                        "{",
+                        "+",
+                        ";",
+                        "=",
+                        "$",
+                        "\\",
+                        "^",
+                        ",",
+                        "!",
+                        "*",
+                        "'",
+                        " ",
+                        ">",
+                        "}",
+                        "<",
+                        "[",
+                        '"',
+                        "#",
+                        "|",
+                        "`",
+                        "%",
+                        "?",
+                        ":",
+                        "]",
+                        "&",
+                        "(",
+                        "@",
+                        ".",
+                        "/",
+                        "-",
+                    ],
+                    seed=seed,
+                ),
+            }
+        )
+
+    return reproduce_dataset(
+        dataset,
+        dsl,
+        evaluator,
+        None,
+        lambda _, __: None,
+        get_sampler,
+        lambda _, max_list_length: basic_output_validator(str_lexicon, max_list_length),
+        lambda _: str_lexicon,
+        seed,
+        **args,
+        **kwargs
+    )
