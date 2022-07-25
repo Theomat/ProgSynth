@@ -91,14 +91,20 @@ class TaskGenerator:
                 best = solution
         return best, unique_tries < self.max_tries
 
+    def __generate_type_request__(self) -> Type:
+        type_request = self.gen_random_type_request.sample()
+        i = 0
+        while type_request in self._failed_types and i <= self.max_tries:
+            type_request = self.gen_random_type_request.sample()
+            i += 1
+        if type_request not in self.difficulty:
+            self.difficulty[type_request] = [0, 0]
+        return type_request
+
     def generate_task(self) -> Task[PBE]:
         self._failed_types.clear()
         while True:
-            type_request = self.gen_random_type_request.sample()
-            i = 0
-            while type_request in self._failed_types and i <= self.max_tries:
-                type_request = self.gen_random_type_request.sample()
-                i += 1
+            type_request = self.__generate_type_request__()
             arguments = type_request.arguments()
 
             # Generate correct program that makes use of all variables
