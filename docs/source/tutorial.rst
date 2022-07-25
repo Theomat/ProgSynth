@@ -56,6 +56,7 @@ Forbidden patterns (Optional)
 In some cases, we wish to stop the DSL to derive a specific primitive from another one:
 For instance, let us say that we want to extend the `calculator` DSL with a primitive to `add1` to an integer and another one to `sub1` to an integer.
 Because doing `(add1 (sub1 x))` or `(sub1 (add1 x))` is the same as doing nothing, we can forbid the second pattern from being derived from the first one, in that case the patterns would be :code:`{ "add1": {"sub1}, "sub1": {"add1"}`.
+For more information see `pruning <pruning.html>`_.
 
 
 Creating a dataset (:code:`calculator/convert_calculator.py`)
@@ -87,21 +88,19 @@ We can simply use this file by command line, from the folder :code:`./examples/p
 
 Generating a synthetic dataset (:code:`dataset_generator.py`)
 -------------------------------------------------------------
-Once the DSL and a short dataset are created, we wish to generate automatically a dataset reproducing the task distribution. We have to adapt the file :code:`dataset_generator.py` for this.
+Once the DSL and a short dataset are created, we wish to generate automatically a dataset reproducing the task distribution.
 
 The *deepcoder* and *dreamcoder* datasets did not require to use float numbers. Thus, the previous implementation of the :code:`task_generator.py` needs to be adapted to float numbers.
-Hence, we create the file :code:`calculator/calculator_task_generator.py` and change some functions (and, if required, some imports).
+Hence, we need to create a function to enable reproduing our dataset. We recommend checking the documentation of ``reproduce_dataset`` which we will use.
 
-* the function :code:`basic_output_validator` needs to allow outputs of type float
-* the function :code:`reproduce_dataset` 
-  - needs to analyse the range of both int and float inputs and to create a sampler for each type, with the corresponding specific lexicon 
-  - must return a :code:`TaskGenerator` object that has the correct program lexicon. Here, as the int lexicon is included in the float lexicon, we return the latter one.
+* the function :code:`analyser` needs to analyse the range of both int and float inputs, it is basically called on base types.
+* the function :code:`get_element_sampler` produces the sampler for our base types, here uniform on our int and float ranges.
+* the function :code:`get_validator` produces a function that takes an ouput produced from a program and should tell whether this output is allowed or not.
+* the function :code:`get_lexicon` produces the lexicon of the DSL, it will be used for deep learning. Here, as the int lexicon is included in the float lexicon, we return the latter one.
 
 Usage
 ~~~~~
-Once this file is created and is properly imported in :code:`dataset_generator.py`, we can use it by command line, from the folder :code:`./examples/pbe`.
-Do not forget that you have to adapt the arguments of this file to the DSL you created before using it.
-
+Once the DSL has been added to the :code:`dsl_loader.py` then you can generate datasets using:
 .. code:: bash
 
     python dataset_generator.py --dsl calculator --dataset calculator/calculator.pickle -o dataset.pickle
