@@ -54,8 +54,8 @@ max_list_length = None
 dsl_module = load_DSL(dsl_name)
 dsl, evaluator, lexicon = dsl_module.dsl, dsl_module.evaluator, dsl_module.lexicon
 
-if hasattr(dsl, "reproduce_dataset"):
-    reproduce_dataset = dsl.reproduce_dataset
+if hasattr(dsl_module, "reproduce_dataset"):
+    reproduce_dataset = dsl_module.reproduce_dataset
 else:
     from synth.pbe.task_generator import reproduce_int_dataset as reproduce_dataset
 
