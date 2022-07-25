@@ -217,6 +217,6 @@ def reproduce_transduction_dataset(
         lambda _, max_list_length: basic_output_validator(str_lexicon, max_list_length),
         lambda _: str_lexicon,
         seed,
-        **args,
+        *args,
         **kwargs
     )
