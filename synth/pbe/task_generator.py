@@ -42,6 +42,7 @@ class TaskGenerator:
         max_tries: int = 100,
         uniques: bool = False,
         skip_exceptions: Optional[Set[PythonType]] = None,
+        verbose: bool = False,
     ) -> None:
         self.input_generator = input_generator
         self.evaluator = evaluator
@@ -53,6 +54,7 @@ class TaskGenerator:
         self.skip_exceptions = skip_exceptions or set()
         self.uniques = uniques
         self.seen: Set[Program] = set()
+        self.verbose = verbose
 
         self._failed_types: Set[Type] = set()
         # For statistics
@@ -61,25 +63,32 @@ class TaskGenerator:
         }
         self.generated_types: Dict[Type, int] = {t: 0 for t in self.type2pgrammar}
 
-    def __generate_program__(self, type_request: Type) -> Program:
+    def __generate_program__(self, type_request: Type) -> Tuple[Program, bool]:
+        """
+        (program, is_unique)
+        """
         nargs: int = len(type_request.arguments())
         solution: Program = self.type2pgrammar[type_request].sample_program()
-        while solution in self.seen:
-            solution = self.type2pgrammar[type_request].sample_program()
         tries: int = 0
+        unique_tries: int = 0
+        while solution in self.seen and unique_tries < self.max_tries:
+            solution = self.type2pgrammar[type_request].sample_program()
+            unique_tries += 1
+
         var_used = len(solution.used_variables())
         best = solution
+        tries = 0
         while var_used < nargs and tries < self.max_tries:
             solution = self.type2pgrammar[type_request].sample_program()
-            while solution in self.seen:
+            while solution in self.seen and unique_tries < self.max_tries:
                 solution = self.type2pgrammar[type_request].sample_program()
-
+                unique_tries += 1
             tries += 1
             n = len(solution.used_variables())
             if n > var_used:
                 var_used = n
                 best = solution
-        return best
+        return best, unique_tries < self.max_tries
 
     def generate_task(self) -> Task[PBE]:
         self._failed_types.clear()
@@ -92,7 +101,7 @@ class TaskGenerator:
             arguments = type_request.arguments()
 
             # Generate correct program that makes use of all variables
-            solution = self.__generate_program__(type_request)
+            solution, is_unique = self.__generate_program__(type_request)
             # Try to generate the required number of samples
             samples = self.gen_random_sample_number.sample(type=type_request)
             inputs: TList = []
@@ -128,8 +137,15 @@ class TaskGenerator:
                 continue
             self._failed_types = set()
             self.generated_types[type_request] += 1
-            if self.uniques:
+            if self.uniques and is_unique:
                 self.seen.add(solution)
+            elif self.verbose:
+                print(
+                    "Generated a copy of an existing program for type request:",
+                    type_request,
+                    "program:",
+                    solution,
+                )
             return Task(
                 type_request,
                 PBE([Example(inp, out) for inp, out in zip(inputs, outputs)]),

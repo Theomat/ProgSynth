@@ -506,7 +506,7 @@ with open(f"constraints_{dsl_name}.py", "w") as fd:
 
 classes = [get_equivalence_class(i) for i in range(n_equiv_classes)]
 classes = [l for l in classes if len(l) > 1]
-with open("equivalent_classes_{dsl_name}.json", "w") as fd:
+with open(f"equivalent_classes_{dsl_name}.json", "w") as fd:
     my_list = [list(map(str, l)) for l in classes]
     json.dump(my_list, fd)
 

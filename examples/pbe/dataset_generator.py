@@ -91,6 +91,7 @@ with chrono.clock("dataset.reproduce") as c:
 # Add some exceptions that are ignored during task generation
 task_generator.skip_exceptions.add(TypeError)
 task_generator.uniques = True
+task_generator.verbose = True
 print("Generating dataset...", end="", flush=True)
 with chrono.clock("dataset.generate") as c:
     gen_dataset = Dataset(
