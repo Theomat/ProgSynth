@@ -55,10 +55,10 @@ class TransductionTaskGenerator(TaskGenerator):
         return Task(
             type_request,
             PBEWithConstants(
-                [Example(inp[2:], out) for inp, out in zip(inputs, outputs)]
+                [Example(inp[2:], out) for inp, out in zip(inputs, outputs)],
+                [self.__constants[0]],
+                [self.__constants[1]],
             ),
-            [self.__constants[0]],
-            [self.__constants[1]],
             solution,
             {"generated": True, **kwargs},
         )
@@ -117,7 +117,7 @@ def reproduce_transduction_dataset(
         ListSampler(
             LexiconSampler(str_lexicon, seed=seed),
             [(i + 4, probabilities[i]) for i in range(len(probabilities))],
-            max_depth=1,
+            max_depth=2,
             seed=seed,
         )
         .compose_with_type_mapper(lambda _: STR_list)
@@ -148,17 +148,18 @@ def reproduce_transduction_dataset(
         **kwargs
     )
 
-    return (
-        TransductionTaskGenerator(
-            task_generator.input_generator,
-            task_generator.evaluator,
-            task_generator.gen_random_type_request,
-            task_generator.gen_random_sample_number,
-            task_generator.type2pgrammar.values(),
-            task_generator.output_validator,
-            task_generator.max_tries,
-            task_generator.uniques,
-            task_generator.verbose,
-        ),
-        str_lexicon,
+    generator = TransductionTaskGenerator(
+        task_generator.input_generator,
+        task_generator.evaluator,
+        task_generator.gen_random_type_request,
+        task_generator.gen_random_sample_number,
+        task_generator.type2pgrammar.values(),
+        task_generator.output_validator,
+        task_generator.max_tries,
+        task_generator.uniques,
+        task_generator.verbose,
     )
+
+    generator.skip_exceptions.add(ValueError)
+
+    return generator, str_lexicon
