@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import (
     Any,
+    Callable,
     Dict,
     Generic,
     Iterable,
@@ -25,6 +26,18 @@ class Sampler(ABC, Generic[T]):
     @abstractmethod
     def sample(self, **kwargs: Any) -> T:
         pass
+
+    def compose(self, f: Callable[[T], T]) -> "Sampler[T]":
+        return ComposedSampler(self, f)
+
+
+class ComposedSampler(Sampler[T]):
+    def __init__(self, sampler: Sampler[T], f: Callable[[T], T]) -> None:
+        self.sampler = sampler
+        self.f = f
+
+    def sample(self, **kwargs: Any) -> T:
+        return self.f(self.sampler.sample(**kwargs))
 
 
 class LexiconSampler(Sampler[U]):
@@ -54,6 +67,20 @@ class RequestSampler(Sampler[U], ABC):
     @abstractmethod
     def sample_for(self, type: Type, **kwargs: Any) -> U:
         pass
+
+    def compose_with_type_mapper(
+        self, f: Callable[[Type], Type]
+    ) -> "RequestSampler[U]":
+        return TypeMappedRequestSampler(self, f)
+
+
+class TypeMappedRequestSampler(RequestSampler[U]):
+    def __init__(self, sampler: RequestSampler[U], f: Callable[[Type], Type]) -> None:
+        self.sampler = sampler
+        self.f = f
+
+    def sample_for(self, type: Type, **kwargs: Any) -> U:
+        return self.sampler.sample_for(self.f(type), **kwargs)
 
 
 class ListSampler(RequestSampler[Union[TList, U]]):
