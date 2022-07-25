@@ -53,7 +53,14 @@ __dsl_funcs: Dict[str, Callable[[bool], Optional[SimpleNamespace]]] = {
         ["dsl", "evaluator", "lexicon", "pretty_print_inputs", "pretty_print_inputs"],
     ),
     "transduction": __base_loader(
-        "transduction.transduction", ["dsl", "evaluator", "lexicon", "constant_types"]
+        "transduction.transduction",
+        [
+            "dsl",
+            "evaluator",
+            "lexicon",
+            "constant_types",
+            ("reproduce_transduction_dataset", "reproduce_dataset"),
+        ],
     ),
     "calculator": __base_loader("calculator.calculator"),
 }
