@@ -148,7 +148,9 @@ def reproduce_regexp_dataset(
         None,
         lambda _, __: None,
         lambda _: input_sampler,
-        lambda _, max_list_length: basic_output_validator(str_lexicon, max_list_length),
+        lambda _, max_list_length: basic_output_validator(
+            {str: str_lexicon, bool: [True, False]}, max_list_length
+        ),
         lambda _: str_lexicon,
         seed,
         *args,
