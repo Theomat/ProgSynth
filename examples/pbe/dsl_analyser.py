@@ -90,15 +90,10 @@ with chrono.clock("dataset.load") as c:
 our_eval = lambda *args: evaluator.eval(*args)
 
 if not no_reproduce:
-    if dsl_name == REGEXP:
-        from regexp.task_generator_regexp import reproduce_dataset
-    elif dsl_name == CALCULATOR:
-        from calculator.calculator_task_generator import reproduce_dataset
-    elif dsl_name == TRANSDUCTION:
-        print("Transductions cannot be reproduced! Please run with --no-reproduce")
-        sys.exit(1)
+    if hasattr(dsl_module, "reproduce_dataset"):
+        reproduce_dataset = dsl_module.reproduce_dataset
     else:
-        from synth.pbe import reproduce_dataset
+        from synth.pbe.task_generator import reproduce_int_dataset as reproduce_dataset
 
     # Reproduce dataset distribution
     print("Reproducing dataset...", end="", flush=True)
