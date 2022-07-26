@@ -26,16 +26,16 @@ syntax = {
 semantics = {"+": lambda x: lambda y: x + y, "-": lambda x: lambda y: x - y, "1": 1}
 
 type_req = FunctionType(INT, INT)
-int_lexicon = list(range(100))
+int_lexicon = list(range(-100, 100))
 max_depth = 4
 dsl = DSL(syntax)
-validator = basic_output_validator(int_lexicon, -1)
+validator = basic_output_validator({int: int_lexicon}, -1)
 
 
 def test_gen() -> None:
     samples_lexicon = [2, 3, 4]
     pcfg = ProbDetGrammar.uniform(CFG.depth_constraint(dsl, type_req, max_depth))
-    pcfg.init_sampling(0)
+    pcfg.init_sampling(20)
     g = TaskGenerator(
         LexiconSampler(int_lexicon, seed=10),
         DSLEvaluator(semantics),
@@ -79,3 +79,6 @@ def test_seed() -> None:
     )
     for _ in range(100):
         assert g1.generate_task() == g2.generate_task()
+
+
+test_gen()
