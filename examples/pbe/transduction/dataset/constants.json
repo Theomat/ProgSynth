@@ -72,30 +72,30 @@
             {
                 "inputs": [
                     "+33",
-                    "04455678"
+                    "04 45 56 78"
                 ],
-                "output": "+334 45 56 78"
+                "output": "+334455678"
             },
             {
                 "inputs": [
                     "+72",
-                    "06151616"
+                    "06 15 16 16"
                 ],
-                "output": "+726 15 16 16"
+                "output": "+726151616"
             },
             {
                 "inputs": [
                     "+59",
-                    "1784521"
+                    "01 78 45 21"
                 ],
-                "output": "+591 78 45 21"
+                "output": "+591784521"
             },
             {
                 "inputs": [
                     "+10",
-                    "7465894"
+                    "47 46 58 94"
                 ],
-                "output": "+107 46 58 94"
+                "output": "+107465894"
             }
         ],
         "metadata": {
@@ -245,34 +245,34 @@
         "examples": [
             {
                 "inputs": [
-                    "French"
+                    "France"
                 ],
-                "output": "France, capital: Paris"
+                "output": "French, capital:Paris"
             },
             {
                 "inputs": [
-                    "German"
+                    "Germany"
                 ],
-                "output": "Germany, capital:Berlin"
+                "output": "German, capital:Berlin"
             },
             {
                 "inputs": [
-                    "Polish"
+                    "Poland"
                 ],
-                "output": "Poland, capital:Warsaw"
+                "output": "Polish, capital:Warsaw"
             },
             {
                 "inputs": [
-                    "New Zealander"
+                    "New Zealand"
                 ],
-                "output": "New Zealand, capital:Wellington"
+                "output": "New Zealander, capital:Wellington"
             }
         ],
         "metadata": {
             "constant_detection": 0,
             "knowledge_graph_relationship": 1,
             "constant_post_processing": 0,
-            "name": "country and capital from demonym"
+            "name": "demonym and capital from country"
         }
     },
     {
