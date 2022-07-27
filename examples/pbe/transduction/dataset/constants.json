@@ -111,25 +111,25 @@
                 "inputs": [
                     "Coffee"
                 ],
-                "output": "Coffee in reversed is eeffoC"
+                "output": "Coffee reversed is eeffoC"
             },
             {
                 "inputs": [
                     "Tea"
                 ],
-                "output": "Tea in  reversed is aeT"
+                "output": "Tea reversed is aeT"
             },
             {
                 "inputs": [
                     "Orange Juice"
                 ],
-                "output": "Orange Juice in reverse is eciuJ egnarO"
+                "output": "Orange Juice reversed is eciuJ egnarO"
             },
             {
                 "inputs": [
                     "Water"
                 ],
-                "output": "Water in reverse is rateW"
+                "output": "Water reversed is rateW"
             }
         ],
         "metadata": {
