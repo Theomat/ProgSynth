@@ -155,6 +155,12 @@ class DSL:
                 if are_equivalent_primitives(P, source[0]):
                     forbidden_sets[(P.primitive, source[1])] = forbidden_sets[source]
 
+    def get_primitive(self, name: str) -> Optional[Primitive]:
+        for P in self.list_primitives:
+            if P.primitive == name:
+                return P
+        return None
+
 
 def are_equivalent_primitives(
     p1: Union[str, Primitive], p2: Union[str, Primitive]
