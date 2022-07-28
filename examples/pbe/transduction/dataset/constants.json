@@ -410,5 +410,661 @@
             "constant_post_processing": 0,
             "name": "country and title of chief of state from demonym"
         }
+    },
+    {
+        "metadata": {
+            "name": "head mock fr.",
+            "constant_detection": 0,
+            "knowledge_graph_relationship": 1,
+            "constant_post_processing": 0,
+            "from_flashgpt3": true
+        },
+        "examples": [
+            {
+                "inputs": [
+                    "un"
+                ],
+                "output": "row_1"
+            },
+            {
+                "inputs": [
+                    "deux"
+                ],
+                "output": "row_2"
+            },
+            {
+                "inputs": [
+                    "trois"
+                ],
+                "output": "row_3"
+            },
+            {
+                "inputs": [
+                    "quatre"
+                ],
+                "output": "row_4"
+            },
+            {
+                "inputs": [
+                    "cinq"
+                ],
+                "output": "row_5"
+            },
+            {
+                "inputs": [
+                    "six"
+                ],
+                "output": "row_6"
+            },
+            {
+                "inputs": [
+                    "sept"
+                ],
+                "output": "row_7"
+            },
+            {
+                "inputs": [
+                    "huit"
+                ],
+                "output": "row_8"
+            },
+            {
+                "inputs": [
+                    "neuf"
+                ],
+                "output": "row_9"
+            },
+            {
+                "inputs": [
+                    "dix"
+                ],
+                "output": "row_10"
+            }
+        ]
+    },
+    {
+        "metadata": {
+            "name": "head novel author.",
+            "constant_detection": 0,
+            "knowledge_graph_relationship": 1,
+            "constant_post_processing": 0,
+            "from_flashgpt3": true
+        },
+        "examples": [
+            {
+                "inputs": [
+                    "Pet Sematary"
+                ],
+                "output": "King's Pet Sematary"
+            },
+            {
+                "inputs": [
+                    "1984"
+                ],
+                "output": "Orwell's 1984"
+            },
+            {
+                "inputs": [
+                    "The Lord of the Rings"
+                ],
+                "output": "Tolkien's The Lord of the Rings"
+            },
+            {
+                "inputs": [
+                    "The Da Vinci Code"
+                ],
+                "output": "Brown's The Da Vinci Code"
+            },
+            {
+                "inputs": [
+                    "Gulliver's Travels"
+                ],
+                "output": "Swift's Gulliver's Travels"
+            },
+            {
+                "inputs": [
+                    "Twilight"
+                ],
+                "output": "Meyer's Twilight"
+            },
+            {
+                "inputs": [
+                    "Girl with the Dragon Tattoo"
+                ],
+                "output": "Larsson's Girl with the Dragon Tattoo"
+            },
+            {
+                "inputs": [
+                    "Harry Potter and the Philosopher's Stone"
+                ],
+                "output": "Rowling's Harry Potter and the Philosopher's Stone"
+            },
+            {
+                "inputs": [
+                    "Life of Pi"
+                ],
+                "output": "Martel's Life of Pi"
+            },
+            {
+                "inputs": [
+                    "Atonement"
+                ],
+                "output": "McEwan's Atonement"
+            }
+        ]
+    },
+    {
+        "metadata": {
+            "name": "head airport 1.",
+            "constant_detection": 0,
+            "knowledge_graph_relationship": 1,
+            "constant_post_processing": 0,
+            "from_flashgpt3": true
+        },
+        "examples": [
+            {
+                "inputs": [
+                    "FRA"
+                ],
+                "output": "Departure from Frankfurt (FRA)"
+            },
+            {
+                "inputs": [
+                    "PRG"
+                ],
+                "output": "Departure from Prague (PRG)"
+            },
+            {
+                "inputs": [
+                    "HND"
+                ],
+                "output": "Departure from Tokyo (HND)"
+            },
+            {
+                "inputs": [
+                    "BOS"
+                ],
+                "output": "Departure from Boston (BOS)"
+            },
+            {
+                "inputs": [
+                    "DXB"
+                ],
+                "output": "Departure from Dubai (DXB)"
+            },
+            {
+                "inputs": [
+                    "LHR"
+                ],
+                "output": "Departure from London (LHR)"
+            },
+            {
+                "inputs": [
+                    "AMS"
+                ],
+                "output": "Departure from Amsterdam (AMS)"
+            },
+            {
+                "inputs": [
+                    "IST"
+                ],
+                "output": "Departure from Istanbul (IST)"
+            },
+            {
+                "inputs": [
+                    "SIN"
+                ],
+                "output": "Departure from Singapore (SIN)"
+            },
+            {
+                "inputs": [
+                    "ATL"
+                ],
+                "output": "Departure from Atlanta (ATL)"
+            }
+        ]
+    },
+    {
+        "metadata": {
+            "name": "head mock nl.",
+            "constant_detection": 0,
+            "knowledge_graph_relationship": 1,
+            "constant_post_processing": 0,
+            "from_flashgpt3": true
+        },
+        "examples": [
+            {
+                "inputs": [
+                    "een"
+                ],
+                "output": "row_1"
+            },
+            {
+                "inputs": [
+                    "twee"
+                ],
+                "output": "row_2"
+            },
+            {
+                "inputs": [
+                    "drie"
+                ],
+                "output": "row_3"
+            },
+            {
+                "inputs": [
+                    "vier"
+                ],
+                "output": "row_4"
+            },
+            {
+                "inputs": [
+                    "vijf"
+                ],
+                "output": "row_5"
+            },
+            {
+                "inputs": [
+                    "zes"
+                ],
+                "output": "row_6"
+            },
+            {
+                "inputs": [
+                    "zeven"
+                ],
+                "output": "row_7"
+            },
+            {
+                "inputs": [
+                    "acht"
+                ],
+                "output": "row_8"
+            },
+            {
+                "inputs": [
+                    "negen"
+                ],
+                "output": "row_9"
+            },
+            {
+                "inputs": [
+                    "tien"
+                ],
+                "output": "row_10"
+            }
+        ]
+    },
+    {
+        "metadata": {
+            "name": "head locale other.",
+            "constant_detection": 0,
+            "knowledge_graph_relationship": 0,
+            "constant_post_processing": 0,
+            "from_flashgpt3": true
+        },
+        "examples": [
+            {
+                "inputs": [
+                    "China /some|really|long/text/"
+                ],
+                "output": "zhCN (really)"
+            },
+            {
+                "inputs": [
+                    "Japan |some|short/text/"
+                ],
+                "output": "jaJP (some)"
+            },
+            {
+                "inputs": [
+                    "Korea /some/very|very|verylong/text/"
+                ],
+                "output": "koKR (very)"
+            },
+            {
+                "inputs": [
+                    "Taiwan /somevery/long|text|"
+                ],
+                "output": "zhTW (text)"
+            },
+            {
+                "inputs": [
+                    "Brazil |tiny|"
+                ],
+                "output": "ptBR (tiny)"
+            },
+            {
+                "inputs": [
+                    "Spain /very/very/long/and/even|longer|obnoxious/text/"
+                ],
+                "output": "esES (longer)"
+            }
+        ]
+    },
+    {
+        "metadata": {
+            "name": "head date french.",
+            "constant_detection": 0,
+            "knowledge_graph_relationship": 1,
+            "constant_post_processing": 0,
+            "from_flashgpt3": true
+        },
+        "examples": [
+            {
+                "inputs": [
+                    "May 29, 1953"
+                ],
+                "output": "29 mai 1953"
+            },
+            {
+                "inputs": [
+                    "July 1, 1954"
+                ],
+                "output": "1 juillet 1954"
+            },
+            {
+                "inputs": [
+                    "June 25, 1955"
+                ],
+                "output": "25 juin 1955"
+            },
+            {
+                "inputs": [
+                    "January 8, 1956"
+                ],
+                "output": "8 janvier 1956"
+            },
+            {
+                "inputs": [
+                    "September 15, 1955"
+                ],
+                "output": "15 septembre 1955"
+            },
+            {
+                "inputs": [
+                    "December 24, 1992"
+                ],
+                "output": "24 décembre 1992"
+            },
+            {
+                "inputs": [
+                    "February 28, 2000"
+                ],
+                "output": "28 février 2000"
+            },
+            {
+                "inputs": [
+                    "October 20, 1994"
+                ],
+                "output": "20 octobre 1994"
+            },
+            {
+                "inputs": [
+                    "April 1, 2021"
+                ],
+                "output": "1 avril 2021"
+            },
+            {
+                "inputs": [
+                    "March 22, 2020"
+                ],
+                "output": "22 mars 2020"
+            }
+        ]
+    },
+    {
+        "metadata": {
+            "name": "head painting artist.",
+            "constant_detection": 0,
+            "knowledge_graph_relationship": 1,
+            "constant_post_processing": 0,
+            "from_flashgpt3": true
+        },
+        "examples": [
+            {
+                "inputs": [
+                    "Guernica"
+                ],
+                "output": "Picasso's Guernica"
+            },
+            {
+                "inputs": [
+                    "Girl with a Pearl Earring"
+                ],
+                "output": "Vermeer's Girl with a Pearl Earring"
+            },
+            {
+                "inputs": [
+                    "Broadway Boogie-Woogie"
+                ],
+                "output": "Mondrian's Broadway Boogie-Woogie "
+            },
+            {
+                "inputs": [
+                    "The Scream"
+                ],
+                "output": "Munch's The Scream"
+            },
+            {
+                "inputs": [
+                    "The Kiss"
+                ],
+                "output": "Klimt's The Kiss"
+            },
+            {
+                "inputs": [
+                    "The Birth of Venus"
+                ],
+                "output": "Botticelli's The Birth of Venus"
+            },
+            {
+                "inputs": [
+                    "Nighthawks"
+                ],
+                "output": "Hopper's Nighthawks"
+            },
+            {
+                "inputs": [
+                    "The Persistence of Memory"
+                ],
+                "output": "Dalí's The Persistence of Memory"
+            },
+            {
+                "inputs": [
+                    "The Night Watch"
+                ],
+                "output": "Rembrandt's The Night Watch"
+            }
+        ]
+    },
+    {
+        "metadata": {
+            "name": "head mock en.",
+            "constant_detection": 0,
+            "knowledge_graph_relationship": 1,
+            "constant_post_processing": 0,
+            "from_flashgpt3": true
+        },
+        "examples": [
+            {
+                "inputs": [
+                    "one"
+                ],
+                "output": "row_1"
+            },
+            {
+                "inputs": [
+                    "two"
+                ],
+                "output": "row_2"
+            },
+            {
+                "inputs": [
+                    "three"
+                ],
+                "output": "row_3"
+            },
+            {
+                "inputs": [
+                    "four"
+                ],
+                "output": "row_4"
+            },
+            {
+                "inputs": [
+                    "five"
+                ],
+                "output": "row_5"
+            },
+            {
+                "inputs": [
+                    "six"
+                ],
+                "output": "row_6"
+            },
+            {
+                "inputs": [
+                    "seven"
+                ],
+                "output": "row_7"
+            },
+            {
+                "inputs": [
+                    "eight"
+                ],
+                "output": "row_8"
+            },
+            {
+                "inputs": [
+                    "nine"
+                ],
+                "output": "row_9"
+            },
+            {
+                "inputs": [
+                    "ten"
+                ],
+                "output": "row_10"
+            }
+        ]
+    },
+    {
+        "metadata": {
+            "name": "head currency.",
+            "constant_detection": 0,
+            "knowledge_graph_relationship": 1,
+            "constant_post_processing": 0,
+            "from_flashgpt3": true
+        },
+        "examples": [
+            {
+                "inputs": [
+                    "United States"
+                ],
+                "output": "USD"
+            },
+            {
+                "inputs": [
+                    "Japan"
+                ],
+                "output": "JPY"
+            },
+            {
+                "inputs": [
+                    "European Union"
+                ],
+                "output": "EUR"
+            },
+            {
+                "inputs": [
+                    "United Kingdom"
+                ],
+                "output": "GBP"
+            },
+            {
+                "inputs": [
+                    "Australia"
+                ],
+                "output": "AUD"
+            },
+            {
+                "inputs": [
+                    "Canada"
+                ],
+                "output": "CAD"
+            },
+            {
+                "inputs": [
+                    "Sweden"
+                ],
+                "output": "SEK"
+            },
+            {
+                "inputs": [
+                    "Czechia"
+                ],
+                "output": "CZK"
+            },
+            {
+                "inputs": [
+                    "China"
+                ],
+                "output": "CNY"
+            },
+            {
+                "inputs": [
+                    "South Korea"
+                ],
+                "output": "KRW"
+            }
+        ]
+    },
+    {
+        "metadata": {
+            "name": "head monthname long.",
+            "constant_detection": 0,
+            "knowledge_graph_relationship": 1,
+            "constant_post_processing": 0,
+            "from_flashgpt3": true
+        },
+        "examples": [
+            {
+                "inputs": [
+                    "03/29/86"
+                ],
+                "output": "March 29"
+            },
+            {
+                "inputs": [
+                    "02/15/84"
+                ],
+                "output": "February 15"
+            },
+            {
+                "inputs": [
+                    "11/30/2017"
+                ],
+                "output": "November 30"
+            },
+            {
+                "inputs": [
+                    "12/28/2004"
+                ],
+                "output": "December 28"
+            },
+            {
+                "inputs": [
+                    "03/03/2007"
+                ],
+                "output": "March 03"
+            },
+            {
+                "inputs": [
+                    "08/22/2010"
+                ],
+                "output": "August 22"
+            }
+        ]
     }
 ]
