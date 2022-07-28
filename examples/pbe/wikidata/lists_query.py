@@ -1,57 +1,37 @@
-from typing import Dict, List
-from wrapper import ListWrapper
-from wikicode_getter import get_wikidata_json, ITEM
-import requests as r
-import pandas as pd
+from typing import List, Set, Tuple
+from SPARQLWrapper import SPARQLWrapper, JSON
 
-"""
-This file demonstrates a way to fetch from a list of str a wikimedia list object that contains, if the queries succeeded, the aforementioned list of str.
-"""
+SPARQL_ENDPOINT = "http://192.168.1.20:9999/blazegraph/namespace/kb/sparql"
 
 
-def get_lists_url(
-    items: List[str], num_lists: int = 2, num_list_per_property: int = 2
-) -> List[List[str]]:
-    q_codes: List[str] = []
-    for item in items:
-        data = get_wikidata_json(item, ITEM)
-        code = "wd:" + data["search"][0]["id"]
-        q_codes.append(code)
-    wrapper = ListWrapper(q_codes)
-    properties = wrapper.list_properties()
-    num_properties = len(properties)
-    lists: List[List[str]] = []
-    for i in range(min(num_properties, num_lists)):
-        lists.append(wrapper.get_lists(properties[i], num_list_per_property))
-    return lists
+def get_path(entities: List[Tuple[str, str]]) -> None:
+    wrapper = SPARQLWrapper(SPARQL_ENDPOINT)
+    wrapper.setReturnFormat(JSON)
 
+    first = entities.pop()
+    subquery = ""
+    for i, item in enumerate(entities):
+        subquery += f"\tFILTER EXISTS {{ yago:{item[0]} ?p1 ?o{i} . \n\t\t\t ?o{i} ?p2 yago:{item[1]}}} .\n"
+    sparql_request = f"""PREFIX yago: <http://yago-knowledge.org/resource/>
+    SELECT ?p1 ?p2 ?obj
+    WHERE
+    {{
+        yago:{first[0]} ?p1 ?obj .
+        ?obj ?p2 yago:{first[1]}
+{subquery}
+    }}"""
+    wrapper.setQuery(sparql_request)
+    answer = wrapper.query().convert()
+    print(sparql_request)
+    print()
+    print(answer)
 
-"""
-this method will use pandas in order to generate .csv files of the tables extracted from html wikipedia pages.
-urls: the list of wikipedia page of the list
-match: a string that must be contained in the table extracted by pandas.
-"""
-
-
-def get_lists(urls: List[List[str]], match: str) -> None:
-    for list in urls:
-        for url in list:
-            try:
-                response = r.get(url)
-                json = response.json()
-                # there may be several entities in one response
-                for field in json["entities"]:
-                    wikien_url = json["entities"][field]["sitelinks"]["enwiki"]["url"]
-                    name = wikien_url.split("/")[-1] + ".csv"
-                    html = r.get(wikien_url).content
-                    df_list = pd.read_html(html, match=match)
-                    df = df_list[-1]
-                    df.to_csv(name)
-            except Exception as e:
-                print("Exception : ", e)
+    properties: Set[str] = set()
+    for r in answer["results"]["bindings"]:
+        properties.add("yago:" + r["obj"]["value"].split("/")[-1])
+    return properties
 
 
 if __name__ == "__main__":
-    countries = ["France", "Poland", "Belgium", "Canada", "Djibouti"]
-    urls = get_lists_url(countries)
-    get_lists(urls, "France")
+    countries = [("France", "Paris"), ("Poland", "Warsaw"), ("Belgium", "Brussels")]
+    print(get_path(countries))
