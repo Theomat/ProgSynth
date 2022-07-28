@@ -1,6 +1,5 @@
 from collections import defaultdict
 import json
-import sys
 from typing import Any, Dict, Generator, List, Set, Tuple, TypeVar
 import copy
 import argparse
@@ -493,7 +492,7 @@ print(f"Produced {len(pattern_constraints)} type constraints.")
 with open(f"constraints_{dsl_name}.py", "w") as fd:
     fd.write("forbidden_patterns = {")
     for k, v in sorted(syntaxic_restrictions.items()):
-        fd.write(f'"{k}":  {{ "' + '", "'.join(sorted(v)) + '"}, ')
+        fd.write(f'{k}:  {{ "' + '", "'.join(sorted(v)) + '"}, ')
     fd.write("}\n")
     fd.write("\n")
     fd.write("pattern_constraints = ")
