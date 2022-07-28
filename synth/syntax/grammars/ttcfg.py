@@ -10,9 +10,11 @@ from typing import (
     TypeVar,
     Generic,
     Union,
+    overload,
 )
 
 from synth.syntax.dsl import DSL
+from synth.syntax.grammars.dfa import DFA
 from synth.syntax.program import Constant, Primitive, Variable
 from synth.syntax.type_system import Arrow, Type, UnknownType
 from synth.syntax.grammars.det_grammar import DerivableProgram, DetGrammar
@@ -82,7 +84,22 @@ class TTCFG(
         # This will cause an error if this is not the last call to derive
         return information, (UnknownType(), (start[1][0], state))
 
+    @overload
     def __mul__(self, other: "TTCFG[U, V]") -> "TTCFG[Tuple[S, U], Tuple[T, V]]":
+        pass
+
+    @overload
+    def __mul__(self, other: DFA[U, str]) -> "TTCFG[S, Tuple[T, U]]":
+        pass
+
+    def __mul__(
+        self, other: Union["TTCFG[U, V]", DFA[U, str]]
+    ) -> Union["TTCFG[S, Tuple[T, U]]", "TTCFG[Tuple[S, U], Tuple[T, V]]"]:
+        if isinstance(other, TTCFG):
+            return self.__mul_ttcfg__(other)
+        return self.__mul_dfa__(other)
+
+    def __mul_ttcfg__(self, other: "TTCFG[U, V]") -> "TTCFG[Tuple[S, U], Tuple[T, V]]":
         assert (
             self.type_request == other.type_request
         ), "Both TTCFGs do not have the same type request!"
@@ -122,6 +139,36 @@ class TTCFG(
                             (self.rules[nT1][P1][1], other.rules[nT2][P1][1]),
                         )
 
+        return TTCFG(start, rules, clean=True)
+
+    def __mul_dfa__(self, other: DFA[U, str]) -> "TTCFG[S, Tuple[T, U]]":
+        rules: Dict[
+            Tuple[Type, Tuple[S, Tuple[T, U]]],
+            Dict[
+                Union[Primitive, Variable, Constant],
+                Tuple[List[Tuple[Type, S]], Tuple[T, U]],
+            ],
+        ] = {}
+        start: Tuple[Type, Tuple[S, Tuple[T, U]]] = (
+            self.start[0],
+            (
+                self.start[1][0],
+                (self.start[1][1], other.start),
+            ),
+        )
+        for nT1 in self.rules:
+            for nT2 in other.rules:
+                rule = (nT1[0], (nT1[1][0], (nT1[1][1], nT2)))
+                rules[rule] = {}
+                for P1 in self.rules[nT1]:
+                    for P2 in other.rules[nT2]:
+                        if str(P1) != P2:
+                            continue
+                        new_deriv = self.rules[nT1][P1][0][:]
+                        rules[rule][P1] = (
+                            new_deriv,
+                            (self.rules[nT1][P1][1], other.rules[nT2][P2]),
+                        )
         return TTCFG(start, rules, clean=True)
 
     def clean(self) -> None:
