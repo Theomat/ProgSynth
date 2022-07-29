@@ -197,7 +197,7 @@
                 "inputs": [
                     "Leonhard Euler"
                 ],
-                "output": "Euler is German"
+                "output": "Euler is Swiss"
             }
         ],
         "metadata": {
@@ -315,25 +315,25 @@
                 "inputs": [
                     "John von Neumann"
                 ],
-                "output": "Washington is the capital of the country von Neumann lived in."
+                "output": "Washington is the capital of the country von Neumann was born in."
             },
             {
                 "inputs": [
                     "Ada Lovelace"
                 ],
-                "output": "London is the capital of the country Lovelace lived in."
+                "output": "London is the capital of the country Lovelace was born in."
             },
             {
                 "inputs": [
                     "Blaise Pascal"
                 ],
-                "output": "Paris is the capital of the country Pascal lived in."
+                "output": "Paris is the capital of the country Pascal was born in."
             },
             {
                 "inputs": [
                     "Leonhard Euler"
                 ],
-                "output": "Berlin is the capital of the country Euler lived in."
+                "output": "Bern is the capital of the country Euler was born in."
             }
         ],
         "metadata": {
@@ -745,7 +745,7 @@
     {
         "metadata": {
             "name": "head date french.",
-            "constant_detection": 0,
+            "constant_detection": 1,
             "knowledge_graph_relationship": 1,
             "constant_post_processing": 0,
             "from_flashgpt3": true
@@ -1023,7 +1023,7 @@
     {
         "metadata": {
             "name": "head monthname long.",
-            "constant_detection": 0,
+            "constant_detection": 1,
             "knowledge_graph_relationship": 1,
             "constant_post_processing": 0,
             "from_flashgpt3": true
@@ -1066,5 +1066,279 @@
                 "output": "August 22"
             }
         ]
+    },
+    {
+        "examples": [
+            {
+                "inputs": [
+                    "This is Paris!"
+                ],
+                "output": "I live in France"
+            },
+            {
+                "inputs": [
+                    "This is Berlin!"
+                ],
+                "output": "I live in Germany"
+            },
+            {
+                "inputs": [
+                    "This is Detroit!"
+                ],
+                "output": "I live in United States"
+            },
+            {
+                "inputs": [
+                    "This is Mexico!"
+                ],
+                "output": "I live in Mexico"
+            }
+        ],
+        "metadata": {
+            "constant_detection": 1,
+            "knowledge_graph_relationship": 1,
+            "constant_post_processing": 0,
+            "name": "country from city + concat"
+        }
+    },
+    {
+        "examples": [
+            {
+                "inputs": [
+                    "Donald Knuth was born in 1938"
+                ],
+                "output": "Knuth is American"
+            },
+            {
+                "inputs": [
+                    "She worked onthe analytical machine, her name was Ada Lovelace"
+                ],
+                "output": "Lovelace is English"
+            },
+            {
+                "inputs": [
+                    "Blaise Pascal was born in june"
+                ],
+                "output": "Pascal is French"
+            },
+            {
+                "inputs": [
+                    "Leonhard Euler was born in Switzerland"
+                ],
+                "output": "Euler is Swiss"
+            }
+        ],
+        "metadata": {
+            "constant_detection": 1,
+            "knowledge_graph_relationship": 1,
+            "constant_post_processing": 0,
+            "name": "family name + nationality"
+        }
+    },
+    {
+        "examples": [
+            {
+                "inputs": [
+                    "Winston Churchill|Barack Obama|Charles De Gaulles Theodore Roosevelt"
+                ],
+                "output": "Obama was chief of state of United States"
+            },
+            {
+                "inputs": [
+                    "Winston Churchill Barack Obama|Charles De Gaulles|Theodore Roosevelt"
+                ],
+                "output": "De Gaulle was chief of state of France"
+            },
+            {
+                "inputs": [
+                    "|Winston Churchill|Barack Obama Charles De Gaulles Theodore Roosevelt"
+                ],
+                "output": "Churchill was chief of state of England"
+            },
+            {
+                "inputs": [
+                    "Winston Churchill Barack Obama Charles De Gaulles|Theodore Roosevelt|"
+                ],
+                "output": "Roosevelt was chief of state of United States"
+            }
+        ],
+        "metadata": {
+            "constant_detection": 1,
+            "knowledge_graph_relationship": 1,
+            "constant_post_processing": 0,
+            "name": "family name + chief of state from |_|"
+        }
+    },
+    {
+        "examples": [
+            {
+                "inputs": [
+                    "FranceFrance"
+                ],
+                "output": "French, capital:Paris"
+            },
+            {
+                "inputs": [
+                    "GermanyGermany"
+                ],
+                "output": "German, capital:Berlin"
+            },
+            {
+                "inputs": [
+                    "PolandPoland"
+                ],
+                "output": "Polish, capital:Warsaw"
+            },
+            {
+                "inputs": [
+                    "New ZealandNew Zealand"
+                ],
+                "output": "New Zealander, capital:Wellington"
+            }
+        ],
+        "metadata": {
+            "constant_detection": 1,
+            "knowledge_graph_relationship": 1,
+            "constant_post_processing": 0,
+            "name": "demonym and capital from countryx2"
+        }
+    },
+    {
+        "examples": [
+            {
+                "inputs": [
+                    "Paris", "345"
+                ],
+                "output": "The phone country code is 33"
+            },
+            {
+                "inputs": [
+                    "Berlin", "168468"
+                ],
+                "output": "The phone country code is 49"
+            },
+            {
+                "inputs": [
+                    "Detroit", "4488"
+                ],
+                "output": "The phone country code is 1"
+            },
+            {
+                "inputs": [
+                    "Mexico", "145"
+                ],
+                "output": "The phone country code is 52"
+            }
+        ],
+        "metadata": {
+            "constant_detection": 1,
+            "knowledge_graph_relationship": 2,
+            "constant_post_processing": 0,
+            "name": "phone country code from city"
+        }
+    },
+    {
+        "examples": [
+            {
+                "inputs": [
+                    "blabla >John von Neumann< blabla bla"
+                ],
+                "output": "Washington is the capital of the country von Neumann was born in."
+            },
+            {
+                "inputs": [
+                    ">Ada Lovelace< |Surprise|"
+                ],
+                "output": "London is the capital of the country Lovelace was born in."
+            },
+            {
+                "inputs": [
+                    "Revolution >Blaise Pascal<"
+                ],
+                "output": "Paris is the capital of the country Pascal was born in."
+            },
+            {
+                "inputs": [
+                    "<<<<<<>Leonhard Euler<<<<<<<<"
+                ],
+                "output": "Bern is the capital of the country Euler was born in."
+            }
+        ],
+        "metadata": {
+            "constant_detection": 1,
+            "knowledge_graph_relationship": 2,
+            "constant_post_processing": 0,
+            "name": "person to capital"
+        }
+    },
+    {
+        "examples": [
+            {
+                "inputs": [
+                    "Eiffel Tower is 330m tall"
+                ],
+                "output": "33 is the country code"
+            },
+            {
+                "inputs": [
+                    "Pisa Tower was finished in 1399"
+                ],
+                "output": "39 is the country code"
+            },
+            {
+                "inputs": [
+                    "Brandenburg Gate's construction started in 1788"
+                ],
+                "output": "49 is the country code"
+            },
+            {
+                "inputs": [
+                    "Statue Of Liberty was a gift from france"
+                ],
+                "output": "1 is the country code"
+            }
+        ],
+        "metadata": {
+            "constant_detection": 1,
+            "knowledge_graph_relationship": 2,
+            "constant_post_processing": 0,
+            "name": "monument in titlecase to country code"
+        }
+    },
+    {
+        "examples": [
+            {
+                "inputs": [
+                    "French", "German"
+                ],
+                "output": "Chief of state of France is the President."
+            },
+            {
+                "inputs": [
+                    "German", "Spanish"
+                ],
+                "output": "Chief of state of Germany is the Chancellor."
+            },
+            {
+                "inputs": [
+                    "Polish", "Greek"
+                ],
+                "output": "Chief of state of Poland is the President."
+            },
+            {
+                "inputs": [
+                    "New Zealander", "Australian"
+                ],
+                "output": "Chief of state of New Zealand is the Prime Minister."
+            }
+        ],
+        "metadata": {
+            "constant_detection": 1,
+            "knowledge_graph_relationship": 2,
+            "constant_post_processing": 0,
+            "name": "country and title of chief of state from demonym"
+        }
     }
+
+
 ]
