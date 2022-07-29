@@ -1207,25 +1207,29 @@
         "examples": [
             {
                 "inputs": [
-                    "Paris", "345"
+                    "Paris",
+                    "345"
                 ],
                 "output": "The phone country code is 33"
             },
             {
                 "inputs": [
-                    "Berlin", "168468"
+                    "Berlin",
+                    "168468"
                 ],
                 "output": "The phone country code is 49"
             },
             {
                 "inputs": [
-                    "Detroit", "4488"
+                    "Detroit",
+                    "4488"
                 ],
                 "output": "The phone country code is 1"
             },
             {
                 "inputs": [
-                    "Mexico", "145"
+                    "Mexico",
+                    "145"
                 ],
                 "output": "The phone country code is 52"
             }
@@ -1309,25 +1313,29 @@
         "examples": [
             {
                 "inputs": [
-                    "French", "German"
+                    "French",
+                    "German"
                 ],
                 "output": "Chief of state of France is the President."
             },
             {
                 "inputs": [
-                    "German", "Spanish"
+                    "German",
+                    "Spanish"
                 ],
                 "output": "Chief of state of Germany is the Chancellor."
             },
             {
                 "inputs": [
-                    "Polish", "Greek"
+                    "Polish",
+                    "Greek"
                 ],
                 "output": "Chief of state of Poland is the President."
             },
             {
                 "inputs": [
-                    "New Zealander", "Australian"
+                    "New Zealander",
+                    "Australian"
                 ],
                 "output": "Chief of state of New Zealand is the Prime Minister."
             }
@@ -1610,7 +1618,285 @@
             "constant_post_processing": 1,
             "name": "country and title of chief of state keep last 4 letters of each word from demonym"
         }
+    },
+    {
+        "examples": [
+            {
+                "inputs": [
+                    "This is Paris!"
+                ],
+                "output": "I live in ecnarF"
+            },
+            {
+                "inputs": [
+                    "This is Berlin!"
+                ],
+                "output": "I live in ynamreG"
+            },
+            {
+                "inputs": [
+                    "This is Detroit!"
+                ],
+                "output": "I live in setatS detinU"
+            },
+            {
+                "inputs": [
+                    "This is Mexico!"
+                ],
+                "output": "I live in ocixeM"
+            }
+        ],
+        "metadata": {
+            "knowledge_graph_relationship": 1,
+            "constant_detection": 1,
+            "constant_post_processing": 1,
+            "name": "reversed country from city + concat"
+        }
+    },
+    {
+        "examples": [
+            {
+                "inputs": [
+                    "Donald Knuth was born in 1938"
+                ],
+                "output": "Knuth is AM ER IC AN"
+            },
+            {
+                "inputs": [
+                    "She worked onthe analytical machine, her name was Ada Lovelace"
+                ],
+                "output": "Lovelace is EN GL IS H"
+            },
+            {
+                "inputs": [
+                    "Blaise Pascal was born in june"
+                ],
+                "output": "Pascal is FR EN CH"
+            },
+            {
+                "inputs": [
+                    "Leonhard Euler was born in Switzerland"
+                ],
+                "output": "Euler is SW IS S"
+            }
+        ],
+        "metadata": {
+            "knowledge_graph_relationship": 1,
+            "constant_detection": 1,
+            "constant_post_processing": 1,
+            "name": "family name + nationality in uppers"
+        }
+    },
+    {
+        "examples": [
+            {
+                "inputs": [
+                    "Winston Churchill|Barack Obama|Charles De Gaulles Theodore Roosevelt"
+                ],
+                "output": "Obama was chief of state of US"
+            },
+            {
+                "inputs": [
+                    "Winston Churchill Barack Obama|Charles De Gaulles|Theodore Roosevelt"
+                ],
+                "output": "De Gaulle was chief of state of FR"
+            },
+            {
+                "inputs": [
+                    "|Winston Churchill|Barack Obama Charles De Gaulles Theodore Roosevelt"
+                ],
+                "output": "Churchill was chief of state of EN"
+            },
+            {
+                "inputs": [
+                    "Winston Churchill Barack Obama Charles De Gaulles|Theodore Roosevelt|"
+                ],
+                "output": "Roosevelt was chief of state of US"
+            }
+        ],
+        "metadata": {
+            "knowledge_graph_relationship": 1,
+            "constant_detection": 1,
+            "constant_post_processing": 1,
+            "name": "family name + chief of state two first letters from |_|"
+        }
+    },
+    {
+        "examples": [
+            {
+                "inputs": [
+                    "FranceFrance"
+                ],
+                "output": "e, capital:Prs"
+            },
+            {
+                "inputs": [
+                    "GermanyGermany"
+                ],
+                "output": "ea, capital:Brln"
+            },
+            {
+                "inputs": [
+                    "PolandPoland"
+                ],
+                "output": "oi, capital:Wrsw"
+            },
+            {
+                "inputs": [
+                    "New ZealandNew Zealand"
+                ],
+                "output": "e eaae, capital:Wllngtn"
+            }
+        ],
+        "metadata": {
+            "knowledge_graph_relationship": 1,
+            "constant_detection": 1,
+            "constant_post_processing": 1,
+            "name": "vowels demonym and consonants capital from countryx2"
+        }
+    },
+    {
+        "examples": [
+            {
+                "inputs": [
+                    "Paris",
+                    "345"
+                ],
+                "output": "The phone country code is thirty-three"
+            },
+            {
+                "inputs": [
+                    "Berlin",
+                    "168468"
+                ],
+                "output": "The phone country code is forty-nine"
+            },
+            {
+                "inputs": [
+                    "Detroit",
+                    "4488"
+                ],
+                "output": "The phone country code is one"
+            },
+            {
+                "inputs": [
+                    "Mexico",
+                    "145"
+                ],
+                "output": "The phone country code is fifty-two"
+            }
+        ],
+        "metadata": {
+            "knowledge_graph_relationship": 2,
+            "constant_detection": 1,
+            "constant_post_processing": 1,
+            "name": "phone country code in letters from city"
+        }
+    },
+    {
+        "examples": [
+            {
+                "inputs": [
+                    "blabla >John von Neumann< blabla bla"
+                ],
+                "output": "Wsigo is the capital of the country von Neumann was born in."
+            },
+            {
+                "inputs": [
+                    ">Ada Lovelace< |Surprise|"
+                ],
+                "output": "Lno is the capital of the country Lovelace was born in."
+            },
+            {
+                "inputs": [
+                    "Revolution >Blaise Pascal<"
+                ],
+                "output": "Prs is the capital of the country Pascal was born in."
+            },
+            {
+                "inputs": [
+                    "<<<<<<>Leonhard Euler<<<<<<<<"
+                ],
+                "output": "Br is the capital of the country Euler was born in."
+            }
+        ],
+        "metadata": {
+            "knowledge_graph_relationship": 2,
+            "constant_detection": 1,
+            "constant_post_processing": 1,
+            "name": "person from >< to capital keep even letters"
+        }
+    },
+    {
+        "examples": [
+            {
+                "inputs": [
+                    "Eiffel Tower is 330m tall"
+                ],
+                "output": "6 is the country code"
+            },
+            {
+                "inputs": [
+                    "Pisa Tower was finished in 1399"
+                ],
+                "output": "12 is the country code"
+            },
+            {
+                "inputs": [
+                    "Brandenburg Gate's construction started in 1788"
+                ],
+                "output": "13 is the country code"
+            },
+            {
+                "inputs": [
+                    "Statue Of Liberty was a gift from france"
+                ],
+                "output": "1 is the country code"
+            }
+        ],
+        "metadata": {
+            "knowledge_graph_relationship": 2,
+            "constant_detection": 1,
+            "constant_post_processing": 1,
+            "name": "monument in titlecase to country code seem individual numbers (33->3+3)"
+        }
+    },
+    {
+        "examples": [
+            {
+                "inputs": [
+                    "French",
+                    "German"
+                ],
+                "output": "Chief of state of ance is the dent."
+            },
+            {
+                "inputs": [
+                    "German",
+                    "Spanish"
+                ],
+                "output": "Chief of state of many is the llor."
+            },
+            {
+                "inputs": [
+                    "Polish",
+                    "Greek"
+                ],
+                "output": "Chief of state of land is the dent."
+            },
+            {
+                "inputs": [
+                    "New Zealander",
+                    "Australian"
+                ],
+                "output": "Chief of state of New land is the rime ster."
+            }
+        ],
+        "metadata": {
+            "knowledge_graph_relationship": 2,
+            "constant_detection": 1,
+            "constant_post_processing": 1,
+            "name": "country and title of chief of state keep last 4 letters of each word from demonym"
+        }
     }
-
-
 ]
