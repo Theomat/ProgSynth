@@ -15,15 +15,20 @@ def __make_query_path__(distance: int, id: int, tabs: int = 1) -> str:
         return path
 
 
+def __format__(el: str) -> str:
+    return el.replace(" ", "_").replace("'", "_")
+
+
 def build_query(entities: List[Tuple[str, str]], distance: int = 1) -> str:
+    entities = [(__format__(a), __format__(b)) for a, b in entities]
     first = entities.pop()
     subquery = ""
     for i, item in enumerate(entities):
         subquery += "\tFILTER EXISTS {\n"
         subquery += (
             __make_query_path__(distance, i + 1, 2)
-            .format(item[1])
-            .replace(f"?o_{i + 1}_{distance}", "w:" + item[0])
+            .format(item[0])
+            .replace(f"?o_{i + 1}_{distance}", "w:" + item[1])
         )
         subquery += "\n\t} .\n"
     sparql_request = "PREFIX w: <https://en.wikipedia.org/wiki/>\n"
@@ -32,8 +37,8 @@ def build_query(entities: List[Tuple[str, str]], distance: int = 1) -> str:
     sparql_request += " WHERE {\n"
     sparql_request += (
         __make_query_path__(distance, 0)
-        .format(first[1])
-        .replace(f"?o_{0}_{distance}", "w:" + first[0])
+        .format(first[0])
+        .replace(f"?o_{0}_{distance}", "w:" + first[1])
     )
     sparql_request += "\n"
     sparql_request += subquery
