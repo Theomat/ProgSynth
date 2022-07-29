@@ -27,6 +27,7 @@ INSERT DATA
         w:American w:demonymOf w:United_States .
         w:English w:demonymOf w:England .
         w:French w:demonymOf w:France .
+        w:New_Zealander w:demonymOf w:New_Zealand .
         w:Swiss w:demonymOf w:Switzerland .
         w:German w:demonymOf w:Germany .
         w:Polish w:demonymOf w:Poland .
@@ -175,7 +176,13 @@ INSERT
 WHERE { 
   ?city w:capitalOf ?country . 
 };
-
+INSERT
+{ 
+  ?country w:contains ?city .
+}
+WHERE { 
+  ?city w:cityOf ?country . 
+};
 INSERT
 { 
   ?l w:number ?n .
