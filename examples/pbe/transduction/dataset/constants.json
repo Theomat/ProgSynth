@@ -161,7 +161,7 @@
             },
             {
                 "inputs": [
-                    "Mexico"
+                    "Chihuahua"
                 ],
                 "output": "I live in Mexico"
             }
@@ -297,7 +297,7 @@
             },
             {
                 "inputs": [
-                    "Mexico"
+                    "Chihuahua"
                 ],
                 "output": "The phone country code is 52"
             }
@@ -315,7 +315,7 @@
                 "inputs": [
                     "John von Neumann"
                 ],
-                "output": "Washington is the capital of the country von Neumann was born in."
+                "output": "Budapest is the capital of the country von Neumann was born in."
             },
             {
                 "inputs": [
@@ -708,31 +708,31 @@
                 "inputs": [
                     "China /some|really|long/text/"
                 ],
-                "output": "zhCN (really)"
+                "output": "CN (really)"
             },
             {
                 "inputs": [
                     "Japan |some|short/text/"
                 ],
-                "output": "jaJP (some)"
+                "output": "JP (some)"
             },
             {
                 "inputs": [
                     "Korea /some/very|very|verylong/text/"
                 ],
-                "output": "koKR (very)"
+                "output": "KR (very)"
             },
             {
                 "inputs": [
                     "Taiwan /somevery/long|text|"
                 ],
-                "output": "zhTW (text)"
+                "output": "TW (text)"
             },
             {
                 "inputs": [
                     "Brazil |tiny|"
                 ],
-                "output": "ptBR (tiny)"
+                "output": "BR (tiny)"
             },
             {
                 "inputs": [
@@ -1089,7 +1089,7 @@
             },
             {
                 "inputs": [
-                    "This is Mexico!"
+                    "This is Chihuahua!"
                 ],
                 "output": "I live in Mexico"
             }
@@ -1247,7 +1247,7 @@
                 "inputs": [
                     "blabla >John von Neumann< blabla bla"
                 ],
-                "output": "Washington is the capital of the country von Neumann was born in."
+                "output": "Budapest is the capital of the country von Neumann was born in."
             },
             {
                 "inputs": [
@@ -1369,7 +1369,7 @@
             },
             {
                 "inputs": [
-                    "Mexico"
+                    "Chihuahua"
                 ],
                 "output": "I live in ocixeM"
             }
@@ -1505,7 +1505,7 @@
             },
             {
                 "inputs": [
-                    "Mexico"
+                    "Chihuahua"
                 ],
                 "output": "The phone country code is fifty-two"
             }
@@ -1523,7 +1523,7 @@
                 "inputs": [
                     "John von Neumann"
                 ],
-                "output": "Wsigo is the capital of the country von Neumann was born in."
+                "output": "Bdps is the capital of the country von Neumann was born in."
             },
             {
                 "inputs": [
@@ -1641,7 +1641,7 @@
             },
             {
                 "inputs": [
-                    "This is Mexico!"
+                    "This is Chihuahua!"
                 ],
                 "output": "I live in ocixeM"
             }
@@ -1780,7 +1780,7 @@
             },
             {
                 "inputs": [
-                    "Mexico",
+                    "Chihuahua",
                     "145"
                 ],
                 "output": "The phone country code is fifty-two"
@@ -1799,7 +1799,7 @@
                 "inputs": [
                     "blabla >John von Neumann< blabla bla"
                 ],
-                "output": "Wsigo is the capital of the country von Neumann was born in."
+                "output": "Bdps is the capital of the country von Neumann was born in."
             },
             {
                 "inputs": [
