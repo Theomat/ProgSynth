@@ -11,33 +11,6 @@ from synth.specification import (
 import argparse
 
 MAX_EXAMPLES_ANALYSED = 5
-argument_parser: argparse.ArgumentParser = argparse.ArgumentParser(
-    description="Preporocess transduction tasks to find constants."
-)
-
-argument_default_values = {
-    "file": "constants.pickle",
-    "endpoint": "http://192.168.1.20:9999/blazegraph/namespace/kb/sparql",
-}
-
-argument_parser.add_argument(
-    "-f",
-    "--file",
-    type=str,
-    default=argument_default_values["file"],
-    help="Source dataset file (default: " + argument_default_values["file"] + ")",
-)
-argument_parser.add_argument(
-    "-e",
-    "--endpoint",
-    type=str,
-    default=argument_default_values["endpoint"],
-    help="SPARQL endpoint (default: " + argument_default_values["endpoint"] + ")",
-)
-args = argument_parser.parse_args()
-dataset_file = args.file
-dataset = Dataset.load(dataset_file)
-wrapper = build_wrapper(args.endpoint)
 
 
 def memoised_find_constants(
@@ -121,48 +94,72 @@ def filter_constants(constants: List[str]) -> List[str]:
     return [x for x in constants if not (len(x) == 1 and x.lower() in ALPHA_NUMERIC)]
 
 
-print("Loaded tasks!")
-for i, task in enumerate(dataset):
-    # if i == 13 or i == 14:
-    # continue
-    if task.metadata["constant_post_processing"] != 0:
-        continue
-    if task.metadata["constant_detection"] != 0:
-        continue
-    if task.metadata["knowledge_graph_relationship"] == 0:
-        continue
-    pbe: PBE = task.specification.get_specification(PBE)
-    assert pbe is not None
-    print("=" * 60)
-    print(f"[N°{i}] {task.metadata['name']}")
-    print("Sample:", pbe.examples[0].output)
-    constants = task.metadata.get("constants", None) or filter_constants(
-        find_constants(
-            [
-                pbe.examples[i].output
-                for i in range(min(MAX_EXAMPLES_ANALYSED, len(pbe.examples)))
-            ]
-        )
+if __name__ == "__main__":
+    argument_parser: argparse.ArgumentParser = argparse.ArgumentParser(
+        description="Preporocess transduction tasks to find constants."
     )
-    if task.metadata.get("constants", None) is None:
-        task.metadata["constants"] = constants
-        dataset.save(dataset_file)
-    print("Constants:", constants)
 
-    new_pseudo_tasks = defaultdict(list)
-    for i in range(len(pbe.examples)):
-        subtasks = sketch(pbe.examples[i].output, constants)
-        if i == 0:
-            print("\tsample sketch:", subtasks)
-        for j in range(len(subtasks)):
-            new_pseudo_tasks[j].append((pbe.examples[i].inputs[0], subtasks[j]))
-    for query_task, pairs in new_pseudo_tasks.items():
-        print("\tPairs:", pairs)
-        d = task.metadata["knowledge_graph_relationship"]
-        paths = find_paths_from_level(pairs, wrapper, d)
-        if paths:
-            for path in paths:
-                print("\t\tstart->" + "->".join(path) + "->end")
-        else:
-            print("\tFound no path for relationship level", d)
-    print()
+    argument_default_values = {
+        "file": "constants.pickle",
+        "endpoint": "http://192.168.1.20:9999/blazegraph/namespace/kb/sparql",
+    }
+
+    argument_parser.add_argument(
+        "-f",
+        "--file",
+        type=str,
+        default=argument_default_values["file"],
+        help="Source dataset file (default: " + argument_default_values["file"] + ")",
+    )
+    argument_parser.add_argument(
+        "-e",
+        "--endpoint",
+        type=str,
+        default=argument_default_values["endpoint"],
+        help="SPARQL endpoint (default: " + argument_default_values["endpoint"] + ")",
+    )
+    args = argument_parser.parse_args()
+    dataset_file = args.file
+    dataset = Dataset.load(dataset_file)
+    wrapper = build_wrapper(args.endpoint)
+    print("Loaded tasks!")
+    for i, task in enumerate(dataset):
+        if task.metadata["constant_post_processing"] != 0:
+            continue
+        if task.metadata["constant_detection"] != 0:
+            continue
+        pbe: PBE = task.specification.get_specification(PBE)
+        assert pbe is not None
+        print("=" * 60)
+        print(f"[N°{i}] {task.metadata['name']}")
+        print("Sample:", pbe.examples[0].output)
+        constants = task.metadata.get("constants", None) or filter_constants(
+            find_constants(
+                [
+                    pbe.examples[i].output
+                    for i in range(min(MAX_EXAMPLES_ANALYSED, len(pbe.examples)))
+                ]
+            )
+        )
+        if task.metadata.get("constants", None) is None:
+            task.metadata["constants"] = constants
+            dataset.save(dataset_file)
+        print("Constants:", constants)
+
+        new_pseudo_tasks = defaultdict(list)
+        for i in range(len(pbe.examples)):
+            subtasks = sketch(pbe.examples[i].output, constants)
+            if i == 0:
+                print("\tsample sketch:", subtasks)
+            for j in range(len(subtasks)):
+                new_pseudo_tasks[j].append((pbe.examples[i].inputs[0], subtasks[j]))
+        for query_task, pairs in new_pseudo_tasks.items():
+            print("\tPairs:", pairs)
+            d = task.metadata["knowledge_graph_relationship"]
+            paths = find_paths_from_level(pairs, wrapper, d)
+            if paths:
+                for path in paths:
+                    print("\t\tstart->" + "->".join(path) + "->end")
+            else:
+                print("\tFound no path for relationship level", d)
+        print()
