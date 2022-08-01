@@ -90,7 +90,7 @@ INSERT DATA
         w:Eiffel_Tower w:inCity w:Paris .
         w:Pisa_Tower w:inCity w:Pisa .
         w:Brandenburg_Gate w:inCity w:Berlin .
-        w:Statue_Of_Liberty w:inCity w:New_York .
+        w:Statue_of_Liberty w:inCity w:New_York .
 
         w:Pet_Sematary w:author w:King .
         w:1984 w:author w:Orwell .
