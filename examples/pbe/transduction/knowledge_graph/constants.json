@@ -257,9 +257,9 @@
             },
             {
                 "inputs": [
-                    "Poland"
+                    "China"
                 ],
-                "output": "Polish, capital:Warsaw"
+                "output": "Chinese, capital:Beijing"
             },
             {
                 "inputs": [
@@ -393,9 +393,9 @@
             },
             {
                 "inputs": [
-                    "Polish"
+                    "Chinese"
                 ],
-                "output": "Chief of state of Poland is the President."
+                "output": "Chief of state of China is the President."
             },
             {
                 "inputs": [
@@ -1185,9 +1185,9 @@
             },
             {
                 "inputs": [
-                    "PolandPoland"
+                    "ChinaChina"
                 ],
-                "output": "Polish, capital:Warsaw"
+                "output": "Chinese, capital:Beijing"
             },
             {
                 "inputs": [
@@ -1327,10 +1327,10 @@
             },
             {
                 "inputs": [
-                    "Polish",
+                    "Chinese",
                     "Greek"
                 ],
-                "output": "Chief of state of Poland is the President."
+                "output": "Chief of state of China is the President."
             },
             {
                 "inputs": [
@@ -1465,9 +1465,9 @@
             },
             {
                 "inputs": [
-                    "Poland"
+                    "China"
                 ],
-                "output": "oi, capital:Wrsw"
+                "output": "ia, capital:Bjng"
             },
             {
                 "inputs": [
@@ -1601,9 +1601,9 @@
             },
             {
                 "inputs": [
-                    "Polish"
+                    "Chinese"
                 ],
-                "output": "Chief of state of land is the dent."
+                "output": "Chief of state of hina is the dent."
             },
             {
                 "inputs": [
@@ -1737,9 +1737,9 @@
             },
             {
                 "inputs": [
-                    "PolandPoland"
+                    "ChinaChina"
                 ],
-                "output": "oi, capital:Wrsw"
+                "output": "ia, capital:Bjng"
             },
             {
                 "inputs": [
@@ -1879,10 +1879,10 @@
             },
             {
                 "inputs": [
-                    "Polish",
+                    "Chinese",
                     "Greek"
                 ],
-                "output": "Chief of state of land is the dent."
+                "output": "Chief of state of hina is the dent."
             },
             {
                 "inputs": [
