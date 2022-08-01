@@ -1,11 +1,18 @@
 from dataclasses import dataclass
-from typing import Any, List
+from typing import Any, Generic, List, Optional, TypeVar
 
 from synth.syntax.type_system import FunctionType, EmptyList, Type, guess_type
 
 
 class TaskSpecification:
-    pass
+    def get_specification(self, specification: type) -> "Optional[TaskSpecification]":
+        """
+        Gets the specification of the given TaskSpecification type that may be embed in this possibly compound specification.
+        If none is found returns None.
+        """
+        if isinstance(self, specification):
+            return self
+        return None
 
 
 @dataclass
@@ -49,6 +56,7 @@ class PBEWithConstants(PBE):
     constants_out: List[Any]
 
 
+@dataclass
 class NLP(TaskSpecification):
     """
     Natural Language (NLP) specification.
@@ -58,18 +66,25 @@ class NLP(TaskSpecification):
 
 
 @dataclass
-class NLPBE(TaskSpecification):
-    """
-    Combined Natural Language and Example specifications.
-    """
+class SketchedSpecification(TaskSpecification):
+    sketch: str
 
-    intent: str
-    examples: List[Example]
 
-    def guess_type(self) -> Type:
-        i = 0
-        t = self.examples[i].guess_type()
-        while EmptyList in t and i + 1 < len(self.examples):
-            i += 1
-            t = self.examples[i].guess_type()
-        return t
+U = TypeVar("U", bound=TaskSpecification, covariant=True)
+V = TypeVar("V", bound=TaskSpecification, covariant=True)
+
+
+@dataclass
+class CompoundSpecification(TaskSpecification, Generic[U, V]):
+    specification1: U
+    specification2: V
+
+    def get_specification(self, specification: type) -> "Optional[TaskSpecification]":
+        a = self.specification1.get_specification(specification)
+        if a is not None:
+            return a
+        return self.specification2.get_specification(specification)
+
+
+NLPBE = CompoundSpecification[NLP, PBE]
+SketchedPBE = CompoundSpecification[SketchedSpecification, PBE]

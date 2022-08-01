@@ -18,6 +18,7 @@ from synth.syntax.type_system import (
 )
 from synth.syntax.grammars import (
     CFG,
+    DFA,
     TTCFG,
     Grammar,
     DetGrammar,

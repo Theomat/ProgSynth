@@ -1,0 +1,1902 @@
+[
+    {
+        "examples": [
+            {
+                "inputs": [
+                    "Coffee"
+                ],
+                "output": "I would like some Coffee"
+            },
+            {
+                "inputs": [
+                    "Tea"
+                ],
+                "output": "I would like some Tea"
+            },
+            {
+                "inputs": [
+                    "Orange Juice"
+                ],
+                "output": "I would like some Orange Juice"
+            },
+            {
+                "inputs": [
+                    "Water"
+                ],
+                "output": "I would like some Water"
+            }
+        ],
+        "metadata": {
+            "constant_detection": 0,
+            "knowledge_graph_relationship": 0,
+            "constant_post_processing": 0,
+            "name": "simple concat"
+        }
+    },
+    {
+        "examples": [
+            {
+                "inputs": [
+                    "Coffee"
+                ],
+                "output": "I would like some Coffee, please"
+            },
+            {
+                "inputs": [
+                    "Tea"
+                ],
+                "output": "I would like some Tea, please"
+            },
+            {
+                "inputs": [
+                    "Orange Juice"
+                ],
+                "output": "I would like some Orange Juice, please"
+            },
+            {
+                "inputs": [
+                    "Water"
+                ],
+                "output": "I would like some Water, please"
+            }
+        ],
+        "metadata": {
+            "constant_detection": 0,
+            "knowledge_graph_relationship": 0,
+            "constant_post_processing": 0,
+            "name": "simple double concat"
+        }
+    },
+    {
+        "examples": [
+            {
+                "inputs": [
+                    "+33",
+                    "04 45 56 78"
+                ],
+                "output": "+334455678"
+            },
+            {
+                "inputs": [
+                    "+72",
+                    "06 15 16 16"
+                ],
+                "output": "+726151616"
+            },
+            {
+                "inputs": [
+                    "+59",
+                    "01 78 45 21"
+                ],
+                "output": "+591784521"
+            },
+            {
+                "inputs": [
+                    "+10",
+                    "47 46 58 94"
+                ],
+                "output": "+107465894"
+            }
+        ],
+        "metadata": {
+            "constant_detection": 0,
+            "knowledge_graph_relationship": 0,
+            "constant_post_processing": 0,
+            "name": "telephone number (concat + drop + split)"
+        }
+    },
+    {
+        "examples": [
+            {
+                "inputs": [
+                    "Coffee"
+                ],
+                "output": "Coffee reversed is eeffoC"
+            },
+            {
+                "inputs": [
+                    "Tea"
+                ],
+                "output": "Tea reversed is aeT"
+            },
+            {
+                "inputs": [
+                    "Orange Juice"
+                ],
+                "output": "Orange Juice reversed is eciuJ egnarO"
+            },
+            {
+                "inputs": [
+                    "Water"
+                ],
+                "output": "Water reversed is rateW"
+            }
+        ],
+        "metadata": {
+            "constant_detection": 0,
+            "knowledge_graph_relationship": 0,
+            "constant_post_processing": 0,
+            "name": "double concat reverse"
+        }
+    },
+    {
+        "examples": [
+            {
+                "inputs": [
+                    "Paris"
+                ],
+                "output": "I live in France"
+            },
+            {
+                "inputs": [
+                    "Berlin"
+                ],
+                "output": "I live in Germany"
+            },
+            {
+                "inputs": [
+                    "Detroit"
+                ],
+                "output": "I live in United States"
+            },
+            {
+                "inputs": [
+                    "Chihuahua"
+                ],
+                "output": "I live in Mexico"
+            }
+        ],
+        "metadata": {
+            "constant_detection": 0,
+            "knowledge_graph_relationship": 1,
+            "constant_post_processing": 0,
+            "name": "country from city + concat"
+        }
+    },
+    {
+        "examples": [
+            {
+                "inputs": [
+                    "Donald Knuth"
+                ],
+                "output": "Knuth is American"
+            },
+            {
+                "inputs": [
+                    "Ada Lovelace"
+                ],
+                "output": "Lovelace is English"
+            },
+            {
+                "inputs": [
+                    "Blaise Pascal"
+                ],
+                "output": "Pascal is French"
+            },
+            {
+                "inputs": [
+                    "Leonhard Euler"
+                ],
+                "output": "Euler is Swiss"
+            }
+        ],
+        "metadata": {
+            "constant_detection": 0,
+            "knowledge_graph_relationship": 1,
+            "constant_post_processing": 0,
+            "name": "family name + nationality"
+        }
+    },
+    {
+        "examples": [
+            {
+                "inputs": [
+                    "Barack Obama"
+                ],
+                "output": "Obama was chief of state of United States"
+            },
+            {
+                "inputs": [
+                    "Charles De Gaulle"
+                ],
+                "output": "De Gaulle was chief of state of France"
+            },
+            {
+                "inputs": [
+                    "Winston Churchill"
+                ],
+                "output": "Churchill was chief of state of England"
+            },
+            {
+                "inputs": [
+                    "Theodore Roosevelt"
+                ],
+                "output": "Roosevelt was chief of state of United States"
+            }
+        ],
+        "metadata": {
+            "constant_detection": 0,
+            "knowledge_graph_relationship": 1,
+            "constant_post_processing": 0,
+            "name": "family name + chief of state"
+        }
+    },
+    {
+        "examples": [
+            {
+                "inputs": [
+                    "France"
+                ],
+                "output": "French, capital:Paris"
+            },
+            {
+                "inputs": [
+                    "Germany"
+                ],
+                "output": "German, capital:Berlin"
+            },
+            {
+                "inputs": [
+                    "Poland"
+                ],
+                "output": "Polish, capital:Warsaw"
+            },
+            {
+                "inputs": [
+                    "New Zealand"
+                ],
+                "output": "New Zealander, capital:Wellington"
+            }
+        ],
+        "metadata": {
+            "constant_detection": 0,
+            "knowledge_graph_relationship": 1,
+            "constant_post_processing": 0,
+            "name": "demonym and capital from country"
+        }
+    },
+    {
+        "examples": [
+            {
+                "inputs": [
+                    "Paris"
+                ],
+                "output": "The phone country code is 33"
+            },
+            {
+                "inputs": [
+                    "Berlin"
+                ],
+                "output": "The phone country code is 49"
+            },
+            {
+                "inputs": [
+                    "Detroit"
+                ],
+                "output": "The phone country code is 1"
+            },
+            {
+                "inputs": [
+                    "Chihuahua"
+                ],
+                "output": "The phone country code is 52"
+            }
+        ],
+        "metadata": {
+            "constant_detection": 0,
+            "knowledge_graph_relationship": 2,
+            "constant_post_processing": 0,
+            "name": "phone country code from city"
+        }
+    },
+    {
+        "examples": [
+            {
+                "inputs": [
+                    "John von Neumann"
+                ],
+                "output": "Budapest is the capital of the country von Neumann was born in."
+            },
+            {
+                "inputs": [
+                    "Ada Lovelace"
+                ],
+                "output": "London is the capital of the country Lovelace was born in."
+            },
+            {
+                "inputs": [
+                    "Blaise Pascal"
+                ],
+                "output": "Paris is the capital of the country Pascal was born in."
+            },
+            {
+                "inputs": [
+                    "Leonhard Euler"
+                ],
+                "output": "Bern is the capital of the country Euler was born in."
+            }
+        ],
+        "metadata": {
+            "constant_detection": 0,
+            "knowledge_graph_relationship": 2,
+            "constant_post_processing": 0,
+            "name": "person to capital"
+        }
+    },
+    {
+        "examples": [
+            {
+                "inputs": [
+                    "Eiffel Tower"
+                ],
+                "output": "33 is the country code"
+            },
+            {
+                "inputs": [
+                    "Pisa Tower"
+                ],
+                "output": "39 is the country code"
+            },
+            {
+                "inputs": [
+                    "Brandenburg Gate"
+                ],
+                "output": "49 is the country code"
+            },
+            {
+                "inputs": [
+                    "Statue of Liberty"
+                ],
+                "output": "1 is the country code"
+            }
+        ],
+        "metadata": {
+            "constant_detection": 0,
+            "knowledge_graph_relationship": 2,
+            "constant_post_processing": 0,
+            "name": "monument to country code"
+        }
+    },
+    {
+        "examples": [
+            {
+                "inputs": [
+                    "French"
+                ],
+                "output": "Chief of state of France is the President."
+            },
+            {
+                "inputs": [
+                    "German"
+                ],
+                "output": "Chief of state of Germany is the Chancellor."
+            },
+            {
+                "inputs": [
+                    "Polish"
+                ],
+                "output": "Chief of state of Poland is the President."
+            },
+            {
+                "inputs": [
+                    "New Zealander"
+                ],
+                "output": "Chief of state of New Zealand is the Prime Minister."
+            }
+        ],
+        "metadata": {
+            "constant_detection": 0,
+            "knowledge_graph_relationship": 2,
+            "constant_post_processing": 0,
+            "name": "country and title of chief of state from demonym"
+        }
+    },
+    {
+        "metadata": {
+            "name": "head mock fr.",
+            "constant_detection": 0,
+            "knowledge_graph_relationship": 1,
+            "constant_post_processing": 0,
+            "from_flashgpt3": true
+        },
+        "examples": [
+            {
+                "inputs": [
+                    "un"
+                ],
+                "output": "row_1"
+            },
+            {
+                "inputs": [
+                    "deux"
+                ],
+                "output": "row_2"
+            },
+            {
+                "inputs": [
+                    "trois"
+                ],
+                "output": "row_3"
+            },
+            {
+                "inputs": [
+                    "quatre"
+                ],
+                "output": "row_4"
+            },
+            {
+                "inputs": [
+                    "cinq"
+                ],
+                "output": "row_5"
+            },
+            {
+                "inputs": [
+                    "six"
+                ],
+                "output": "row_6"
+            },
+            {
+                "inputs": [
+                    "sept"
+                ],
+                "output": "row_7"
+            },
+            {
+                "inputs": [
+                    "huit"
+                ],
+                "output": "row_8"
+            },
+            {
+                "inputs": [
+                    "neuf"
+                ],
+                "output": "row_9"
+            },
+            {
+                "inputs": [
+                    "dix"
+                ],
+                "output": "row_10"
+            }
+        ]
+    },
+    {
+        "metadata": {
+            "name": "head novel author.",
+            "constant_detection": 0,
+            "knowledge_graph_relationship": 1,
+            "constant_post_processing": 0,
+            "from_flashgpt3": true
+        },
+        "examples": [
+            {
+                "inputs": [
+                    "Pet Sematary"
+                ],
+                "output": "King's Pet Sematary"
+            },
+            {
+                "inputs": [
+                    "1984"
+                ],
+                "output": "Orwell's 1984"
+            },
+            {
+                "inputs": [
+                    "The Lord of the Rings"
+                ],
+                "output": "Tolkien's The Lord of the Rings"
+            },
+            {
+                "inputs": [
+                    "The Da Vinci Code"
+                ],
+                "output": "Brown's The Da Vinci Code"
+            },
+            {
+                "inputs": [
+                    "Gulliver's Travels"
+                ],
+                "output": "Swift's Gulliver's Travels"
+            },
+            {
+                "inputs": [
+                    "Twilight"
+                ],
+                "output": "Meyer's Twilight"
+            },
+            {
+                "inputs": [
+                    "Girl with the Dragon Tattoo"
+                ],
+                "output": "Larsson's Girl with the Dragon Tattoo"
+            },
+            {
+                "inputs": [
+                    "Harry Potter and the Philosopher's Stone"
+                ],
+                "output": "Rowling's Harry Potter and the Philosopher's Stone"
+            },
+            {
+                "inputs": [
+                    "Life of Pi"
+                ],
+                "output": "Martel's Life of Pi"
+            },
+            {
+                "inputs": [
+                    "Atonement"
+                ],
+                "output": "McEwan's Atonement"
+            }
+        ]
+    },
+    {
+        "metadata": {
+            "name": "head airport 1.",
+            "constant_detection": 0,
+            "knowledge_graph_relationship": 1,
+            "constant_post_processing": 0,
+            "from_flashgpt3": true
+        },
+        "examples": [
+            {
+                "inputs": [
+                    "FRA"
+                ],
+                "output": "Departure from Frankfurt (FRA)"
+            },
+            {
+                "inputs": [
+                    "PRG"
+                ],
+                "output": "Departure from Prague (PRG)"
+            },
+            {
+                "inputs": [
+                    "HND"
+                ],
+                "output": "Departure from Tokyo (HND)"
+            },
+            {
+                "inputs": [
+                    "BOS"
+                ],
+                "output": "Departure from Boston (BOS)"
+            },
+            {
+                "inputs": [
+                    "DXB"
+                ],
+                "output": "Departure from Dubai (DXB)"
+            },
+            {
+                "inputs": [
+                    "LHR"
+                ],
+                "output": "Departure from London (LHR)"
+            },
+            {
+                "inputs": [
+                    "AMS"
+                ],
+                "output": "Departure from Amsterdam (AMS)"
+            },
+            {
+                "inputs": [
+                    "IST"
+                ],
+                "output": "Departure from Istanbul (IST)"
+            },
+            {
+                "inputs": [
+                    "SIN"
+                ],
+                "output": "Departure from Singapore (SIN)"
+            },
+            {
+                "inputs": [
+                    "ATL"
+                ],
+                "output": "Departure from Atlanta (ATL)"
+            }
+        ]
+    },
+    {
+        "metadata": {
+            "name": "head mock nl.",
+            "constant_detection": 0,
+            "knowledge_graph_relationship": 1,
+            "constant_post_processing": 0,
+            "from_flashgpt3": true
+        },
+        "examples": [
+            {
+                "inputs": [
+                    "een"
+                ],
+                "output": "row_1"
+            },
+            {
+                "inputs": [
+                    "twee"
+                ],
+                "output": "row_2"
+            },
+            {
+                "inputs": [
+                    "drie"
+                ],
+                "output": "row_3"
+            },
+            {
+                "inputs": [
+                    "vier"
+                ],
+                "output": "row_4"
+            },
+            {
+                "inputs": [
+                    "vijf"
+                ],
+                "output": "row_5"
+            },
+            {
+                "inputs": [
+                    "zes"
+                ],
+                "output": "row_6"
+            },
+            {
+                "inputs": [
+                    "zeven"
+                ],
+                "output": "row_7"
+            },
+            {
+                "inputs": [
+                    "acht"
+                ],
+                "output": "row_8"
+            },
+            {
+                "inputs": [
+                    "negen"
+                ],
+                "output": "row_9"
+            },
+            {
+                "inputs": [
+                    "tien"
+                ],
+                "output": "row_10"
+            }
+        ]
+    },
+    {
+        "metadata": {
+            "name": "head locale other.",
+            "constant_detection": 0,
+            "knowledge_graph_relationship": 0,
+            "constant_post_processing": 0,
+            "from_flashgpt3": true
+        },
+        "examples": [
+            {
+                "inputs": [
+                    "China /some|really|long/text/"
+                ],
+                "output": "CN (really)"
+            },
+            {
+                "inputs": [
+                    "Japan |some|short/text/"
+                ],
+                "output": "JP (some)"
+            },
+            {
+                "inputs": [
+                    "Korea /some/very|very|verylong/text/"
+                ],
+                "output": "KR (very)"
+            },
+            {
+                "inputs": [
+                    "Taiwan /somevery/long|text|"
+                ],
+                "output": "TW (text)"
+            },
+            {
+                "inputs": [
+                    "Brazil |tiny|"
+                ],
+                "output": "BR (tiny)"
+            },
+            {
+                "inputs": [
+                    "Spain /very/very/long/and/even|longer|obnoxious/text/"
+                ],
+                "output": "esES (longer)"
+            }
+        ]
+    },
+    {
+        "metadata": {
+            "name": "head date french.",
+            "constant_detection": 1,
+            "knowledge_graph_relationship": 1,
+            "constant_post_processing": 0,
+            "from_flashgpt3": true
+        },
+        "examples": [
+            {
+                "inputs": [
+                    "May 29, 1953"
+                ],
+                "output": "29 mai 1953"
+            },
+            {
+                "inputs": [
+                    "July 1, 1954"
+                ],
+                "output": "1 juillet 1954"
+            },
+            {
+                "inputs": [
+                    "June 25, 1955"
+                ],
+                "output": "25 juin 1955"
+            },
+            {
+                "inputs": [
+                    "January 8, 1956"
+                ],
+                "output": "8 janvier 1956"
+            },
+            {
+                "inputs": [
+                    "September 15, 1955"
+                ],
+                "output": "15 septembre 1955"
+            },
+            {
+                "inputs": [
+                    "December 24, 1992"
+                ],
+                "output": "24 décembre 1992"
+            },
+            {
+                "inputs": [
+                    "February 28, 2000"
+                ],
+                "output": "28 février 2000"
+            },
+            {
+                "inputs": [
+                    "October 20, 1994"
+                ],
+                "output": "20 octobre 1994"
+            },
+            {
+                "inputs": [
+                    "April 1, 2021"
+                ],
+                "output": "1 avril 2021"
+            },
+            {
+                "inputs": [
+                    "March 22, 2020"
+                ],
+                "output": "22 mars 2020"
+            }
+        ]
+    },
+    {
+        "metadata": {
+            "name": "head painting artist.",
+            "constant_detection": 0,
+            "knowledge_graph_relationship": 1,
+            "constant_post_processing": 0,
+            "from_flashgpt3": true
+        },
+        "examples": [
+            {
+                "inputs": [
+                    "Guernica"
+                ],
+                "output": "Picasso's Guernica"
+            },
+            {
+                "inputs": [
+                    "Girl with a Pearl Earring"
+                ],
+                "output": "Vermeer's Girl with a Pearl Earring"
+            },
+            {
+                "inputs": [
+                    "Broadway Boogie-Woogie"
+                ],
+                "output": "Mondrian's Broadway Boogie-Woogie "
+            },
+            {
+                "inputs": [
+                    "The Scream"
+                ],
+                "output": "Munch's The Scream"
+            },
+            {
+                "inputs": [
+                    "The Kiss"
+                ],
+                "output": "Klimt's The Kiss"
+            },
+            {
+                "inputs": [
+                    "The Birth of Venus"
+                ],
+                "output": "Botticelli's The Birth of Venus"
+            },
+            {
+                "inputs": [
+                    "Nighthawks"
+                ],
+                "output": "Hopper's Nighthawks"
+            },
+            {
+                "inputs": [
+                    "The Persistence of Memory"
+                ],
+                "output": "Dalí's The Persistence of Memory"
+            },
+            {
+                "inputs": [
+                    "The Night Watch"
+                ],
+                "output": "Rembrandt's The Night Watch"
+            }
+        ]
+    },
+    {
+        "metadata": {
+            "name": "head mock en.",
+            "constant_detection": 0,
+            "knowledge_graph_relationship": 1,
+            "constant_post_processing": 0,
+            "from_flashgpt3": true
+        },
+        "examples": [
+            {
+                "inputs": [
+                    "one"
+                ],
+                "output": "row_1"
+            },
+            {
+                "inputs": [
+                    "two"
+                ],
+                "output": "row_2"
+            },
+            {
+                "inputs": [
+                    "three"
+                ],
+                "output": "row_3"
+            },
+            {
+                "inputs": [
+                    "four"
+                ],
+                "output": "row_4"
+            },
+            {
+                "inputs": [
+                    "five"
+                ],
+                "output": "row_5"
+            },
+            {
+                "inputs": [
+                    "six"
+                ],
+                "output": "row_6"
+            },
+            {
+                "inputs": [
+                    "seven"
+                ],
+                "output": "row_7"
+            },
+            {
+                "inputs": [
+                    "eight"
+                ],
+                "output": "row_8"
+            },
+            {
+                "inputs": [
+                    "nine"
+                ],
+                "output": "row_9"
+            },
+            {
+                "inputs": [
+                    "ten"
+                ],
+                "output": "row_10"
+            }
+        ]
+    },
+    {
+        "metadata": {
+            "name": "head currency.",
+            "constant_detection": 0,
+            "knowledge_graph_relationship": 1,
+            "constant_post_processing": 0,
+            "from_flashgpt3": true
+        },
+        "examples": [
+            {
+                "inputs": [
+                    "United States"
+                ],
+                "output": "USD"
+            },
+            {
+                "inputs": [
+                    "Japan"
+                ],
+                "output": "JPY"
+            },
+            {
+                "inputs": [
+                    "European Union"
+                ],
+                "output": "EUR"
+            },
+            {
+                "inputs": [
+                    "United Kingdom"
+                ],
+                "output": "GBP"
+            },
+            {
+                "inputs": [
+                    "Australia"
+                ],
+                "output": "AUD"
+            },
+            {
+                "inputs": [
+                    "Canada"
+                ],
+                "output": "CAD"
+            },
+            {
+                "inputs": [
+                    "Sweden"
+                ],
+                "output": "SEK"
+            },
+            {
+                "inputs": [
+                    "Czechia"
+                ],
+                "output": "CZK"
+            },
+            {
+                "inputs": [
+                    "China"
+                ],
+                "output": "CNY"
+            },
+            {
+                "inputs": [
+                    "South Korea"
+                ],
+                "output": "KRW"
+            }
+        ]
+    },
+    {
+        "metadata": {
+            "name": "head monthname long.",
+            "constant_detection": 1,
+            "knowledge_graph_relationship": 1,
+            "constant_post_processing": 0,
+            "from_flashgpt3": true
+        },
+        "examples": [
+            {
+                "inputs": [
+                    "03/29/86"
+                ],
+                "output": "March 29"
+            },
+            {
+                "inputs": [
+                    "02/15/84"
+                ],
+                "output": "February 15"
+            },
+            {
+                "inputs": [
+                    "11/30/2017"
+                ],
+                "output": "November 30"
+            },
+            {
+                "inputs": [
+                    "12/28/2004"
+                ],
+                "output": "December 28"
+            },
+            {
+                "inputs": [
+                    "03/03/2007"
+                ],
+                "output": "March 03"
+            },
+            {
+                "inputs": [
+                    "08/22/2010"
+                ],
+                "output": "August 22"
+            }
+        ]
+    },
+    {
+        "examples": [
+            {
+                "inputs": [
+                    "This is Paris!"
+                ],
+                "output": "I live in France"
+            },
+            {
+                "inputs": [
+                    "This is Berlin!"
+                ],
+                "output": "I live in Germany"
+            },
+            {
+                "inputs": [
+                    "This is Detroit!"
+                ],
+                "output": "I live in United States"
+            },
+            {
+                "inputs": [
+                    "This is Chihuahua!"
+                ],
+                "output": "I live in Mexico"
+            }
+        ],
+        "metadata": {
+            "constant_detection": 1,
+            "knowledge_graph_relationship": 1,
+            "constant_post_processing": 0,
+            "name": "country from city + concat"
+        }
+    },
+    {
+        "examples": [
+            {
+                "inputs": [
+                    "Donald Knuth was born in 1938"
+                ],
+                "output": "Knuth is American"
+            },
+            {
+                "inputs": [
+                    "She worked onthe analytical machine, her name was Ada Lovelace"
+                ],
+                "output": "Lovelace is English"
+            },
+            {
+                "inputs": [
+                    "Blaise Pascal was born in june"
+                ],
+                "output": "Pascal is French"
+            },
+            {
+                "inputs": [
+                    "Leonhard Euler was born in Switzerland"
+                ],
+                "output": "Euler is Swiss"
+            }
+        ],
+        "metadata": {
+            "constant_detection": 1,
+            "knowledge_graph_relationship": 1,
+            "constant_post_processing": 0,
+            "name": "family name + nationality"
+        }
+    },
+    {
+        "examples": [
+            {
+                "inputs": [
+                    "Winston Churchill|Barack Obama|Charles De Gaulles Theodore Roosevelt"
+                ],
+                "output": "Obama was chief of state of United States"
+            },
+            {
+                "inputs": [
+                    "Winston Churchill Barack Obama|Charles De Gaulles|Theodore Roosevelt"
+                ],
+                "output": "De Gaulle was chief of state of France"
+            },
+            {
+                "inputs": [
+                    "|Winston Churchill|Barack Obama Charles De Gaulles Theodore Roosevelt"
+                ],
+                "output": "Churchill was chief of state of England"
+            },
+            {
+                "inputs": [
+                    "Winston Churchill Barack Obama Charles De Gaulles|Theodore Roosevelt|"
+                ],
+                "output": "Roosevelt was chief of state of United States"
+            }
+        ],
+        "metadata": {
+            "constant_detection": 1,
+            "knowledge_graph_relationship": 1,
+            "constant_post_processing": 0,
+            "name": "family name + chief of state from |_|"
+        }
+    },
+    {
+        "examples": [
+            {
+                "inputs": [
+                    "FranceFrance"
+                ],
+                "output": "French, capital:Paris"
+            },
+            {
+                "inputs": [
+                    "GermanyGermany"
+                ],
+                "output": "German, capital:Berlin"
+            },
+            {
+                "inputs": [
+                    "PolandPoland"
+                ],
+                "output": "Polish, capital:Warsaw"
+            },
+            {
+                "inputs": [
+                    "New ZealandNew Zealand"
+                ],
+                "output": "New Zealander, capital:Wellington"
+            }
+        ],
+        "metadata": {
+            "constant_detection": 1,
+            "knowledge_graph_relationship": 1,
+            "constant_post_processing": 0,
+            "name": "demonym and capital from countryx2"
+        }
+    },
+    {
+        "examples": [
+            {
+                "inputs": [
+                    "Paris",
+                    "345"
+                ],
+                "output": "The phone country code is 33"
+            },
+            {
+                "inputs": [
+                    "Berlin",
+                    "168468"
+                ],
+                "output": "The phone country code is 49"
+            },
+            {
+                "inputs": [
+                    "Detroit",
+                    "4488"
+                ],
+                "output": "The phone country code is 1"
+            },
+            {
+                "inputs": [
+                    "Mexico",
+                    "145"
+                ],
+                "output": "The phone country code is 52"
+            }
+        ],
+        "metadata": {
+            "constant_detection": 1,
+            "knowledge_graph_relationship": 2,
+            "constant_post_processing": 0,
+            "name": "phone country code from city"
+        }
+    },
+    {
+        "examples": [
+            {
+                "inputs": [
+                    "blabla >John von Neumann< blabla bla"
+                ],
+                "output": "Budapest is the capital of the country von Neumann was born in."
+            },
+            {
+                "inputs": [
+                    ">Ada Lovelace< |Surprise|"
+                ],
+                "output": "London is the capital of the country Lovelace was born in."
+            },
+            {
+                "inputs": [
+                    "Revolution >Blaise Pascal<"
+                ],
+                "output": "Paris is the capital of the country Pascal was born in."
+            },
+            {
+                "inputs": [
+                    "<<<<<<>Leonhard Euler<<<<<<<<"
+                ],
+                "output": "Bern is the capital of the country Euler was born in."
+            }
+        ],
+        "metadata": {
+            "constant_detection": 1,
+            "knowledge_graph_relationship": 2,
+            "constant_post_processing": 0,
+            "name": "person to capital"
+        }
+    },
+    {
+        "examples": [
+            {
+                "inputs": [
+                    "Eiffel Tower is 330m tall"
+                ],
+                "output": "33 is the country code"
+            },
+            {
+                "inputs": [
+                    "Pisa Tower was finished in 1399"
+                ],
+                "output": "39 is the country code"
+            },
+            {
+                "inputs": [
+                    "Brandenburg Gate's construction started in 1788"
+                ],
+                "output": "49 is the country code"
+            },
+            {
+                "inputs": [
+                    "Statue Of Liberty was a gift from france"
+                ],
+                "output": "1 is the country code"
+            }
+        ],
+        "metadata": {
+            "constant_detection": 1,
+            "knowledge_graph_relationship": 2,
+            "constant_post_processing": 0,
+            "name": "monument in titlecase to country code"
+        }
+    },
+    {
+        "examples": [
+            {
+                "inputs": [
+                    "French",
+                    "German"
+                ],
+                "output": "Chief of state of France is the President."
+            },
+            {
+                "inputs": [
+                    "German",
+                    "Spanish"
+                ],
+                "output": "Chief of state of Germany is the Chancellor."
+            },
+            {
+                "inputs": [
+                    "Polish",
+                    "Greek"
+                ],
+                "output": "Chief of state of Poland is the President."
+            },
+            {
+                "inputs": [
+                    "New Zealander",
+                    "Australian"
+                ],
+                "output": "Chief of state of New Zealand is the Prime Minister."
+            }
+        ],
+        "metadata": {
+            "constant_detection": 1,
+            "knowledge_graph_relationship": 2,
+            "constant_post_processing": 0,
+            "name": "country and title of chief of state from demonym"
+        }
+    },
+    {
+        "examples": [
+            {
+                "inputs": [
+                    "Paris"
+                ],
+                "output": "I live in ecnarF"
+            },
+            {
+                "inputs": [
+                    "Berlin"
+                ],
+                "output": "I live in ynamreG"
+            },
+            {
+                "inputs": [
+                    "Detroit"
+                ],
+                "output": "I live in setatS detinU"
+            },
+            {
+                "inputs": [
+                    "Chihuahua"
+                ],
+                "output": "I live in ocixeM"
+            }
+        ],
+        "metadata": {
+            "constant_detection": 0,
+            "knowledge_graph_relationship": 1,
+            "constant_post_processing": 1,
+            "name": "reversed country from city + concat"
+        }
+    },
+    {
+        "examples": [
+            {
+                "inputs": [
+                    "Donald Knuth"
+                ],
+                "output": "Knuth is AM ER IC AN"
+            },
+            {
+                "inputs": [
+                    "Ada Lovelace"
+                ],
+                "output": "Lovelace is EN GL IS H"
+            },
+            {
+                "inputs": [
+                    "Blaise Pascal"
+                ],
+                "output": "Pascal is FR EN CH"
+            },
+            {
+                "inputs": [
+                    "Leonhard Euler"
+                ],
+                "output": "Euler is SW IS S"
+            }
+        ],
+        "metadata": {
+            "constant_detection": 0,
+            "knowledge_graph_relationship": 1,
+            "constant_post_processing": 1,
+            "name": "family name + nationality"
+        }
+    },
+    {
+        "examples": [
+            {
+                "inputs": [
+                    "Barack Obama"
+                ],
+                "output": "Obama was chief of state of US"
+            },
+            {
+                "inputs": [
+                    "Charles De Gaulle"
+                ],
+                "output": "De Gaulle was chief of state of FR"
+            },
+            {
+                "inputs": [
+                    "Winston Churchill"
+                ],
+                "output": "Churchill was chief of state of EN"
+            },
+            {
+                "inputs": [
+                    "Theodore Roosevelt"
+                ],
+                "output": "Roosevelt was chief of state of US"
+            }
+        ],
+        "metadata": {
+            "constant_detection": 0,
+            "knowledge_graph_relationship": 1,
+            "constant_post_processing": 1,
+            "name": "family name + chief of state"
+        }
+    },
+    {
+        "examples": [
+            {
+                "inputs": [
+                    "France"
+                ],
+                "output": "e, capital:Prs"
+            },
+            {
+                "inputs": [
+                    "Germany"
+                ],
+                "output": "ea, capital:Brln"
+            },
+            {
+                "inputs": [
+                    "Poland"
+                ],
+                "output": "oi, capital:Wrsw"
+            },
+            {
+                "inputs": [
+                    "New Zealand"
+                ],
+                "output": "e eaae, capital:Wllngtn"
+            }
+        ],
+        "metadata": {
+            "constant_detection": 0,
+            "knowledge_graph_relationship": 1,
+            "constant_post_processing": 1,
+            "name": "vowels demonym and consonants capital from country"
+        }
+    },
+    {
+        "examples": [
+            {
+                "inputs": [
+                    "Paris"
+                ],
+                "output": "The phone country code is thirty-three"
+            },
+            {
+                "inputs": [
+                    "Berlin"
+                ],
+                "output": "The phone country code is forty-nine"
+            },
+            {
+                "inputs": [
+                    "Detroit"
+                ],
+                "output": "The phone country code is one"
+            },
+            {
+                "inputs": [
+                    "Chihuahua"
+                ],
+                "output": "The phone country code is fifty-two"
+            }
+        ],
+        "metadata": {
+            "constant_detection": 0,
+            "knowledge_graph_relationship": 2,
+            "constant_post_processing": 1,
+            "name": "phone country code in letters from city"
+        }
+    },
+    {
+        "examples": [
+            {
+                "inputs": [
+                    "John von Neumann"
+                ],
+                "output": "Bdps is the capital of the country von Neumann was born in."
+            },
+            {
+                "inputs": [
+                    "Ada Lovelace"
+                ],
+                "output": "Lno is the capital of the country Lovelace was born in."
+            },
+            {
+                "inputs": [
+                    "Blaise Pascal"
+                ],
+                "output": "Prs is the capital of the country Pascal was born in."
+            },
+            {
+                "inputs": [
+                    "Leonhard Euler"
+                ],
+                "output": "Br is the capital of the country Euler was born in."
+            }
+        ],
+        "metadata": {
+            "constant_detection": 0,
+            "knowledge_graph_relationship": 2,
+            "constant_post_processing": 1,
+            "name": "person to capital keep even letters"
+        }
+    },
+    {
+        "examples": [
+            {
+                "inputs": [
+                    "Eiffel Tower"
+                ],
+                "output": "6 is the country code"
+            },
+            {
+                "inputs": [
+                    "Pisa Tower"
+                ],
+                "output": "12 is the country code"
+            },
+            {
+                "inputs": [
+                    "Brandenburg Gate"
+                ],
+                "output": "13 is the country code"
+            },
+            {
+                "inputs": [
+                    "Statue of Liberty"
+                ],
+                "output": "1 is the country code"
+            }
+        ],
+        "metadata": {
+            "constant_detection": 0,
+            "knowledge_graph_relationship": 2,
+            "constant_post_processing": 1,
+            "name": "monument to country code and sum individual numbers (33->3+3)"
+        }
+    },
+    {
+        "examples": [
+            {
+                "inputs": [
+                    "French"
+                ],
+                "output": "Chief of state of ance is the dent."
+            },
+            {
+                "inputs": [
+                    "German"
+                ],
+                "output": "Chief of state of many is the llor."
+            },
+            {
+                "inputs": [
+                    "Polish"
+                ],
+                "output": "Chief of state of land is the dent."
+            },
+            {
+                "inputs": [
+                    "New Zealander"
+                ],
+                "output": "Chief of state of New land is the rime ster."
+            }
+        ],
+        "metadata": {
+            "constant_detection": 0,
+            "knowledge_graph_relationship": 2,
+            "constant_post_processing": 1,
+            "name": "country and title of chief of state keep last 4 letters of each word from demonym"
+        }
+    },
+    {
+        "examples": [
+            {
+                "inputs": [
+                    "This is Paris!"
+                ],
+                "output": "I live in ecnarF"
+            },
+            {
+                "inputs": [
+                    "This is Berlin!"
+                ],
+                "output": "I live in ynamreG"
+            },
+            {
+                "inputs": [
+                    "This is Detroit!"
+                ],
+                "output": "I live in setatS detinU"
+            },
+            {
+                "inputs": [
+                    "This is Chihuahua!"
+                ],
+                "output": "I live in ocixeM"
+            }
+        ],
+        "metadata": {
+            "knowledge_graph_relationship": 1,
+            "constant_detection": 1,
+            "constant_post_processing": 1,
+            "name": "reversed country from city + concat"
+        }
+    },
+    {
+        "examples": [
+            {
+                "inputs": [
+                    "Donald Knuth was born in 1938"
+                ],
+                "output": "Knuth is AM ER IC AN"
+            },
+            {
+                "inputs": [
+                    "She worked onthe analytical machine, her name was Ada Lovelace"
+                ],
+                "output": "Lovelace is EN GL IS H"
+            },
+            {
+                "inputs": [
+                    "Blaise Pascal was born in june"
+                ],
+                "output": "Pascal is FR EN CH"
+            },
+            {
+                "inputs": [
+                    "Leonhard Euler was born in Switzerland"
+                ],
+                "output": "Euler is SW IS S"
+            }
+        ],
+        "metadata": {
+            "knowledge_graph_relationship": 1,
+            "constant_detection": 1,
+            "constant_post_processing": 1,
+            "name": "family name + nationality in uppers"
+        }
+    },
+    {
+        "examples": [
+            {
+                "inputs": [
+                    "Winston Churchill|Barack Obama|Charles De Gaulles Theodore Roosevelt"
+                ],
+                "output": "Obama was chief of state of US"
+            },
+            {
+                "inputs": [
+                    "Winston Churchill Barack Obama|Charles De Gaulles|Theodore Roosevelt"
+                ],
+                "output": "De Gaulle was chief of state of FR"
+            },
+            {
+                "inputs": [
+                    "|Winston Churchill|Barack Obama Charles De Gaulles Theodore Roosevelt"
+                ],
+                "output": "Churchill was chief of state of EN"
+            },
+            {
+                "inputs": [
+                    "Winston Churchill Barack Obama Charles De Gaulles|Theodore Roosevelt|"
+                ],
+                "output": "Roosevelt was chief of state of US"
+            }
+        ],
+        "metadata": {
+            "knowledge_graph_relationship": 1,
+            "constant_detection": 1,
+            "constant_post_processing": 1,
+            "name": "family name + chief of state two first letters from |_|"
+        }
+    },
+    {
+        "examples": [
+            {
+                "inputs": [
+                    "FranceFrance"
+                ],
+                "output": "e, capital:Prs"
+            },
+            {
+                "inputs": [
+                    "GermanyGermany"
+                ],
+                "output": "ea, capital:Brln"
+            },
+            {
+                "inputs": [
+                    "PolandPoland"
+                ],
+                "output": "oi, capital:Wrsw"
+            },
+            {
+                "inputs": [
+                    "New ZealandNew Zealand"
+                ],
+                "output": "e eaae, capital:Wllngtn"
+            }
+        ],
+        "metadata": {
+            "knowledge_graph_relationship": 1,
+            "constant_detection": 1,
+            "constant_post_processing": 1,
+            "name": "vowels demonym and consonants capital from countryx2"
+        }
+    },
+    {
+        "examples": [
+            {
+                "inputs": [
+                    "Paris",
+                    "345"
+                ],
+                "output": "The phone country code is thirty-three"
+            },
+            {
+                "inputs": [
+                    "Berlin",
+                    "168468"
+                ],
+                "output": "The phone country code is forty-nine"
+            },
+            {
+                "inputs": [
+                    "Detroit",
+                    "4488"
+                ],
+                "output": "The phone country code is one"
+            },
+            {
+                "inputs": [
+                    "Chihuahua",
+                    "145"
+                ],
+                "output": "The phone country code is fifty-two"
+            }
+        ],
+        "metadata": {
+            "knowledge_graph_relationship": 2,
+            "constant_detection": 1,
+            "constant_post_processing": 1,
+            "name": "phone country code in letters from city"
+        }
+    },
+    {
+        "examples": [
+            {
+                "inputs": [
+                    "blabla >John von Neumann< blabla bla"
+                ],
+                "output": "Bdps is the capital of the country von Neumann was born in."
+            },
+            {
+                "inputs": [
+                    ">Ada Lovelace< |Surprise|"
+                ],
+                "output": "Lno is the capital of the country Lovelace was born in."
+            },
+            {
+                "inputs": [
+                    "Revolution >Blaise Pascal<"
+                ],
+                "output": "Prs is the capital of the country Pascal was born in."
+            },
+            {
+                "inputs": [
+                    "<<<<<<>Leonhard Euler<<<<<<<<"
+                ],
+                "output": "Br is the capital of the country Euler was born in."
+            }
+        ],
+        "metadata": {
+            "knowledge_graph_relationship": 2,
+            "constant_detection": 1,
+            "constant_post_processing": 1,
+            "name": "person from >< to capital keep even letters"
+        }
+    },
+    {
+        "examples": [
+            {
+                "inputs": [
+                    "Eiffel Tower is 330m tall"
+                ],
+                "output": "6 is the country code"
+            },
+            {
+                "inputs": [
+                    "Pisa Tower was finished in 1399"
+                ],
+                "output": "12 is the country code"
+            },
+            {
+                "inputs": [
+                    "Brandenburg Gate's construction started in 1788"
+                ],
+                "output": "13 is the country code"
+            },
+            {
+                "inputs": [
+                    "Statue Of Liberty was a gift from france"
+                ],
+                "output": "1 is the country code"
+            }
+        ],
+        "metadata": {
+            "knowledge_graph_relationship": 2,
+            "constant_detection": 1,
+            "constant_post_processing": 1,
+            "name": "monument in titlecase to country code seem individual numbers (33->3+3)"
+        }
+    },
+    {
+        "examples": [
+            {
+                "inputs": [
+                    "French",
+                    "German"
+                ],
+                "output": "Chief of state of ance is the dent."
+            },
+            {
+                "inputs": [
+                    "German",
+                    "Spanish"
+                ],
+                "output": "Chief of state of many is the llor."
+            },
+            {
+                "inputs": [
+                    "Polish",
+                    "Greek"
+                ],
+                "output": "Chief of state of land is the dent."
+            },
+            {
+                "inputs": [
+                    "New Zealander",
+                    "Australian"
+                ],
+                "output": "Chief of state of New land is the rime ster."
+            }
+        ],
+        "metadata": {
+            "knowledge_graph_relationship": 2,
+            "constant_detection": 1,
+            "constant_post_processing": 1,
+            "name": "country and title of chief of state keep last 4 letters of each word from demonym"
+        }
+    }
+]

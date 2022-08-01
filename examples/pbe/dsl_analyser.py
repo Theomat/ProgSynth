@@ -1,6 +1,5 @@
 from collections import defaultdict
 import json
-import sys
 from typing import Any, Dict, Generator, List, Set, Tuple, TypeVar
 import copy
 import argparse
@@ -90,15 +89,10 @@ with chrono.clock("dataset.load") as c:
 our_eval = lambda *args: evaluator.eval(*args)
 
 if not no_reproduce:
-    if dsl_name == REGEXP:
-        from regexp.task_generator_regexp import reproduce_dataset
-    elif dsl_name == CALCULATOR:
-        from calculator.calculator_task_generator import reproduce_dataset
-    elif dsl_name == TRANSDUCTION:
-        print("Transductions cannot be reproduced! Please run with --no-reproduce")
-        sys.exit(1)
+    if hasattr(dsl_module, "reproduce_dataset"):
+        reproduce_dataset = dsl_module.reproduce_dataset
     else:
-        from synth.pbe import reproduce_dataset
+        from synth.pbe.task_generator import reproduce_int_dataset as reproduce_dataset
 
     # Reproduce dataset distribution
     print("Reproducing dataset...", end="", flush=True)
@@ -498,7 +492,7 @@ print(f"Produced {len(pattern_constraints)} type constraints.")
 with open(f"constraints_{dsl_name}.py", "w") as fd:
     fd.write("forbidden_patterns = {")
     for k, v in sorted(syntaxic_restrictions.items()):
-        fd.write(f'"{k}":  {{ "' + '", "'.join(sorted(v)) + '"}, ')
+        fd.write(f'{k}:  {{ "' + '", "'.join(sorted(v)) + '"}, ')
     fd.write("}\n")
     fd.write("\n")
     fd.write("pattern_constraints = ")
