@@ -51,15 +51,19 @@ def build_wrapper(endpoint: str) -> SPARQLWrapper:
 
 
 def __execute_query__(query: str, wrapper: SPARQLWrapper) -> List[List[str]]:
-    wrapper.setQuery(query)
-    answer = wrapper.query().convert()
-    paths: List[List[str]] = []
-    for path in answer["results"]["bindings"]:
-        cur_path = []
-        for rel in path:
-            cur_path.append(path[rel]["value"].split("/")[-1])
-        paths.append(cur_path)
-    return paths
+    try:
+        wrapper.setQuery(query)
+        answer = wrapper.query().convert()
+        paths: List[List[str]] = []
+        for path in answer["results"]["bindings"]:
+            cur_path = []
+            for rel in path:
+                cur_path.append(path[rel]["value"].split("/")[-1])
+            paths.append(cur_path)
+        return paths
+    except:
+        pass
+    return []
 
 
 def find_paths_from_level(
