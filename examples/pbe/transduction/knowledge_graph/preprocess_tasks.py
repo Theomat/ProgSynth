@@ -9,7 +9,7 @@ from synth.specification import (
     PBE,
 )
 import argparse
-
+MAX_EXAMPLES_ANALYSED = 5
 argument_parser: argparse.ArgumentParser = argparse.ArgumentParser(
     description="Preporocess transduction tasks to find constants."
 )
@@ -122,6 +122,8 @@ def filter_constants(constants: List[str]) -> List[str]:
 
 print("Loaded tasks!")
 for i, task in enumerate(dataset):
+    # if i == 13 or i == 14:
+        # continue
     if task.metadata["constant_post_processing"] != 0:
         continue
     if task.metadata["constant_detection"] != 0:
@@ -134,7 +136,7 @@ for i, task in enumerate(dataset):
     print(f"[N°{i}] {task.metadata['name']}")
     print("Sample:", pbe.examples[0].output)
     constants = task.metadata.get("constants", None) or filter_constants(
-        find_constants([pbe.examples[i].output for i in range(len(pbe.examples))])
+        find_constants([pbe.examples[i].output for i in range(min(MAX_EXAMPLES_ANALYSED, len(pbe.examples)))])
     )
     if task.metadata.get("constants", None) is None:
         task.metadata["constants"] = constants
