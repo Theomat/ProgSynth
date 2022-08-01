@@ -80,10 +80,11 @@ def sketch(output: str, constants: List[str]) -> List[str]:
             last = i
             j += 1
             if j == len(constants):
-                if i < len(output):
-                    out.append(output[i:])
                 break
         i += 1
+    if j == len(constants):
+        if i < len(output):
+            out.append(output[i:])
     return out
 
 
@@ -155,7 +156,7 @@ if __name__ == "__main__":
                 new_pseudo_tasks[j].append((pbe.examples[i].inputs[0], subtasks[j]))
         for query_task, pairs in new_pseudo_tasks.items():
             print("\tPairs:", pairs)
-            d = task.metadata["knowledge_graph_relationship"]
+            d = task.metadata["knowledge_graph_relationship"] - 1
             paths = find_paths_from_level(pairs, wrapper, d)
             if paths:
                 for path in paths:
@@ -163,3 +164,16 @@ if __name__ == "__main__":
             else:
                 print("\tFound no path for relationship level", d)
         print()
+
+        constants_in = task.metadata.get("constants_in", None) or filter_constants(
+            find_constants(
+                [
+                    pbe.examples[i].inputs[0]
+                    for i in range(min(MAX_EXAMPLES_ANALYSED, len(pbe.examples)))
+                ]
+            )
+        )
+        if task.metadata.get("constants_in", None) is None:
+            task.metadata["constants_in"] = constants_in
+            dataset.save(dataset_file)
+        print("Constants Input:", constants)

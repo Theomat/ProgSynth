@@ -698,8 +698,8 @@
     {
         "metadata": {
             "name": "head locale other.",
-            "constant_detection": 0,
-            "knowledge_graph_relationship": 0,
+            "constant_detection": 1,
+            "knowledge_graph_relationship": 1,
             "constant_post_processing": 0,
             "from_flashgpt3": true
         },
