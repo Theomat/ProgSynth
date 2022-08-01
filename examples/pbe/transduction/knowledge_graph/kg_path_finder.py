@@ -1,3 +1,4 @@
+import sys
 from typing import List, Tuple
 from SPARQLWrapper import SPARQLWrapper, JSON
 
@@ -61,7 +62,8 @@ def __execute_query__(query: str, wrapper: SPARQLWrapper) -> List[List[str]]:
                 cur_path.append(path[rel]["value"].split("/")[-1])
             paths.append(cur_path)
         return paths
-    except:
+    except Exception as e:
+        print(e, file=sys.stderr)
         pass
     return []
 
@@ -72,7 +74,9 @@ def find_paths_from_level(
     level: int,
     max_distance: int = 3,
 ) -> List[List[str]]:
-    if level == 0 or 1:
+    if level < 0:
+        return []
+    elif level == 0:
         query = build_query(pairs, level)
         return __execute_query__(query, wrapper)
 
