@@ -450,4 +450,4 @@ if __name__ == "__main__":
     except Exception as e:
         print(e)
     save(trace)
-    print("csv file is saved.")
+    print("csv file was saved as:", file)
