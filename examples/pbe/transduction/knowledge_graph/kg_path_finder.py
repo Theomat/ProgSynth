@@ -52,6 +52,8 @@ def build_wrapper(endpoint: str) -> SPARQLWrapper:
 
 
 def __execute_query__(query: str, wrapper: SPARQLWrapper) -> List[List[str]]:
+    if "+" in query or "|" in query:
+        return []
     try:
         wrapper.setQuery(query)
         answer = wrapper.query().convert()
@@ -76,10 +78,6 @@ def find_paths_from_level(
 ) -> List[List[str]]:
     if level < 0:
         return []
-    elif level == 0:
-        query = build_query(pairs, level)
-        return __execute_query__(query, wrapper)
-
     d = level
     while d < max_distance:
         query = build_query(pairs, d)
