@@ -11,6 +11,7 @@ INSERT DATA
         w:Wellington w:capitalOf w:New_Zealand .
         w:London w:capitalOf w:England .
         w:Washington w:capitalOf w:United_States .
+        w:Bern w:capitalOf w:Switzerland .
 
         w:Detroit w:cityOf w:United_States .
         w:Chihuahua w:cityOf w:Mexico .
