@@ -180,7 +180,9 @@ class DSLEvaluatorWithConstant(Evaluator):
         return evaluations[program]
 
     def eval(self, program: Program, input: List) -> Any:
-        return self.eval_with_constant(program, input[2:], input[0], input[1])
+        if len(input) >= 3:
+            return self.eval_with_constant(program, input[2:], input[0], input[1])
+        return self.eval_with_constant(program, input, "", "")
 
     def clear_cache(self) -> None:
         self._cache = {}
