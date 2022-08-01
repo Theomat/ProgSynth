@@ -12,6 +12,7 @@ INSERT DATA
         w:London w:capitalOf w:England .
         w:Washington w:capitalOf w:United_States .
         w:Bern w:capitalOf w:Switzerland .
+        w:Beijing w:capitalOf w:China .
 
         w:Detroit w:cityOf w:United_States .
         w:Chihuahua w:cityOf w:Mexico .
@@ -32,6 +33,7 @@ INSERT DATA
         w:Swiss w:demonymOf w:Switzerland .
         w:German w:demonymOf w:Germany .
         w:Polish w:demonymOf w:Poland .
+        w:Chinese w:demonymOf w:China .
 
         w:Barack_Obama w:wasChiefOfState w:United_States .
         w:Charles_De_Gaulle w:wasChiefOfState w:France .
@@ -80,6 +82,7 @@ INSERT DATA
         w:France w:titleOfChiefOfState w:President .
         w:Germany w:titleOfChiefOfState w:Chancellor .
         w:Poland w:titleOfChiefOfState w:President .
+        w:China w:titleOfChiefOfState w:President .
         w:New_Zealand w:titleOfChiefOfState w:Prime_Minister .
 
         w:John_von_Neumann w:bornIn w:Budapest .
