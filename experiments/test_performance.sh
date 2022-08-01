@@ -51,14 +51,14 @@ fi
 # Train model
 if [  ! -f "$MODEL_FILE" ]; then
     echo "[Training] Creating the model."
-    python examples/pbe/model_trainer.py --dsl DSL_NAME --dataset $TRAIN_DATASET --seed $SEED --b $BATCH_SIZE -o $MODEL_FILE -e $EPOCHS
+    python examples/pbe/model_trainer.py --dsl $DSL_NAME --dataset $TRAIN_DATASET --seed $SEED --b $BATCH_SIZE -o $MODEL_FILE -e $EPOCHS
     if [ $? != "0" ]; then
         exit 2
     fi
 fi
 # Eval model
 echo "[Evaluation] Evaluating the model."
-python examples/pbe/evaluate.py --dsl DSL_NAME --dataset $TEST_DATASET --b $BATCH_SIZE --model $MODEL_FILE -o $EXPERIMENT_FOLDER -t $TIMEOUT
+python examples/pbe/evaluate.py --dsl $DSL_NAME --dataset $TEST_DATASET --b $BATCH_SIZE --model $MODEL_FILE -o $EXPERIMENT_FOLDER -t $TIMEOUT
 if [ $? != "0" ]; then
     exit 4
 fi
