@@ -1,8 +1,6 @@
 from typing import List, Tuple
 from SPARQLWrapper import SPARQLWrapper, JSON
 
-SPARQL_ENDPOINT = "http://192.168.1.20:9999/blazegraph/namespace/kb/sparql"
-
 
 def __make_query_path__(distance: int, id: int, tabs: int = 1) -> str:
     if distance == 0:
@@ -46,9 +44,13 @@ def build_query(entities: List[Tuple[str, str]], distance: int = 1) -> str:
     return sparql_request
 
 
-def execute_query(query: str, endpoint: str = SPARQL_ENDPOINT) -> List[List[str]]:
+def build_wrapper(endpoint: str) -> SPARQLWrapper:
     wrapper = SPARQLWrapper(endpoint)
     wrapper.setReturnFormat(JSON)
+    return wrapper
+
+
+def __execute_query__(query: str, wrapper: SPARQLWrapper) -> List[List[str]]:
     wrapper.setQuery(query)
     answer = wrapper.query().convert()
     paths: List[List[str]] = []
@@ -60,12 +62,21 @@ def execute_query(query: str, endpoint: str = SPARQL_ENDPOINT) -> List[List[str]
     return paths
 
 
-if __name__ == "__main__":
-    countries = [
-        ("France", "Paris"),
-        ("United_States", "Washington"),
-        ("Germany", "Berlin"),
-    ]
-    query = build_query(countries, 2)
-    print(query)
-    print(execute_query(query))
+def find_paths_from_level(
+    pairs: List[Tuple[str, str]],
+    wrapper: SPARQLWrapper,
+    level: int,
+    max_distance: int = 3,
+) -> List[List[str]]:
+    if level == 0 or 1:
+        query = build_query(pairs, level)
+        return __execute_query__(query, wrapper)
+
+    d = level
+    while d < max_distance:
+        query = build_query(pairs, d)
+        out = __execute_query__(query, wrapper)
+        if len(out) > 0:
+            return out
+        d += 1
+    return []
