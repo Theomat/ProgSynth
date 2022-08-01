@@ -150,7 +150,7 @@ for i, task in enumerate(dataset):
             new_pseudo_tasks[j].append((pbe.examples[i].inputs[0], subtasks[j]))
     for query_task, pairs in new_pseudo_tasks.items():
         print("\tPairs:", pairs)
-        d = task.metadata["knowledge_graph_relationship"] - 1
+        d = task.metadata["knowledge_graph_relationship"]
         paths = find_paths_from_level(pairs, wrapper, d)
         if paths:
             for path in paths:
