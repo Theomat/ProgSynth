@@ -150,12 +150,12 @@ INSERT DATA
         w:Japan w:currency w:JPY .
         w:European_Union w:currency w:EUR .
         w:United_Kingdom w:currency w:GBP .
-        w:Autralia w:currency w:AUD .
+        w:Australia w:currency w:AUD .
         w:Canada w:currency w:CAD .
         w:Sweden w:currency w:SEK .
         w:Czechia w:currency w:CZK .
         w:China w:currency w:CNY .
-        w:South_Kora w:currency w:KRW .
+        w:South_Korea w:currency w:KRW .
 
         w:March w:number w:03 .
         w:February w:number w:02 .
