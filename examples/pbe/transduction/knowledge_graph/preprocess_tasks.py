@@ -124,6 +124,7 @@ if __name__ == "__main__":
     dataset = Dataset.load(dataset_file)
     wrapper = build_wrapper(args.endpoint)
     print("Loaded tasks!")
+    solvable = 0
     for i, task in enumerate(dataset):
         if task.metadata["constant_post_processing"] != 0:
             continue
@@ -131,6 +132,7 @@ if __name__ == "__main__":
             continue
         pbe: PBE = task.specification.get_specification(PBE)
         assert pbe is not None
+        solvable += 1
         print("=" * 60)
         print(f"[N°{i}] {task.metadata['name']}")
         print("Sample:", pbe.examples[0].output)
@@ -176,4 +178,5 @@ if __name__ == "__main__":
         if task.metadata.get("constants_in", None) is None:
             task.metadata["constants_in"] = constants_in
             dataset.save(dataset_file)
-        print("Constants Input:", constants)
+        print("Constants Input:", constants_in)
+    print("Found", solvable, "solvable tasks")
