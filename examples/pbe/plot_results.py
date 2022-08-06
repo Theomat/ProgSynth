@@ -32,13 +32,19 @@ parser.add_argument(
     default=False,
     help="does not sort tasks by time taken",
 )
-
+parser.add_argument(
+    "--no-programs",
+    action="store_true",
+    default=False,
+    help="does not show programs wrt tasks",
+)
 
 parameters = parser.parse_args()
 dataset_file: str = parameters.dataset
 output_folder: str = parameters.folder
 no_show: bool = parameters.no_show
 no_sort: bool = parameters.no_sort
+no_progs: bool = parameters.no_programs
 
 start_index = (
     0
@@ -48,14 +54,18 @@ start_index = (
 dataset_name = dataset_file[start_index : dataset_file.index(".", start_index)]
 
 pub.setup()
-ax1 = plt.subplot(1, 2, 1)
+if not no_progs:
+    ax1 = plt.subplot(1, 2, 1)
+else:
+    ax1 = plt.subplot(1, 1, 1)
 plt.xlabel("Time (in s)")
 plt.ylabel("Tasks Completed")
 plt.grid()
-ax2 = plt.subplot(1, 2, 2)
-plt.xlabel("# Programs")
-plt.ylabel("Tasks Completed")
-plt.grid()
+if not no_progs:
+    ax2 = plt.subplot(1, 2, 2)
+    plt.xlabel("# Programs")
+    plt.ylabel("Tasks Completed")
+    plt.grid()
 max_time, max_programs = 0, 0
 max_tasks = 0
 for file in glob(os.path.join(output_folder, "*.csv")):
@@ -86,7 +96,8 @@ for file in glob(os.path.join(output_folder, "*.csv")):
         [row[2] for row in trace_programs]
     )
     max_programs = max(max_programs, cum_programs[-1])
-    ax2.plot(cum_programs, cum_sol2, label=name.capitalize())
+    if not no_progs:
+        ax2.plot(cum_programs, cum_sol2, label=name.capitalize())
     print(name, "solved", cum_sol2[-1], "/", len(trace))
 ax1.hlines(
     [max_tasks],
@@ -98,18 +109,19 @@ ax1.hlines(
 )
 ax1.set_xlim(0, max_time)
 ax1.set_ylim(0, max_tasks + 10)
-ax2.hlines(
-    [max_tasks],
-    xmin=0,
-    xmax=max_programs,
-    label="All tasks",
-    color="k",
-    linestyles="dashed",
-)
-ax2.set_xlim(0, max_programs)
-ax2.set_ylim(0, max_tasks + 10)
+if not no_progs:
+    ax2.hlines(
+        [max_tasks],
+        xmin=0,
+        xmax=max_programs,
+        label="All tasks",
+        color="k",
+        linestyles="dashed",
+    )
+    ax2.set_xlim(0, max_programs)
+    ax2.set_ylim(0, max_tasks + 10)
+    ax2.legend()
 ax1.legend()
-ax2.legend()
 pub.save_fig(os.path.join(output_folder, "results.png"))
 if not no_show:
     plt.show()
