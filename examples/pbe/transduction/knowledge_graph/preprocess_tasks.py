@@ -140,15 +140,23 @@ if __name__ == "__main__":
         print("=" * 60)
         print(f"[N°{i}] {task.metadata['name']}")
         print("Sample:", pbe.examples[0].output)
-        constants = task.metadata.get("constants", None) or filter_constants(
-            find_constants(
-                [
-                    pbe.examples[i].output
-                    for i in range(min(MAX_EXAMPLES_ANALYSED, len(pbe.examples)))
-                ]
-            )
-        )
-        if task.metadata.get("constants", None) is None:
+        constants = task.metadata.get("constants", None)
+        if constants is None:
+            all_possibles = [
+                filter_constants(
+                    find_constants(
+                        [
+                            pbe.examples[i + k].output
+                            for i in range(
+                                min(MAX_EXAMPLES_ANALYSED, len(pbe.examples))
+                            )
+                        ]
+                    )
+                )
+                for k in range(max(1, len(pbe.examples) - MAX_EXAMPLES_ANALYSED))
+            ]
+            t = sorted([(len(l), l) for l in all_possibles])
+            constants = t[0][1]
             task.metadata["constants"] = constants
             dataset.save(dataset_file)
         print("Constants:", constants)
