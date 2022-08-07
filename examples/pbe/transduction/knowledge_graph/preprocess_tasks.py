@@ -2,6 +2,7 @@ from collections import defaultdict
 from typing import Dict, List, Optional, Tuple, Union
 from examples.pbe.transduction.knowledge_graph.kg_path_finder import (
     build_wrapper,
+    choose_best_path,
     find_paths_from_level,
 )
 from synth import Dataset
@@ -128,8 +129,6 @@ if __name__ == "__main__":
     for i, task in enumerate(dataset):
         if task.metadata["constant_post_processing"] != 0:
             continue
-        if task.metadata["constant_detection"] != 0:
-            continue
         pbe: PBE = task.specification.get_specification(PBE)
         assert pbe is not None
         solvable += 1
@@ -161,6 +160,8 @@ if __name__ == "__main__":
             d = task.metadata["knowledge_graph_relationship"] - 1
             paths = find_paths_from_level(pairs, wrapper, d)
             if paths:
+                if len(paths) > 1:
+                    paths = [choose_best_path(paths, pairs, wrapper)]
                 for path in paths:
                     print("\t\tstart->" + "->".join(path) + "->end")
             else:
