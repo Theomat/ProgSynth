@@ -77,12 +77,17 @@ def sketch(output: str, constants: List[str]) -> List[str]:
         if output[i:].startswith(constants[j]):
             if i - last > 0:
                 out.append(output[last:i])
+            else:
+                out.append("")
             i += len(constants[j])
             last = i
             j += 1
+            if i >= len(output):
+                out.append("")
             if j == len(constants):
                 break
-        i += 1
+        else:
+            i += 1
     if j == len(constants):
         if i < len(output):
             out.append(output[i:])
