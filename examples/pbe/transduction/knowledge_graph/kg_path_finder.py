@@ -18,7 +18,7 @@ def __format__(el: str) -> str:
     return el.replace(" ", "_").replace("'", "_")
 
 
-def build_query(entities: List[Tuple[str, str]], distance: int = 1) -> str:
+def build_search_path_query(entities: List[Tuple[str, str]], distance: int = 1) -> str:
     entities = [(__format__(a), __format__(b)) for a, b in entities]
     first = entities.pop()
     subquery = ""
@@ -45,13 +45,26 @@ def build_query(entities: List[Tuple[str, str]], distance: int = 1) -> str:
     return sparql_request
 
 
+def build_count_paths_query(start: str, path: List[str]) -> str:
+    sparql_request = "PREFIX w: <https://en.wikipedia.org/wiki/>\n"
+    sparql_request += "SELECT "
+    sparql_request += "?dst"
+    sparql_request += " WHERE {\n"
+    sparql_request += f"\tw:{__format__(start)} w:{path[0]} ?e0 ."
+    for i in range(1, len(path) - 1):
+        sparql_request += f"\t?e{i-1} w:{path[i]} ?e{i} ."
+    sparql_request += f"\t?e{len(path) - 1} w:{path[-1]} ?dst"
+    sparql_request += "\n}"
+    return sparql_request
+
+
 def build_wrapper(endpoint: str) -> SPARQLWrapper:
     wrapper = SPARQLWrapper(endpoint)
     wrapper.setReturnFormat(JSON)
     return wrapper
 
 
-def __execute_query__(query: str, wrapper: SPARQLWrapper) -> List[List[str]]:
+def __exec_search_path_query__(query: str, wrapper: SPARQLWrapper) -> List[List[str]]:
     if "+" in query or "|" in query:
         return []
     try:
@@ -80,9 +93,37 @@ def find_paths_from_level(
         return []
     d = level
     while d < max_distance:
-        query = build_query(pairs, d)
-        out = __execute_query__(query, wrapper)
+        query = build_search_path_query(pairs, d)
+        out = __exec_search_path_query__(query, wrapper)
         if len(out) > 0:
             return out
         d += 1
     return []
+
+
+def __exec_count_query__(query: str, wrapper: SPARQLWrapper) -> int:
+    if "+" in query or "|" in query:
+        return 0
+    try:
+        wrapper.setQuery(query)
+        answer = wrapper.query().convert()
+        return len(answer["results"]["bindings"])
+    except Exception as e:
+        print(e, file=sys.stderr)
+        pass
+    return 0
+
+
+def choose_best_path(
+    paths: List[List[str]], pairs: List[Tuple[str, str]], wrapper: SPARQLWrapper
+) -> List[str]:
+    best_path_index = 0
+    best_score = 99999999999999999999
+    for i, path in enumerate(paths):
+        score = 0
+        for start, _ in pairs:
+            score += __exec_count_query__(build_count_paths_query(start, path), wrapper)
+        if score < best_score:
+            best_score = score
+            best_path_index = i
+    return paths[best_path_index]
