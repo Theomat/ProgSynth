@@ -62,7 +62,10 @@ def find_constants(
             )
             for i in iterator
         ]
-    best = [(sum(len(s) for s in l if l is not None), l) for l in possibles]
+    best = [
+        (sum(len(s) for s in filter_constants(l) if l is not None), l)
+        for l in possibles
+    ]
     best.sort(reverse=True)
     found = best[0][1]
     # if has_found_constant:
@@ -141,7 +144,7 @@ if __name__ == "__main__":
         print(f"[N°{i}] {task.metadata['name']}")
         print("Sample:", pbe.examples[0].output)
         constants = task.metadata.get("constants", None)
-        if constants is None:
+        if constants is None or task.metadata["name"] == "head date french.":
             all_possibles = [
                 filter_constants(
                     find_constants(
