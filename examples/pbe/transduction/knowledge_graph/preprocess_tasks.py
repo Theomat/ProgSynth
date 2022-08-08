@@ -181,15 +181,23 @@ if __name__ == "__main__":
                 print("\tFound no path for relationship level", d)
         print()
 
-        constants_in = task.metadata.get("constants_in", None) or filter_constants(
-            find_constants(
-                [
-                    pbe.examples[i].inputs[0]
-                    for i in range(min(MAX_EXAMPLES_ANALYSED, len(pbe.examples)))
-                ]
-            )
-        )
-        if task.metadata.get("constants_in", None) is None:
+        constants_in = task.metadata.get("constants_in", None)
+        if constants_in is None:
+            all_possibles = [
+                filter_constants(
+                    find_constants(
+                        [
+                            pbe.examples[i + k].inputs[0]
+                            for i in range(
+                                min(MAX_EXAMPLES_ANALYSED, len(pbe.examples))
+                            )
+                        ]
+                    )
+                )
+                for k in range(max(1, len(pbe.examples) - MAX_EXAMPLES_ANALYSED))
+            ]
+            t = sorted([(len(l), l) for l in all_possibles])
+            constants_in = t[0][1]
             task.metadata["constants_in"] = constants_in
             dataset.save(dataset_file)
         print("Constants Input:", constants_in)
