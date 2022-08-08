@@ -738,7 +738,7 @@
                 "inputs": [
                     "Spain /very/very/long/and/even|longer|obnoxious/text/"
                 ],
-                "output": "esES (longer)"
+                "output": "ES (longer)"
             }
         ]
     },
