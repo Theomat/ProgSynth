@@ -296,9 +296,15 @@ def enumerative_search(
     start = len(trace)
     pbar = tqdm.tqdm(total=len(pcfgs) - start, desc="Tasks", smoothing=0)
     i = 0
+    solved = 0
+    total = 0
     for task, pcfg in zip(dataset.tasks[start:], pcfgs[start:]):
+        total += 1
         try:
-            trace.append(method(evaluator, task, pcfg, custom_enumerate))
+            out = method(evaluator, task, pcfg, custom_enumerate)
+            trace.append(out)
+            if out[0]:
+                solved += 1
         except KeyboardInterrupt:
             break
         pbar.update(1)
@@ -308,7 +314,8 @@ def enumerative_search(
         if i % 10 == 0:
             pbar.set_postfix_str("Saving...")
             save(trace)
-            pbar.set_postfix_str("")
+        pbar.set_postfix_str(f"Solved {solved}/{total}")
+
     pbar.close()
 
 
