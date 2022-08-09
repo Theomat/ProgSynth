@@ -81,6 +81,9 @@ def __exec_search_path_query__(query: str, wrapper: SPARQLWrapper) -> List[List[
     return []
 
 
+forbidden_chars = "+|!/<>"
+
+
 def find_paths_from_level(
     pairs: List[Tuple[str, str]],
     wrapper: SPARQLWrapper,
@@ -90,9 +93,7 @@ def find_paths_from_level(
     if level < 0:
         return []
     for inp, out in pairs:
-        if "+" in inp or "|" in inp or ">" in inp or "<" in inp or "/" in inp:
-            return []
-        if "+" in out or "|" in out or ">" in out or "<" in out or "/" in out:
+        if any(c in inp or c in out for c in forbidden_chars):
             return []
     d = level
     while d < max_distance:
