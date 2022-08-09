@@ -160,7 +160,7 @@ INSERT DATA
         w:March w:number w:03 .
         w:February w:number w:02 .
         w:November w:number w:11 .
-        w:December w:number w:28 .
+        w:December w:number w:12 .
         w:August w:number w:08 .
 
   }
