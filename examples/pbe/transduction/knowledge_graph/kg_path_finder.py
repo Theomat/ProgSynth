@@ -15,7 +15,7 @@ def __make_query_path__(distance: int, id: int, tabs: int = 1) -> str:
 
 
 def __format__(el: str) -> str:
-    return el.replace(" ", "_").replace("'", "_")
+    return el.replace(" ", "_").replace("'", "_").replace(",", "_")
 
 
 def build_search_path_query(entities: List[Tuple[str, str]], distance: int = 1) -> str:
