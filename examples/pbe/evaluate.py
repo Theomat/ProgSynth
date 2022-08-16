@@ -1,4 +1,5 @@
 import atexit
+from collections import defaultdict
 import os
 import sys
 from typing import Callable, Iterable, List, Optional, Tuple
@@ -13,6 +14,12 @@ import torch.nn as nn
 from torch.nn.utils.rnn import PackedSequence
 
 from dsl_loader import add_dsl_choice_arg, load_DSL
+from examples.pbe.transduction.knowledge_graph.kg_path_finder import (
+    build_wrapper,
+    choose_best_path,
+    find_paths_from_level,
+)
+from examples.pbe.transduction.knowledge_graph.preprocess_tasks import sketch
 
 from synth import Dataset, PBE, Task
 from synth.nn import (
@@ -24,7 +31,7 @@ from synth.nn import (
 from synth.pbe import IOEncoder
 from synth.semantic import DSLEvaluator
 from synth.semantic.evaluator import DSLEvaluatorWithConstant
-from synth.specification import PBEWithConstants
+from synth.specification import Example, PBEWithConstants
 from synth.syntax import (
     CFG,
     ProbDetGrammar,
@@ -34,6 +41,8 @@ from synth.syntax import (
     Program,
 )
 from synth.syntax.grammars.heap_search import HSEnumerator
+from synth.syntax.program import Function, Primitive, Variable
+from synth.syntax.type_system import STRING, Arrow
 from synth.utils import chrono
 
 import argparse
@@ -199,7 +208,10 @@ def produce_pcfgs(
         max_depth = max(task.solution.depth() for task in full_dataset)
     else:
         max_depth = 10  # TODO: set as parameter
-    cfgs = [CFG.depth_constraint(dsl, t, max_depth) for t in all_type_requests]
+    cfgs = [
+        CFG.depth_constraint(dsl, t, max_depth, min_variable_depth=0)
+        for t in all_type_requests
+    ]
 
     class MyPredictor(nn.Module):
         def __init__(self, size: int) -> None:
@@ -364,10 +376,9 @@ def constants_injector(
     constants_out = task.specification.constants_out
     if len(constants_out) == 0:
         constants_out.append("")
-    name = task.metadata["name"]
-    program = task.solution
-    if program == None:
-        return (False, time, programs, None, None)
+    # program = task.solution
+    # if program == None:
+    #     return (False, time, programs, None, None)
     with chrono.clock("search.constant_injector") as c:
 
         # print("\n-----------------------")
@@ -398,19 +409,6 @@ def constants_injector(
                 if not found:
                     break
             if found:
-                # print("Solution found.\n")
-                # print("\t", program)
-                # print(
-                #    "\nWorking for all ",
-                #    counter,
-                #    "/",
-                #    len(task.specification.examples),
-                #    " examples in ",
-                #    time,
-                #    "/",
-                #    task_timeout,
-                #    "s.",
-                # )
                 return (
                     True,
                     c.elapsed_time(),
@@ -421,15 +419,192 @@ def constants_injector(
     return (False, time, programs, None, None)
 
 
+def sketched_base(
+    evaluator: DSLEvaluator,
+    task: Task[PBE],
+    pcfg: ProbDetGrammar,
+    custom_enumerate: Callable[[ProbDetGrammar], HSEnumerator],
+) -> Tuple[bool, float, int, Optional[Program]]:
+    programs = 0
+    global task_timeout
+    if task.metadata.get("constants", None) is not None:
+        original_timeout = task_timeout
+        verbose = False
+        # (
+        #     task.metadata["constant_post_processing"] == 0
+        #     and task.metadata["constant_detection"] == 0
+        #     and task.metadata["knowledge_graph_relationship"] > 0
+        # )
+        if verbose:
+            print("should solve:", task.metadata.get("name", "???"))
+        with chrono.clock("additional") as c:
+            wrapper = build_wrapper(
+                "http://192.168.1.20:9999/blazegraph/namespace/kb/sparql"
+            )
+            constants = task.metadata.get("constants", None)
+            constants_in = task.metadata.get("constants_in", [])
+            pbe = task.specification
+            new_pseudo_tasks = defaultdict(lambda: defaultdict(list))
+            # print("working on:", task.metadata["name"])
+            # print("constants out.:", constants)
+            # print("constants inp.:", constants_in)
+            true_inputs = (
+                [
+                    sketch(pbe.examples[i].inputs[0], constants_in)
+                    for i in range(len(pbe.examples))
+                ]
+                if constants_in
+                else [pbe.examples[i].inputs for i in range(len(pbe.examples))]
+            )
+            # print("true_inputs:", true_inputs)
+            n = len(true_inputs[0])
+            for i in range(len(pbe.examples)):
+                subtasks = sketch(pbe.examples[i].output, constants)
+                for j in range(len(subtasks)):
+                    for k in range(n):
+                        new_pseudo_tasks[j][k].append((true_inputs[i][k], subtasks[j]))
+            solution_part = []
+            prob = 1
+            for j, possibles in new_pseudo_tasks.items():
+                any_solved = False
+                relevant_alternatives = {
+                    k: pairs
+                    for k, pairs in possibles.items()
+                    if not all(len(out) == 0 for _, out in pairs)
+                    and not all(len(inp) == 0 for inp, _ in pairs)
+                }
+                subn = len(relevant_alternatives)
+                if subn == 0:
+                    continue
+                # print(
+                #     f"\t\tpart[{j}] before:{possibles}")
+                # print(
+                #     f"\t\tpart[{j}] before:{len(possibles)} after:{len(relevant_alternatives)}")
+                for k, pairs in relevant_alternatives.items():
+                    # print("\tsub task:", pairs)
+                    d = task.metadata["knowledge_graph_relationship"] - 1
+                    paths = find_paths_from_level(pairs, wrapper, d)
+                    # print("\t\tfound paths:", paths)
+                    if paths:
+                        any_solved = True
+                        if len(paths) > 1:
+                            paths = [choose_best_path(paths, pairs, wrapper)]
+                        custom_input = Variable(0, STRING)
+                        if not (k == 0 and k + 1 >= len(constants_in)):
+                            custom_input = Function(
+                                Primitive(
+                                    f"between {constants_in[k] if k > 0 else 'start'} and {constants_in[k + 1] if k + 1 < len(constants_in) else 'end'}",
+                                    Arrow(STRING, STRING),
+                                ),
+                                [custom_input],
+                            )
+                        solution_part.append(
+                            Function(
+                                Primitive(
+                                    "start->" + "->".join(paths[0]) + "->end",
+                                    Arrow(STRING, STRING),
+                                ),
+                                [custom_input],
+                            )
+                        )
+                        if verbose:
+                            print(
+                                "\tresult:", "start->" + "->".join(paths[0]) + "->end"
+                            )
+                    else:
+                        sub_task = Task(
+                            task.type_request,
+                            PBE(
+                                [
+                                    Example([pairs[i][0]], pairs[i][1])
+                                    for i in range(len(pbe.examples))
+                                ],
+                            ),
+                        )
+                        task_timeout = original_timeout - c.elapsed_time()
+                        task_timeout /= subn
+                        if verbose:
+                            print(
+                                "\tsolving with timeout",
+                                task_timeout,
+                                "s :",
+                                sub_task.specification.examples,
+                            )
+
+                        (
+                            solved,
+                            _,
+                            enumerated,
+                            partial_sol,
+                            part_prob,
+                        ) = base(evaluator, sub_task, pcfg, custom_enumerate)
+                        task_timeout = original_timeout
+                        if verbose:
+                            print("\tresult:", solved, partial_sol)
+                        if c.elapsed_time() >= task_timeout:
+                            return (False, c.elapsed_time(), programs, None, None)
+                        if solved:
+                            any_solved = True
+                            prob *= part_prob
+                            solution_part.append(partial_sol)
+                        programs += enumerated
+                    if any_solved:
+                        break
+                if not any_solved:
+                    return False, c.elapsed_time(), programs, None, None
+            # Convert back to a program
+            some_output: str = pbe.examples[0].output
+            start_cste = len(constants) > 0 and some_output.startswith(constants[0])
+            i = 0
+            concat_type = STRING
+            if start_cste:
+                arguments = [Primitive('"' + constants[0] + '"', STRING)]
+                for cste in constants[1:]:
+                    arguments.append(solution_part[i])
+                    concat_type = Arrow(concat_type, STRING)
+                    arguments.append(Primitive('"' + cste + '"', STRING))
+                    concat_type = Arrow(concat_type, STRING)
+                    i += 1
+                if i < len(solution_part):
+                    arguments.append(solution_part[i])
+                    concat_type = Arrow(concat_type, STRING)
+
+            else:
+                arguments = [solution_part.pop(0)]
+                for cste in constants:
+                    arguments.append(Primitive('"' + cste + '"', STRING))
+                    concat_type = Arrow(concat_type, STRING)
+                    if i < len(solution_part):
+                        arguments.append(solution_part[i])
+                        concat_type = Arrow(concat_type, STRING)
+                    i += 1
+                if i < len(solution_part):
+                    arguments.append(solution_part[i])
+                    concat_type = Arrow(concat_type, STRING)
+            end_solution = (
+                Function(Primitive("concat", concat_type), arguments)
+                if len(arguments) > 1
+                else arguments[0]
+            )
+            return True, c.elapsed_time(), programs, end_solution, prob
+
+    else:
+        # print("timeout:", task_timeout)
+        if task.specification.get_specification(PBEWithConstants) is not None:
+            return constants_injector(evaluator, task, pcfg, custom_enumerate)
+        else:
+            return base(evaluator, task, pcfg, custom_enumerate)
+
+
 # Main ====================================================================
 
 if __name__ == "__main__":
     full_dataset, dsl, evaluator, lexicon, model_name = load_dataset()
-    method = base
-    name = "base"
-    if isinstance(evaluator, DSLEvaluatorWithConstant):
-        method = constants_injector
-        name = "constants_injector"
+    method = sketched_base
+    name = "sketched_base"
+    # if isinstance(evaluator, DSLEvaluatorWithConstant):
+    #     method = constants_injector
+    #     name = "constants_injector"
 
     pcfgs = produce_pcfgs(full_dataset, dsl, lexicon)
     file = os.path.join(
