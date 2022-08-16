@@ -104,6 +104,7 @@ def filter_constants(constants: List[str]) -> List[str]:
     return [x for x in constants if not (len(x) == 1 and x.lower() in ALPHA_NUMERIC)]
 
 
+to_update = set([])
 if __name__ == "__main__":
     argument_parser: argparse.ArgumentParser = argparse.ArgumentParser(
         description="Preporocess transduction tasks to find constants."
@@ -144,7 +145,7 @@ if __name__ == "__main__":
         print(f"[N°{i}] {task.metadata['name']}")
         print("Sample:", pbe.examples[0].output)
         constants = task.metadata.get("constants", None)
-        if constants is None or task.metadata["name"] == "head date french.":
+        if constants is None or task.metadata["name"] in to_update:
             all_possibles = [
                 filter_constants(
                     find_constants(
@@ -185,7 +186,7 @@ if __name__ == "__main__":
         print()
 
         constants_in = task.metadata.get("constants_in", None)
-        if constants_in is None:
+        if constants_in is None or task.metadata["name"] in to_update:
             all_possibles = [
                 filter_constants(
                     find_constants(
