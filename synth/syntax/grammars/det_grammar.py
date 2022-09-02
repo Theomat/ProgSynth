@@ -4,11 +4,13 @@ from typing import (
     Dict,
     List,
     Optional,
+    Set,
     Tuple,
     TypeVar,
     Generic,
     Union,
 )
+from functools import lru_cache
 import copy
 from synth.syntax.dsl import are_equivalent_primitives
 
@@ -36,6 +38,18 @@ class DetGrammar(Grammar, ABC, Generic[U, V, W]):
         self.type_request = self._guess_type_request_()
         if clean:
             self.clean()
+
+    @lru_cache()
+    def primitives_used(self) -> Set[Primitive]:
+        """
+        Returns the set of primitives used by this grammar.
+        """
+        out: Set[Primitive] = set()
+        for S in self.rules:
+            for P in self.rules[S]:
+                if isinstance(P, Primitive):
+                    out.add(P)
+        return out
 
     def __hash__(self) -> int:
         return hash((self.start, str(self.rules)))
