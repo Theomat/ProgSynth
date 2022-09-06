@@ -58,3 +58,10 @@ class DFA(Generic[U, V]):
         if start in self.finals:
             return start
         return self.rules[start][word]
+
+    def map_states(self, f: Callable[[U], W]) -> "DFA[W, V]":
+        mapping = {s: f(s) for s in self.states}
+        dst_rules = {
+            {mapping[self.rules[S][P]] for P in self.rules[S]} for S in self.rules
+        }
+        return DFA(mapping[self.start], dst_rules, {mapping[f] for f in self.finals})
