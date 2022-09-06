@@ -44,7 +44,7 @@ class NGram:
 
     def successor(self, new_succ: Tuple[DerivableProgram, int]) -> "NGram":
         new_pred = [new_succ] + self.predecessors
-        if len(new_pred) + 1 > self.n:
+        if len(new_pred) + 1 > self.n and self.n >= 0:
             new_pred.pop()
         return NGram(self.n, new_pred)
 
