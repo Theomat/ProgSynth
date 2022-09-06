@@ -82,3 +82,20 @@ class DFA(Generic[U, V]):
         for S in other.rules:
             new_rules[S] = {P: other.rules[S][P] for P in other.rules[S]}
         return DFA(self.start, new_rules, other.finals)
+
+    def read_product(self, other: "DFA[W, V]") -> "DFA[Tuple[U, W], V]":
+        start = (self.start, other.start)
+        rules: Dict[Tuple[U, W], Dict[V, Tuple[U, W]]] = {}
+        new_finals = set()
+        for S1 in self.rules:
+            for S2 in other.rules:
+                if S1 in self.finals and S2 in other.finals:
+                    new_finals.add((S1, S2))
+                rules[(S1, S2)] = {}
+                for v in self.rules[S1]:
+                    if v in other.rules[S2]:
+                        rules[(S1, S2)][v] = (
+                            self.rules[S1][v],
+                            other.rules[S2][v],
+                        )
+        return DFA(start, rules, new_finals)
