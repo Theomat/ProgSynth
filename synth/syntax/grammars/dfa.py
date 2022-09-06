@@ -1,4 +1,5 @@
-from typing import Dict, Generic, Tuple, TypeVar
+from functools import lru_cache
+from typing import Callable, Dict, Generic, Set, Tuple, TypeVar
 
 
 U = TypeVar("U")
@@ -14,9 +15,10 @@ class DFA(Generic[U, V]):
     If there is no transition from U reading V it means it is non accepting. (there are no final states)
     """
 
-    def __init__(self, initial: U, rules: Dict[U, Dict[V, U]]) -> None:
+    def __init__(self, initial: U, rules: Dict[U, Dict[V, U]], finals: Set[U]) -> None:
         self.start = initial
         self.rules = rules
+        self.finals = finals
 
     def __mul__(self, other: "DFA[W, X]") -> "DFA[Tuple[U, W], Tuple[V, X]]":
         start = (self.start, other.start)
@@ -32,5 +34,27 @@ class DFA(Generic[U, V]):
                         )
         return DFA(start, rules)
 
+    @property
+    @lru_cache
+    def states(self) -> Set[U]:
+        all = set()
+        last_frontier = [self.start]
+        while last_frontier:
+            new_frontier = []
+            while last_frontier:
+                state = last_frontier.pop()
+                for P in self.rules[state]:
+                    new_state = self.rules[state][P]
+                    if new_state not in all:
+                        all.add(new_state)
+                        new_frontier.append(new_state)
+            last_frontier = new_frontier
+        return all
+
     def can_read(self, start: U, word: V) -> bool:
-        return start in self.rules and word in self.rules[start]
+        return start in self.rules and word in self.rules[start] or start in self.finals
+
+    def read(self, start: U, word: V) -> U:
+        if start in self.finals:
+            return start
+        return self.rules[start][word]
