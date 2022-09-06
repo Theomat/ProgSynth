@@ -65,3 +65,16 @@ class DFA(Generic[U, V]):
             {mapping[self.rules[S][P]] for P in self.rules[S]} for S in self.rules
         }
         return DFA(mapping[self.start], dst_rules, {mapping[f] for f in self.finals})
+
+    def then(self, other: "DFA[U, V]") -> "DFA[U, V]":
+        assert self.states.isdisjoint(other.states)
+        new_rules = {
+            {
+                self.rules[S][P] if self.rules[S][P] not in self.finals else other.start
+                for P in self.rules[S]
+            }
+            for S in self.rules
+        }
+        for S in other.rules:
+            new_rules[S] = {other.rules[S][P] for P in other.rules[S]}
+        return DFA(self.start, new_rules, other.finals)
