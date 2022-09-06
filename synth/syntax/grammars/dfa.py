@@ -1,4 +1,3 @@
-from functools import lru_cache
 from typing import Callable, Dict, Generic, Set, Tuple, TypeVar
 
 
@@ -23,8 +22,11 @@ class DFA(Generic[U, V]):
     def __mul__(self, other: "DFA[W, X]") -> "DFA[Tuple[U, W], Tuple[V, X]]":
         start = (self.start, other.start)
         rules: Dict[Tuple[U, W], Dict[Tuple[V, X], Tuple[U, W]]] = {}
+        new_finals = set()
         for S1 in self.rules:
             for S2 in other.rules:
+                if S1 in self.finals and S2 in other.finals:
+                    new_finals.add((S1, S2))
                 rules[(S1, S2)] = {}
                 for w1 in self.rules[S1]:
                     for w2 in other.rules[S2]:
@@ -32,10 +34,9 @@ class DFA(Generic[U, V]):
                             self.rules[S1][w1],
                             other.rules[S2][w2],
                         )
-        return DFA(start, rules)
+        return DFA(start, rules, new_finals)
 
     @property
-    @lru_cache
     def states(self) -> Set[U]:
         all = set()
         last_frontier = [self.start]
@@ -62,19 +63,22 @@ class DFA(Generic[U, V]):
     def map_states(self, f: Callable[[U], W]) -> "DFA[W, V]":
         mapping = {s: f(s) for s in self.states}
         dst_rules = {
-            {mapping[self.rules[S][P]] for P in self.rules[S]} for S in self.rules
+            mapping[S]: {P: mapping[self.rules[S][P]] for P in self.rules[S]}
+            for S in self.rules
         }
         return DFA(mapping[self.start], dst_rules, {mapping[f] for f in self.finals})
 
     def then(self, other: "DFA[U, V]") -> "DFA[U, V]":
         assert self.states.isdisjoint(other.states)
         new_rules = {
-            {
-                self.rules[S][P] if self.rules[S][P] not in self.finals else other.start
+            S: {
+                P: self.rules[S][P]
+                if self.rules[S][P] not in self.finals
+                else other.start
                 for P in self.rules[S]
             }
             for S in self.rules
         }
         for S in other.rules:
-            new_rules[S] = {other.rules[S][P] for P in other.rules[S]}
+            new_rules[S] = {P: other.rules[S][P] for P in other.rules[S]}
         return DFA(self.start, new_rules, other.finals)
