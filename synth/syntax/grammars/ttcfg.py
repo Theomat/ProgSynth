@@ -218,6 +218,30 @@ class TTCFG(
 
         self.rules = {S: {P: self.rules[S][P] for P in new_rules[S]} for S in new_rules}
 
+        # Now back propagate and delete things that cannot finish with a valid program
+        deleted_S = []
+        # Fill deleted S
+        for S in list(self.rules.keys()):
+            if len(self.rules[S]) == 0:
+                deleted_S.append(S)
+                del self.rules[S]
+        while deleted_S:
+            S = deleted_S.pop()
+            to_check = (S[0], S[1][0])
+            for SS in list(self.rules.keys()):
+                for P in list(self.rules[SS].keys()):
+                    derlist, state = self.rules[SS][P]
+                    to_delete = False
+                    for der in derlist:
+                        if der == to_check:
+                            to_delete = True
+                            break
+                    if to_delete:
+                        del self.rules[SS][P]
+                        if len(self.rules[SS]) == 0:
+                            del self.rules[SS]
+                            deleted_S.append(SS)
+
     def start_information(self) -> List[Tuple[Type, S]]:
         return []
 
