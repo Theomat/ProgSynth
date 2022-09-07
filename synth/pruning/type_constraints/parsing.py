@@ -21,21 +21,38 @@ SYMBOL_AGGREGATOR = "#"
 # TOKENS
 # ========================================================================================
 class Token:
-    pass
+    def __repr__(self) -> str:
+        return str(self)
 
 
 class TokenAnything(Token):
-    pass
+    def __repr__(self) -> str:
+        return str(self)
+
+    def __str__(self) -> str:
+        return "Any"
 
 
 @dataclass
 class TokenAllow(Token):
     allowed: TList[DerivableProgram]
 
+    def __repr__(self) -> str:
+        return str(self)
+
+    def __str__(self) -> str:
+        return f"Allow ({self.allowed})"
+
 
 @dataclass
 class TokenVarDep(Token):
     variables: TList[Variable]
+
+    def __repr__(self) -> str:
+        return str(self)
+
+    def __str__(self) -> str:
+        return f"VarDep ({self.variables})"
 
 
 @dataclass
@@ -43,11 +60,23 @@ class TokenAtMost(Token):
     to_count: TList[DerivableProgram]
     count: int
 
+    def __repr__(self) -> str:
+        return str(self)
+
+    def __str__(self) -> str:
+        return f"AtMost {self.count} ({self.to_count})"
+
 
 @dataclass
 class TokenFunction(Token):
     function: TokenAllow
     args: TList[Token]
+
+    def __repr__(self) -> str:
+        return str(self)
+
+    def __str__(self) -> str:
+        return f"Func f={self.function} args=({self.args})"
 
 
 # ========================================================================================
