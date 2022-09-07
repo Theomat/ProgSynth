@@ -68,6 +68,18 @@ class TokenAtMost(Token):
 
 
 @dataclass
+class TokenAtLeast(Token):
+    to_count: TList[DerivableProgram]
+    count: int
+
+    def __repr__(self) -> str:
+        return str(self)
+
+    def __str__(self) -> str:
+        return f"AtLeast {self.count} ({self.to_count})"
+
+
+@dataclass
 class TokenFunction(Token):
     function: TokenAllow
     args: TList[Token]
@@ -132,9 +144,16 @@ def __interpret_word__(word: str, grammar: TTCFG) -> Token:
         return TokenAnything()
     elif word.startswith(SYMBOL_AGGREGATOR):
         word = word[1:].replace(" ", "")
-        considered = word[: word.index("<=")]
+        end_index = max(word.find("<="), word.find(">="))
+        most = word[end_index] == "<"
+        considered = word[:end_index]
         count = int(word[len(considered) + 2 :])
-        return TokenAtMost(__str_to_derivable_program__(considered, grammar), count)
+        if most:
+            return TokenAtMost(__str_to_derivable_program__(considered, grammar), count)
+        else:
+            return TokenAtLeast(
+                __str_to_derivable_program__(considered, grammar), count
+            )
     return TokenAllow(__str_to_derivable_program__(word, grammar))
 
 
