@@ -11,9 +11,6 @@ from typing import (
     Union,
 )
 from functools import lru_cache
-import copy
-from synth.syntax.dsl import are_equivalent_primitives
-
 from synth.syntax.grammars.grammar import Grammar
 from synth.syntax.program import Constant, Function, Primitive, Program, Variable
 from synth.syntax.type_system import Arrow, Type
@@ -145,27 +142,27 @@ class UGrammar(Grammar, ABC, Generic[U, V, W]):
         information: W,
         S: Tuple[Type, U],
         P: Program,
-        current: Optional[List[Tuple[Type, U]]] = None,
-    ) -> List[Tuple[W, List[Tuple[Type, U]]]]:
+        current: Optional[List[Tuple[Tuple[Type, U], V]]] = None,
+    ) -> List[Tuple[W, List[Tuple[Tuple[Type, U], V]]]]:
         """
         Given current information and context S, produces the new information and all the contexts the grammar went through to derive program P.
         """
         current = current or []
         if isinstance(P, (Primitive, Variable, Constant)):
             cur_possibles = self.derive(information, S, P)
-            out = [(info, current + [ctx]) for info, ctx in cur_possibles]
+            out = [(info, current + [(ctx, pp)]) for info, ctx, pp in cur_possibles]
             return out
 
         elif isinstance(P, Function):
             F = P.function
-            current.append(S)
+            # current.append(S)
             # information, _ = self.derive_all(information, S, F, current)
             possibles = self.derive_all(information, S, F, current)
             for arg in P.arguments:
                 next_possibles = []
                 for possible in possibles:
                     information, crt = possible
-                    S = crt[-1]
+                    S = crt[-1][0]
                     possibles_arg = self.derive_all(information, S, arg, current)
                     for information, next_crt in possibles_arg:
                         next_possibles.append((information, next_crt))
@@ -189,38 +186,53 @@ class UGrammar(Grammar, ABC, Generic[U, V, W]):
     #     init: T,
     #     program: Program,
     #     start: Optional[Tuple[Type, U]] = None,
-    # ) -> T:
+    # ) -> List[T]:
     #     """
     #     Reduce the given program using the given reduce operator.
 
     #     reduce is called after derivation.
     #     """
-
-    #     return self.__reduce_derivations_rec__(
-    #         reduce, init, program, start or self.start, self.start_information()
-    #     )[0]
+    #     alternatives = self.__reduce_derivations_rec__(
+    #         reduce, program, start or self.start, self.start_information()
+    #     )
+    #     outputs = []
+    #     for possibles in alternatives:
+    #         value = init
+    #         for S, P, v, _ in possibles:
+    #             value = reduce(value, S, P, v)
+    #         outputs.append(value)
+    #     return outputs
 
     # def __reduce_derivations_rec__(
     #     self,
     #     reduce: Callable[[T, Tuple[Type, U], DerivableProgram, V], T],
-    #     init: T,
     #     program: Program,
     #     start: Tuple[Type, U],
     #     information: W,
-    # ) -> Tuple[T, W, Tuple[Type, U]]:
-    #     value = init
+    # ) -> List[List[Tuple[Tuple[Type, U], DerivableProgram, V, W]]]:
     #     if isinstance(program, Function):
     #         function = program.function
     #         args_P = program.arguments
-    #         information, next = self.derive(information, start, function)  # type: ignore
-    #         value = reduce(value, start, function, self.rules[start][function])  # type: ignore
+    #         possibles = [self.derive(information, start, function)]  # type: ignore
     #         for arg in args_P:
-    #             value, information, next = self.__reduce_derivations_rec__(
-    #                 reduce, value, arg, start=next, information=information
-    #             )
+    #             next_possibles = []
+    #             for possible in possibles:
+    #                 information, next, v = possible
+    #                 alternatives = self.__reduce_derivations_rec__(
+    #                     reduce, arg, start=next, information=information
+    #                 )
+    #                 for possibles in alternatives:
+    #                     for S, P, v, _ in possibles:
+
+    #             # value, information, next = self.__reduce_derivations_rec__(
+    #             #     reduce, value, arg, start=next, information=information
+    #             # )
     #         return value, information, next
     #     elif isinstance(program, (Primitive, Variable, Constant)):
-    #         information, next = self.derive(information, start, program)
-    #         value = reduce(value, start, program, self.rules[start][program])
-    #         return value, information, next
-    #     return value, information, start
+    #         possibles = self.derive(information, start, program)
+    #         alternatives = []
+    #         for possible in possibles:
+    #             information, next, v = possible
+    #             alternatives.append([(next, program, v, information)])
+    #         return alternatives
+    #     return []
