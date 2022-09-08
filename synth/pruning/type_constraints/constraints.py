@@ -426,19 +426,19 @@ def add_constraints(
     return preprocessed
 
 
-if __name__ == "__main__":
-    from examples.pbe.calculator.calculator import dsl, INT
-    from synth.syntax import FunctionType, CFG
+# if __name__ == "__main__":
+#     from examples.pbe.calculator.calculator import dsl, INT
+#     from synth.syntax import FunctionType, CFG
 
-    type_request = FunctionType(INT, INT)
+#     type_request = FunctionType(INT, INT)
 
-    patterns = [
-        # "+ ^+,1 ^1",
-        "+ (+ 2 _) _"
-    ]
+#     patterns = [
+#         # "+ ^+,1 ^1",
+#         "+ (+ 2 _) _"
+#     ]
 
-    max_depth = 4
-    cfg = CFG.depth_constraint(dsl, type_request, max_depth)
-    print(cfg)
-    new_cfg = add_constraints(cfg, patterns, False, False)
-    print(new_cfg)
+#     max_depth = 4
+#     cfg = CFG.depth_constraint(dsl, type_request, max_depth)
+#     print(cfg)
+#     new_cfg = add_constraints(cfg, patterns, False, False)
+#     print(new_cfg)
