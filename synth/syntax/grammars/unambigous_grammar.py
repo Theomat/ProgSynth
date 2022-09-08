@@ -104,7 +104,7 @@ class UGrammar(Grammar, ABC, Generic[U, V, W]):
             args_P = program.arguments
             if function not in self.rules[start]:
                 return False, [(information, start)]
-            possibles = self.derive(information, start, function)  # type: ignore
+            possibles = [(a, b) for a, b, _ in self.derive(information, start, function)]  # type: ignore
             for arg in args_P:
                 next_possibles = []
                 for possible in possibles:
@@ -121,7 +121,7 @@ class UGrammar(Grammar, ABC, Generic[U, V, W]):
         elif isinstance(program, (Primitive, Variable, Constant)):
             if program not in self.rules[start]:
                 return False, [(information, start)]
-            possibles = self.derive(information, start, program)
+            possibles = [(a, b) for a, b, _ in self.derive(information, start, program)]
             return True, possibles
         return False, [(information, start)]
 
@@ -134,7 +134,7 @@ class UGrammar(Grammar, ABC, Generic[U, V, W]):
     @abstractmethod
     def derive(
         self, information: W, S: Tuple[Type, U], P: DerivableProgram
-    ) -> List[Tuple[W, Tuple[Type, U]]]:
+    ) -> List[Tuple[W, Tuple[Type, U], V]]:
         """
         Given the current information and the derivation S -> P, produces the new information state and the next S after this derivation.
         """
