@@ -8,5 +8,6 @@ from synth.syntax.grammars.heap_search import (
     enumerate_prob_grammar,
     enumerate_bucket_prob_grammar,
 )
+from synth.syntax.grammars.unambigous_grammar import UGrammar
 
 # from synth.syntax.grammars.pcfg_splitter import split
