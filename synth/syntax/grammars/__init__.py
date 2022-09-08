@@ -9,5 +9,6 @@ from synth.syntax.grammars.heap_search import (
     enumerate_bucket_prob_grammar,
 )
 from synth.syntax.grammars.unambigous_grammar import UGrammar
+from synth.syntax.grammars.ucfg import UCFG
 
 # from synth.syntax.grammars.pcfg_splitter import split
