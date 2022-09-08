@@ -14,3 +14,10 @@ class Grammar(ABC):
         Returns the name of this class of grammar.
         """
         pass
+
+    @abstractmethod
+    def clean(self) -> None:
+        """
+        Clean the grammar.
+        """
+        pass
