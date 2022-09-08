@@ -35,3 +35,12 @@ class UCFG(UGrammar[U, List[Tuple[Type, U]], NoneType], Generic[U]):
 
     def start_information(self) -> NoneType:
         return None
+
+    def derive(
+        self, information: NoneType, S: Tuple[Type, U], P: DerivableProgram
+    ) -> List[Tuple[NoneType, Tuple[Type, U], List[Tuple[Type, U]]]]:
+        """
+        Given the current information and the derivation S -> P, produces the new information state and the next S after this derivation.
+        """
+        possibles = self.rules[S][P]
+        return [(None, possible[0], possible) for possible in possibles]
