@@ -180,59 +180,59 @@ class UGrammar(Grammar, ABC, Generic[U, V, W]):
     def start_information(self) -> W:
         pass
 
-    # def reduce_derivations(
-    #     self,
-    #     reduce: Callable[[T, Tuple[Type, U], DerivableProgram, V], T],
-    #     init: T,
-    #     program: Program,
-    #     start: Optional[Tuple[Type, U]] = None,
-    # ) -> List[T]:
-    #     """
-    #     Reduce the given program using the given reduce operator.
+    def reduce_derivations(
+        self,
+        reduce: Callable[[T, Tuple[Type, U], DerivableProgram, V], T],
+        init: T,
+        program: Program,
+        start: Optional[Tuple[Type, U]] = None,
+    ) -> List[T]:
+        """
+        Reduce the given program using the given reduce operator.
 
-    #     reduce is called after derivation.
-    #     """
-    #     alternatives = self.__reduce_derivations_rec__(
-    #         reduce, program, start or self.start, self.start_information()
-    #     )
-    #     outputs = []
-    #     for possibles in alternatives:
-    #         value = init
-    #         for S, P, v, _ in possibles:
-    #             value = reduce(value, S, P, v)
-    #         outputs.append(value)
-    #     return outputs
+        reduce is called after derivation.
+        """
+        alternatives = self.__reduce_derivations_rec__(
+            reduce, program, start or self.start, self.start_information()
+        )
+        outputs = []
+        for possibles in alternatives:
+            value = init
+            for S, P, v, _ in possibles:
+                value = reduce(value, S, P, v)
+            outputs.append(value)
+        return outputs
 
-    # def __reduce_derivations_rec__(
-    #     self,
-    #     reduce: Callable[[T, Tuple[Type, U], DerivableProgram, V], T],
-    #     program: Program,
-    #     start: Tuple[Type, U],
-    #     information: W,
-    # ) -> List[List[Tuple[Tuple[Type, U], DerivableProgram, V, W]]]:
-    #     if isinstance(program, Function):
-    #         function = program.function
-    #         args_P = program.arguments
-    #         possibles = [self.derive(information, start, function)]  # type: ignore
-    #         for arg in args_P:
-    #             next_possibles = []
-    #             for possible in possibles:
-    #                 information, next, v = possible
-    #                 alternatives = self.__reduce_derivations_rec__(
-    #                     reduce, arg, start=next, information=information
-    #                 )
-    #                 for possibles in alternatives:
-    #                     for S, P, v, _ in possibles:
-
-    #             # value, information, next = self.__reduce_derivations_rec__(
-    #             #     reduce, value, arg, start=next, information=information
-    #             # )
-    #         return value, information, next
-    #     elif isinstance(program, (Primitive, Variable, Constant)):
-    #         possibles = self.derive(information, start, program)
-    #         alternatives = []
-    #         for possible in possibles:
-    #             information, next, v = possible
-    #             alternatives.append([(next, program, v, information)])
-    #         return alternatives
-    #     return []
+    def __reduce_derivations_rec__(
+        self,
+        reduce: Callable[[T, Tuple[Type, U], DerivableProgram, V], T],
+        program: Program,
+        start: Tuple[Type, U],
+        information: W,
+    ) -> List[List[Tuple[Tuple[Type, U], DerivableProgram, V, W]]]:
+        if isinstance(program, Function):
+            function = program.function
+            args_P = program.arguments
+            possibles: List[List[Tuple[Tuple[Type, U], DerivableProgram, V, W]]] = [[(b, function, c, a)] for a, b, c in self.derive(information, start, function)]  # type: ignore
+            for arg in args_P:
+                next_possibles = []
+                for possible in possibles:
+                    next, _, v, information = possible[-1]
+                    alternatives = self.__reduce_derivations_rec__(
+                        reduce, arg, start=next, information=information
+                    )
+                    for alternative in alternatives:
+                        next_possibles.append(possible + alternative)
+                possibles = next_possibles
+                # value, information, next = self.__reduce_derivations_rec__(
+                #     reduce, value, arg, start=next, information=information
+                # )
+            return next_possibles
+        elif isinstance(program, (Primitive, Variable, Constant)):
+            new_possibles = self.derive(information, start, program)
+            alternatives = []
+            for new_possible in new_possibles:
+                information, next, v = new_possible
+                alternatives.append([(next, program, v, information)])
+            return alternatives
+        return []
