@@ -15,7 +15,7 @@ import vose
 from synth.syntax.grammars.cfg import CFG, CFGNonTerminal, CFGState, NoneType
 
 from synth.syntax.grammars.det_grammar import DerivableProgram, DetGrammar
-from synth.syntax.grammars.unambigous_grammar import UGrammar
+from synth.syntax.grammars.u_grammar import UGrammar
 from synth.syntax.program import Function, Program
 from synth.syntax.type_system import Type
 

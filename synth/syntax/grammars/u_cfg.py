@@ -7,7 +7,7 @@ from typing import (
 )
 
 from synth.syntax.grammars.cfg import NoneType
-from synth.syntax.grammars.unambigous_grammar import UGrammar
+from synth.syntax.grammars.u_grammar import UGrammar
 from synth.syntax.program import Constant, Primitive, Variable
 from synth.syntax.type_system import Type
 
