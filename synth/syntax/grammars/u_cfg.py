@@ -68,7 +68,7 @@ class UCFG(UGrammar[U, List[Tuple[Type, U]], NoneType], Generic[U]):
         constant_types: Set[Type] = set(),
     ) -> "UCFG[CFGState]":
         """
-        Constructs a CFG from a DSL imposing bounds on size of the types
+        Constructs a UCFG from a DSL imposing bounds on size of the types
         and on the maximum program depth.
 
         max_depth: int - is the maxium depth of programs allowed
@@ -88,6 +88,13 @@ class UCFG(UGrammar[U, List[Tuple[Type, U]], NoneType], Generic[U]):
             recursive,
             constant_types,
         )
+        return UCFG.from_CFG(cfg)
+
+    @classmethod
+    def from_CFG(cls, cfg: CFG) -> "UCFG[CFGState]":
+        """
+        Constructs a UCFG from the specified CFG
+        """
         rules: Dict[
             Tuple[Type, CFGState],
             Dict[DerivableProgram, List[List[Tuple[Type, CFGState]]]],
