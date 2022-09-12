@@ -204,7 +204,11 @@ class ProbUGrammar(TaggedUGrammar[float, U, V, W]):
             probs[S] = {}
             n = sum(len(grammar.rules[S][P]) for P in grammar.rules[S])
             for P in grammar.rules[S]:
-                probs[S][P] = {v: 1 / n for v in grammar.rules[S][P]}
+                lst = grammar.rules[S][P]
+                if isinstance(lst[0], List):
+                    probs[S][P] = {tuple(v): 1 / n for v in lst}  # type: ignore
+                else:
+                    probs[S][P] = {v: 1 / n for v in lst}
         return ProbUGrammar(
             grammar,
             probs,
