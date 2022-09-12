@@ -89,11 +89,11 @@ class TTCFG(
         pass
 
     @overload
-    def __mul__(self, other: DFA[U, str]) -> "TTCFG[S, Tuple[T, U]]":
+    def __mul__(self, other: DFA[U, DerivableProgram]) -> "TTCFG[S, Tuple[T, U]]":
         pass
 
     def __mul__(
-        self, other: Union["TTCFG[U, V]", DFA[U, str]]
+        self, other: Union["TTCFG[U, V]", DFA[U, DerivableProgram]]
     ) -> Union["TTCFG[S, Tuple[T, U]]", "TTCFG[Tuple[S, U], Tuple[T, V]]"]:
         if isinstance(other, TTCFG):
             return self.__mul_ttcfg__(other)
@@ -141,7 +141,7 @@ class TTCFG(
 
         return TTCFG(start, rules, clean=True)
 
-    def __mul_dfa__(self, other: DFA[U, str]) -> "TTCFG[S, Tuple[T, U]]":
+    def __mul_dfa__(self, other: DFA[U, DerivableProgram]) -> "TTCFG[S, Tuple[T, U]]":
         rules: Dict[
             Tuple[Type, Tuple[S, Tuple[T, U]]],
             Dict[
@@ -162,7 +162,7 @@ class TTCFG(
                 rules[rule] = {}
                 for P1 in self.rules[nT1]:
                     for P2 in other.rules[nT2]:
-                        if str(P1) != P2:
+                        if P1 != P2:
                             continue
                         new_deriv = self.rules[nT1][P1][0][:]
                         rules[rule][P1] = (
