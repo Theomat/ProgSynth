@@ -125,9 +125,18 @@ def __restore_save__(
 
 def __count_dfa__(
     grammar: TTCFG[Tuple[U, int], V], to_count: TList[DerivableProgram], count: int
-) -> DFA[int, Any]:
-    # TODO
-    pass
+) -> DFA[int, DerivableProgram]:
+    all_primitives = grammar.primitives_used()
+
+    rules: Dict[int, Dict[DerivableProgram, int]] = {}
+    while count > 0:
+        rules[count] = {
+            P: count - 1 if P in to_count else count for P in all_primitives
+        }
+        count -= 1
+    # count == 0
+    rules[count] = {P: count for P in all_primitives if P not in to_count}
+    return DFA(count, rules, set())
 
 
 def __preprocess_grammar__(grammar: TTCFG[U, V]) -> TTCFG[Tuple[U, int], V]:
