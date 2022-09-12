@@ -48,8 +48,12 @@ class UCFG(UGrammar[U, List[Tuple[Type, U]], NoneType], Generic[U]):
         """
         Given the current information and the derivation S -> P, produces the new information state and the next S after this derivation.
         """
+        if S not in self.rules or P not in self.rules[S]:
+            return [(None, S, [])]
         possibles = self.rules[S][P]
-        return [(None, possible[0], possible) for possible in possibles]
+        return [
+            (None, possible[0] if possible else S, possible) for possible in possibles
+        ]
 
     @classmethod
     def depth_constraint(
