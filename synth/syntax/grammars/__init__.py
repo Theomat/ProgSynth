@@ -12,4 +12,4 @@ from synth.syntax.grammars.u_grammar import UGrammar
 from synth.syntax.grammars.u_cfg import UCFG
 from synth.syntax.grammars.tagged_u_grammar import ProbUGrammar, TaggedUGrammar
 
-# from synth.syntax.grammars.pcfg_splitter import split
+# from synth.syntax.grammars.grammar_splitter import split
