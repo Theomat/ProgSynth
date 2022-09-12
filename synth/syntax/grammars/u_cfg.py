@@ -20,6 +20,9 @@ DerivableProgram = Union[Primitive, Variable, Constant]
 
 
 class UCFG(UGrammar[U, List[Tuple[Type, U]], NoneType], Generic[U]):
+    def name(self) -> str:
+        return "UCFG"
+
     def __rule_to_str__(self, P: DerivableProgram, out: List[Tuple[Type, U]]) -> str:
         return "{}: {}".format(P, out)
 
