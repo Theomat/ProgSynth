@@ -14,7 +14,7 @@ from typing import (
 )
 
 from synth.syntax.dsl import DSL
-from synth.syntax.grammars.dfa import DFA
+from synth.syntax.automata.dfa import DFA
 from synth.syntax.program import Constant, Primitive, Variable
 from synth.syntax.type_system import Arrow, Type, UnknownType
 from synth.syntax.grammars.det_grammar import DerivableProgram, DetGrammar

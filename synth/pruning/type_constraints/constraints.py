@@ -3,7 +3,6 @@ from dataclasses import dataclass, field
 from typing import (
     Any,
     Dict,
-    Generator,
     Generic,
     Iterable,
     List as TList,
@@ -23,9 +22,8 @@ from synth.pruning.type_constraints.parsing import (
     TokenVarDep,
     parse_specification,
 )
+from synth.syntax.automata.dfa import DFA
 from synth.syntax.grammars.det_grammar import DerivableProgram
-from synth.syntax.grammars.dfa import DFA
-
 from synth.syntax.grammars.ttcfg import TTCFG
 from synth.syntax.program import Variable
 from synth.syntax.type_system import Type
