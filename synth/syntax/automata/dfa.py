@@ -36,6 +36,9 @@ class DFA(Generic[U, V]):
 
     @property
     def states(self) -> Set[U]:
+        """
+        The set of accessible states.
+        """
         all = set()
         last_frontier = [self.start]
         while last_frontier:
