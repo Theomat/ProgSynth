@@ -10,6 +10,8 @@ X = TypeVar("X")
 class DFA(Generic[U, V]):
     """
     Deterministic safe finite automaton.
+    states: U
+    alphabet: V
     Reads V elements from states U.
     If there is no transition from U reading V it means it is non accepting. (there are no final states)
     """
