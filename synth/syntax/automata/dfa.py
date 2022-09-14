@@ -53,6 +53,22 @@ class DFA(Generic[U, V]):
             last_frontier = new_frontier
         return all
 
+    def reduce(self) -> "DFA[U, V]":
+        """
+        Return the same DFA with only accessible states.
+        """
+        new_states = self.states
+        new_rules = {
+            state: {
+                letter: dst_state
+                for letter, dst_state in self.rules[state].items()
+                if dst_state in new_states
+            }
+            for state in self.rules
+            if state in new_states
+        }
+        return DFA(self.start, new_rules)
+
     def can_read(self, start: U, word: V) -> bool:
         return start in self.rules and word in self.rules[start]
 
