@@ -14,19 +14,15 @@ class DFA(Generic[U, V]):
     If there is no transition from U reading V it means it is non accepting. (there are no final states)
     """
 
-    def __init__(self, initial: U, rules: Dict[U, Dict[V, U]], loops: Set[U]) -> None:
+    def __init__(self, initial: U, rules: Dict[U, Dict[V, U]]) -> None:
         self.start = initial
         self.rules = rules
-        self.loops = loops
 
     def __mul__(self, other: "DFA[W, X]") -> "DFA[Tuple[U, W], Tuple[V, X]]":
         start = (self.start, other.start)
         rules: Dict[Tuple[U, W], Dict[Tuple[V, X], Tuple[U, W]]] = {}
-        new_loops = set()
         for S1 in self.rules:
             for S2 in other.rules:
-                if S1 in self.loops and S2 in other.loops:
-                    new_loops.add((S1, S2))
                 rules[(S1, S2)] = {}
                 for w1 in self.rules[S1]:
                     for w2 in other.rules[S2]:
@@ -34,7 +30,7 @@ class DFA(Generic[U, V]):
                             self.rules[S1][w1],
                             other.rules[S2][w2],
                         )
-        return DFA(start, rules, new_loops)
+        return DFA(start, rules)
 
     @property
     def states(self) -> Set[U]:
@@ -53,11 +49,9 @@ class DFA(Generic[U, V]):
         return all
 
     def can_read(self, start: U, word: V) -> bool:
-        return start in self.rules and word in self.rules[start] or start in self.loops
+        return start in self.rules and word in self.rules[start]
 
     def read(self, start: U, word: V) -> U:
-        if start in self.loops:
-            return start
         return self.rules[start][word]
 
     def map_states(self, f: Callable[[U], W]) -> "DFA[W, V]":
@@ -66,31 +60,22 @@ class DFA(Generic[U, V]):
             mapping[S]: {P: mapping[self.rules[S][P]] for P in self.rules[S]}
             for S in self.rules
         }
-        return DFA(mapping[self.start], dst_rules, {mapping[f] for f in self.loops})
+        return DFA(mapping[self.start], dst_rules)
 
     def then(self, other: "DFA[U, V]") -> "DFA[U, V]":
         assert self.states.isdisjoint(other.states)
         new_rules = {
-            S: {
-                P: self.rules[S][P]
-                if self.rules[S][P] not in self.loops
-                else other.start
-                for P in self.rules[S]
-            }
-            for S in self.rules
+            S: {P: self.rules[S][P] for P in self.rules[S]} for S in self.rules
         }
         for S in other.rules:
             new_rules[S] = {P: other.rules[S][P] for P in other.rules[S]}
-        return DFA(self.start, new_rules, other.loops)
+        return DFA(self.start, new_rules)
 
     def read_product(self, other: "DFA[W, V]") -> "DFA[Tuple[U, W], V]":
         start = (self.start, other.start)
         rules: Dict[Tuple[U, W], Dict[V, Tuple[U, W]]] = {}
-        new_loops = set()
         for S1 in self.rules:
             for S2 in other.rules:
-                if S1 in self.loops and S2 in other.loops:
-                    new_loops.add((S1, S2))
                 rules[(S1, S2)] = {}
                 for v in self.rules[S1]:
                     if v in other.rules[S2]:
@@ -98,4 +83,4 @@ class DFA(Generic[U, V]):
                             self.rules[S1][v],
                             other.rules[S2][v],
                         )
-        return DFA(start, rules, new_loops)
+        return DFA(start, rules)

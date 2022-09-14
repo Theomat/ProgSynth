@@ -134,7 +134,7 @@ def __count_dfa__(
         count -= 1
     # count == 0
     rules[count] = {P: count for P in all_primitives if P not in to_count}
-    return DFA(count, rules, set())
+    return DFA(count, rules)
 
 
 def __preprocess_grammar__(grammar: TTCFG[U, V]) -> TTCFG[Tuple[U, int], V]:
