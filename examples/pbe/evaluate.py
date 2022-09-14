@@ -40,7 +40,7 @@ from synth.syntax import (
     DSL,
     Program,
 )
-from synth.syntax.grammars.heap_search import HSEnumerator
+from synth.syntax.grammars.enumeration.heap_search import HSEnumerator
 from synth.syntax.program import Function, Primitive, Variable
 from synth.syntax.type_system import STRING, Arrow
 from synth.utils import chrono

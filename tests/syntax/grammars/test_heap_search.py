@@ -1,4 +1,4 @@
-from synth.syntax.grammars.heap_search import (
+from synth.syntax.grammars.enumeration.heap_search import (
     Bucket,
     enumerate_prob_grammar,
     enumerate_bucket_prob_grammar,
