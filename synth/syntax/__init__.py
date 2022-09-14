@@ -16,9 +16,9 @@ from synth.syntax.type_system import (
     BOOL,
     STRING,
 )
+from synth.syntax.automata import DFA
 from synth.syntax.grammars import (
     CFG,
-    DFA,
     TTCFG,
     Grammar,
     DetGrammar,
