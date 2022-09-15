@@ -115,6 +115,10 @@ def __parse_next_word__(program: str) -> Tuple[str, int]:
 
 
 def __str_to_derivable_program__(word: str, grammar: TTCFG) -> TList[DerivableProgram]:
+    if word == SYMBOL_ANYTHING:
+        out: TList[DerivableProgram] = list(grammar.primitives_used())
+        out += grammar.variables()
+        return out
     allowed = set(
         [word] if not SYMBOL_SEPARATOR in word else word.split(SYMBOL_SEPARATOR)
     )
@@ -133,10 +137,11 @@ def __interpret_word__(word: str, grammar: TTCFG) -> Token:
     word = word.strip()
     if word.startswith(SYMBOL_FORBIDDEN):
         forbidden = set(word[1:].split(SYMBOL_SEPARATOR))
-        # TODO: Add variables
-        return TokenAllow(
-            [P for P in grammar.primitives_used() if P.primitive not in forbidden]
-        )
+        out: TList[DerivableProgram] = [
+            P for P in grammar.primitives_used() if P.primitive not in forbidden
+        ]
+        out += [V for V in grammar.variables() if str(V) not in forbidden]
+        return TokenAllow(out)
     elif word.startswith(SYMBOL_VAR_EXPR):
         var_text = word.strip("()" + SYMBOL_VAR_EXPR)
         return TokenVarDep(__str_to_derivable_program__(var_text, grammar))  # type: ignore
