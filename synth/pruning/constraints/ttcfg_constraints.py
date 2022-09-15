@@ -13,7 +13,7 @@ from typing import (
 )
 
 import tqdm
-from synth.pruning.type_constraints.parsing import (
+from synth.pruning.constraints.parsing import (
     Token,
     TokenAllow,
     TokenAtLeast,
