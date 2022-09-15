@@ -1,3 +1,4 @@
+from collections import defaultdict
 from typing import (
     Dict,
     List,
@@ -10,7 +11,7 @@ from synth.syntax.automata.tree_automaton import DFTA
 from synth.syntax.dsl import DSL
 
 from synth.syntax.grammars.cfg import CFG, CFGState, NoneType
-from synth.syntax.grammars.grammar import DerivableProgram
+from synth.syntax.grammars.grammar import DerivableProgram, NGram
 from synth.syntax.grammars.u_grammar import UGrammar
 from synth.syntax.type_system import Type
 
@@ -103,3 +104,34 @@ class UCFG(UGrammar[U, List[Tuple[Type, U]], NoneType], Generic[U]):
             for P in cfg.rules[S]:
                 rules[nS][P] = [[SS for SS in cfg.rules[S][P][0]]]
         return UCFG({(cfg.start[0], cfg.start[1][0])}, rules)
+
+    @classmethod
+    def from_DFTA(
+        cls, dfta: DFTA[Tuple[Type, U], DerivableProgram], ngrams: int
+    ) -> "UCFG[Tuple[U, NGram]]":
+        starts = {(t, (q, NGram(ngrams))) for t, q in dfta.finals}
+
+        new_rules: Dict[
+            Tuple[Type, Tuple[U, NGram]],
+            Dict[DerivableProgram, List[List[Tuple[Type, Tuple[U, NGram]]]]],
+        ] = {}
+
+        stack = [el for el in starts]
+        while stack:
+            tgt = stack.pop()
+            if tgt in new_rules:
+                continue
+            new_rules[tgt] = defaultdict(list)
+            current = tgt[1][1]
+            for (P, args), dst in dfta.rules.items():
+                if dst != tgt:
+                    continue
+                nargs = [
+                    (t, (u, current.successor((P, i)))) for i, (t, u) in enumerate(args)
+                ]
+                new_rules[tgt][P].append(nargs)
+                for new_state in nargs:
+                    if new_state not in new_rules:
+                        stack.append(new_state)
+
+        return UCFG(starts, new_rules)
