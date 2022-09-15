@@ -26,11 +26,11 @@ DerivableProgram = Union[Primitive, Variable, Constant]
 class UGrammar(Grammar, ABC, Generic[U, V, W]):
     def __init__(
         self,
-        start: Tuple[Type, U],
+        starts: Set[Tuple[Type, U]],
         rules: Dict[Tuple[Type, U], Dict[DerivableProgram, List[V]]],
         clean: bool = True,
     ):
-        self.start = start
+        self.starts = starts
         self.rules = rules
         self.type_request = self._guess_type_request_()
         if clean:
@@ -49,14 +49,14 @@ class UGrammar(Grammar, ABC, Generic[U, V, W]):
         return out
 
     def __hash__(self) -> int:
-        return hash((self.start, str(self.rules)))
+        return hash((tuple(self.starts), str(self.rules)))
 
     def __rule_to_str__(self, P: DerivableProgram, out: V) -> str:
         return "{}: {}".format(P, out)
 
     def __str__(self) -> str:
         s = f"Print a {self.name()}\n"
-        s += "start: {}\n".format(self.start)
+        s += "starts: {}\n".format(self.starts)
         for S in reversed(self.rules):
             s += "#\n {}\n".format(S)
             for P in self.rules[S]:
@@ -73,7 +73,7 @@ class UGrammar(Grammar, ABC, Generic[U, V, W]):
         Guess the type request of this grammar.
         """
         # Compute the type request
-        type_req = self.start[0]
+        type_req = list(self.starts)[0][0]
         variables: List[Variable] = []
         for S in self.rules:
             for P in self.rules[S]:
@@ -89,7 +89,10 @@ class UGrammar(Grammar, ABC, Generic[U, V, W]):
         return type_req
 
     def __contains__(self, program: Program) -> bool:
-        return self.__contains_rec__(program, self.start, self.start_information())[0]
+        return any(
+            self.__contains_rec__(program, start, self.start_information())[0]
+            for start in self.starts
+        )
 
     def __contains_rec__(
         self, program: Program, start: Tuple[Type, U], information: W
@@ -192,10 +195,18 @@ class UGrammar(Grammar, ABC, Generic[U, V, W]):
 
         reduce is called after derivation.
         """
-        alternatives = self.__reduce_derivations_rec__(
-            reduce, program, start or self.start, self.start_information()
-        )
+
         outputs = []
+        if start is None:
+            alternatives: List[List[Tuple[Tuple[Type, U], DerivableProgram, V, W]]] = []
+            for start in self.starts:
+                alternatives += self.__reduce_derivations_rec__(
+                    reduce, program, start, self.start_information()
+                )
+        else:
+            alternatives = self.__reduce_derivations_rec__(
+                reduce, program, start, self.start_information()
+            )
         for possibles in alternatives:
             value = init
             for S, P, v, _ in possibles:

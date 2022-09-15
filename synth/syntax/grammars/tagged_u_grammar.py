@@ -30,19 +30,22 @@ class TaggedUGrammar(UGrammar[U, V, W], Generic[T, U, V, W]):
         self,
         grammar: UGrammar[U, V, W],
         tags: Dict[Tuple[Type, U], Dict[DerivableProgram, Dict[V, T]]],
+        start_tags: Dict[Tuple[Type, U], T],
     ):
-        super().__init__(grammar.start, grammar.rules, clean=False)
+        super().__init__(grammar.starts, grammar.rules, clean=False)
         self.grammar = grammar
         self.tags = tags
+        self.start_tags = start_tags
 
     def __hash__(self) -> int:
-        return hash((self.start, self.grammar, str(self.tags)))
+        return hash((self.start_tags, self.grammar, str(self.tags)))
 
     def __eq__(self, o: object) -> bool:
         return (
             isinstance(o, TaggedUGrammar)
             and self.grammar == o.grammar
             and self.tags == o.tags
+            and self.start_tags == o.start_tags
         )
 
     def name(self) -> str:
@@ -50,7 +53,8 @@ class TaggedUGrammar(UGrammar[U, V, W], Generic[T, U, V, W]):
 
     def __str__(self) -> str:
         s = f"Print a {self.name()}\n"
-        s += "start: {}\n".format(self.grammar.start)
+        s += "start: {}\n".format(self.grammar.starts)
+        s += "start tags: {}\n".format(self.start_tags)
         for S in reversed(self.grammar.rules):
             s += "#\n {}\n".format(S)
             for P in self.grammar.rules[S]:
@@ -82,7 +86,10 @@ class TaggedUGrammar(UGrammar[U, V, W], Generic[T, U, V, W]):
             for P in set(self.tags.get(S, {})).union(other.tags.get(S, {})):
                 for key in self.tags[S][P]:
                     new_probs[S][P][key] = self.tags[S][P][key] + other.tags[S][P][key]  # type: ignore
-        return TaggedUGrammar(self.grammar, new_probs)
+        new_start_tags: Dict[Tuple[Type, U], T] = {
+            key: value + other.start_tags[key] for key, value in self.start_tags.items()  # type: ignore
+        }
+        return TaggedUGrammar(self.grammar, new_probs, new_start_tags)
 
 
 class ProbUGrammar(TaggedUGrammar[float, U, V, W]):
@@ -90,8 +97,9 @@ class ProbUGrammar(TaggedUGrammar[float, U, V, W]):
         self,
         grammar: UGrammar[U, V, W],
         probabilities: Dict[Tuple[Type, U], Dict[DerivableProgram, Dict[V, float]]],
+        start_probs: Dict[Tuple[Type, U], float],
     ):
-        super().__init__(grammar, probabilities)
+        super().__init__(grammar, probabilities, start_probs)
         self.ready_for_sampling = False
 
     @property
@@ -110,6 +118,7 @@ class ProbUGrammar(TaggedUGrammar[float, U, V, W]):
                 S: {P: {v: p * other for v, p in lst.items()} for P, lst in v.items()}
                 for S, v in self.tags.items()
             },
+            {S: v * other for S, v in self.start_tags.items()},
         )
 
     def __rmul__(self, other: float) -> "ProbUGrammar[U, V, W]":
@@ -120,15 +129,22 @@ class ProbUGrammar(TaggedUGrammar[float, U, V, W]):
         program: Program,
         start: Optional[Tuple[Type, U]] = None,
     ) -> float:
-        try:
-            return self.reduce_derivations(
-                lambda current, S, P, V: current * self.tags[S][P][V],
-                1.0,
-                program,
-                start,
-            )[0]
-        except:
+        if start is None:
+            for start in self.starts:
+                p = self.probability(program, start)
+                if p > 0:
+                    return p * self.start_tags[start]
             return 0
+        else:
+            try:
+                return self.reduce_derivations(
+                    lambda current, S, P, V: current * self.tags[S][P][V],
+                    1.0,
+                    program,
+                    start,
+                )[0]
+            except:
+                return 0
 
     def init_sampling(self, seed: Optional[int] = None) -> None:
         """
@@ -158,6 +174,14 @@ class ProbUGrammar(TaggedUGrammar[float, U, V, W]):
                     seed=seed + i if seed else None,
                 )
             self.sampling_map[S] = P_list
+        self._int2start = list(self.starts)
+        self._start_sampler = vose.Sampler(
+            np.array(
+                [v for v in self.start_tags.values()],
+                dtype=float,
+            ),
+            seed=seed + len(self.tags) if seed else None,
+        )
 
     def normalise(self) -> None:
         for S in self.tags:
@@ -168,19 +192,24 @@ class ProbUGrammar(TaggedUGrammar[float, U, V, W]):
                 w = self.tags[S][P]
                 self.tags[S][P] = {v: p / s for v, p in w.items()}
 
+        s = sum(v for v in self.start_tags.values())
+        for S in self.start_tags:
+            self.start_tags[S] /= s
+
     def sampling(self) -> Generator[Program, None, None]:
         """
         A generator that samples programs according to the PCFG G
         """
         assert self.ready_for_sampling
         while True:
-            yield self.sample_program(self.start)
+            yield self.sample_program()
 
     def sample_program(
         self, S: Optional[Tuple[Type, U]] = None, information: Optional[W] = None
     ) -> Program:
         assert self.ready_for_sampling
-        S = S or self.start
+        if S is None:
+            S = self._int2start[self._start_sampler.sample()]
         i: int = self.vose_samplers[S].sample()
         P = self.sampling_map[S][i]
         nargs = self.arguments_length_for(S, P)
@@ -209,7 +238,6 @@ class ProbUGrammar(TaggedUGrammar[float, U, V, W]):
                     probs[S][P] = {tuple(v): 1 / n for v in lst}  # type: ignore
                 else:
                     probs[S][P] = {v: 1 / n for v in lst}
-        return ProbUGrammar(
-            grammar,
-            probs,
-        )
+
+        start_probs = {start: 1 / len(grammar.starts) for start in grammar.starts}
+        return ProbUGrammar(grammar, probs, start_probs)

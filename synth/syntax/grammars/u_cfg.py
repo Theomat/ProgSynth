@@ -104,4 +104,4 @@ class UCFG(UGrammar[U, List[Tuple[Type, U]], NoneType], Generic[U]):
             rules[nS] = {}
             for P in cfg.rules[S]:
                 rules[nS][P] = [[SS for SS in cfg.rules[S][P][0]]]
-        return UCFG((cfg.start[0], cfg.start[1][0]), rules)
+        return UCFG({(cfg.start[0], cfg.start[1][0])}, rules)
