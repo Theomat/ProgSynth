@@ -76,19 +76,22 @@ class DetGrammar(Grammar, ABC, Generic[U, V, W]):
         """
         # Compute the type request
         type_req = self.start[0]
-        variables: List[Variable] = []
+        self._variables: List[Variable] = []
         for S in self.rules:
             for P in self.rules[S]:
                 if isinstance(P, Variable):
-                    if P not in variables:
-                        variables.append(P)
-        n = len(variables)
+                    if P not in self._variables:
+                        self._variables.append(P)
+        n = len(self._variables)
         for i in range(n):
             j = n - i - 1
-            for v in variables:
+            for v in self._variables:
                 if v.variable == j:
                     type_req = Arrow(v.type, type_req)
         return type_req
+
+    def variables(self) -> List[Variable]:
+        return self._variables[:]
 
     def __contains__(self, program: Program) -> bool:
         return self.__contains_rec__(program, self.start, self.start_information())[0]
