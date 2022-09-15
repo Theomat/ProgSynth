@@ -1,5 +1,4 @@
 from collections import deque
-from dataclasses import dataclass, field
 from typing import (
     Callable,
     Deque,
@@ -15,41 +14,15 @@ from typing import (
 
 from synth.syntax.dsl import DSL
 from synth.syntax.automata.dfa import DFA
+from synth.syntax.grammars.grammar import DerivableProgram, NGram
 from synth.syntax.program import Constant, Primitive, Variable
 from synth.syntax.type_system import Arrow, Type, UnknownType
-from synth.syntax.grammars.det_grammar import DerivableProgram, DetGrammar
+from synth.syntax.grammars.det_grammar import DetGrammar
 
 T = TypeVar("T")
 U = TypeVar("U")
 S = TypeVar("S")
 V = TypeVar("V")
-
-
-@dataclass(frozen=True)
-class NGram:
-    n: int
-    predecessors: List[Tuple[DerivableProgram, int]] = field(default_factory=lambda: [])
-
-    def __hash__(self) -> int:
-        return hash((self.n, tuple(self.predecessors)))
-
-    def __str__(self) -> str:
-        return str(self.predecessors)
-
-    def __repr__(self) -> str:
-        return self.__str__()
-
-    def __len__(self) -> int:
-        return len(self.predecessors)
-
-    def successor(self, new_succ: Tuple[DerivableProgram, int]) -> "NGram":
-        new_pred = [new_succ] + self.predecessors
-        if len(new_pred) + 1 > self.n and self.n >= 0:
-            new_pred.pop()
-        return NGram(self.n, new_pred)
-
-    def last(self) -> Tuple[DerivableProgram, int]:
-        return self.predecessors[0]
 
 
 class TTCFG(

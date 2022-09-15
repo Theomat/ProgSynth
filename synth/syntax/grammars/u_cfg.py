@@ -5,21 +5,19 @@ from typing import (
     Tuple,
     TypeVar,
     Generic,
-    Union,
 )
+from synth.syntax.automata.tree_automaton import DFTA
 from synth.syntax.dsl import DSL
 
 from synth.syntax.grammars.cfg import CFG, CFGState, NoneType
+from synth.syntax.grammars.grammar import DerivableProgram
 from synth.syntax.grammars.u_grammar import UGrammar
-from synth.syntax.program import Constant, Primitive, Variable
 from synth.syntax.type_system import Type
 
 U = TypeVar("U")
 V = TypeVar("V")
 W = TypeVar("W")
 T = TypeVar("T")
-
-DerivableProgram = Union[Primitive, Variable, Constant]
 
 
 class UCFG(UGrammar[U, List[Tuple[Type, U]], NoneType], Generic[U]):

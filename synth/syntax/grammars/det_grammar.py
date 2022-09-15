@@ -8,13 +8,12 @@ from typing import (
     Tuple,
     TypeVar,
     Generic,
-    Union,
 )
 from functools import lru_cache
 import copy
-from synth.syntax.dsl import are_equivalent_primitives
 
-from synth.syntax.grammars.grammar import Grammar
+from synth.syntax.dsl import are_equivalent_primitives
+from synth.syntax.grammars.grammar import DerivableProgram, Grammar
 from synth.syntax.program import Constant, Function, Primitive, Program, Variable
 from synth.syntax.type_system import Arrow, Type
 
@@ -22,8 +21,6 @@ U = TypeVar("U")
 V = TypeVar("V")
 W = TypeVar("W")
 T = TypeVar("T")
-
-DerivableProgram = Union[Primitive, Variable, Constant]
 
 
 class DetGrammar(Grammar, ABC, Generic[U, V, W]):
