@@ -1,4 +1,4 @@
-from typing import  Dict, Generic, List, Set, Tuple, TypeVar
+from typing import Dict, Generic, List, Set, Tuple, TypeVar
 
 U = TypeVar("U")
 V = TypeVar("V")
@@ -11,8 +11,6 @@ class DFTA(Generic[U, V]):
     Deterministic finite tree automaton.
     states: U
     alphabet: V
-    Reads V elements from states U.
-    If there is no transition from U reading V it means it is non accepting. (there are no final states)
     """
 
     def __init__(
