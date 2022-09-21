@@ -32,6 +32,9 @@ class TokenAnything(Token):
     def __str__(self) -> str:
         return "Any"
 
+    def __eq__(self, o: object) -> bool:
+        return isinstance(o, TokenAnything)
+
 
 @dataclass
 class TokenAllow(Token):
@@ -43,6 +46,9 @@ class TokenAllow(Token):
     def __str__(self) -> str:
         return f"Allow ({self.allowed})"
 
+    def __eq__(self, o: object) -> bool:
+        return isinstance(o, TokenAllow) and o.allowed == self.allowed
+
 
 @dataclass
 class TokenVarDep(Token):
@@ -53,6 +59,9 @@ class TokenVarDep(Token):
 
     def __str__(self) -> str:
         return f"VarDep ({self.variables})"
+
+    def __eq__(self, o: object) -> bool:
+        return isinstance(o, TokenVarDep) and o.variables == self.variables
 
 
 @dataclass
@@ -66,6 +75,13 @@ class TokenAtMost(Token):
     def __str__(self) -> str:
         return f"AtMost {self.count} ({self.to_count})"
 
+    def __eq__(self, o: object) -> bool:
+        return (
+            isinstance(o, TokenAtMost)
+            and o.to_count == self.to_count
+            and o.count == self.count
+        )
+
 
 @dataclass
 class TokenAtLeast(Token):
@@ -78,6 +94,13 @@ class TokenAtLeast(Token):
     def __str__(self) -> str:
         return f"AtLeast {self.count} ({self.to_count})"
 
+    def __eq__(self, o: object) -> bool:
+        return (
+            isinstance(o, TokenAtLeast)
+            and o.to_count == self.to_count
+            and o.count == self.count
+        )
+
 
 @dataclass
 class TokenFunction(Token):
@@ -89,6 +112,13 @@ class TokenFunction(Token):
 
     def __str__(self) -> str:
         return f"Func f={self.function} args=({self.args})"
+
+    def __eq__(self, o: object) -> bool:
+        return (
+            isinstance(o, TokenFunction)
+            and o.function == self.function
+            and o.args == self.args
+        )
 
 
 # ========================================================================================
@@ -175,6 +205,8 @@ def parse_specification(spec: str, grammar: TTCFG) -> Token:
             token = __interpret_word__(word, grammar)
         elements.append(token)
     assert len(elements) > 0
-    first = elements.pop(0)
-    assert isinstance(first, TokenAllow)
-    return TokenFunction(first, elements)
+    if isinstance(elements[0], TokenAllow):
+        first = elements.pop(0)
+        return TokenFunction(first, elements)
+    assert len(elements) == 1
+    return elements[0]
