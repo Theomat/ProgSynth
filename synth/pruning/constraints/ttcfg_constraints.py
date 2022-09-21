@@ -74,9 +74,19 @@ class Path(Generic[U, V]):
     ) -> "Path[U, V]":
         return Path(self.predecessors + [(S, P)])
 
-    def to_dfa(self) -> DFA[int, Any]:
-        # TODO
-        pass
+    def to_dfa(
+        self,
+    ) -> DFA[int, Tuple[Tuple[Type, Tuple[Tuple[U, int], V]], DerivableProgram]]:
+
+        rules: Dict[
+            int,
+            Dict[Tuple[Tuple[Type, Tuple[Tuple[U, int], V]], DerivableProgram], int],
+        ] = {}
+        current = 0
+        for S, P in self.predecessors:
+            rules[current] = {(S, P): current + 1}
+            current += 1
+        return DFA(0, rules)
 
 
 Save = Tuple[
