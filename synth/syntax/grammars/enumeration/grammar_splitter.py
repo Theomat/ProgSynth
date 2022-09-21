@@ -1,23 +1,30 @@
-# from typing import Dict, List, Optional, Tuple
+# from typing import Dict, Generic, List, Optional, Tuple, TypeVar
 # import bisect
 # from dataclasses import dataclass, field
 # import copy
 
 # import numpy as np
 
-# from synth.syntax.grammars.concrete_pcfg import ConcretePCFG, NonTerminal, PRules
+# from synth.syntax.grammars.tagged_det_grammar import ProbDetGrammar, DerivableProgram
 # from synth.syntax.program import Program
+# from synth.syntax.type_system import Type
+
+# U = TypeVar("U")
+# V = TypeVar("V")
+# W = TypeVar("W")
 
 
 # @dataclass(order=True, frozen=True)
-# class Node:
+# class Node(Generic[U, W]):
 #     probability: float
-#     next_contexts: List[NonTerminal] = field(compare=False)
+#     for_next_derivation: Tuple[W, Tuple[Type, U]] = field(compare=False)
 #     program: List[Program] = field(compare=False)
-#     derivation_history: List[NonTerminal] = field(compare=False)
+#     derivation_history: List[Tuple[Type, U]] = field(compare=False)
 
 
-# def __common_prefix__(a: List[NonTerminal], b: List[NonTerminal]) -> List[NonTerminal]:
+# def __common_prefix__(
+#     a: List[Tuple[Type, U]], b: List[Tuple[Type, U]]
+# ) -> List[Tuple[Type, U]]:
 #     if a == b:
 #         return a
 #     candidates = []
@@ -36,19 +43,19 @@
 #     return candidates[1]
 
 
-# def __adapt_ctx__(S: NonTerminal, i: int) -> NonTerminal:
+# def __adapt_ctx__(S: Tuple[Type, U], i: int) -> Tuple[Type, U]:
 #     pred = S.predecessors[0]
-#     return NonTerminal(S.type, [(pred[0], i)] + S.predecessors[1:], S.depth)
+#     return Tuple[Type, U](S.type, [(pred[0], i)] + S.predecessors[1:], S.depth)
 
 
 # def __create_path__(
 #     rules: PRules,
-#     original_pcfg: ConcretePCFG,
+#     original_pcfg: ProbDetGrammar[U, V, W],
 #     rule_no: int,
-#     Slist: List[NonTerminal],
+#     Slist: List[Tuple[Type, U]],
 #     Plist: List[Program],
-#     mapping: Dict[NonTerminal, NonTerminal],
-#     original_start: NonTerminal,
+#     mapping: Dict[Tuple[Type, U], Tuple[Type, U]],
+#     original_start: Tuple[Type, U],
 # ) -> int:
 #     for i, (S, P) in enumerate(zip(Slist, Plist)):
 #         if i == 0:
@@ -79,7 +86,9 @@
 #     return rule_no
 
 
-# def __pcfg_from__(original_pcfg: ConcretePCFG, group: List[Node]) -> ConcretePCFG:
+# def __pcfg_from__(
+#     original_pcfg: ProbDetGrammar[U, V, W], group: List[Node]
+# ) -> ProbDetGrammar[U, V, W]:
 #     # Find the common prefix to all
 #     min_prefix = copy.deepcopy(group[0].derivation_history)
 #     for node in group[1:]:
@@ -88,7 +97,7 @@
 #     # Extract the start symbol
 #     start = min_prefix.pop()
 
-#     rules: Dict[NonTerminal, Dict[Program, Tuple[List[NonTerminal], float]]] = {}
+#     rules: Dict[Tuple[Type, U], Dict[Program, Tuple[List[Tuple[Type, U]], float]]] = {}
 #     rule_no: int = (
 #         max(
 #             max(x[1] for x in key.predecessors) if key.predecessors else 0
@@ -96,7 +105,7 @@
 #         )
 #         + 1
 #     )
-#     mapping: Dict[NonTerminal, NonTerminal] = {}
+#     mapping: Dict[Tuple[Type, U], Tuple[Type, U]] = {}
 #     # Our min_prefix may be something like (int, 1, (+, 1))
 #     # which means we already chose +
 #     # But it is not in the PCFG
@@ -114,7 +123,7 @@
 
 #     # Now we need to make a path from the common prefix to each node's prefix
 #     # We also need to mark all contexts that should be filled
-#     to_fill: List[NonTerminal] = []
+#     to_fill: List[Tuple[Type, U]] = []
 #     for node in group:
 #         args, program, prefix = (
 #             node.next_contexts,
@@ -178,7 +187,7 @@
 #             rules[S][P] = args, old_w * remaining_fraction
 
 #         # The updated probabilities may not sum to 1 so we need to normalise them
-#         # But let ConcretePCFG do it with clean=True
+#         # But let ProbDetGrammar[U, V, W] do it with clean=True
 
 #     start = original_pcfg.start
 
@@ -187,10 +196,14 @@
 #         key: rules[key] for key in sorted(list(rules.keys()), key=lambda x: x.depth)
 #     }
 
-#     return ConcretePCFG(start, rules, original_pcfg.max_program_depth, clean=True)
+#     return ProbDetGrammar[U, V, W](
+#         start, rules, original_pcfg.max_program_depth, clean=True
+#     )
 
 
-# def __node_split__(pcfg: ConcretePCFG, node: Node) -> Tuple[bool, List[Node]]:
+# def __node_split__(
+#     pcfg: ProbDetGrammar[U, V, W], node: Node
+# ) -> Tuple[bool, List[Node]]:
 #     """
 #     Split the specified node accordingly.
 
@@ -199,30 +212,30 @@
 #     - False, [node]
 #     """
 #     output: List[Node] = []
-#     next_contexts = node.next_contexts
+#     info, S = node.for_next_derivation
 #     # If there is no next then it means this node can't be split
-#     if len(next_contexts) == 0:
+#     if S not in pcfg.tags:
 #         return False, [node]
-#     new_context: NonTerminal = next_contexts.pop()
-#     for P in pcfg.rules[new_context]:
-#         args, p_prob = pcfg.rules[new_context][P]
+#     for P in pcfg.rules[S]:
+#         p_prob = pcfg.probabilities[S][P]
+#         next = pcfg.derive(info, S, P)
 #         new_root = Node(
 #             node.probability * p_prob,
-#             next_contexts + args,
+#             next,
 #             node.program + [P],
-#             node.derivation_history + [new_context],
+#             node.derivation_history + [S],
 #         )
 #         output.append(new_root)
 #     return True, output
 
 
 # def __split_nodes_until_quantity_reached__(
-#     pcfg: ConcretePCFG, quantity: int
+#     pcfg: ProbDetGrammar[U, V, W], quantity: int
 # ) -> List[Node]:
 #     """
 #     Start from the root node and split most probable node until the threshold number of nodes is reached.
 #     """
-#     nodes: List[Node] = [Node(1.0, [pcfg.start], [], [])]
+#     nodes: List[Node] = [Node(1.0, (pcfg.start_information(), pcfg.start), [], [])]
 #     while len(nodes) < quantity:
 #         i = 1
 #         success, new_nodes = __node_split__(pcfg, nodes.pop())
@@ -237,7 +250,7 @@
 #     return nodes
 
 
-# def __holes_of__(pcfg: ConcretePCFG, node: Node) -> List[NonTerminal]:
+# def __holes_of__(pcfg: ProbDetGrammar[U, V, W], node: Node) -> List[Tuple[Type, U]]:
 #     stack = [pcfg.start]
 #     current = node.program[:]
 #     while current:
@@ -250,7 +263,7 @@
 
 
 # def __is_fixing_any_hole__(
-#     pcfg: ConcretePCFG, node: Node, holes: List[NonTerminal]
+#     pcfg: ProbDetGrammar[U, V, W], node: Node, holes: List[Tuple[Type, U]]
 # ) -> bool:
 #     current = node.program[:]
 #     stack = [pcfg.start]
@@ -265,7 +278,7 @@
 #     return False
 
 
-# def __are_compatible__(pcfg: ConcretePCFG, node1: Node, node2: Node) -> bool:
+# def __are_compatible__(pcfg: ProbDetGrammar[U, V, W], node1: Node, node2: Node) -> bool:
 #     """
 #     Two nodes prefix are compatible if one does not fix a context for the other.
 #     e.g. a -> b -> map -> *  and c -> b -> map -> +1 -> * are incompatible.
@@ -281,12 +294,14 @@
 #     return not __is_fixing_any_hole__(pcfg, node1, holes2)
 
 
-# def __all_compatible__(pcfg: ConcretePCFG, node: Node, group: List[Node]) -> bool:
+# def __all_compatible__(
+#     pcfg: ProbDetGrammar[U, V, W], node: Node, group: List[Node]
+# ) -> bool:
 #     return all(__are_compatible__(pcfg, node, node2) for node2 in group)
 
 
 # def __try_split_node_in_group__(
-#     pcfg: ConcretePCFG, prob_groups: List[List], group_index: int
+#     pcfg: ProbDetGrammar[U, V, W], prob_groups: List[List], group_index: int
 # ) -> bool:
 #     group_a: List[Node] = prob_groups[group_index][1]
 #     # Sort group by ascending probability
@@ -308,7 +323,7 @@
 
 
 # def __find_swap_for_group__(
-#     pcfg: ConcretePCFG, prob_groups: List[List], group_index: int
+#     pcfg: ProbDetGrammar[U, V, W], prob_groups: List[List], group_index: int
 # ) -> Optional[Tuple[int, Optional[int], int]]:
 #     max_prob: float = prob_groups[-1][1]
 #     min_prob: float = prob_groups[0][1]
@@ -405,12 +420,12 @@
 
 
 # def __split_into_nodes__(
-#     pcfg: ConcretePCFG, splits: int, desired_ratio: float = 2
+#     pcfg: ProbDetGrammar[U, V, W], splits: int, desired_ratio: float = 2
 # ) -> Tuple[List[List[Node]], float]:
 #     nodes = __split_nodes_until_quantity_reached__(pcfg, splits)
 
 #     # Create groups
-#     groups: List[List[Node]] = []
+#     groups: List[List[Node[U, W]]] = []
 #     for node in nodes[:splits]:
 #         groups.append([node])
 #     for node in nodes[splits:]:
@@ -446,15 +461,15 @@
 
 
 # def split(
-#     pcfg: ConcretePCFG, splits: int, desired_ratio: float = 1.1
-# ) -> Tuple[List[ConcretePCFG], float]:
+#     pcfg: ProbDetGrammar[U, V, W], splits: int, desired_ratio: float = 1.1
+# ) -> Tuple[List[ProbDetGrammar[U, V, W]], float]:
 #     """
 #     Currently use exchange split.
 #     Parameters:
 #     desired_ratio: the max ratio authorized between the most probable group and the least probable pcfg
 
 #     Return:
-#     a list of ConcretePCFG
+#     a list of ProbDetGrammar[U, V, W]
 #     the reached threshold
 #     """
 #     if splits == 1:
