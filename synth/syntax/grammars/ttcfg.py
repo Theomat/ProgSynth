@@ -65,12 +65,28 @@ class TTCFG(
     def __mul__(self, other: DFA[U, DerivableProgram]) -> "TTCFG[S, Tuple[T, U]]":
         pass
 
+    @overload
     def __mul__(
-        self, other: Union["TTCFG[U, V]", DFA[U, DerivableProgram]]
+        self, other: DFA[U, Tuple[Tuple[Type, Tuple[S, T]], DerivableProgram]]
+    ) -> "TTCFG[S, Tuple[T, U]]":
+        pass
+
+    def __mul__(
+        self,
+        other: Union[
+            "TTCFG[U, V]",
+            DFA[U, DerivableProgram],
+            DFA[U, Tuple[Tuple[Type, Tuple[S, T]], DerivableProgram]],
+        ],
     ) -> Union["TTCFG[S, Tuple[T, U]]", "TTCFG[Tuple[S, U], Tuple[T, V]]"]:
         if isinstance(other, TTCFG):
             return self.__mul_ttcfg__(other)
-        return self.__mul_dfa__(other)
+        elif isinstance(other, DFA):
+            if isinstance(other.rules[other.start], tuple):
+                return self.__mul_dfa__(other)  # type: ignore
+            else:
+                return self.__mul_dfa_simple__(other)  # type: ignore
+        assert False, f"Cannot multiply TTCFG with {other}"
 
     def __mul_ttcfg__(self, other: "TTCFG[U, V]") -> "TTCFG[Tuple[S, U], Tuple[T, V]]":
         assert (
@@ -114,7 +130,9 @@ class TTCFG(
 
         return TTCFG(start, rules, clean=True)
 
-    def __mul_dfa__(self, other: DFA[U, DerivableProgram]) -> "TTCFG[S, Tuple[T, U]]":
+    def __mul_dfa_simple__(
+        self, other: DFA[U, DerivableProgram]
+    ) -> "TTCFG[S, Tuple[T, U]]":
         rules: Dict[
             Tuple[Type, Tuple[S, Tuple[T, U]]],
             Dict[
@@ -141,6 +159,40 @@ class TTCFG(
                         rules[rule][P1] = (
                             new_deriv,
                             (self.rules[nT1][P1][1], other.rules[nT2][P2]),
+                        )
+        return TTCFG(start, rules, clean=True)
+
+    def __mul_dfa__(
+        self, other: DFA[U, Tuple[Tuple[Type, Tuple[S, T]], DerivableProgram]]
+    ) -> "TTCFG[S, Tuple[T, U]]":
+        rules: Dict[
+            Tuple[Type, Tuple[S, Tuple[T, U]]],
+            Dict[
+                Union[Primitive, Variable, Constant],
+                Tuple[List[Tuple[Type, S]], Tuple[T, U]],
+            ],
+        ] = {}
+        start: Tuple[Type, Tuple[S, Tuple[T, U]]] = (
+            self.start[0],
+            (
+                self.start[1][0],
+                (self.start[1][1], other.start),
+            ),
+        )
+        for nT1 in self.rules:
+            for nT2 in other.rules:
+                rule = (nT1[0], (nT1[1][0], (nT1[1][1], nT2)))
+                rules[rule] = {}
+                for S2, P2 in other.rules[nT2]:
+                    if S2 != nT1:
+                        continue
+                    for P1 in self.rules[nT1]:
+                        if P1 != P2:
+                            continue
+                        new_deriv = self.rules[nT1][P1][0][:]
+                        rules[rule][P1] = (
+                            new_deriv,
+                            (self.rules[nT1][P1][1], other.rules[nT2][(S2, P2)]),
                         )
         return TTCFG(start, rules, clean=True)
 
