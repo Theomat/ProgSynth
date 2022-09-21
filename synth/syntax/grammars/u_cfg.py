@@ -25,6 +25,9 @@ class UCFG(UGrammar[U, List[Tuple[Type, U]], NoneType], Generic[U]):
     def name(self) -> str:
         return "UCFG"
 
+    def __hash__(self) -> int:
+        return super().__hash__()
+
     def __rule_to_str__(self, P: DerivableProgram, out: List[Tuple[Type, U]]) -> str:
         return "{}: {}".format(P, out)
 

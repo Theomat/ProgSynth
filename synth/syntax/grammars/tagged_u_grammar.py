@@ -102,6 +102,9 @@ class ProbUGrammar(TaggedUGrammar[float, U, V, W]):
         super().__init__(grammar, probabilities, start_probs)
         self.ready_for_sampling = False
 
+    def __hash__(self) -> int:
+        return super().__hash__()
+
     @property
     def probabilities(
         self,

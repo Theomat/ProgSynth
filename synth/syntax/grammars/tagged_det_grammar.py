@@ -93,6 +93,9 @@ class ProbDetGrammar(TaggedDetGrammar[float, U, V, W]):
         super().__init__(grammar, probabilities)
         self.ready_for_sampling = False
 
+    def __hash__(self) -> int:
+        return super().__hash__()
+
     @property
     def probabilities(self) -> Dict[Tuple[Type, U], Dict[DerivableProgram, float]]:
         return self.tags

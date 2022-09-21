@@ -40,6 +40,9 @@ class TTCFG(
             and self.rules == o.rules
         )
 
+    def __hash__(self) -> int:
+        return super().__hash__()
+
     def derive(
         self,
         information: List[Tuple[Type, S]],
