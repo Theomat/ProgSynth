@@ -221,7 +221,7 @@ def __forbid_vars__(
     new_S = __duplicate__(grammar, S, state)
     __redirect__(grammar, parent_S, parent_P, S, new_S)
     done = done or set()
-    for P in grammar.rules[S]:
+    for P in sorted(grammar.rules[S].keys(), key=lambda P: str(P)):
         if P not in variables and isinstance(P, Variable):
             # Delete forbidden variables
             del grammar.rules[new_S][P]
