@@ -300,7 +300,7 @@ class TTCFG(
         forbidden_sets = dsl.forbidden_patterns
 
         def __transition__(
-            state: Tuple[Type, Tuple[NGram, int]],
+            state: Tuple[Type, Tuple[NGram, Tuple[int, int]]],
             derivation: Union[Primitive, Variable, Constant],
         ) -> Tuple[bool, int]:
             predecessors = state[1][0]
