@@ -61,7 +61,7 @@ def test_multi_level() -> None:
     assert dsl.parse_program("(+ 1 (+ 1 1))", cfg.type_request) in new_cfg
     assert dsl.parse_program("(+ 1 1)", cfg.type_request) not in new_cfg
     assert dsl.parse_program("(+ 1 (+ 1 (+ 1 1)))", cfg.type_request) not in new_cfg
-    assert dsl.parse_program("(+ 1 (+ (+ 1 1) 1))", cfg.type_request) in new_cfg
+    assert dsl.parse_program("(+ 1 (+ (+ 1 1) 1))", cfg.type_request) not in new_cfg
 
 
 def test_at_most() -> None:
