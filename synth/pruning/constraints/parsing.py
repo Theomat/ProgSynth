@@ -207,6 +207,6 @@ def parse_specification(spec: str, grammar: TTCFG) -> Token:
     assert len(elements) > 0
     if isinstance(elements[0], TokenAllow):
         first = elements.pop(0)
-        return TokenFunction(first, elements)
+        return TokenFunction(first, elements)  # type: ignore
     assert len(elements) == 1
     return elements[0]
