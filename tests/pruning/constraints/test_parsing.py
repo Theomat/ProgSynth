@@ -29,21 +29,20 @@ syntax = {
 }
 dsl = DSL(syntax)
 cfg = TTCFG.size_constraint(dsl, FunctionType(INT, INT), 20)
+ONE = dsl.get_primitive("1")
+PLUS = dsl.get_primitive("+")
 
 
 def test_bases() -> None:
     assert parse_specification("_", cfg) == TokenAnything()
-    assert parse_specification("#(1)<=3", cfg), TokenAtMost(
-        [dsl.get_primitive("1")], count=3
+    assert parse_specification("#(1)<=3", cfg) == TokenAtMost([ONE], count=3)
+    assert parse_specification("(+ #(1)<=1 _)", cfg) == TokenFunction(
+        PLUS, args=[TokenAtMost([ONE], count=1), TokenAnything()]
     )
-    assert parse_specification("#(1,+)>=3", cfg), TokenAtLeast(
-        [dsl.get_primitive("1"), dsl.get_primitive("+")], count=4
-    )
-    assert parse_specification("#(1,+,+)>=3", cfg), TokenAtLeast(
-        [dsl.get_primitive("1"), dsl.get_primitive("+")], count=4
-    )
+    assert parse_specification("#(1,+)>=3", cfg) == TokenAtLeast([ONE, PLUS], count=4)
+    assert parse_specification("#(1,+,+)>=3", cfg) == TokenAtLeast([ONE, PLUS], count=4)
     assert parse_specification("(+ 1 _)", cfg) == TokenFunction(
-        TokenAllow([dsl.get_primitive("+")]),
-        [TokenAllow([dsl.get_primitive("1")]), TokenAnything()],
+        TokenAllow([PLUS]),
+        [TokenAllow([ONE]), TokenAnything()],
     )
-    assert parse_specification("$(var0)", cfg), TokenVarDep([Variable(0, INT)])
+    assert parse_specification("$(var0)", cfg) == TokenVarDep([Variable(0, INT)])
