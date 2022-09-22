@@ -227,33 +227,23 @@ def __forbid_vars__(
     S: State,
     variables: TList[Variable],
     state: ProcessState,
+    done: Optional[Set[State]] = None,
+    info: Optional[TList[Tuple[Type, Tuple[U, int]]]] = None,
 ) -> None:
     new_S = __duplicate__(grammar, S, state)
     __redirect__(grammar, parent_S, parent_P, S, new_S)
-    done = set()
+    done = done or set()
     for P in grammar.rules[S]:
         if P not in variables and isinstance(P, Variable):
             # Delete forbidden variables
             del grammar.rules[new_S][P]
         else:
             # Recursive calls
-            derlist, v = grammar.rules[new_S][P]
+            info, nextS = grammar.derive(info or grammar.start_information(), S, P)
             # Nothing to do
-            if len(derlist) == 0:
+            if nextS not in grammar.rules:
                 continue
-            # Do on all possible children
-            all_v = set([v])
-            while len(derlist) > 0:
-                next_all_v = set()
-                ttype, el = derlist[0]
-                for v in all_v:
-                    start = (ttype, (el, v))
-                    if start in done:
-                        continue
-                    done.add(start)
-                    derlist = derlist[1:]
-                    __forbid_vars__(grammar, S, P, start, variables, state)
-                    next_all_v |= __all_possible__(grammar, start)
+            __forbid_vars__(grammar, S, P, nextS, variables, state, done, info)
 
 
 def __process__(
