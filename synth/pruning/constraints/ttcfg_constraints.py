@@ -164,18 +164,6 @@ def __preprocess_grammar__(grammar: TTCFG[U, V]) -> TTCFG[Tuple[U, int], V]:
     )
 
 
-def __all_possible__(
-    grammar: TTCFG[Tuple[U, int], V],
-    S: State,
-    P: Optional[DerivableProgram] = None,
-    info: Optional[Info] = None,
-) -> Set[V]:
-    """
-    Return the set of all possibles V that can be generated starting from S -> P or just from S
-    """
-    return grammar.possible_outcomes_after(S, P, info)
-
-
 def __redirect__(
     grammar: TTCFG[Tuple[U, int], V],
     parent_S: State,
@@ -357,8 +345,9 @@ def __process__(
                 for P in list(grammar.rules[new_S].keys()):
                     if P not in token.allowed:
                         # print("\t" * (level + 3), "del:", new_S, "->", P)
-
                         del grammar.rules[new_S][P]
+            new_relevant.append((path, new_S, info))
+        relevant = new_relevant
     elif isinstance(token, TokenAtMost):
         assert relevant is not None
         # Create a DFA that recognises the path
@@ -379,7 +368,8 @@ def __process__(
     # Compute valid possible new states
     assert relevant is not None
     for path, S, info in relevant:
-        all_new_states = __all_possible__(grammar, S)
+        # print("\t" * level, "  Query from:", S, "with", info)
+        all_new_states = grammar.possible_outcomes_after(S, None, info)
         # print("\t" * level, "  All states from:", S, ":", all_new_states)
         possible_new_states[path].append(all_new_states)
     return out_grammar, possible_new_states
