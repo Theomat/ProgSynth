@@ -20,7 +20,7 @@ syntax = {
     "non_productive": FunctionType(INT, STRING),
 }
 dsl = DSL(syntax)
-cfg = TTCFG.size_constraint(dsl, FunctionType(INT, INT), 14)
+cfg = TTCFG.size_constraint(dsl, FunctionType(INT, INT), 9)
 # cfg = CFG.depth_constraint(dsl, FunctionType(INT, INT), 4)
 
 
