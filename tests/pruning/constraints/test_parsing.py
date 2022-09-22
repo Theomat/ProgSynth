@@ -37,10 +37,10 @@ def test_bases() -> None:
     assert parse_specification("_", cfg) == TokenAnything()
     assert parse_specification("#(1)<=3", cfg) == TokenAtMost([ONE], count=3)
     assert parse_specification("(+ #(1)<=1 _)", cfg) == TokenFunction(
-        PLUS, args=[TokenAtMost([ONE], count=1), TokenAnything()]
+        TokenAllow([PLUS]), args=[TokenAtMost([ONE], count=1), TokenAnything()]
     )
-    assert parse_specification("#(1,+)>=3", cfg) == TokenAtLeast([ONE, PLUS], count=4)
-    assert parse_specification("#(1,+,+)>=3", cfg) == TokenAtLeast([ONE, PLUS], count=4)
+    assert parse_specification("#(1,+)>=3", cfg) == TokenAtLeast([ONE, PLUS], count=3)
+    assert parse_specification("#(1,+,+)>=4", cfg) == TokenAtLeast([ONE, PLUS], count=4)
     assert parse_specification("(+ 1 _)", cfg) == TokenFunction(
         TokenAllow([PLUS]),
         [TokenAllow([ONE]), TokenAnything()],
