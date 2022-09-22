@@ -291,8 +291,8 @@ class TTCFG(
     def possible_outcomes_after(
         self,
         S: Tuple[Type, Tuple[S, T]],
-        P: Optional[DerivableProgram],
-        info: Optional[List[Tuple[Type, S]]],
+        P: Optional[DerivableProgram] = None,
+        info: Optional[List[Tuple[Type, S]]] = None,
     ) -> Set[T]:
         """
         Return the set of all possibles T that can be generated starting from S -> P or just from S.
