@@ -4,6 +4,7 @@ from typing import (
     Deque,
     Dict,
     List,
+    Optional,
     Set,
     Tuple,
     TypeVar,
@@ -287,6 +288,40 @@ class TTCFG(
     def name(self) -> str:
         return "TTCFG"
 
+    def possible_outcomes_after(
+        self,
+        S: Tuple[Type, Tuple[S, T]],
+        P: Optional[DerivableProgram],
+        info: Optional[List[Tuple[Type, S]]],
+    ) -> Set[T]:
+        """
+        Return the set of all possibles T that can be generated starting from S -> P or just from S.
+        """
+        info = info or self.start_information()
+        if S not in self.rules:
+            return set()
+        if P is None:
+            # print(f"  ask {S} ({info})")
+            out_plus = set()
+            for P in self.rules[S]:
+                out_plus |= self.possible_outcomes_after(S, P, info)
+            # print(f"  end {S} ({info})")
+
+            return out_plus
+        new_info, new_S = self.derive(info, S, P)
+        if new_S not in self.rules:
+            assert (
+                len(new_info) == 0
+            ), f"info:{new_info} from {S}->{P} ({info}) obtained: {new_S}"
+            return set([new_S[1][1]])
+        # print(f"    ask {S} -> {P} ({info}->{new_info})")
+        # Derive all possible children
+        out = set()
+        for PP in self.rules[new_S]:
+            candidates = self.possible_outcomes_after(new_S, PP, new_info)
+            out |= candidates
+        return out
+
     @classmethod
     def size_constraint(
         cls, dsl: DSL, type_request: Type, max_size: int, n_gram: int = 2
@@ -302,7 +337,7 @@ class TTCFG(
         def __transition__(
             state: Tuple[Type, Tuple[NGram, Tuple[int, int]]],
             derivation: Union[Primitive, Variable, Constant],
-        ) -> Tuple[bool, int]:
+        ) -> Tuple[bool, Tuple[int, int]]:
             predecessors = state[1][0]
             last_pred = predecessors.last() if len(predecessors) > 0 else None
             if derivation in forbidden_sets.get(
