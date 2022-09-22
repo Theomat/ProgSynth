@@ -256,12 +256,11 @@ def __process__(
     #     for path, S, info in relevant:
     #         print("\t" * level, "  path:", path, "S:", S)
     if isinstance(token, TokenFunction):
-        relevant_was_none = relevant is None
         if relevant is None:
             # Compute relevant depending on sketch or not
             if sketch:
                 relevant = [(Path(), grammar.start, grammar.start_information())]
-                grammar, returns = __process__(
+                grammar, _ = __process__(
                     grammar, token.function, sketch, relevant, level, state
                 )
                 relevant = []
@@ -278,7 +277,7 @@ def __process__(
                 __make_save__(grammar, path, S, info) for path, S, info in relevant
             ]
             # So here we have correct paths
-            grammar, returns = __process__(
+            grammar, _ = __process__(
                 grammar, token.function, sketch, relevant, level, state
             )
             # However we have restricted the possible functions so we renamed our paths
@@ -298,18 +297,11 @@ def __process__(
         # print("\t" * level, "building arg relevant")
         for path, S, info in relevant:
             # print("\t" * level, "  path:", path)
-
             for P in grammar.rules[S]:
                 if P in token.function.allowed:
                     new_path = path.next(S, P)
                     new_info, new_S = grammar.derive(info, S, P)
-                    if not relevant_was_none:
-                        for vlst in returns[path]:
-                            for v in vlst:
-                                nS = (new_S[0], (new_S[1][0], v))
-                                arg_relevant.append((new_path, nS, new_info))
-                    else:
-                        arg_relevant.append((new_path, new_S, new_info))
+                    arg_relevant.append((new_path, new_S, new_info))
 
         for argno, arg in enumerate(token.args):
             grammar, possible_states = __process__(
@@ -330,23 +322,42 @@ def __process__(
     elif isinstance(token, TokenAllow):
         assert relevant is not None
         relevant_cpy = relevant[:]
-        already_done: Dict[State, State] = {}
+        # Redirection is to fix the path towards S if it has been changed during iteration
+        redirections: Dict[State, State] = {}
+        # Already done avoids conflicts when there are multiple identical derivations where only the from state changes
+        already_done: Dict[Tuple[State, Tuple[Type, Tuple[U, int]]], State] = {}
         relevant = []
         while relevant_cpy:
             path, S, info = relevant_cpy.pop()
             if len(path) > 0:
                 parent_S, parent_P = path.last()
-                if parent_S in already_done:
-                    parent_S = already_done[parent_S]
+                if parent_S in redirections:
+                    parent_S = redirections[parent_S]
                     if parent_P not in grammar.rules[parent_S]:
                         continue
                     # print(grammar)
-                # print("\t" * (level + 1), "parent:", parent_S, "->", parent_P, "=>", S)
-            if S in already_done:
-                new_S = already_done[S]
+                # print(
+                #     "\t" * (level + 1), "parent:", parent_S , "->", parent_P, "=>", S)
+                key = (parent_S, (S[0], S[1][0]))
+            else:
+                key = None
+            should_del = True
+            if key in already_done:
+                tmpS = already_done[key]
+                newS = (tmpS[0], (tmpS[1][0], S[1][1]))
+                grammar.rules[newS] = {
+                    P: (grammar.rules[S][P][0][:], grammar.rules[S][P][1])
+                    for P in grammar.rules[S]
+                }
+            elif S in redirections:
+                new_S = redirections[S]
+                should_del = False
             else:
                 new_S = __duplicate__(grammar, S, state)
-                already_done[S] = new_S
+                if key is not None:
+                    already_done[key] = new_S
+                redirections[S] = new_S
+            if should_del:
                 # Delete forbidden
                 for P in list(grammar.rules[new_S].keys()):
                     if P not in token.allowed:
