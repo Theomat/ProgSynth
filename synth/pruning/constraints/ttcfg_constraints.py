@@ -77,21 +77,6 @@ class Path(Generic[U, V]):
     ) -> "Path[U, V]":
         return Path(self.predecessors + [(S, P)])
 
-    def to_dfa(
-        self,
-    ) -> DFA[int, Tuple[Tuple[Type, Tuple[Tuple[U, int], V]], DerivableProgram]]:
-
-        rules: Dict[
-            int,
-            Dict[Tuple[Tuple[Type, Tuple[Tuple[U, int], V]], DerivableProgram], int],
-        ] = {}
-        current = 0
-        for S, P in self.predecessors:
-            rules[current] = {(S, P): current + 1}
-            current += 1
-        rules[current] = {}
-        return DFA(0, rules)
-
 
 Save = Tuple[
     Tuple[Type, Tuple[Tuple[U, int], V]], TList[Tuple[DerivableProgram, int, V]], Info
@@ -135,12 +120,73 @@ def __restore_save__(
     return path, start, info
 
 
+def __dfa_start_from_any__(
+    grammar: TTCFG[Tuple[U, int], V],
+    relevant: TList[Tuple[Path, Tuple[Type, Tuple[Tuple[U, int], V]], Info]],
+    state: ProcessState,
+) -> Tuple[
+    DFA[int, Tuple[Type, Tuple[Tuple[U, int], V]]], TList[Tuple[Path, State, Info]]
+]:
+    # Create DFA that self loops
+    rules: Dict[int, Dict[Tuple[Type, Tuple[Tuple[U, int], V]], int]] = {
+        0: {S: 0 for S in grammar.rules},
+        1: {},
+    }
+    # Now for only the relevant states we will need to not self loops
+    relevant_cpy = relevant[:]
+    # Redirection is to fix the path towards S if it has been changed during iteration
+    redirections: Dict[State, State] = {}
+    # Already done avoids conflicts when there are multiple identical derivations where only the from state changes
+    already_done: Dict[Tuple[State, Tuple[Type, Tuple[U, int]]], State] = {}
+    relevant = []
+    while relevant_cpy:
+        path, S, info = relevant_cpy.pop()
+        if len(path) > 0:
+            parent_S, parent_P = path.last()
+            if parent_S in redirections:
+                parent_S = redirections[parent_S]
+                if parent_P not in grammar.rules[parent_S]:
+                    continue
+                # print(grammar)
+            # print(
+            #     "\t" * (level + 1), "parent:", parent_S , "->", parent_P, "=>", S)
+            key = (parent_S, (S[0], S[1][0]))
+        else:
+            key = None
+        if key in already_done:
+            tmpS = already_done[key]
+            new_S = (tmpS[0], (tmpS[1][0], S[1][1]))
+            grammar.rules[new_S] = {
+                P: (grammar.rules[S][P][0][:], grammar.rules[S][P][1])
+                for P in grammar.rules[S]
+            }
+        elif S in redirections:
+            new_S = redirections[S]
+        else:
+            new_S = __duplicate__(grammar, S, state)
+            if key is not None:
+                already_done[key] = new_S
+            redirections[S] = new_S
+        if len(path) > 0:
+            __redirect__(grammar, parent_S, parent_P, S, new_S)
+        else:
+            grammar.start = new_S
+        rules[0][new_S] = 1
+        relevant.append((path, new_S, info))
+    return DFA(0, rules), relevant
+
+
 def __count_dfa__(
-    grammar: TTCFG[Tuple[U, int], V], to_count: TList[DerivableProgram], count: int
-) -> DFA[int, DerivableProgram]:
-    all_primitives = grammar.primitives_used()
+    grammar: TTCFG[Tuple[U, int], V],
+    dfa: DFA[int, Tuple[Type, Tuple[Tuple[U, int], V]]],
+    to_count: TList[DerivableProgram],
+    count: int,
+) -> DFA[int, Tuple[Tuple[Type, Tuple[Tuple[U, int], V]], DerivableProgram]]:
+    all_primitives: TList[DerivableProgram] = list(grammar.primitives_used())
+    all_primitives += grammar.variables()
 
     rules: Dict[int, Dict[DerivableProgram, int]] = {}
+    start_count = count
     while count > 0:
         rules[count] = {
             P: count - 1 if P in to_count else count for P in all_primitives
@@ -148,7 +194,23 @@ def __count_dfa__(
         count -= 1
     # count == 0
     rules[count] = {P: count for P in all_primitives if P not in to_count}
-    return DFA(count, rules)
+    counter = DFA(start_count, rules).map_states(lambda i: i + len(dfa.states) - 1)
+    new_rules: Dict[
+        int, Dict[Tuple[Tuple[Type, Tuple[Tuple[U, int], V]], DerivableProgram], int]
+    ] = {}
+
+    for u in dfa.rules:
+        new_rules[u] = {}
+        for S in dfa.rules[u]:
+            for P in grammar.rules[S]:
+                new_rules[u][(S, P)] = 0 if dfa.rules[u][S] == 0 else counter.start
+
+    for u in counter.rules:
+        new_rules[u] = {}
+        for S in grammar.rules:
+            for P in counter.rules[u]:
+                new_rules[u][(S, P)] = counter.rules[u][P]
+    return DFA(0, new_rules)
 
 
 def __preprocess_grammar__(grammar: TTCFG[U, V]) -> TTCFG[Tuple[U, int], V]:
@@ -374,14 +436,10 @@ def __process__(
     elif isinstance(token, TokenAtMost):
         assert relevant is not None
         # Create a DFA that recognises the path
-        all_dfas = [path.to_dfa() for path, S, info in relevant]
-        detector: DFA[Any, Any] = all_dfas.pop()
-        while all_dfas:
-            detector = detector.read_product(all_dfas.pop())
+        detector, relevant = __dfa_start_from_any__(grammar, relevant, state)
         # Create a DFA that counts primitives
-        counter = __count_dfa__(grammar, token.to_count, token.count)
-        # Now add it to the grammar
-        final_dfa = detector.then(counter)
+        final_dfa = __count_dfa__(grammar, detector, token.to_count, token.count)
+        print(final_dfa)
         out_grammar = grammar * final_dfa
     elif isinstance(token, TokenVarDep):
         assert relevant is not None
