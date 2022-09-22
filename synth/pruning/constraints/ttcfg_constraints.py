@@ -58,7 +58,10 @@ class Path(Generic[U, V]):
         return hash(tuple(self.predecessors))
 
     def __str__(self) -> str:
-        return "->".join([f"{S[1][0]}" for S, P in self.predecessors])
+        if len(self) > 0:
+            end = f"->{self.predecessors[-1][1]}"
+            return "->".join([f"{S[1][0]}" for S, P in self.predecessors]) + end
+        return "-"
 
     def __repr__(self) -> str:
         return self.__str__()
