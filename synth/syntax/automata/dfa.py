@@ -40,17 +40,14 @@ class DFA(Generic[U, V]):
         The set of accessible states.
         """
         all = set()
-        last_frontier = [self.start]
-        while last_frontier:
-            new_frontier = []
-            while last_frontier:
-                state = last_frontier.pop()
-                for P in self.rules[state]:
-                    new_state = self.rules[state][P]
-                    if new_state not in all:
-                        all.add(new_state)
-                        new_frontier.append(new_state)
-            last_frontier = new_frontier
+        frontier = [self.start]
+        while frontier:
+            state = frontier.pop()
+            for P in self.rules[state]:
+                new_state = self.rules[state][P]
+                if new_state not in all:
+                    all.add(new_state)
+                    frontier.append(new_state)
         return all
 
     def reduce(self) -> "DFA[U, V]":
