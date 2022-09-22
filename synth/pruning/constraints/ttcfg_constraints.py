@@ -258,12 +258,18 @@ def __process__(
             # Compute relevant depending on sketch or not
             if sketch:
                 relevant = [(Path(), grammar.start, grammar.start_information())]
+                grammar, returns = __process__(
+                    grammar, token.function, sketch, relevant, level, state
+                )
+                relevant = []
+                relevant.append((Path(), grammar.start, grammar.start_information()))
             else:
                 relevant = []
                 for S in grammar.rules:
                     for P in grammar.rules[S]:
                         if P in token.function.allowed:
                             relevant.append((Path(), S, grammar.start_information()))
+                            break
         else:
             saves = [
                 __make_save__(grammar, path, S, info) for path, S, info in relevant
@@ -322,32 +328,34 @@ def __process__(
         assert relevant is not None
         relevant_cpy = relevant[:]
         already_done: Dict[State, State] = {}
+        relevant = []
         while relevant_cpy:
             path, S, info = relevant_cpy.pop()
-            parent_S, parent_P = path.last()
-            if parent_S in already_done:
-                # path.predecessors[-1] = (already_done[parent_S], parent_P)
-                parent_S = already_done[parent_S]
-                if parent_P not in grammar.rules[parent_S]:
-                    continue
-                # print(grammar)
-            # print("\t" * (level + 1), "parent:", parent_S, "->", parent_P, "=>", S)
+            if len(path) > 0:
+                parent_S, parent_P = path.last()
+                if parent_S in already_done:
+                    parent_S = already_done[parent_S]
+                    if parent_P not in grammar.rules[parent_S]:
+                        continue
+                    # print(grammar)
+                # print("\t" * (level + 1), "parent:", parent_S, "->", parent_P, "=>", S)
             if S in already_done:
                 new_S = already_done[S]
-                __redirect__(grammar, parent_S, parent_P, S, new_S)
             else:
                 new_S = __duplicate__(grammar, S, state)
                 already_done[S] = new_S
-                # print("\t" * (level + 2), "duplicate:", new_S)
-
-                __redirect__(grammar, parent_S, parent_P, S, new_S)
                 # Delete forbidden
                 for P in list(grammar.rules[new_S].keys()):
                     if P not in token.allowed:
                         # print("\t" * (level + 3), "del:", new_S, "->", P)
                         del grammar.rules[new_S][P]
-            new_relevant.append((path, new_S, info))
-        relevant = new_relevant
+            if len(path) > 0:
+                __redirect__(grammar, parent_S, parent_P, S, new_S)
+            else:
+                grammar.start = new_S
+
+            # print("\t" * (level + 1), "from:", S, "to", new_S)
+            relevant.append((path, new_S, info))
     elif isinstance(token, TokenAtMost):
         assert relevant is not None
         # Create a DFA that recognises the path
@@ -368,8 +376,16 @@ def __process__(
     # Compute valid possible new states
     assert relevant is not None
     for path, S, info in relevant:
-        # print("\t" * level, "  Query from:", S, "with", info)
-        all_new_states = grammar.possible_outcomes_after(S, None, info)
+        # print(
+        #     "\t" * level,
+        #     "  Query from:",
+        #     S,
+        #     "with",
+        #     info,
+        #     "allowed:",
+        #     grammar.rules[S].keys() if S in grammar.rules else [],
+        # )
+        all_new_states = grammar.possible_outcomes_after(S)
         # print("\t" * level, "  All states from:", S, ":", all_new_states)
         possible_new_states[path].append(all_new_states)
     return out_grammar, possible_new_states
