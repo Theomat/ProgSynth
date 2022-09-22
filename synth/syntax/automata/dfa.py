@@ -79,9 +79,7 @@ class DFA(Generic[U, V]):
         return self.rules[start][word]
 
     def map_states(self, f: Callable[[U], W]) -> "DFA[W, V]":
-        print(self)
         mapping = {s: f(s) for s in self.states}
-        print(self.states)
         dst_rules = {
             mapping[S]: {P: mapping[self.rules[S][P]] for P in self.rules[S]}
             for S in self.rules
