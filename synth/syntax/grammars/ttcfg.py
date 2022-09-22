@@ -203,73 +203,22 @@ class TTCFG(
     def clean(self) -> None:
         new_rules: Dict[Tuple[Type, Tuple[S, T]], Set[DerivableProgram]] = {}
         list_to_be_treated: Deque[
-            Tuple[Tuple[Type, S], T, List[Tuple[Type, S]]]
+            Tuple[Tuple[Type, Tuple[S, T]], List[Tuple[Type, S]]]
         ] = deque()
-        list_to_be_treated.append(
-            ((self.start[0], self.start[1][0]), self.start[1][1], [])
-        )
 
-        if isinstance(self.type_request, Arrow):
-            args = self.type_request.arguments()
-        else:
-            args = []
-
+        list_to_be_treated.append((self.start, self.start_information()))
         while list_to_be_treated:
-            (current_type, non_terminal), current, stack = list_to_be_treated.pop()
-            rule = current_type, (non_terminal, current)
-            # Create rule if non existent
+            rule, info = list_to_be_treated.pop()
             if rule not in new_rules:
                 new_rules[rule] = set()
-            else:
-                continue
-            # Try to add variables rules
-            for i in range(len(args)):
-                if current_type == args[i]:
-                    var = Variable(i, current_type)
-                    if var in self.rules[rule]:
-                        new_rules[rule].add(var)
-                        _, s = self.rules[rule][var]
-                        if stack:
-                            list_to_be_treated.append((stack[0], s, stack[1:]))
-            # DSL Primitives
+            # Create rule if non existent
             for P in self.rules[rule]:
-                type_P = P.type
-                arguments_P = type_P.ends_with(current_type)
-                if arguments_P is not None:
-                    if P in self.rules[rule]:
-                        decorated_arguments_P, new_el = self.rules[rule][P]
-                        new_rules[rule].add(P)
-                        tmp_stack = decorated_arguments_P + stack
-                        if tmp_stack:
-                            list_to_be_treated.append(
-                                (tmp_stack[0], new_el, tmp_stack[1:])
-                            )
+                new_rules[rule].add(P)
+                new_info, new_S = self.derive(info, rule, P)
+                if new_S in self.rules:
+                    list_to_be_treated.append((new_S, new_info))
 
         self.rules = {S: {P: self.rules[S][P] for P in new_rules[S]} for S in new_rules}
-
-        # Now back propagate and delete things that cannot finish with a valid program
-        deleted_S = []
-        # Fill deleted S
-        for S in list(self.rules.keys()):
-            if len(self.rules[S]) == 0:
-                deleted_S.append(S)
-                del self.rules[S]
-        while deleted_S:
-            S = deleted_S.pop()
-            to_check = (S[0], S[1][0])
-            for SS in list(self.rules.keys()):
-                for P in list(self.rules[SS].keys()):
-                    derlist, state = self.rules[SS][P]
-                    to_delete = False
-                    for der in derlist:
-                        if der == to_check:
-                            to_delete = True
-                            break
-                    if to_delete:
-                        del self.rules[SS][P]
-                        if len(self.rules[SS]) == 0:
-                            del self.rules[SS]
-                            deleted_S.append(SS)
 
     def start_information(self) -> List[Tuple[Type, S]]:
         return []
