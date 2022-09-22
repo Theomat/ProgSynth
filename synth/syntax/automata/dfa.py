@@ -19,6 +19,15 @@ class DFA(Generic[U, V]):
     def __init__(self, initial: U, rules: Dict[U, Dict[V, U]]) -> None:
         self.start = initial
         self.rules = rules
+        # Clean unreachable states
+        reachables = self.states
+        for u in list(self.rules.keys()):
+            if u not in reachables:
+                del self.rules[u]
+            else:
+                for P in list(self.rules[u].keys()):
+                    if self.rules[u][P] not in reachables:
+                        del self.rules[u][P]
 
     def __mul__(self, other: "DFA[W, X]") -> "DFA[Tuple[U, W], Tuple[V, X]]":
         start = (self.start, other.start)
@@ -50,7 +59,7 @@ class DFA(Generic[U, V]):
     @property
     def states(self) -> Set[U]:
         """
-        The set of accessible states.
+        The set of reachables states.
         """
         all = set()
         frontier = [self.start]
@@ -63,22 +72,6 @@ class DFA(Generic[U, V]):
                     frontier.append(new_state)
         return all
 
-    def reduce(self) -> "DFA[U, V]":
-        """
-        Return the same DFA with only accessible states.
-        """
-        new_states = self.states
-        new_rules = {
-            state: {
-                letter: dst_state
-                for letter, dst_state in self.rules[state].items()
-                if dst_state in new_states
-            }
-            for state in self.rules
-            if state in new_states
-        }
-        return DFA(self.start, new_rules)
-
     def can_read(self, start: U, word: V) -> bool:
         return start in self.rules and word in self.rules[start]
 
@@ -86,7 +79,9 @@ class DFA(Generic[U, V]):
         return self.rules[start][word]
 
     def map_states(self, f: Callable[[U], W]) -> "DFA[W, V]":
+        print(self)
         mapping = {s: f(s) for s in self.states}
+        print(self.states)
         dst_rules = {
             mapping[S]: {P: mapping[self.rules[S][P]] for P in self.rules[S]}
             for S in self.rules
