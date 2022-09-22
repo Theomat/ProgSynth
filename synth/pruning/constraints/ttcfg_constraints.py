@@ -407,8 +407,8 @@ def __process__(
             should_del = True
             if key in already_done:
                 tmpS = already_done[key]
-                newS = (tmpS[0], (tmpS[1][0], S[1][1]))
-                grammar.rules[newS] = {
+                new_S = (tmpS[0], (tmpS[1][0], S[1][1]))
+                grammar.rules[new_S] = {
                     P: (grammar.rules[S][P][0][:], grammar.rules[S][P][1])
                     for P in grammar.rules[S]
                 }
