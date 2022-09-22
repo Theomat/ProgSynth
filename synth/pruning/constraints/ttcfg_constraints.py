@@ -89,6 +89,7 @@ class Path(Generic[U, V]):
         for S, P in self.predecessors:
             rules[current] = {(S, P): current + 1}
             current += 1
+        rules[current] = {}
         return DFA(0, rules)
 
 
