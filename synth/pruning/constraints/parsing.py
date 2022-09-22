@@ -145,15 +145,18 @@ def __parse_next_word__(program: str) -> Tuple[str, int]:
 
 
 def __str_to_derivable_program__(word: str, grammar: TTCFG) -> TList[DerivableProgram]:
+    all_primitives = sorted(
+        grammar.primitives_used(), key=lambda p: p.primitive, reverse=True
+    )
     if word == SYMBOL_ANYTHING:
-        out: TList[DerivableProgram] = list(grammar.primitives_used())
+        out: TList[DerivableProgram] = all_primitives  # type: ignore
         out += grammar.variables()
         return out
     allowed = set(
         [word] if not SYMBOL_SEPARATOR in word else word.split(SYMBOL_SEPARATOR)
     )
     primitives: TList[DerivableProgram] = [
-        P for P in grammar.primitives_used() if P.primitive in allowed
+        P for P in all_primitives if P.primitive in allowed
     ]
     arg_types = grammar.type_request.arguments()
     for el in allowed:
@@ -182,13 +185,12 @@ def __interpret_word__(word: str, grammar: TTCFG) -> Token:
         end_index = max(word.find("<="), word.find(">="))
         most = word[end_index] == "<"
         considered = word[:end_index]
+        content = __str_to_derivable_program__(considered.strip("()"), grammar)
         count = int(word[len(considered) + 2 :])
         if most:
-            return TokenAtMost(__str_to_derivable_program__(considered, grammar), count)
+            return TokenAtMost(content, count)
         else:
-            return TokenAtLeast(
-                __str_to_derivable_program__(considered, grammar), count
-            )
+            return TokenAtLeast(content, count)
     return TokenAllow(__str_to_derivable_program__(word, grammar))
 
 
