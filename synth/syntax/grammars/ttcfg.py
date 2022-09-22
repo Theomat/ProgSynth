@@ -290,7 +290,7 @@ class TTCFG(
     @classmethod
     def size_constraint(
         cls, dsl: DSL, type_request: Type, max_size: int, n_gram: int = 2
-    ) -> "TTCFG[NGram, int]":
+    ) -> "TTCFG[NGram, Tuple[int, int]]":
         """
         Constructs a n-gram TT CFG from a DSL imposing the maximum program size.
 
@@ -311,18 +311,23 @@ class TTCFG(
                 else ("", 0),
                 set(),
             ):
-                return False, 0
-            size = state[1][1]
+                return False, (0, 0)
+            size, future = state[1][1]
             if size > max_size:
-                return False, 0
+                return False, (0, 0)
             if not isinstance(derivation.type, Arrow):
-                return size + 1 <= max_size, size + 1
-            return size + 1 + len(derivation.type.arguments()) <= max_size, size + 1
+                if future > 0:
+                    return size + future <= max_size, (size + 1, future - 1)
+                return size + 1 + future <= max_size, (size + 1, future)
+            nargs = len(derivation.type.arguments())
+            if future > 0:
+                return size + nargs + future <= max_size, (size + 1, future + nargs - 1)
+            return size + nargs + 1 + future <= max_size, (size + 1, future + nargs)
 
         return __saturation_build__(
             dsl,
             type_request,
-            (NGram(n_gram), 0),
+            (NGram(n_gram), (0, 0)),
             __transition__,
             lambda ctx, P, i, __: ctx[1][0].successor((P, i)),
         )
