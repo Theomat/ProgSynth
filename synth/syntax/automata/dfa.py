@@ -34,6 +34,19 @@ class DFA(Generic[U, V]):
                         )
         return DFA(start, rules)
 
+    def __str__(self) -> str:
+        s = f"Print a DFA\n"
+        s += "start: {}\n".format(self.start)
+        for S in reversed(self.rules):
+            s += "#\n {}\n".format(S)
+            for P in self.rules[S]:
+                out = self.rules[S][P]
+                s += "\t{} -> {}\n".format(P, out)
+        return s
+
+    def __repr__(self) -> str:
+        return self.__str__()
+
     @property
     def states(self) -> Set[U]:
         """
