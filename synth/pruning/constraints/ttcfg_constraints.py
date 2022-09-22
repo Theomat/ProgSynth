@@ -173,21 +173,7 @@ def __all_possible__(
     """
     Return the set of all possibles V that can be generated starting from S -> P or just from S
     """
-    info = info or grammar.start_information()
-    if P is None:
-        out_plus = set()
-        for P in grammar.rules[S]:
-            out_plus |= __all_possible__(grammar, S, P, info)
-        return out_plus
-    new_info, new_S = grammar.derive(info, S, P)
-    if new_S not in grammar.rules:
-        return set([new_S[1][1]])
-    # Derive all possible children
-    out = set()
-    for PP in grammar.rules[new_S]:
-        candidates = __all_possible__(grammar, new_S, PP, new_info[:])
-        out |= candidates
-    return out
+    return grammar.possible_outcomes_after(S, P, info)
 
 
 def __redirect__(
