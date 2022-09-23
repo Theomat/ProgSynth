@@ -60,7 +60,7 @@ class Path(Generic[U, V]):
     def __str__(self) -> str:
         if len(self) > 0:
             end = f"->{self.predecessors[-1][1]}"
-            return "->".join([f"{S[1][0]}" for S, P in self.predecessors]) + end
+            return "->".join([f"{S[1]}" for S, P in self.predecessors]) + end
         return "-"
 
     def __repr__(self) -> str:
@@ -71,6 +71,9 @@ class Path(Generic[U, V]):
 
     def last(self) -> Tuple[Tuple[Type, Tuple[Tuple[U, int], V]], DerivableProgram]:
         return self.predecessors[-1]
+
+    def fix_last(self, S: Tuple[Type, Tuple[Tuple[U, int], V]]) -> None:
+        self.predecessors[-1] = (S, self.predecessors[-1][1])
 
     def next(
         self, S: Tuple[Type, Tuple[Tuple[U, int], V]], P: DerivableProgram
@@ -145,11 +148,7 @@ def __dfa_start_from_any__(
             parent_S, parent_P = path.last()
             if parent_S in redirections:
                 parent_S = redirections[parent_S]
-                if parent_P not in grammar.rules[parent_S]:
-                    continue
-                # print(grammar)
-            # print(
-            #     "\t" * (level + 1), "parent:", parent_S , "->", parent_P, "=>", S)
+                path.fix_last(parent_S)
             key = (parent_S, (S[0], S[1][0]))
         else:
             key = None
@@ -172,6 +171,26 @@ def __dfa_start_from_any__(
         else:
             grammar.start = new_S
         rules[0][new_S] = 1
+        outcomes = grammar.possible_outcomes_after(new_S)
+        if len(path) > 0:
+            parent_S, parent_P = path.last()
+            derlst, _ = grammar.rules[parent_S][parent_P]
+            der = (new_S[0], new_S[1][0])
+
+            added, found = False, False
+            nextS = der
+            for SS in derlst:
+                if SS == der:
+                    found = True
+                elif found:
+                    nextS = SS
+                    added = True
+                    break
+            if not added:
+                nextS = info[0]
+            for v in outcomes:
+                rules[1][(nextS[0], (nextS[1], v))] = 0
+
         relevant.append((path, new_S, info))
     return DFA(0, rules), relevant
 
@@ -209,7 +228,11 @@ def __count_dfa__(
         new_rules[u] = {}
         for S in grammar.rules:
             for P in counter.rules[u]:
-                new_rules[u][(S, P)] = counter.rules[u][P]
+                new_rules[u][(S, P)] = (
+                    0
+                    if S in dfa.rules[1] and dfa.rules[1][S] == 0
+                    else counter.rules[u][P]
+                )
     return DFA(0, new_rules)
 
 
@@ -307,23 +330,33 @@ def __process__(
     relevant: Optional[TList[Tuple[Path, State, Info]]] = None,
     level: int = 0,
     state: Optional[ProcessState] = None,
-) -> Tuple[TTCFG[Tuple[U, int], Any], Dict[Path[U, V], TList[Set[V]]],]:
+) -> Tuple[
+    TTCFG[Tuple[U, int], Any],
+    Dict[Path[U, V], TList[Set[V]]],
+    TList[Tuple[Path, State, Info]],
+]:
     assert not isinstance(
         token, TokenAtLeast
     ), "Unsupported constraint for TTCFG(safe, det)"
     out_grammar: TTCFG[Tuple[U, int], Any] = grammar
     state = state or ProcessState()
     possible_new_states: Dict[Path[U, V], TList[Set[V]]] = defaultdict(list)
-    # print("\t" * level, "processing:", token)
+    # print(
+    #     "\t" * level,
+    #     "processing:",
+    #     token,
+    #     "len(relevant)=",
+    #     len(relevant) if relevant else 0,
+    # )
     # if relevant is not None:
     #     for path, S, info in relevant:
-    #         print("\t" * level, "  path:", path, "S:", S)
+    #         print("\t" * level, " path:", path, "S:", S)
     if isinstance(token, TokenFunction):
         if relevant is None:
             # Compute relevant depending on sketch or not
             if sketch:
                 relevant = [(Path(), grammar.start, grammar.start_information())]
-                grammar, _ = __process__(
+                grammar, _, __ = __process__(
                     grammar, token.function, sketch, relevant, level, state
                 )
                 relevant = []
@@ -340,19 +373,12 @@ def __process__(
                 __make_save__(grammar, path, S, info) for path, S, info in relevant
             ]
             # So here we have correct paths
-            grammar, _ = __process__(
+            grammar, _, __ = __process__(
                 grammar, token.function, sketch, relevant, level, state
             )
             # However we have restricted the possible functions so we renamed our paths
             # We need to fix that
             new_relevant = [__restore_save__(grammar, save) for save in saves]
-
-            # print("\t" * level, "[CHANGED]")
-            # for old, new in zip(relevant, new_relevant):
-            #     if old != new:
-            #         print("\t" * level, "  old:", old[0], "S:", old[1])
-            #         print("\t" * level, "  new:", new[0], "S:", new[1])
-            #         print()
 
             relevant = new_relevant
         # Go from relevant to first argument context
@@ -367,9 +393,11 @@ def __process__(
                     arg_relevant.append((new_path, new_S, new_info))
 
         for argno, arg in enumerate(token.args):
-            grammar, possible_states = __process__(
+            grammar, possible_states, new_relevant = __process__(
                 grammar, arg, sketch, arg_relevant, level + 1, state
             )
+            if isinstance(arg, TokenAtMost):
+                arg_relevant = new_relevant
             next_relevant: TList[Tuple[Path, State, Info]] = []
             for path, S, info in arg_relevant:
                 pS, pP = path.last()
@@ -382,6 +410,7 @@ def __process__(
                         new_S = (t, (u, v))
                         next_relevant.append((path, new_S, info))
             arg_relevant = next_relevant
+        out_grammar = grammar
     elif isinstance(token, TokenAllow):
         assert relevant is not None
         relevant_cpy = relevant[:]
@@ -406,6 +435,7 @@ def __process__(
                 key = None
             should_del = True
             if key in already_done:
+                # print("\t" * (level + 1), "copy")
                 tmpS = already_done[key]
                 new_S = (tmpS[0], (tmpS[1][0], S[1][1]))
                 grammar.rules[new_S] = {
@@ -413,9 +443,11 @@ def __process__(
                     for P in grammar.rules[S]
                 }
             elif S in redirections:
+                # print("\t" * (level + 1), "redirection")
                 new_S = redirections[S]
                 should_del = False
             else:
+                # print("\t" * (level + 1), "duplicate")
                 new_S = __duplicate__(grammar, S, state)
                 if key is not None:
                     already_done[key] = new_S
@@ -439,8 +471,34 @@ def __process__(
         detector, relevant = __dfa_start_from_any__(grammar, relevant, state)
         # Create a DFA that counts primitives
         final_dfa = __count_dfa__(grammar, detector, token.to_count, token.count)
-        print(final_dfa)
         out_grammar = grammar * final_dfa
+        # Relevant contains old paths since we augmented the type of the grammar
+        # We need to create the new relevant
+        new_relevant = []
+        # easier to go from saves we only need to map the starting one
+        ssaves = [
+            (path, __make_save__(grammar, path, S, info)) for path, S, info in relevant
+        ]
+        for or_path, save in ssaves:
+            start, hist, info = save
+            assert len(hist) == len(or_path)
+            # Let's hope info is useless and we can just not care
+            found = 0
+            for SS in out_grammar.rules:
+                old_S = (SS[0], (SS[1][0], SS[1][1][0]))
+                if old_S == start:
+                    try:
+                        path, SSS, Sinfo = __restore_save__(
+                            out_grammar, (SS, hist[:], info)  # type: ignore
+                        )
+                        assert len(path) == len(
+                            or_path
+                        ), f"or_path={or_path} path={path}"
+                        new_relevant.append((path, SSS, Sinfo))
+                        found += 1
+                    except KeyError:
+                        pass
+        relevant = new_relevant
     elif isinstance(token, TokenVarDep):
         assert relevant is not None
         for path, S, info in relevant:
@@ -449,19 +507,9 @@ def __process__(
     # Compute valid possible new states
     assert relevant is not None
     for path, S, info in relevant:
-        # print(
-        #     "\t" * level,
-        #     "  Query from:",
-        #     S,
-        #     "with",
-        #     info,
-        #     "allowed:",
-        #     grammar.rules[S].keys() if S in grammar.rules else [],
-        # )
         all_new_states = grammar.possible_outcomes_after(S)
-        # print("\t" * level, "  All states from:", S, ":", all_new_states)
         possible_new_states[path].append(all_new_states)
-    return out_grammar, possible_new_states
+    return out_grammar, possible_new_states, relevant
 
 
 def add_constraints(
@@ -489,28 +537,10 @@ def add_constraints(
         pbar = tqdm.tqdm(total=len(parsed_constraints), desc="constraints", smoothing=1)
     state = ProcessState()
     for constraint in parsed_constraints:
-        preprocessed, _ = __process__(preprocessed, constraint, sketch, state=state)
+        preprocessed, _, __ = __process__(preprocessed, constraint, sketch, state=state)
         if progress:
             pbar.update(1)
     if progress:
         pbar.close()
     preprocessed.clean()
     return preprocessed
-
-
-# if __name__ == "__main__":
-#     from examples.pbe.calculator.calculator import dsl, INT
-#     from synth.syntax import FunctionType, CFG
-
-#     type_request = FunctionType(INT, INT)
-
-#     patterns = [
-#         # "+ ^+,1 ^1",
-#         "+ (+ 2 _) _"
-#     ]
-
-#     max_depth = 4
-#     cfg = CFG.depth_constraint(dsl, type_request, max_depth)
-#     print(cfg)
-#     new_cfg = add_constraints(cfg, patterns, False, False)
-#     print(new_cfg)
