@@ -86,7 +86,7 @@ class TTCFG(
         if isinstance(other, TTCFG):
             return self.__mul_ttcfg__(other)
         elif isinstance(other, DFA):
-            if isinstance(other.rules[other.start], tuple):
+            if isinstance(list(other.rules[other.start].keys())[0], tuple):
                 return self.__mul_dfa__(other)  # type: ignore
             else:
                 return self.__mul_dfa_simple__(other)  # type: ignore
