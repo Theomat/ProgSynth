@@ -65,7 +65,7 @@ def test_size_constraint() -> None:
 def test_at_most() -> None:
     dsl = DSL(syntax)
     dsl.instantiate_polymorphic_types()
-    for max_occ in [3, 7, 11]:
+    for max_occ in [3, 4, 5]:
         cfg = TTCFG.at_most_k(dsl, FunctionType(INT, INT), "+", max_occ)
         res = dsl.parse_program("(+ 1 var0)", FunctionType(INT, INT))
         while res.depth() - 1 <= max_occ:
