@@ -1,4 +1,4 @@
-from collections import deque
+from collections import defaultdict, deque
 from functools import lru_cache
 from typing import (
     Callable,
@@ -274,33 +274,31 @@ class TTCFG(
         """
         Return the total number of programs contained in this grammar.
         """
-        _counts: Dict[Tuple[Type, Tuple[S, T]], int] = {}
+        _counts: Dict[Tuple[Type, Tuple[S, T]], Dict[T, int]] = {}
 
-        def __compute__(state: Tuple[Type, Tuple[S, T]]) -> int:
+        def __compute__(state: Tuple[Type, Tuple[S, T]]) -> Dict[T, int]:
             if state in _counts:
                 return _counts[state]
             if state not in self.rules:
-                return 1
-            total = 0
+                return {state[1][1]: 1}
+            output: Dict[T, int] = defaultdict(int)
             for P in self.rules[state]:
                 info, new_state = self.derive(self.start_information(), state, P)
                 local = __compute__(new_state)
-                all_new_states = self.possible_outcomes_after(new_state)
                 while info:
-                    arg_count = 0
-                    next_new_states = set()
                     base = info.pop()
-                    for v in all_new_states:
+                    next_local: Dict[T, int] = defaultdict(int)
+                    for v, cnt in local.items():
                         next_new_state = (base[0], (base[1], v))
-                        arg_count += __compute__(next_new_state)
-                        next_new_states |= self.possible_outcomes_after(next_new_state)
-                    all_new_states = next_new_states
-                    local *= arg_count
-                total += local
-            _counts[state] = total
-            return total
+                        for nV, nC in __compute__(next_new_state).items():
+                            next_local[nV] += nC * cnt
+                    local = next_local
+                for v, c in local.items():
+                    output[v] += c
+            _counts[state] = output
+            return output
 
-        return __compute__(self.start)
+        return sum(c for _, c in __compute__(self.start).items())
 
     def possible_outcomes_after(
         self,
