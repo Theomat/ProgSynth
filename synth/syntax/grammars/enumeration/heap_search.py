@@ -190,9 +190,11 @@ class HSEnumerator(ABC, Generic[U, V, W]):
 
                     if hash_new_program not in self.hash_table_program[S]:
                         self.hash_table_program[S].add(hash_new_program)
-
-                        priority: Ordered = self.compute_priority(S, new_program)
-                        heappush(self.heaps[S], HeapElement(priority, new_program))
+                        try:
+                            priority: Ordered = self.compute_priority(S, new_program)
+                            heappush(self.heaps[S], HeapElement(priority, new_program))
+                        except KeyError:
+                            pass
                 information, lst = self.G.derive_all(information, S2, succ.arguments[i])
                 S2 = lst[-1]
 
