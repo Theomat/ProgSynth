@@ -25,7 +25,7 @@ def test_function_as_variable() -> None:
     dsl = DSL(syntax)
     max_depth = 5
     cfg = CFG.depth_constraint(dsl, FunctionType(Arrow(INT, INT), INT), max_depth)
-    assert cfg.size() > 0
+    assert cfg.programs() > 0
 
 
 def test_clean() -> None:

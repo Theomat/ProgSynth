@@ -4,6 +4,7 @@ from synth.syntax.grammars.enumeration.heap_search import (
     enumerate_bucket_prob_grammar,
 )
 from synth.syntax.grammars.cfg import CFG
+from synth.syntax.grammars.ttcfg import TTCFG
 from synth.syntax.grammars.tagged_det_grammar import ProbDetGrammar
 from synth.syntax.dsl import DSL
 from synth.syntax.type_system import (
@@ -34,7 +35,7 @@ def test_unicity_heapSearch() -> None:
     for program in enumerate_prob_grammar(pcfg):
         assert program not in seen
         seen.add(program)
-    assert len(seen) == cfg.size()
+    assert len(seen) == cfg.programs()
 
 
 def test_order_heapSearch() -> None:
@@ -59,7 +60,7 @@ def test_unicity_bucketSearch() -> None:
         for program in enumerate_bucket_prob_grammar(pcfg, bucket_size=bucketSize):
             assert program not in seen
             seen.add(program)
-        assert len(seen) == cfg.size()
+        assert len(seen) == cfg.programs()
 
 
 def test_order_bucketSearch() -> None:
