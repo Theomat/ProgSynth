@@ -26,6 +26,10 @@ U = TypeVar("U")
 V = TypeVar("V")
 W = TypeVar("W")
 
+def __wrap__(el: Union[U, List[U]]) -> Union[U, Tuple[U, ...]]:
+    if isinstance(el, list):
+        return tuple(el)
+    return el
 
 @dataclass(order=True, frozen=True)
 class HeapElement:
@@ -177,6 +181,8 @@ class UHSEnumerator(ABC, Generic[U, V, W]):
         succ: Function,
         i: int = 0,
     ) -> None:
+        if i >= len(succ.arguments):
+            return
         # S2 is non-terminal symbol used to derive the i-th argument
         succ_sub_program = self.query(S2, succ.arguments[i])
         if succ_sub_program:
@@ -290,18 +296,18 @@ class UHeapSearch(UHSEnumerator[U, V, W]):
             possibles = self.G.derive_all(self.G.start_information(), S, F)
             out = []
             for information, lst in possibles:
-                probability = self.G.probabilities[S][F][lst[-1][1]]  # type: ignore
+                probability = self.G.probabilities[S][F][__wrap__(lst[-1][1])]  # type: ignore
                 S2 = lst[-1][0]
                 probs = self.__next_prob__(new_program.arguments, S2, information)
                 if len(probs) == 0:
                     continue
                 out += [x * probability for x in probs]
-            assert len(out) == 1
-            return out[0]
+            assert len(out) == 1, f"out={out}"
+            probability = out[0]
 
         else:
             lst = self.G.derive_all(self.G.start_information(), S, new_program)[0][1]
-            probability = self.G.probabilities[S][new_program][lst[-1][1]]  # type: ignore
+            probability = self.G.probabilities[S][new_program][__wrap__(lst[-1][1])]  # type: ignore
         self.probabilities[new_program][S] = probability
         return -probability
 
@@ -419,7 +425,7 @@ class UBucketSearch(UHSEnumerator[U, V, W]):
             possibles = self.G.derive_all(self.G.start_information(), S, F)
             out = []
             for information, lst in possibles:
-                probability = self.G.probabilities[S][F][lst[-1][1]]  # type: ignore
+                probability = self.G.probabilities[S][F][__wrap__(lst[-1][1])]  # type: ignore
 
                 S2 = lst[-1][0]
                 probs = self.__next_prob__(new_program.arguments, S2, information)
@@ -431,7 +437,7 @@ class UBucketSearch(UHSEnumerator[U, V, W]):
             return out[0]
         else:
             lst = self.G.derive_all(self.G.start_information(), S, new_program)[0][1]
-            probability = self.G.probabilities[S][new_program][lst[-1][1]]  # type: ignore
+            probability = self.G.probabilities[S][new_program][__wrap__(lst[-1][1])]  # type: ignore
             new_bucket.add_prob_uniform(probability)
         self.bucket_tuples[new_program][S] = new_bucket
         return new_bucket
