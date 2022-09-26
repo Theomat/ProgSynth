@@ -229,6 +229,8 @@ class TTCFG(
             list_to_be_treated.append((self.start, self.start_information()))
             while list_to_be_treated:
                 rule, info = list_to_be_treated.pop()
+                if rule not in new_rules:
+                    continue
                 if len(new_rules[rule]) == 0:
                     del new_rules[rule]
                     return_value = True
