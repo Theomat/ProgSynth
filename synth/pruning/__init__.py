@@ -8,8 +8,4 @@ from synth.pruning.syntactic_pruner import (
     SyntacticPruner,
     SetPruner,
 )
-from synth.pruning.type_constraints import (
-    export_syntax_to_python,
-    produce_new_syntax_for_constraints,
-    produce_new_syntax_for_sketch,
-)
+from synth.pruning.constraints import add_constraints
