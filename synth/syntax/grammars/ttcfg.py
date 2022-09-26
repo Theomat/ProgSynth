@@ -225,12 +225,14 @@ class TTCFG(
             list_to_be_treated: Deque[
                 Tuple[Tuple[Type, Tuple[S, T]], List[Tuple[Type, S]]]
             ] = deque()
+            return_value = False
             list_to_be_treated.append((self.start, self.start_information()))
             while list_to_be_treated:
                 rule, info = list_to_be_treated.pop()
                 if len(new_rules[rule]) == 0:
                     del new_rules[rule]
-                    return True
+                    return_value = True
+                    continue
                 # Create rule if non existent
                 for P in list(new_rules[rule]):
                     new_info, new_S = self.derive(info, rule, P)
@@ -238,10 +240,10 @@ class TTCFG(
                         new_rules[rule].remove(P)
                         if len(new_rules[rule]) == 0:
                             del new_rules[rule]
-                            return True
+                            return_value = True
                     elif new_S in self.rules:
                         list_to_be_treated.append((new_S, new_info))
-            return False
+            return return_value
 
         while clean():
             pass
