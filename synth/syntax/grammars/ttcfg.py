@@ -253,16 +253,19 @@ class TTCFG(
             total = 0
             for P in self.rules[state]:
                 info, new_state = self.derive(self.start_information(), state, P)
-                total += __compute__(new_state)
+                local = __compute__(new_state)
                 all_new_states = self.possible_outcomes_after(new_state)
                 while info:
+                    arg_count = 0
                     next_new_states = set()
                     base = info.pop()
                     for v in all_new_states:
                         next_new_state = (base[0], (base[1], v))
-                        total += __compute__(next_new_state)
+                        arg_count += __compute__(next_new_state)
                         next_new_states |= self.possible_outcomes_after(next_new_state)
                     all_new_states = next_new_states
+                    local *= arg_count
+                total += local
             _counts[state] = total
             return total
 
