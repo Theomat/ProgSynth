@@ -16,6 +16,8 @@ from synth.syntax.type_system import (
     PrimitiveType,
 )
 
+import pytest
+
 
 syntax = {
     "+": FunctionType(INT, INT, INT),
@@ -24,12 +26,15 @@ syntax = {
     "1": INT,
     "non_productive": FunctionType(INT, STRING),
 }
+dsl = DSL(syntax)
+testdata = [
+    CFG.depth_constraint(dsl, FunctionType(INT, INT), 3),
+    TTCFG.size_constraint(dsl, FunctionType(INT, INT), 5),
+]
 
 
-def test_unicity_heapSearch() -> None:
-    dsl = DSL(syntax)
-    max_depth = 3
-    cfg = CFG.depth_constraint(dsl, FunctionType(INT, INT), max_depth)
+@pytest.mark.parametrize("cfg", testdata)
+def test_unicity_heapSearch(cfg: TTCFG) -> None:
     pcfg = ProbDetGrammar.uniform(cfg)
     seen = set()
     for program in enumerate_prob_grammar(pcfg):
@@ -38,10 +43,8 @@ def test_unicity_heapSearch() -> None:
     assert len(seen) == cfg.programs()
 
 
-def test_order_heapSearch() -> None:
-    dsl = DSL(syntax)
-    max_depth = 3
-    cfg = CFG.depth_constraint(dsl, FunctionType(INT, INT), max_depth)
+@pytest.mark.parametrize("cfg", testdata)
+def test_order_heapSearch(cfg: TTCFG) -> None:
     pcfg = ProbDetGrammar.uniform(cfg)
     last = 1.0
     for program in enumerate_prob_grammar(pcfg):
@@ -50,10 +53,8 @@ def test_order_heapSearch() -> None:
         last = p
 
 
-def test_unicity_bucketSearch() -> None:
-    dsl = DSL(syntax)
-    max_depth = 3
-    cfg = CFG.depth_constraint(dsl, FunctionType(INT, INT), max_depth)
+@pytest.mark.parametrize("cfg", testdata)
+def test_unicity_bucketSearch(cfg: TTCFG) -> None:
     pcfg = ProbDetGrammar.uniform(cfg)
     for bucketSize in range(3, 10):
         seen = set()
@@ -63,10 +64,8 @@ def test_unicity_bucketSearch() -> None:
         assert len(seen) == cfg.programs()
 
 
-def test_order_bucketSearch() -> None:
-    dsl = DSL(syntax)
-    max_depth = 3
-    cfg = CFG.depth_constraint(dsl, FunctionType(INT, INT), max_depth)
+@pytest.mark.parametrize("cfg", testdata)
+def test_order_bucketSearch(cfg: TTCFG) -> None:
     pcfg = ProbDetGrammar.uniform(cfg)
     for bucketSize in range(3, 10):
         last = Bucket(bucketSize)
