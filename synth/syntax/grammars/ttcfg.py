@@ -202,6 +202,7 @@ class TTCFG(
         return TTCFG(start, rules, clean=True)
 
     def clean(self) -> None:
+        # 1) Only keep reachable states
         new_rules: Dict[Tuple[Type, Tuple[S, T]], Set[DerivableProgram]] = {}
         list_to_be_treated: Deque[
             Tuple[Tuple[Type, Tuple[S, T]], List[Tuple[Type, S]]]
@@ -218,6 +219,32 @@ class TTCFG(
                 new_info, new_S = self.derive(info, rule, P)
                 if new_S in self.rules:
                     list_to_be_treated.append((new_S, new_info))
+
+        # 2) Remove empty non terminals
+        def clean() -> bool:
+            list_to_be_treated: Deque[
+                Tuple[Tuple[Type, Tuple[S, T]], List[Tuple[Type, S]]]
+            ] = deque()
+            list_to_be_treated.append((self.start, self.start_information()))
+            while list_to_be_treated:
+                rule, info = list_to_be_treated.pop()
+                if len(new_rules[rule]) == 0:
+                    del new_rules[rule]
+                    return True
+                # Create rule if non existent
+                for P in list(new_rules[rule]):
+                    new_info, new_S = self.derive(info, rule, P)
+                    if new_S not in new_rules and new_S in self.rules:
+                        new_rules[rule].remove(P)
+                        if len(new_rules[rule]) == 0:
+                            del new_rules[rule]
+                            return True
+                    elif new_S in self.rules:
+                        list_to_be_treated.append((new_S, new_info))
+            return False
+
+        while clean():
+            pass
 
         self.rules = {S: {P: self.rules[S][P] for P in new_rules[S]} for S in new_rules}
 
