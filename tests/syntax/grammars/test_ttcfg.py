@@ -22,6 +22,7 @@ syntax = {
 
 def test_clean() -> None:
     dsl = DSL(syntax)
+    dsl.instantiate_polymorphic_types()
     for max_size in [3, 7, 11]:
         cfg = TTCFG.size_constraint(dsl, FunctionType(INT, INT), max_size)
         for rule in cfg.rules:
@@ -36,6 +37,7 @@ def test_clean() -> None:
 
 def test_size() -> None:
     dsl = DSL(syntax)
+    dsl.instantiate_polymorphic_types()
     for max_size, progs in zip([1, 3, 5], [2, 2 + 4, 50]):
         cfg = TTCFG.size_constraint(dsl, FunctionType(INT, INT), max_size)
         size = cfg.programs()
@@ -45,6 +47,7 @@ def test_size() -> None:
 
 def test_size_constraint() -> None:
     dsl = DSL(syntax)
+    dsl.instantiate_polymorphic_types()
     for max_size in [3, 7, 11]:
         cfg = TTCFG.size_constraint(dsl, FunctionType(INT, INT), max_size)
         size1 = dsl.parse_program("(+ 1 var0)", FunctionType(INT, INT))
@@ -61,6 +64,7 @@ def test_size_constraint() -> None:
 
 def test_at_most() -> None:
     dsl = DSL(syntax)
+    dsl.instantiate_polymorphic_types()
     for max_occ in [3, 7, 11]:
         cfg = TTCFG.at_most_k(dsl, FunctionType(INT, INT), "+", max_occ)
         res = dsl.parse_program("(+ 1 var0)", FunctionType(INT, INT))
@@ -76,6 +80,7 @@ def test_at_most() -> None:
 
 def test_clean() -> None:
     dsl = DSL(syntax)
+    dsl.instantiate_polymorphic_types()
     for max_size in [3, 7, 11]:
         cfg = TTCFG.size_constraint(dsl, FunctionType(INT, INT), max_size)
         for rule in cfg.rules:
@@ -92,6 +97,7 @@ def test_clean() -> None:
 
 def test_product() -> None:
     dsl = DSL(syntax)
+    dsl.instantiate_polymorphic_types()
     max_size = 3
     cfg1 = TTCFG.size_constraint(dsl, FunctionType(INT, INT), max_size * 2)
     cfg2 = TTCFG.size_constraint(dsl, FunctionType(INT, INT), max_size)
