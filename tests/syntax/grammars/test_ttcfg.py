@@ -38,7 +38,7 @@ def test_clean() -> None:
 def test_size() -> None:
     dsl = DSL(syntax)
     dsl.instantiate_polymorphic_types()
-    for max_size, progs in zip([1, 3, 5], [2, 2 + 4, 50]):
+    for max_size, progs in zip([1, 3, 5], [2, 2 + 4, 22]):
         cfg = TTCFG.size_constraint(dsl, FunctionType(INT, INT), max_size)
         size = cfg.programs()
         print(cfg)
