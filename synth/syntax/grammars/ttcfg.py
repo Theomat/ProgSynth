@@ -449,4 +449,4 @@ def __saturation_build__(
                     if tmp_stack:
                         list_to_be_treated.append((tmp_stack[0], new_el, tmp_stack[1:]))
 
-    return TTCFG((return_type, init), rules, clean=False)
+    return TTCFG((return_type, init), rules)
