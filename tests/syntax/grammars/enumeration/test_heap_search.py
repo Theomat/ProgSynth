@@ -27,6 +27,7 @@ syntax = {
     "non_productive": FunctionType(INT, STRING),
 }
 dsl = DSL(syntax)
+dsl.instantiate_polymorphic_types()
 testdata = [
     CFG.depth_constraint(dsl, FunctionType(INT, INT), 3),
     TTCFG.size_constraint(dsl, FunctionType(INT, INT), 5),
