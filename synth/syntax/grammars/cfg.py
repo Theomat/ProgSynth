@@ -25,19 +25,6 @@ class CFG(TTCFG[CFGState, NoneType]):
     def __hash__(self) -> int:
         return hash((self.start, str(self.rules)))
 
-    def size(self) -> int:
-        total_programs: Dict[Tuple[Type, Tuple[CFGState, NoneType]], int] = {}
-        for S in sorted(self.rules, key=lambda nt: nt[1][0][1], reverse=True):
-            total = 0
-            for P in self.rules[S]:
-                args_P = self.rules[S][P][0]
-                if len(args_P) == 0:
-                    total += 1
-                else:
-                    total += prod(total_programs[(C[0], (C[1], None))] for C in args_P)
-            total_programs[S] = total
-        return total_programs[self.start]
-
     def clean(self) -> None:
         self._remove_non_productive_()
         self._remove_non_reachable_()
