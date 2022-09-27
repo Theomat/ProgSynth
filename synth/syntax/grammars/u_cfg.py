@@ -1,4 +1,5 @@
 from collections import defaultdict
+from functools import lru_cache
 from typing import (
     Dict,
     List,
@@ -56,6 +57,31 @@ class UCFG(UGrammar[U, List[Tuple[Type, U]], NoneType], Generic[U]):
         return [
             (None, possible[0] if possible else S, possible) for possible in possibles
         ]
+
+    @lru_cache()
+    def programs(self) -> int:
+        """
+        Return the total number of programs contained in this grammar.
+        """
+        _counts: Dict[Tuple[Type, U], int] = {}
+
+        def __compute__(state: Tuple[Type, U]) -> int:
+            if state in _counts:
+                return _counts[state]
+            if state not in self.rules:
+                return 1
+            total = 0
+            for P in self.rules[state]:
+                possibles = self.derive(None, state, P)
+                for _, _, args in possibles:
+                    local = 1
+                    for arg in args:
+                        local *= __compute__(arg)
+                    total += local
+            _counts[state] = total
+            return total
+
+        return sum(__compute__(start) for start in self.starts)
 
     @classmethod
     def depth_constraint(
