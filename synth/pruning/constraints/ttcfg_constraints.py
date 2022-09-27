@@ -427,8 +427,9 @@ def __process__(
                 if parent_S in redirections:
                     parent_S = redirections[parent_S]
                     if parent_P not in grammar.rules[parent_S]:
+                        # The path that we took was actually deleted by the constraints
                         continue
-                    # print(grammar)
+                    path.fix_last(parent_S)
                 # print(
                 #     "\t" * (level + 1), "parent:", parent_S , "->", parent_P, "=>", S)
                 key = (parent_S, (S[0], S[1][0]))
