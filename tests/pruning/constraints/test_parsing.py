@@ -16,7 +16,8 @@ from synth.pruning.constraints.parsing import (
     TokenAtLeast,
     TokenAtMost,
     TokenFunction,
-    TokenVarDep,
+    TokenForceSubtree,
+    TokenForbidSubtree,
 )
 
 
@@ -45,4 +46,7 @@ def test_bases() -> None:
         TokenAllow([PLUS]),
         [TokenAllow([ONE]), TokenAnything()],
     )
-    assert parse_specification("$(var0)", cfg) == TokenVarDep([Variable(0, INT)])
+    assert parse_specification(">(var0)", cfg) == TokenForceSubtree([Variable(0, INT)])
+    assert parse_specification(">^(1,var0)", cfg) == TokenForbidSubtree(
+        [ONE, Variable(0, INT)]
+    )

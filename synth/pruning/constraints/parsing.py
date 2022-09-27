@@ -2,6 +2,8 @@ from dataclasses import dataclass
 from typing import (
     Tuple,
     List as TList,
+    Type,
+    Union,
 )
 from synth.syntax.grammars.det_grammar import DerivableProgram
 
@@ -13,9 +15,9 @@ from synth.syntax.program import Variable
 # SYMBOLS
 # ========================================================================================
 SYMBOL_ANYTHING = "_"
-SYMBOL_VAR_EXPR = "$"
 SYMBOL_FORBIDDEN = "^"
 SYMBOL_SEPARATOR = ","
+SYMBOL_SUBTREE = ">"
 SYMBOL_AGGREGATOR = "#"
 # ========================================================================================
 # TOKENS
@@ -51,17 +53,31 @@ class TokenAllow(Token):
 
 
 @dataclass
-class TokenVarDep(Token):
-    variables: TList[Variable]
+class TokenForbidSubtree(Token):
+    forbidden: TList[DerivableProgram]
 
     def __repr__(self) -> str:
         return str(self)
 
     def __str__(self) -> str:
-        return f"VarDep ({self.variables})"
+        return f"ForbidSubtree ({self.forbidden})"
 
     def __eq__(self, o: object) -> bool:
-        return isinstance(o, TokenVarDep) and o.variables == self.variables
+        return isinstance(o, TokenForbidSubtree) and o.forbidden == self.forbidden
+
+
+@dataclass
+class TokenForceSubtree(Token):
+    forced: TList[DerivableProgram]
+
+    def __repr__(self) -> str:
+        return str(self)
+
+    def __str__(self) -> str:
+        return f"ForceSubtree ({self.forced})"
+
+    def __eq__(self, o: object) -> bool:
+        return isinstance(o, TokenForceSubtree) and o.forced == self.forced
 
 
 @dataclass
@@ -137,7 +153,7 @@ def __next_level__(string: str, start: str, end: str) -> int:
 
 
 def __parse_next_word__(program: str) -> Tuple[str, int]:
-    if program[0] in [SYMBOL_VAR_EXPR, "("]:
+    if program[0] in ["("]:
         end = __next_level__(program, "(", ")")
     else:
         end = program.index(" ") - 1 if " " in program else len(program) - 1
@@ -175,9 +191,15 @@ def __interpret_word__(word: str, grammar: TTCFG) -> Token:
         ]
         out += [V for V in grammar.variables() if str(V) not in forbidden]
         return TokenAllow(out)
-    elif word.startswith(SYMBOL_VAR_EXPR):
-        var_text = word.strip("()" + SYMBOL_VAR_EXPR)
-        return TokenVarDep(__str_to_derivable_program__(var_text, grammar))  # type: ignore
+    elif word.startswith(SYMBOL_SUBTREE):
+        cst: Union[
+            Type[TokenForceSubtree], Type[TokenForbidSubtree]
+        ] = TokenForceSubtree
+        str_content = word[1:]
+        if str_content.startswith(SYMBOL_FORBIDDEN):
+            str_content = str_content[1:]
+            cst = TokenForbidSubtree
+        return cst(__str_to_derivable_program__(str_content.strip("()"), grammar))
     elif word == SYMBOL_ANYTHING:
         return TokenAnything()
     elif word.startswith(SYMBOL_AGGREGATOR):
