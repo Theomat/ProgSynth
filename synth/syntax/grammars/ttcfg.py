@@ -238,7 +238,11 @@ class TTCFG(
                 # Create rule if non existent
                 for P in list(new_rules[rule]):
                     new_info, new_S = self.derive(info, rule, P)
-                    if new_S not in new_rules and new_S in self.rules:
+                    if (
+                        new_S not in new_rules
+                        and new_S in self.rules
+                        and len(new_info) >= len(info)
+                    ):
                         new_rules[rule].remove(P)
                         if len(new_rules[rule]) == 0:
                             del new_rules[rule]
