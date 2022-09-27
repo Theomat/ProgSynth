@@ -19,7 +19,8 @@ from synth.pruning.constraints.parsing import (
     TokenAtLeast,
     TokenAtMost,
     TokenFunction,
-    TokenVarDep,
+    TokenForceSubtree,
+    TokenForbidSubtree,
     parse_specification,
 )
 from synth.syntax.automata.dfa import DFA
@@ -297,12 +298,12 @@ def __duplicate__(
     return new_S
 
 
-def __forbid_vars__(
+def __forbid_subtree__(
     grammar: TTCFG[Tuple[U, int], V],
     parent_S: State,
     parent_P: DerivableProgram,
     S: State,
-    variables: TList[Variable],
+    forbidden: TList[DerivableProgram],
     state: ProcessState,
     done: Optional[Set[State]] = None,
     info: Optional[TList[Tuple[Type, Tuple[U, int]]]] = None,
@@ -311,8 +312,8 @@ def __forbid_vars__(
     __redirect__(grammar, parent_S, parent_P, S, new_S)
     done = done or set()
     for P in sorted(grammar.rules[S].keys(), key=lambda P: str(P)):
-        if P not in variables and isinstance(P, Variable):
-            # Delete forbidden variables
+        if P in forbidden:
+            # Delete forbidden
             del grammar.rules[new_S][P]
         else:
             # Recursive calls
@@ -320,7 +321,7 @@ def __forbid_vars__(
             # Nothing to do
             if nextS not in grammar.rules:
                 continue
-            __forbid_vars__(grammar, S, P, nextS, variables, state, done, info)
+            __forbid_subtree__(grammar, S, P, nextS, forbidden, state, done, info)
 
 
 def __process__(
@@ -336,7 +337,7 @@ def __process__(
     TList[Tuple[Path, State, Info]],
 ]:
     assert not isinstance(
-        token, TokenAtLeast
+        token, (TokenAtLeast, TokenForceSubtree)
     ), "Unsupported constraint for TTCFG(safe, det)"
     out_grammar: TTCFG[Tuple[U, int], Any] = grammar
     state = state or ProcessState()
@@ -499,11 +500,11 @@ def __process__(
                     except KeyError:
                         pass
         relevant = new_relevant
-    elif isinstance(token, TokenVarDep):
+    elif isinstance(token, TokenForbidSubtree):
         assert relevant is not None
         for path, S, info in relevant:
             parent_S, parent_P = path.last()
-            __forbid_vars__(grammar, parent_S, parent_P, S, token.variables, state)
+            __forbid_subtree__(grammar, parent_S, parent_P, S, token.forbidden, state)
     # Compute valid possible new states
     assert relevant is not None
     for path, S, info in relevant:

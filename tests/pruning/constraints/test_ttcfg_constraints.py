@@ -85,7 +85,7 @@ def test_at_most() -> None:
 
 
 def test_var_dep() -> None:
-    new_cfg = add_constraints(cfg, ["(+ $() _)"], sketch=True, progress=False)
+    new_cfg = add_constraints(cfg, ["(+ >^(var0) _)"], sketch=True, progress=False)
     print(new_cfg)
     assert dsl.parse_program("(- 1 (+ 1 1))", cfg.type_request) not in new_cfg
     assert dsl.parse_program("(- 1 (- 1 1))", cfg.type_request) not in new_cfg
@@ -93,7 +93,7 @@ def test_var_dep() -> None:
     assert dsl.parse_program("(+ var0 1)", cfg.type_request) not in new_cfg
     assert dsl.parse_program("(+ 1 (+ 1 (+ var0 1)))", cfg.type_request) in new_cfg
 
-    new_cfg = add_constraints(cfg, ["(+ $() _)"], sketch=False, progress=False)
+    new_cfg = add_constraints(cfg, ["(+ >^(var0) _)"], sketch=False, progress=False)
     print(new_cfg)
     assert dsl.parse_program("(- 1 (+ 1 1))", cfg.type_request) in new_cfg
     assert dsl.parse_program("(- 1 (- 1 1))", cfg.type_request) in new_cfg
