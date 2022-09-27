@@ -11,6 +11,7 @@ from synth.syntax.type_system import (
     PrimitiveType,
 )
 
+import pytest
 
 syntax = {
     "+": FunctionType(INT, INT, INT),
@@ -19,6 +20,8 @@ syntax = {
     "1": INT,
     "non_productive": FunctionType(INT, STRING),
 }
+dsl = DSL(syntax)
+max_depths = [3, 7, 11]
 
 
 def test_function_as_variable() -> None:
@@ -28,30 +31,28 @@ def test_function_as_variable() -> None:
     assert cfg.programs() > 0
 
 
-def test_clean() -> None:
-    dsl = DSL(syntax)
-    for max_depth in [3, 7, 11]:
-        cfg = CFG.depth_constraint(dsl, FunctionType(INT, INT), max_depth)
-        for rule in cfg.rules:
-            assert rule[1][0][1] <= max_depth
-            for P in cfg.rules[rule]:
-                if isinstance(P, Primitive):
-                    assert P.primitive != "non_reachable"
-                    assert P.primitive != "non_productive"
-                    assert P.primitive != "head"
+@pytest.mark.parametrize("max_depth", max_depths)
+def test_clean(max_depth: int) -> None:
+    cfg = CFG.depth_constraint(dsl, FunctionType(INT, INT), max_depth)
+    for rule in cfg.rules:
+        assert rule[1][0][1] <= max_depth
+        for P in cfg.rules[rule]:
+            if isinstance(P, Primitive):
+                assert P.primitive != "non_reachable"
+                assert P.primitive != "non_productive"
+                assert P.primitive != "head"
 
 
-def test_depth_constraint() -> None:
-    dsl = DSL(syntax)
-    for max_depth in [3, 7, 11]:
-        cfg = CFG.depth_constraint(dsl, FunctionType(INT, INT), max_depth)
-        res = dsl.parse_program("(+ 1 var0)", FunctionType(INT, INT))
-        print(cfg)
-        while res.depth() <= max_depth:
-            assert (
-                res in cfg
-            ), f"Program depth:{res.depth()} should be in the TTCFG max_depth:{max_depth}"
-            res = dsl.parse_program(f"(+ {res} var0)", FunctionType(INT, INT))
+@pytest.mark.parametrize("max_depth", max_depths)
+def test_depth_constraint(max_depth: int) -> None:
+    cfg = CFG.depth_constraint(dsl, FunctionType(INT, INT), max_depth)
+    res = dsl.parse_program("(+ 1 var0)", FunctionType(INT, INT))
+    print(cfg)
+    while res.depth() <= max_depth:
         assert (
-            res not in cfg
-        ), f"Program depth:{res.depth()} should NOT be in the TTCFG max_depth:{max_depth}"
+            res in cfg
+        ), f"Program depth:{res.depth()} should be in the TTCFG max_depth:{max_depth}"
+        res = dsl.parse_program(f"(+ {res} var0)", FunctionType(INT, INT))
+    assert (
+        res not in cfg
+    ), f"Program depth:{res.depth()} should NOT be in the TTCFG max_depth:{max_depth}"
