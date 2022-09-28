@@ -11,10 +11,10 @@ from typing import (
 from synth.syntax.automata.tree_automaton import DFTA
 from synth.syntax.dsl import DSL
 
-from synth.syntax.grammars.cfg import CFG, CFGState, NoneType
-from synth.syntax.grammars.grammar import DerivableProgram, NGram
+from synth.syntax.grammars.cfg import CFG, CFGState
+from synth.syntax.grammars.grammar import DerivableProgram
 from synth.syntax.grammars.u_grammar import UGrammar
-from synth.syntax.type_system import Type
+from synth.syntax.type_system import Type, UnknownType
 
 U = TypeVar("U")
 V = TypeVar("V")
@@ -22,7 +22,16 @@ W = TypeVar("W")
 T = TypeVar("T")
 
 
-class UCFG(UGrammar[U, List[Tuple[Type, U]], NoneType], Generic[U]):
+class UCFG(UGrammar[U, List[Tuple[Type, U]], List[Tuple[Type, U]]], Generic[U]):
+    def __init__(
+        self,
+        starts: Set[Tuple[Type, U]],
+        rules: Dict[Tuple[Type, U], Dict[DerivableProgram, List[List[Tuple[Type, U]]]]],
+        clean: bool = True,
+    ):
+        super().__init__(starts, rules, clean)
+        self._some_start = list(self.starts)[0]
+
     def name(self) -> str:
         return "UCFG"
 
@@ -34,29 +43,38 @@ class UCFG(UGrammar[U, List[Tuple[Type, U]], NoneType], Generic[U]):
 
     def clean(self) -> None:
         """
-        Clean this deterministic grammar by removing non reachable, non productive rules.
+        Clean this unambiguous grammar by removing non reachable, non productive rules.
         """
+        # TODO
         pass
 
     def arguments_length_for(self, S: Tuple[Type, U], P: DerivableProgram) -> int:
         possibles = self.rules[S][P]
         return len(possibles[0])
 
-    def start_information(self) -> NoneType:
-        return None
+    def start_information(self) -> List[Tuple[Type, U]]:
+        return []
 
     def derive(
-        self, information: NoneType, S: Tuple[Type, U], P: DerivableProgram
-    ) -> List[Tuple[NoneType, Tuple[Type, U], List[Tuple[Type, U]]]]:
+        self, information: List[Tuple[Type, U]], S: Tuple[Type, U], P: DerivableProgram
+    ) -> List[Tuple[List[Tuple[Type, U]], Tuple[Type, U], List[Tuple[Type, U]]]]:
         """
         Given the current information and the derivation S -> P, produces the list of possibles new information state and the next S after this derivation.
         """
         if S not in self.rules or P not in self.rules[S]:
-            return [(None, S, [])]
-        possibles = self.rules[S][P]
-        return [
-            (None, possible[0] if possible else S, possible) for possible in possibles
-        ]
+            # This is important since we can fail to derive
+            return []
+        candidates = self.rules[S][P]
+        out = []
+        for args in candidates:
+            if args:
+                out.append((args[1:] + information, args[0], args))
+            elif information:
+                out.append((information[1:], information[0], []))
+            else:
+                # This indicates the end of a derivation
+                out.append(([], (UnknownType(), self._some_start[1]), []))
+        return out
 
     @lru_cache()
     def programs(self) -> int:
@@ -72,7 +90,7 @@ class UCFG(UGrammar[U, List[Tuple[Type, U]], NoneType], Generic[U]):
                 return 1
             total = 0
             for P in self.rules[state]:
-                possibles = self.derive(None, state, P)
+                possibles = self.derive(self.start_information(), state, P)
                 for _, _, args in possibles:
                     local = 1
                     for arg in args:
