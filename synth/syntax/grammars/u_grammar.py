@@ -196,7 +196,9 @@ class UGrammar(Grammar, ABC, Generic[U, V, W]):
 
         outputs = []
         if start is None:
-            alternatives: List[List[Tuple[Tuple[Type, U], DerivableProgram, V, W]]] = []
+            alternatives: List[
+                List[Tuple[Tuple[Type, U], Tuple[Type, U], DerivableProgram, V, W]]
+            ] = []
             for start in self.starts:
                 alternatives += self.__reduce_derivations_rec__(
                     reduce, program, start, self.start_information()
@@ -207,7 +209,7 @@ class UGrammar(Grammar, ABC, Generic[U, V, W]):
             )
         for possibles in alternatives:
             value = init
-            for S, P, v, _ in possibles:
+            for __, S, P, v, _ in possibles:
                 value = reduce(value, S, P, v)
             outputs.append(value)
         return outputs
@@ -218,15 +220,15 @@ class UGrammar(Grammar, ABC, Generic[U, V, W]):
         program: Program,
         start: Tuple[Type, U],
         information: W,
-    ) -> List[List[Tuple[Tuple[Type, U], DerivableProgram, V, W]]]:
+    ) -> List[List[Tuple[Tuple[Type, U], Tuple[Type, U], DerivableProgram, V, W]]]:
         if isinstance(program, Function):
             function = program.function
             args_P = program.arguments
-            possibles: List[List[Tuple[Tuple[Type, U], DerivableProgram, V, W]]] = [[(b, function, c, a)] for a, b, c in self.derive(information, start, function)]  # type: ignore
+            possibles: List[List[Tuple[Tuple[Type, U], Tuple[Type, U], DerivableProgram, V, W]]] = [[(b, start, function, c, a)] for a, b, c in self.derive(information, start, function)]  # type: ignore
             for arg in args_P:
                 next_possibles = []
                 for possible in possibles:
-                    next, _, v, information = possible[-1]
+                    next, _, __, v, information = possible[-1]
                     alternatives = self.__reduce_derivations_rec__(
                         reduce, arg, start=next, information=information
                     )
@@ -242,6 +244,6 @@ class UGrammar(Grammar, ABC, Generic[U, V, W]):
             alternatives = []
             for new_possible in new_possibles:
                 information, next, v = new_possible
-                alternatives.append([(next, program, v, information)])
+                alternatives.append([(next, start, program, v, information)])
             return alternatives
         return []
