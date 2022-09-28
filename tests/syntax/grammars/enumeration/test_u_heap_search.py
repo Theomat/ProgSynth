@@ -1,8 +1,10 @@
+from typing import Tuple, TypeVar, List as TList
 from synth.syntax.grammars.enumeration.u_heap_search import (
     Bucket,
     enumerate_prob_u_grammar,
     enumerate_bucket_prob_u_grammar,
 )
+from synth.syntax.grammars.grammar import DerivableProgram
 from synth.syntax.grammars.u_cfg import UCFG
 from synth.syntax.grammars.tagged_u_grammar import ProbUGrammar
 from synth.syntax.dsl import DSL
@@ -13,6 +15,7 @@ from synth.syntax.type_system import (
     List,
     PolymorphicType,
     PrimitiveType,
+    Type,
 )
 
 import pytest
@@ -28,7 +31,7 @@ syntax = {
 dsl = DSL(syntax)
 dsl.instantiate_polymorphic_types()
 testdata = [
-    UCFG.depth_constraint(dsl, FunctionType(INT, INT), 5),
+    UCFG.depth_constraint(dsl, FunctionType(INT, INT), 3),
 ]
 
 
@@ -36,8 +39,6 @@ testdata = [
 def test_unicity_heapSearch(cfg: UCFG) -> None:
     pcfg = ProbUGrammar.uniform(cfg)
     seen = set()
-    print(cfg)
-    print("programs:", cfg.programs())
     for program in enumerate_prob_u_grammar(pcfg):
         assert program not in seen
         seen.add(program)
@@ -65,17 +66,24 @@ def test_unicity_bucketSearch(cfg: UCFG) -> None:
         assert len(seen) == cfg.programs()
 
 
+U = TypeVar("U")
+
+
 @pytest.mark.parametrize("cfg", testdata)
-def test_order_bucketSearch(cfg: UCFG) -> None:
+def test_order_bucketSearch(cfg: UCFG[U]) -> None:
     pcfg = ProbUGrammar.uniform(cfg)
     for bucketSize in range(3, 10):
         last = Bucket(bucketSize)
         for program in enumerate_bucket_prob_u_grammar(pcfg, bucket_size=bucketSize):
-            p = pcfg.reduce_derivations(
-                lambda b, S, P, _: b.add_prob_uniform(pcfg.probabilities[S][P]),
+            outs = pcfg.reduce_derivations(
+                lambda b, S, P, v: b.add_prob_uniform(
+                    pcfg.probabilities[S][P][tuple(v)]
+                ),
                 Bucket(bucketSize),
                 program,
             )
+            assert len(outs) == 1
+            p = outs[0]
             assert p.size == bucketSize
             assert p >= last or last == Bucket(bucketSize)
             last = p
