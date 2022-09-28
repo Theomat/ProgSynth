@@ -178,3 +178,18 @@ class DFTA(Generic[U, V]):
                 (l, tuple([cls2states[state2cls[q]] for q in args]))
             ] = cls2states[state2cls[dst]]
         return DFTA(new_rules, {cls2states[state2cls[q]] for q in self.finals})
+
+    def __repr__(self) -> str:
+        return str(self)
+
+    def __str__(self) -> str:
+        s = "Print a DFTA\n"
+        for (P, args), dst in self.rules.items():
+            add = ""
+            if len(args) > 0:
+                add = "(" + ", ".join(map(str, args)) + ")"
+            s += f"\t{P}{add} -> {dst}"
+            if dst in self.finals:
+                s += " (FINAL)"
+            s += "\n"
+        return s
