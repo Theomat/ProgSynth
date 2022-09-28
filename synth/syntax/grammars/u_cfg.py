@@ -135,14 +135,12 @@ class UCFG(UGrammar[U, List[Tuple[Type, U]], NoneType], Generic[U]):
         return UCFG({(cfg.start[0], cfg.start[1][0])}, rules)
 
     @classmethod
-    def from_DFTA(
-        cls, dfta: DFTA[Tuple[Type, U], DerivableProgram], ngrams: int
-    ) -> "UCFG[Tuple[U, NGram]]":
-        starts = {(t, (q, NGram(ngrams))) for t, q in dfta.finals}
+    def from_DFTA(cls, dfta: DFTA[Tuple[Type, U], DerivableProgram]) -> "UCFG[U]":
+        starts = {(t, q) for t, q in dfta.finals}
 
         new_rules: Dict[
-            Tuple[Type, Tuple[U, NGram]],
-            Dict[DerivableProgram, List[List[Tuple[Type, Tuple[U, NGram]]]]],
+            Tuple[Type, U],
+            Dict[DerivableProgram, List[List[Tuple[Type, U]]]],
         ] = {}
 
         stack = [el for el in starts]
@@ -151,15 +149,11 @@ class UCFG(UGrammar[U, List[Tuple[Type, U]], NoneType], Generic[U]):
             if tgt in new_rules:
                 continue
             new_rules[tgt] = defaultdict(list)
-            current = tgt[1][1]
             for (P, args), dst in dfta.rules.items():
                 if dst != tgt:
                     continue
-                nargs = [
-                    (t, (u, current.successor((P, i)))) for i, (t, u) in enumerate(args)
-                ]
-                new_rules[tgt][P].append(nargs)
-                for new_state in nargs:
+                new_rules[tgt][P].append(list(args))
+                for new_state in args:
                     if new_state not in new_rules:
                         stack.append(new_state)
 
