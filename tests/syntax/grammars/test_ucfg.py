@@ -22,6 +22,7 @@ syntax = {
     "non_productive": FunctionType(INT, STRING),
 }
 dsl = DSL(syntax)
+dsl.instantiate_polymorphic_types()
 max_depths = [3, 7, 11]
 
 
