@@ -291,6 +291,19 @@ class Bucket(Ordered):
                 )
             )
 
+    def __add__(self, other: "Bucket") -> "Bucket":
+        if self.size == other.size:
+            dst = Bucket(self.size)
+            dst += self
+            dst += other
+            return dst
+        else:
+            raise RuntimeError(
+                "size mismatch, Bucket{}: {}, Bucket{}: {}".format(
+                    self, self.size, other, other.size
+                )
+            )
+
     def add_prob_uniform(self, probability: float) -> "Bucket":
         """
         Given a probability add 1 in the relevant bucket assuming buckets are linearly distributed.
