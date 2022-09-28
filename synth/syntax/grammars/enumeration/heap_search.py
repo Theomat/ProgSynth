@@ -216,6 +216,8 @@ class HeapSearch(HSEnumerator[U, V, W]):
         )
 
     def compute_priority(self, S: Tuple[Type, U], new_program: Program) -> float:
+        if new_program in self.probabilities and S in self.probabilities[new_program]:
+            return -self.probabilities[new_program][S]
         if isinstance(new_program, Function):
             F = new_program.function
             # We guarantee that F is a Primitive
