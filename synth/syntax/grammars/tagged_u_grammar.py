@@ -3,7 +3,6 @@ from typing import (
     Dict,
     Generator,
     Generic,
-    Iterable,
     List,
     Optional,
     Tuple,
@@ -12,9 +11,8 @@ from typing import (
 
 import numpy as np
 import vose
-from synth.syntax.grammars.cfg import CFG, CFGNonTerminal, CFGState, NoneType
 
-from synth.syntax.grammars.det_grammar import DerivableProgram, DetGrammar
+from synth.syntax.grammars.det_grammar import DerivableProgram
 from synth.syntax.grammars.u_grammar import UGrammar
 from synth.syntax.program import Function, Program
 from synth.syntax.type_system import Type
