@@ -92,15 +92,15 @@ class DFTA(Generic[U, V]):
                 rules[S] = (dst1, dst2)
         return DFTA(rules, finals)
 
-    def minimise(self) -> "DFTA[Set[U], V]":
+    def minimise(self) -> "DFTA[Tuple[U, ...], V]":
         """
         Assumes this is a reduced DTFA
 
         Adapted algorithm from:
         Brainerd, Walter S.. “The Minimalization of Tree Automata.” Inf. Control. 13 (1968): 484-491.
         """
-        # 1. Build relevant
-        relevant: Dict[
+        # 1. Build consumer_of
+        consumer_of: Dict[
             U,
             List[
                 Tuple[
@@ -114,41 +114,44 @@ class DFTA(Generic[U, V]):
         ] = {q: [] for q in self.states}
         for (l, args) in self.rules:
             for k, ik in enumerate(args):
-                relevant[ik].append(((l, args), k))
+                consumer_of[ik].append(((l, args), k))
         # 2. Init equiv classes
         state2cls: Dict[U, int] = {
             q: 0 if q not in self.finals else 1 for q in self.states
         }
-        cls2states: Dict[int, Set[U]] = {
-            j: {q for q, i in state2cls.items() if i == j} for j in [0, 1]
+        cls2states: Dict[int, Tuple[U, ...]] = {
+            j: tuple({q for q, i in state2cls.items() if i == j}) for j in [0, 1]
         }
 
         n = 1
         finished = False
         # Routine
         def are_equivalent(a: U, b: U) -> bool:
-            for S, k in relevant[a]:
+            for S, k in consumer_of[a]:
+                P, args = S
                 dst_cls = state2cls[self.rules[S]]
-                newS = (S[0], tuple([p if j != k else b for j, p in enumerate(S[1])]))
+                newS = (P, tuple([p if j != k else b for j, p in enumerate(args)]))
                 out = self.rules.get(newS)
                 if out is None or state2cls[out] != dst_cls:
                     return False
-            for S, k in relevant[b]:
+            for S, k in consumer_of[b]:
+                P, args = S
                 dst_cls = state2cls[self.rules[S]]
-                newS = (S[0], tuple([p if j != k else a for j, p in enumerate(S[1])]))
+                newS = (P, tuple([p if j != k else a for j, p in enumerate(args)]))
                 out = self.rules.get(newS)
                 if out is None or state2cls[out] != dst_cls:
                     return False
+            print("\t", a, "and", b, "are equivalent")
             return True
 
         # 3. Main loop
         while not finished:
             finished = True
             # For each equivalence class
-            for i in range(n):
+            for i in range(n + 1):
                 cls = list(cls2states[i])
-                new_cls = []
                 while cls:
+                    new_cls = []
                     representative = cls.pop()
                     new_cls.append(representative)
                     for q in cls:
@@ -160,23 +163,23 @@ class DFTA(Generic[U, V]):
                         n += 1
                         for q in new_cls:
                             state2cls[q] = n
-                        cls2states[n] = set(new_cls)
+                        cls2states[n] = tuple(new_cls)
                         finished = False
                     else:
                         # If cls is empty then we can use the previous number- that is i- for the new equivalence class
-                        cls2states[i] = set(new_cls)
+                        cls2states[i] = tuple(new_cls)
 
         new_rules: Dict[
             Tuple[
                 V,
-                Tuple[Set[U], ...],
+                Tuple[Tuple[U, ...], ...],
             ],
-            Set[U],
+            Tuple[U, ...],
         ] = {}
         for (l, args), dst in self.rules.items():
-            new_rules[
-                (l, tuple([cls2states[state2cls[q]] for q in args]))
-            ] = cls2states[state2cls[dst]]
+            t_args = tuple([cls2states[state2cls[q]] for q in args])
+            hash(t_args)
+            new_rules[(l, t_args)] = cls2states[state2cls[dst]]
         return DFTA(new_rules, {cls2states[state2cls[q]] for q in self.finals})
 
     def __repr__(self) -> str:
