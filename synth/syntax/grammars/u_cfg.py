@@ -7,6 +7,8 @@ from typing import (
     Tuple,
     TypeVar,
     Generic,
+    Union,
+    overload,
 )
 from synth.syntax.automata.tree_automaton import DFTA
 from synth.syntax.dsl import DSL
@@ -152,9 +154,32 @@ class UCFG(UGrammar[U, List[Tuple[Type, U]], List[Tuple[Type, U]]], Generic[U]):
                 rules[nS][P] = [[SS for SS in cfg.rules[S][P][0]]]
         return UCFG({(cfg.start[0], cfg.start[1][0])}, rules)
 
+    @overload
     @classmethod
     def from_DFTA(cls, dfta: DFTA[Tuple[Type, U], DerivableProgram]) -> "UCFG[U]":
-        starts = {q for q in dfta.finals}
+        pass
+
+    @overload
+    @classmethod
+    def from_DFTA(
+        cls, dfta: DFTA[Tuple[Tuple[Type, U], ...], DerivableProgram]
+    ) -> "UCFG[Tuple[U, ...]]":
+        pass
+
+    @classmethod
+    def from_DFTA(
+        cls,
+        dfta: Union[
+            DFTA[Tuple[Tuple[Type, U], ...], DerivableProgram],
+            DFTA[Tuple[Type, U], DerivableProgram],
+        ],
+    ) -> "Union[UCFG[U], UCFG[Tuple[U, ...]]]":
+        d2state = lambda x: x
+        some_final = list(dfta.finals)[0]
+        if isinstance(some_final[0], tuple):
+            d2state = lambda t: (t[0][0], tuple(tt[1] for tt in t))
+
+        starts = {d2state(q) for q in dfta.finals}
 
         new_rules: Dict[
             Tuple[Type, U],
@@ -168,11 +193,11 @@ class UCFG(UGrammar[U, List[Tuple[Type, U]], List[Tuple[Type, U]]], Generic[U]):
                 continue
             new_rules[tgt] = defaultdict(list)
             for (P, args), dst in dfta.rules.items():
-                if dst != tgt:
+                if d2state(dst) != tgt:
                     continue
-                new_rules[tgt][P].append(list(args))
+                new_rules[tgt][P].append([d2state(arg) for arg in args])
                 for new_state in args:
-                    if new_state not in new_rules:
-                        stack.append(new_state)
+                    if d2state(new_state) not in new_rules:
+                        stack.append(d2state(new_state))
 
         return UCFG(starts, new_rules)
