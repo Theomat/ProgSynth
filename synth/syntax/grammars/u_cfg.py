@@ -154,7 +154,7 @@ class UCFG(UGrammar[U, List[Tuple[Type, U]], List[Tuple[Type, U]]], Generic[U]):
 
     @classmethod
     def from_DFTA(cls, dfta: DFTA[Tuple[Type, U], DerivableProgram]) -> "UCFG[U]":
-        starts = {(t, q) for t, q in dfta.finals}
+        starts = {q for q in dfta.finals}
 
         new_rules: Dict[
             Tuple[Type, U],
