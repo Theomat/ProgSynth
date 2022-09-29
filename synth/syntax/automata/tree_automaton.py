@@ -49,7 +49,7 @@ class DFTA(Generic[U, V]):
     @property
     def states(self) -> Set[U]:
         """
-        The set of accessible states.
+        The set of reachable states.
         """
         reachable = set()
         added = True
@@ -63,7 +63,7 @@ class DFTA(Generic[U, V]):
 
     def reduce(self) -> "DFTA[U, V]":
         """
-        Return the same DFTA with only accessible states.
+        Return the same DFTA with only reachable states.
         """
         new_states = self.states
         new_rules = {
