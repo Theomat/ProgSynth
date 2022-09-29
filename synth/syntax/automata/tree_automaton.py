@@ -159,7 +159,6 @@ class DFTA(Generic[U, V]):
                 out = self.rules.get(newS)
                 if out is None or state2cls[out] != dst_cls:
                     return False
-            print("\t", a, "and", b, "are equivalent")
             return True
 
         # 3. Main loop
