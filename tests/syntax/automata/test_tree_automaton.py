@@ -2,7 +2,6 @@ from itertools import product
 from typing import Dict, Set, Tuple
 
 from synth.syntax.dsl import DSL
-from synth.syntax.program import Primitive
 from synth.syntax.type_system import (
     INT,
     STRING,
@@ -58,16 +57,20 @@ max_depths = [3, 7, 11]
 @pytest.mark.parametrize("max_depth", max_depths)
 def test_reduce(max_depth: int) -> None:
     cfg = CFG.depth_constraint(dsl, FunctionType(INT, INT), max_depth)
-    dfta = cfg2dfta(cfg).reduce()
-    for P, args in dfta.rules:
+    dfta = cfg2dfta(cfg)
+    dfta.reduce()
+    for (P, args), dst in dfta.rules.items():
         assert not (
             all(x == 0 for x in args) and len(args) > 0
-        ), f"Unreduced rule: {P} {args}"
+        ), f"Unreachable rule: {P} {args}"
+        assert dst != max_depth, f"Unproductive rule: {P} {args} -> {dst}"
 
 
 @pytest.mark.parametrize("max_depth", max_depths)
 def test_minimise(max_depth: int) -> None:
     cfg = CFG.depth_constraint(dsl, FunctionType(INT, INT), max_depth)
-    dfta = cfg2dfta(cfg).reduce().minimise()
-    for P, args in dfta.rules:
+    dfta = cfg2dfta(cfg)
+    dfta.reduce()
+    ndfta = dfta.minimise()
+    for P, args in ndfta.rules:
         assert not (all(x == (0,) for x in args) and len(args) > 0)

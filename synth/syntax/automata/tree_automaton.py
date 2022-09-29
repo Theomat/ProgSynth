@@ -61,17 +61,35 @@ class DFTA(Generic[U, V]):
                     added = True
         return reachable
 
-    def reduce(self) -> "DFTA[U, V]":
-        """
-        Return the same DFTA with only reachable states.
-        """
+    def __remove_unreachable__(self) -> None:
         new_states = self.states
         new_rules = {
             (letter, args): dst
             for (letter, args), dst in self.rules.items()
             if dst in new_states and all(s in new_states for s in args)
         }
-        return DFTA(new_rules, self.finals.intersection(new_states))
+        self.rules = new_rules
+        self.finals = self.finals.intersection(new_states)
+
+    def __remove_unproductive__(self) -> None:
+        removed = True
+        while removed:
+            removed = False
+            consumed: Set[U] = {q for q in self.finals}
+            for _, args in self.rules:
+                for arg in args:
+                    consumed.add(arg)
+            for S, dst in list(self.rules.items()):
+                if dst not in consumed:
+                    del self.rules[S]
+                    removed = True
+
+    def reduce(self) -> None:
+        """
+        Removes unreachable states and unproductive states.
+        """
+        self.__remove_unreachable__()
+        self.__remove_unproductive__()
 
     def read_product(self, other: "DFTA[W, V]") -> "DFTA[Tuple[U, W], V]":
         rules: Dict[
