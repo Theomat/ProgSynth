@@ -79,6 +79,26 @@ class Path(Generic[U]):
     def next(self, P: DerivableProgram, args: Tuple[U, ...], index: int) -> "Path[U]":
         return Path(self.predecessors + [(P, args, index)])
 
+    def start(self, grammar: DFTA[U, DerivableProgram]) -> U:
+        P, args, i = self.predecessors[0]
+        start = grammar.rules[(P, args)]
+        print("\tstart=", start)
+        return start
+
+    def exists(self, grammar: DFTA[U, DerivableProgram]) -> bool:
+        print("EXIST?:", self)
+        last = None
+        for P, args, i in self.predecessors:
+            print("\tlast=", last, end="")
+            if (P, args) not in grammar.rules:
+                return False
+            print("=>", grammar.rules[(P, args)])
+            if last is not None and grammar.rules[(P, args)] != last:
+                return False
+            last = args[i]
+
+        return True
+
     def next_argument(self) -> None:
         P, args, i = self.predecessors[-1]
         self.predecessors[-1] = (P, args, i + 1)
@@ -259,7 +279,7 @@ def __process__(
 ]:
     pstate = pstate or ProcessState()
     out_grammar: DFTA = grammar
-    print("\t" * level, "processing:", token, "relevant:", relevant)
+    print("\t" * level, "processing:", token)
     if isinstance(token, TokenFunction):
         if relevant is None:
             # Compute relevant depending on sketch or not
@@ -287,12 +307,12 @@ def __process__(
 
         # Go from relevant to first argument context
         arg_relevant: TList[Tuple[Path, Tuple[Type, U]]] = []
-        print("\t" * level, "relevant:", relevant)
+        # print("\t" * level, "relevant:", relevant)
         for path, end in relevant:
             for (P, args), dst in grammar.rules.items():
                 if P in token.function.allowed and dst == end:
                     arg_relevant.append((path.next(P, args, 0), args[0]))
-        print("\t" * level, "arg relevant:", arg_relevant)
+        # print("\t" * level, "arg relevant:", arg_relevant)
         for arg in token.args:
             grammar, arg_relevant = __process__(
                 grammar, arg, sketch, arg_relevant, level + 1, pstate
@@ -356,14 +376,14 @@ def __process__(
                     old_dst = out_grammar.rules[(P, p_args)]
                     new_dst = old2new(old_dst) if sketch else old_dst
                     possibles = [
-                        [arg, old2new(arg)] if j != i else [old2new(arg)]
+                        [arg, old2new(arg)] if j != i or not sketch else [old2new(arg)]
                         for j, arg in enumerate(p_args)
                     ]
                     candidates = []
                     for new_args in product(*possibles):
                         out_grammar.rules[(P, new_args)] = new_dst
                         candidates.append((P, new_args, i))
-                        print("\t", P, new_args, "->", new_dst)
+                        print("\t" * (level + 1), P, new_args, "->", new_dst)
                     candidate_predecessors.append(candidates)
                     if old_dst in old_finals:
                         out_grammar.finals.add(new_dst)
@@ -375,12 +395,16 @@ def __process__(
                     del out_grammar.rules[(P, p_args)]
                 for new_preds in product(*candidate_predecessors):
                     new_path = Path(list(new_preds))
-                    _, dst_args, i = new_path.last()
-                    relevant.append((new_path, dst_args[i]))
-            # relevant.append((path, new_end))  # type: ignore
-
-        # We don't need to go deeper in relevant since this is an end node
+                    # Relevant if not a sketch or if it is
+                    # only the case where we match the sketch
+                    if not sketch or new_path.last()[1][i][1][1] == 1:
+                        _, dst_args, i = new_path.last()
+                        relevant.append((new_path, dst_args[i]))
         out_grammar.reduce()
+        relevant = [
+            (path, path_end) for path, path_end in relevant if path.exists(out_grammar)
+        ]
+        # We don't need to go deeper in relevant since this is an end node
         print(out_grammar)
         print("\t" * level, "out_relevant", relevant)
         return out_grammar, relevant
