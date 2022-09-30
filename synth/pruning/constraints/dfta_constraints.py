@@ -1,8 +1,8 @@
-from collections import defaultdict
 from dataclasses import dataclass, field
 from itertools import product
 from typing import (
     Any,
+    Callable,
     Dict,
     Generic,
     Iterable,
@@ -27,8 +27,6 @@ from synth.pruning.constraints.parsing import (
 from synth.syntax.automata.tree_automaton import DFTA
 from synth.syntax.grammars.det_grammar import DerivableProgram
 from synth.syntax.grammars.cfg import CFG
-from synth.syntax.grammars.grammar import NGram
-from synth.syntax.program import Variable
 from synth.syntax.type_system import Type
 
 
@@ -84,13 +82,13 @@ class Path(Generic[U]):
         P, args, i = self.predecessors[-1]
         self.predecessors[-1] = (P, args, i + 1)
 
-    def fix_last(self, j: int, new_arg: U) -> None:
-        P, args, i = self.predecessors[-1]
-        self.predecessors[-1] = (
-            P,
-            tuple(arg if k != j else new_arg for k, arg in enumerate(args)),
-            i,
-        )
+    def map_fix(self, map: Callable[[U], U]) -> None:
+        for k, (P, args, i) in enumerate(self.predecessors):
+            self.predecessors[k] = (
+                P,
+                tuple(arg if j != i else map(arg) for j, arg in enumerate(args)),
+                i,
+            )
 
 
 def __cfg2dfta__(
@@ -160,6 +158,63 @@ def __augment__(
     return new_dfta, new_relevant
 
 
+def __count__(
+    dfta: DFTA[Tuple[Type, Tuple[U, int]], DerivableProgram],
+    relevant: TList[
+        Tuple[Path[Tuple[Type, Tuple[U, int]]], Tuple[Type, Tuple[U, int]]]
+    ],
+    count: int,
+    to_count: TList[DerivableProgram],
+) -> Tuple[
+    DFTA[Tuple[Type, Tuple[U, int]], DerivableProgram],
+    TList[Tuple[Path[Tuple[Type, Tuple[U, int]]], Tuple[Type, Tuple[U, int]]]],
+]:
+    # We duplicate rules in order to count
+    all_alternatives = lambda s: [(s[0], (s[1][0], i)) for i in range(count)]
+    for (P, args), dst in list(dfta.rules.items()):
+        possibles = [all_alternatives(arg) for arg in args]
+        del dfta.rules[(P, args)]
+        for new_args in product(*possibles):
+            total = sum(arg[1][1] for arg in args)
+            if P in to_count:
+                total += 1
+            if total <= count:
+                dfta.rules[(P, new_args)] = (dst[0], (dst[1][0], total))
+    # Now we need to duplicate the paths
+    # TODO: check if that works
+    are_equals = lambda a, b: a[0] == b[0] and a[1][0] == b[1][0]
+    next_relevant = []
+    for path, path_end in relevant:
+        if len(path) > 0:
+            pred_possibles: TList[
+                TList[
+                    Tuple[DerivableProgram, Tuple[Tuple[Type, Tuple[U, int]], ...], int]
+                ]
+            ] = []
+            for preP, pre_args, i in path.predecessors:
+                candidates: TList[
+                    Tuple[DerivableProgram, Tuple[Tuple[Type, Tuple[U, int]], ...], int]
+                ] = []
+                for (P, args) in dfta.rules:
+                    if P == preP and all(
+                        are_equals(args[k], pre_args[k]) for k in range(len(pre_args))
+                    ):
+                        candidates.append((P, args, i))
+                pred_possibles.append(candidates)
+            all_paths: TList[Path] = []
+            for new_pred in product(*pred_possibles):
+                all_paths.append(Path(list(new_pred)))
+            for path in all_paths:
+                P, args, i = path.last()
+                next_relevant.append((path, args[i]))
+        else:
+            for (P, args), dst in dfta.rules.items():
+                if are_equals(path_end, dst):
+                    next_relevant.append((Path(), dst))
+
+    return dfta, next_relevant
+
+
 def __process__(
     grammar: DFTA[Tuple[Type, U], DerivableProgram],
     token: Token,
@@ -167,7 +222,9 @@ def __process__(
     relevant: Optional[TList[Tuple[Path, Tuple[Type, U]]]] = None,
     level: int = 0,
     pstate: Optional[ProcessState] = None,
-) -> Tuple[DFTA, TList[Tuple[Path, Tuple[Type, V]]]]:
+) -> Tuple[
+    DFTA[Tuple[Type, Any], DerivableProgram], TList[Tuple[Path, Tuple[Type, U]]]
+]:
     pstate = pstate or ProcessState()
     out_grammar: DFTA = grammar
     print("\t" * level, "processing:", token, "relevant:", relevant)
@@ -208,7 +265,20 @@ def __process__(
             grammar, arg_relevant = __process__(
                 grammar, arg, sketch, arg_relevant, level + 1, pstate
             )
-        out_grammar = grammar
+            next_relevant = []
+            for path, end in arg_relevant:
+                if len(path) == 0:
+                    next_relevant.append((path, end))
+                    continue
+                path.next_argument()
+                P, args, i = path.last()
+                if i >= len(args):
+                    continue
+                next_relevant.append((path, args[i]))
+            arg_relevant = next_relevant
+        out_grammar = grammar  # type trick
+        return out_grammar, arg_relevant
+
     elif isinstance(token, TokenAllow):
         assert relevant is not None
         # We need to augment grammar to tell that this we detected this the correct thing
@@ -241,11 +311,12 @@ def __process__(
                     out_grammar.finals.remove(path_end)
                     out_grammar.finals.add(new_end)
             else:
+                P, p_args, i = path.last()
+                if p_args[i] not in producables:
+                    continue
                 print("\t" * level, "path", path, "end", path_end)
                 for P, p_args, i in reversed(path.predecessors):
                     old_dst = out_grammar.rules[(P, p_args)]
-                    if p_args[i] not in producables:
-                        continue
                     possibles = [
                         [arg, old2new(arg)] if j != i else [old2new(arg)]
                         for j, arg in enumerate(p_args)
@@ -267,32 +338,34 @@ def __process__(
                         if old_dst in out_grammar.finals and sketch:
                             out_grammar.finals.remove(old_dst)
 
+                P, p_args, i = path.last()
                 if not sketch:
-                    P, p_args, i = path.last()
                     del out_grammar.rules[(P, p_args)]
-                    path.fix_last(i, old2new(p_args[i]))
+                path.map_fix(old2new)
             relevant.append((path, new_end))  # type: ignore
         # We don't need to go deeper in relevant since this is an end node
         out_grammar.reduce()
         print(out_grammar)
-    elif isinstance(token, TokenAtMost):
+        print("\t" * level, "out_relevant", relevant)
+        return out_grammar, relevant
+
+    elif isinstance(token, (TokenAtMost, TokenAtLeast)):
+        assert relevant is not None
+        out_grammar, out_relevant = __augment__(grammar, relevant)
+        out_grammar, our_relevant = __count__(
+            out_grammar, out_relevant, token.count, token.to_count
+        )
+        # TODO
         pass
     elif isinstance(token, TokenForbidSubtree):
-        pass
-    # Compute valid possible new states
-    assert relevant is not None
-    next_relevant: TList[Tuple[Path, Tuple[Type, V]]] = []
-    for path, end in relevant:
-        if len(path) == 0:
-            next_relevant.append((path, end))  # type: ignore
-            continue
-
-        path.next_argument()
-        P, args, i = path.last()
-        if i >= len(args):
-            continue
-        next_relevant.append((path, args[i]))  # type: ignore
-    return out_grammar, next_relevant
+        return __process__(
+            grammar, TokenAtMost(token.forbidden, 0), sketch, relevant, level, pstate
+        )
+    elif isinstance(token, TokenForceSubtree):
+        return __process__(
+            grammar, TokenAtLeast(token.forced, 1), sketch, relevant, level, pstate
+        )
+    assert False, f"Not implemented: {token}"
 
 
 def add_dfta_constraints(
