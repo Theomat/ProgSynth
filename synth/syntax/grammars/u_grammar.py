@@ -56,7 +56,8 @@ class UGrammar(Grammar, ABC, Generic[U, V, W]):
         s = f"Print a {self.name()}\n"
         s += "starts: {}\n".format(self.starts)
         for S in reversed(self.rules):
-            s += "#\n {}\n".format(S)
+            add = " [START]" if S in self.starts else ""
+            s += "#\n {}{}\n".format(S, add)
             for P in self.rules[S]:
                 out = self.rules[S][P]
                 for possible in out:
