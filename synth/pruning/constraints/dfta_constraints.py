@@ -166,24 +166,55 @@ def __count__(
     ],
     count: int,
     to_count: TList[DerivableProgram],
+    at_most: bool,
 ) -> Tuple[
     DFTA[Tuple[Type, Tuple[U, int]], DerivableProgram],
     TList[Tuple[Path[Tuple[Type, Tuple[U, int]]], Tuple[Type, Tuple[U, int]]]],
 ]:
+    maxi = count + (1 if at_most else 0)
     # We duplicate rules in order to count
-    all_alternatives = lambda s: [(s[0], (s[1][0], i)) for i in range(count)]
+    all_alternatives = lambda s: [(s[0], (s[1][0], i)) for i in range(maxi + 1)]
     for (P, args), dst in list(dfta.rules.items()):
         possibles = [all_alternatives(arg) for arg in args]
         del dfta.rules[(P, args)]
         for new_args in product(*possibles):
-            total = sum(arg[1][1] for arg in args)
+            total = sum(arg[1][1] for arg in new_args)
             if P in to_count:
                 total += 1
-            if total <= count:
-                dfta.rules[(P, new_args)] = (dst[0], (dst[1][0], total))
+            dfta.rules[(P, new_args)] = (dst[0], (dst[1][0], min(total, maxi)))
+
+    # We update finals
+    if at_most:
+        for q in list(dfta.finals):
+            for new_alt in all_alternatives(q):
+                dfta.finals.add(new_alt)
+    else:
+        dfta.finals = {(q[0], (q[1][0], count)) for q in dfta.finals}
+    # Now we need some kind of reset thing or to remove things
+    are_equals = lambda a, b: a[0] == b[0] and a[1][0] == b[1][0]
+    for path, path_end in relevant:
+        if len(path) > 0:
+            pP, pargs, i = path.last()
+            for (P, args), dst in list(dfta.rules.items()):
+                if pP == P and all(
+                    are_equals(args[k], pargs[k]) for k in range(len(pargs))
+                ):
+                    if at_most:
+                        # Remove rules that go over the count
+                        if args[i][1][1] == maxi:
+                            del dfta.rules[(P, args)]
+                    else:
+                        # other subtrees should not count so we do not count them
+                        if any(k != i and arg[1][1] > 0 for k, arg in enumerate(args)):
+                            dfta.rules[(P, args)] = (dst[0], (dst[1][0], args[i][1][1]))
+        elif at_most:
+            q = (path_end[0], (path_end[1][0], count))
+            if q in dfta.finals:
+                dfta.finals.remove(q)
+        else:
+            pass  # TODO: think
     # Now we need to duplicate the paths
     # TODO: check if that works
-    are_equals = lambda a, b: a[0] == b[0] and a[1][0] == b[1][0]
     next_relevant = []
     for path, path_end in relevant:
         if len(path) > 0:
@@ -290,60 +321,64 @@ def __process__(
         producables: Set[Tuple[Type, Tuple[U, int]]] = {
             dst for (P, args), dst in out_grammar.rules.items() if P in token.allowed
         }
+        # Create duplicates for the context
         for path, path_end in out_relevant:
             new_end = old2new(path_end)
             for (P, p_args), p_dst in list(out_grammar.rules.items()):
-                if p_dst == path_end and P in token.allowed:
-                    out_grammar.rules[(P, p_args)] = new_end
-                if any(arg == path_end for arg in p_args):
-                    if len(path) > 0 and path.last()[0] == P and not sketch:
-                        continue
+                if any(arg == path_end for arg in p_args) and (
+                    sketch or len(path) == 0 or path.last()[0] != P
+                ):
                     possibles = [
                         [arg] if arg != path_end else [arg, new_end] for arg in p_args
                     ]
                     for new_args in product(*possibles):
                         out_grammar.rules[(P, new_args)] = p_dst
-                    # print("\t" * (level + 1), "P", P, "args", tuple([arg if arg != end else new_end for arg in args]), "=>", dst)
+        # Now add initial transition
         for path, path_end in out_relevant:
             new_end = old2new(path_end)
+            for (P, p_args), p_dst in list(out_grammar.rules.items()):
+                if p_dst == path_end and P in token.allowed:
+                    out_grammar.rules[(P, p_args)] = new_end
+
             # Now we have to go back the track
             if len(path) == 0:
                 if path_end in out_grammar.finals:
                     out_grammar.finals.remove(path_end)
                     out_grammar.finals.add(new_end)
+                relevant.append((path, new_end))  # type: ignore
             else:
                 P, p_args, i = path.last()
                 if p_args[i] not in producables:
                     continue
                 print("\t" * level, "path", path, "end", path_end)
-                for P, p_args, i in reversed(path.predecessors):
+                candidate_predecessors = []
+                for P, p_args, i in path.predecessors:
                     old_dst = out_grammar.rules[(P, p_args)]
+                    new_dst = old2new(old_dst) if sketch else old_dst
                     possibles = [
                         [arg, old2new(arg)] if j != i else [old2new(arg)]
                         for j, arg in enumerate(p_args)
                     ]
+                    candidates = []
                     for new_args in product(*possibles):
-                        out_grammar.rules[(P, new_args)] = old2new(old_dst)
-
-                        print(
-                            "\t" * (level + 1),
-                            "REAL P",
-                            P,
-                            "args",
-                            new_args,
-                            "=>",
-                            old2new(old_dst),
-                        )
+                        out_grammar.rules[(P, new_args)] = new_dst
+                        candidates.append((P, new_args, i))
+                        print("\t", P, new_args, "->", new_dst)
+                    candidate_predecessors.append(candidates)
                     if old_dst in old_finals:
-                        out_grammar.finals.add(old2new(old_dst))
+                        out_grammar.finals.add(new_dst)
                         if old_dst in out_grammar.finals and sketch:
                             out_grammar.finals.remove(old_dst)
 
                 P, p_args, i = path.last()
                 if not sketch:
                     del out_grammar.rules[(P, p_args)]
-                path.map_fix(old2new)
-            relevant.append((path, new_end))  # type: ignore
+                for new_preds in product(*candidate_predecessors):
+                    new_path = Path(list(new_preds))
+                    _, dst_args, i = new_path.last()
+                    relevant.append((new_path, dst_args[i]))
+            # relevant.append((path, new_end))  # type: ignore
+
         # We don't need to go deeper in relevant since this is an end node
         out_grammar.reduce()
         print(out_grammar)
@@ -353,11 +388,25 @@ def __process__(
     elif isinstance(token, (TokenAtMost, TokenAtLeast)):
         assert relevant is not None
         out_grammar, out_relevant = __augment__(grammar, relevant)
-        out_grammar, our_relevant = __count__(
-            out_grammar, out_relevant, token.count, token.to_count
+        out_grammar, out_relevant = __count__(
+            out_grammar,
+            out_relevant,
+            token.count,
+            token.to_count,
+            isinstance(token, TokenAtMost),
         )
+        # What happens now?
+        if isinstance(token, TokenAtMost):
+            # We need to reset count at some points
+            for path, path_end in out_relevant:
+                pass
+            pass
         # TODO
-        pass
+        print(out_grammar)
+        out_grammar.reduce()
+        print("\t" * level, "out_relevant:", out_relevant)
+        return out_grammar, out_relevant  # type: ignore
+
     elif isinstance(token, TokenForbidSubtree):
         return __process__(
             grammar, TokenAtMost(token.forbidden, 0), sketch, relevant, level, pstate
@@ -403,7 +452,7 @@ def add_dfta_constraints(
             pbar.update(1)
     if progress:
         pbar.close()
-    print(dfta)
+    # print(dfta)
     dfta.reduce()
     print(dfta)
-    return dfta.minimise()  # type: ignore
+    return dfta  # type: ignore # .minimise()  # type: ignore
