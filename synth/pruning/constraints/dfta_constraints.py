@@ -84,6 +84,14 @@ class Path(Generic[U]):
         P, args, i = self.predecessors[-1]
         self.predecessors[-1] = (P, args, i + 1)
 
+    def fix_last(self, j: int, new_arg: U) -> None:
+        P, args, i = self.predecessors[-1]
+        self.predecessors[-1] = (
+            P,
+            tuple(arg if k != j else new_arg for k, arg in enumerate(args)),
+            i,
+        )
+
 
 def __cfg2dfta__(
     grammar: CFG,
@@ -124,10 +132,10 @@ def __cfg2dfta__(
 
 def __augment__(
     grammar: DFTA[Tuple[Type, U], DerivableProgram],
-    relevant: TList[Tuple[Path, Tuple[Type, U]]],
+    relevant: TList[Tuple[Path[Tuple[Type, U]], Tuple[Type, U]]],
 ) -> Tuple[
     DFTA[Tuple[Type, Tuple[U, int]], DerivableProgram],
-    TList[Tuple[Path, Tuple[Type, Tuple[U, int]]]],
+    TList[Tuple[Path[Tuple[Type, Tuple[U, int]]], Tuple[Type, Tuple[U, int]]]],
 ]:
     new_dfta = DFTA(
         {
@@ -217,6 +225,8 @@ def __process__(
                 if p_dst == path_end and P in token.allowed:
                     out_grammar.rules[(P, p_args)] = new_end
                 if any(arg == path_end for arg in p_args):
+                    if len(path) > 0 and path.last()[0] == P and not sketch:
+                        continue
                     possibles = [
                         [arg] if arg != path_end else [arg, new_end] for arg in p_args
                     ]
@@ -254,8 +264,13 @@ def __process__(
                         )
                     if old_dst in old_finals:
                         out_grammar.finals.add(old2new(old_dst))
-                        if old_dst in out_grammar.finals:
+                        if old_dst in out_grammar.finals and sketch:
                             out_grammar.finals.remove(old_dst)
+
+                if not sketch:
+                    P, p_args, i = path.last()
+                    del out_grammar.rules[(P, p_args)]
+                    path.fix_last(i, old2new(p_args[i]))
             relevant.append((path, new_end))  # type: ignore
         # We don't need to go deeper in relevant since this is an end node
         out_grammar.reduce()
