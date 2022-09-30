@@ -287,8 +287,8 @@ def __process__(
             next_relevant.append((path, end))  # type: ignore
             continue
 
-        P, args, i = path.last()
         path.next_argument()
+        P, args, i = path.last()
         if i >= len(args):
             continue
         next_relevant.append((path, args[i]))  # type: ignore
