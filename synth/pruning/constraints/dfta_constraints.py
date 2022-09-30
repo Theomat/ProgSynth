@@ -17,6 +17,7 @@ import tqdm
 from synth.pruning.constraints.parsing import (
     Token,
     TokenAllow,
+    TokenAnything,
     TokenAtLeast,
     TokenAtMost,
     TokenFunction,
@@ -365,6 +366,9 @@ def __process__(
         return __process__(
             grammar, TokenAtLeast(token.forced, 1), sketch, relevant, level, pstate
         )
+    elif isinstance(token, TokenAnything):
+        assert relevant is not None
+        return grammar, relevant
     assert False, f"Not implemented: {token}"
 
 
