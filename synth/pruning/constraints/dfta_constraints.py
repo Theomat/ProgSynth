@@ -1,13 +1,10 @@
-from dataclasses import dataclass, field
 from itertools import product
 from typing import (
     Any,
     Callable,
     Dict,
-    Generic,
     Iterable,
     List as TList,
-    Optional,
     Set,
     Tuple,
     TypeVar,
@@ -31,85 +28,8 @@ from synth.syntax.grammars.cfg import CFG
 from synth.syntax.type_system import Type
 
 
-# ========================================================================================
-# PARSING
-# ========================================================================================
-
-
 U = TypeVar("U")
 V = TypeVar("V")
-
-State = Tuple[DerivableProgram, Tuple[U, ...]]
-
-
-@dataclass
-class ProcessState:
-    new_terminal_no: int = field(default=1)
-    duplicate_from: Dict[State, State] = field(default_factory=lambda: {})
-
-
-@dataclass(frozen=True)
-class Path(Generic[U]):
-    predecessors: TList[Tuple[DerivableProgram, Tuple[U, ...], int]] = field(
-        default_factory=lambda: []
-    )
-
-    def __hash__(self) -> int:
-        return hash(tuple(self.predecessors))
-
-    def __str__(self) -> str:
-        if len(self) > 0:
-            return "->".join(
-                [
-                    f"{P}(" + ",".join(map(str, args)) + ")"
-                    for P, args, _ in self.predecessors
-                ]
-            )
-        return "|"
-
-    def __repr__(self) -> str:
-        return self.__str__()
-
-    def __len__(self) -> int:
-        return len(self.predecessors)
-
-    def last(self) -> Tuple[DerivableProgram, Tuple[U, ...], int]:
-        return self.predecessors[-1]
-
-    def next(self, P: DerivableProgram, args: Tuple[U, ...], index: int) -> "Path[U]":
-        return Path(self.predecessors + [(P, args, index)])
-
-    def start(self, grammar: DFTA[U, DerivableProgram]) -> U:
-        P, args, i = self.predecessors[0]
-        start = grammar.rules[(P, args)]
-        print("\tstart=", start)
-        return start
-
-    def exists(self, grammar: DFTA[U, DerivableProgram]) -> bool:
-        print("EXIST?:", self)
-        last = None
-        for P, args, i in self.predecessors:
-            print("\tlast=", last, end="")
-            if (P, args) not in grammar.rules:
-                return False
-            print("=>", grammar.rules[(P, args)])
-            if last is not None and grammar.rules[(P, args)] != last:
-                return False
-            last = args[i]
-
-        return True
-
-    def next_argument(self) -> None:
-        P, args, i = self.predecessors[-1]
-        self.predecessors[-1] = (P, args, i + 1)
-
-    def map_fix(self, map: Callable[[U], U]) -> None:
-        for k, (P, args, i) in enumerate(self.predecessors):
-            self.predecessors[k] = (
-                P,
-                tuple(arg if j != i else map(arg) for j, arg in enumerate(args)),
-                i,
-            )
 
 
 def __cfg2dfta__(
@@ -151,11 +71,7 @@ def __cfg2dfta__(
 
 def __augment__(
     grammar: DFTA[Tuple[Type, U], DerivableProgram],
-    relevant: TList[Tuple[Path[Tuple[Type, U]], Tuple[Type, U]]],
-) -> Tuple[
-    DFTA[Tuple[Type, Tuple[U, int]], DerivableProgram],
-    TList[Tuple[Path[Tuple[Type, Tuple[U, int]]], Tuple[Type, Tuple[U, int]]]],
-]:
+) -> DFTA[Tuple[Type, Tuple[U, int]], DerivableProgram]:
     new_dfta = DFTA(
         {
             (P, tuple((arg[0], (arg[1], 0)) for arg in args)): (dst[0], (dst[1], 0))
@@ -163,285 +79,147 @@ def __augment__(
         },
         {(t, (q, 0)) for t, q in grammar.finals},
     )
-    new_relevant = [
-        (
-            Path(
-                [
-                    (P, tuple([(arg[0], (arg[1], 0)) for arg in args]), i)
-                    for P, args, i in path.predecessors
-                ]
-            ),
-            (S[0], (S[1], 0)),
-        )
-        for path, S in relevant
-    ]
+    return new_dfta
 
-    return new_dfta, new_relevant
+
+def __tuples_get__(t: Tuple[U, int], index: int) -> int:
+    if index == 0:
+        return t[1]
+    return __tuples_get__(t[0], index - 1)  # type: ignore
+
+
+def __match__(
+    args: TList[Tuple[Type, Tuple[U, int]]], to_check: TList[Tuple[int, TList[int]]]
+) -> bool:
+    for arg, (i, allowed) in zip(args, to_check):
+        if len(allowed) > 0 and __tuples_get__(arg[1], i) not in allowed:
+            return False
+    return True
 
 
 def __count__(
-    dfta: DFTA[Tuple[Type, Tuple[U, int]], DerivableProgram],
-    relevant: TList[
-        Tuple[Path[Tuple[Type, Tuple[U, int]]], Tuple[Type, Tuple[U, int]]]
-    ],
+    grammar: DFTA[Tuple[Type, U], DerivableProgram],
     count: int,
     to_count: TList[DerivableProgram],
     at_most: bool,
-) -> Tuple[
-    DFTA[Tuple[Type, Tuple[U, int]], DerivableProgram],
-    TList[Tuple[Path[Tuple[Type, Tuple[U, int]]], Tuple[Type, Tuple[U, int]]]],
-]:
+) -> DFTA[Tuple[Type, Tuple[U, int]], DerivableProgram]:
+    dfta = __augment__(grammar)
     maxi = count + (1 if at_most else 0)
     # We duplicate rules in order to count
     all_alternatives = lambda s: [(s[0], (s[1][0], i)) for i in range(maxi + 1)]
     for (P, args), dst in list(dfta.rules.items()):
         possibles = [all_alternatives(arg) for arg in args]
-        del dfta.rules[(P, args)]
         for new_args in product(*possibles):
             total = sum(arg[1][1] for arg in new_args)
             if P in to_count:
                 total += 1
             dfta.rules[(P, new_args)] = (dst[0], (dst[1][0], min(total, maxi)))
+    # We duplicate finals as well
+    for q in list(dfta.finals):
+        for new_q in all_alternatives(q):
+            dfta.finals.add(new_q)
+    return dfta
 
-    # We update finals
-    if at_most:
-        for q in list(dfta.finals):
-            for new_alt in all_alternatives(q):
-                dfta.finals.add(new_alt)
-    else:
-        dfta.finals = {(q[0], (q[1][0], count)) for q in dfta.finals}
-    # Now we need some kind of reset thing or to remove things
-    are_equals = lambda a, b: a[0] == b[0] and a[1][0] == b[1][0]
-    for path, path_end in relevant:
-        if len(path) > 0:
-            pP, pargs, i = path.last()
-            for (P, args), dst in list(dfta.rules.items()):
-                if pP == P and all(
-                    are_equals(args[k], pargs[k]) for k in range(len(pargs))
-                ):
-                    if at_most:
-                        # Remove rules that go over the count
-                        if args[i][1][1] == maxi:
-                            del dfta.rules[(P, args)]
-                    else:
-                        # other subtrees should not count so we do not count them
-                        if any(k != i and arg[1][1] > 0 for k, arg in enumerate(args)):
-                            dfta.rules[(P, args)] = (dst[0], (dst[1][0], args[i][1][1]))
-        elif at_most:
-            q = (path_end[0], (path_end[1][0], count))
-            if q in dfta.finals:
-                dfta.finals.remove(q)
-        else:
-            pass  # TODO: think
-    # Now we need to duplicate the paths
-    # TODO: check if that works
-    next_relevant = []
-    for path, path_end in relevant:
-        if len(path) > 0:
-            pred_possibles: TList[
-                TList[
-                    Tuple[DerivableProgram, Tuple[Tuple[Type, Tuple[U, int]], ...], int]
-                ]
-            ] = []
-            for preP, pre_args, i in path.predecessors:
-                candidates: TList[
-                    Tuple[DerivableProgram, Tuple[Tuple[Type, Tuple[U, int]], ...], int]
-                ] = []
-                for (P, args) in dfta.rules:
-                    if P == preP and all(
-                        are_equals(args[k], pre_args[k]) for k in range(len(pre_args))
-                    ):
-                        candidates.append((P, args, i))
-                pred_possibles.append(candidates)
-            all_paths: TList[Path] = []
-            for new_pred in product(*pred_possibles):
-                all_paths.append(Path(list(new_pred)))
-            for path in all_paths:
-                P, args, i = path.last()
-                next_relevant.append((path, args[i]))
-        else:
-            for (P, args), dst in dfta.rules.items():
-                if are_equals(path_end, dst):
-                    next_relevant.append((Path(), dst))
 
-    return dfta, next_relevant
+def __tag__(
+    grammar: DFTA[Tuple[Type, U], DerivableProgram],
+    check: Callable[
+        [
+            DerivableProgram,
+            Tuple[Tuple[Type, Tuple[U, int]], ...],
+            Tuple[Type, Tuple[U, int]],
+        ],
+        bool,
+    ],
+) -> DFTA[Tuple[Type, Tuple[U, int]], DerivableProgram]:
+    out_grammar = __augment__(grammar)
+    tag_state = lambda s: (s[0], (s[1][0], 1))
+    added = set()
+    # Whenever the pattern is correct we tag with 1
+    for (P, p_args), p_dst in list(out_grammar.rules.items()):
+        if check(P, p_args, p_dst):
+            out_grammar.rules[(P, p_args)] = tag_state(p_dst)
+            added.add(p_dst)
+    # We also need to be able to consume the new tagged states like the others
+    for (P, p_args), p_dst in list(out_grammar.rules.items()):
+        if any(arg in added for arg in p_args):
+            possibles = [
+                [arg] if arg not in added else [arg, tag_state(arg)] for arg in p_args
+            ]
+            for new_args in product(*possibles):
+                out_grammar.rules[(P, new_args)] = p_dst
+    for q in added.intersection(out_grammar.finals):
+        out_grammar.finals.add(tag_state(q))
+    return out_grammar
 
 
 def __process__(
     grammar: DFTA[Tuple[Type, U], DerivableProgram],
     token: Token,
     sketch: bool,
-    relevant: Optional[TList[Tuple[Path, Tuple[Type, U]]]] = None,
     level: int = 0,
-    pstate: Optional[ProcessState] = None,
-) -> Tuple[
-    DFTA[Tuple[Type, Any], DerivableProgram], TList[Tuple[Path, Tuple[Type, U]]]
-]:
-    pstate = pstate or ProcessState()
-    out_grammar: DFTA = grammar
+) -> Tuple[DFTA[Tuple[Type, Any], DerivableProgram], int, TList[int]]:
     print("\t" * level, "processing:", token)
     if isinstance(token, TokenFunction):
-        if relevant is None:
-            # Compute relevant depending on sketch or not
-            if sketch:
-                relevant = [(Path(), q) for q in grammar.finals]
-                grammar, relevant = __process__(
-                    grammar, token.function, sketch, relevant, level, pstate
-                )
-            else:
-                relevant = []
-                for (P, args), dst in grammar.rules.items():
-                    if P in token.function.allowed:
-                        new_elem: Tuple[Path, Tuple[Type, U]] = (
-                            Path(),
-                            dst,
-                        )
-                        if new_elem not in relevant:
-                            relevant.append(new_elem)
-        else:
-            # TODO: save or something alike
-            # So here we have correct paths
-            grammar, relevant = __process__(
-                grammar, token.function, sketch, relevant, level, pstate
-            )
-
-        # Go from relevant to first argument context
-        arg_relevant: TList[Tuple[Path, Tuple[Type, U]]] = []
-        # print("\t" * level, "relevant:", relevant)
-        for path, end in relevant:
-            for (P, args), dst in grammar.rules.items():
-                if P in token.function.allowed and dst == end:
-                    arg_relevant.append((path.next(P, args, 0), args[0]))
-        # print("\t" * level, "arg relevant:", arg_relevant)
+        possibles = []
+        added_length = []
         for arg in token.args:
-            grammar, arg_relevant = __process__(
-                grammar, arg, sketch, arg_relevant, level + 1, pstate
-            )
-            next_relevant = []
-            for path, end in arg_relevant:
-                if len(path) == 0:
-                    next_relevant.append((path, end))
-                    continue
-                path.next_argument()
-                P, args, i = path.last()
-                if i >= len(args):
-                    continue
-                next_relevant.append((path, args[i]))
-            arg_relevant = next_relevant
-        out_grammar = grammar  # type trick
-        return out_grammar, arg_relevant
+            grammar, no_added, corrects = __process__(grammar, arg, sketch, level + 1)
+            added_length.append(no_added)
+            possibles.append(corrects)
+        # Compile what we need to check
+        to_check = []
+        length_so_far = 1
+        for allowed, added in zip(possibles[::-1], added_length[::-1]):
+            to_check.append((length_so_far, allowed))
+            length_so_far += added
+        to_check = to_check[::-1]
+        # Augment grammar and mark 1 when right pattern
+        allowed_P = token.function.allowed
+        out_grammar = __tag__(
+            grammar,
+            lambda P, p_args, __: P in allowed_P and __match__(list(p_args), to_check),
+        )
+
+        # We need to do something if we are the final node
+        if level == 0:
+            if sketch:
+                out_grammar.finals = {q for q in out_grammar.finals if q[1][1] == 1}
+            else:
+                # TODO: think
+                for (P, p_args), p_dst in list(out_grammar.rules.items()):
+                    if P in token.function.allowed and p_dst[1][1] == 0:
+                        pass
+
+        return out_grammar, length_so_far, [1]
 
     elif isinstance(token, TokenAllow):
-        assert relevant is not None
         # We need to augment grammar to tell that this we detected this the correct thing
-        out_grammar, out_relevant = __augment__(grammar, relevant)
-        old2new = lambda s: (s[0], (s[1][0], 1))
-        relevant = []
-        old_finals: Set[Tuple[Type, Tuple[U, int]]] = {q for q in out_grammar.finals}
-        producables: Set[Tuple[Type, Tuple[U, int]]] = {
-            dst for (P, args), dst in out_grammar.rules.items() if P in token.allowed
-        }
-        # Create duplicates for the context
-        for path, path_end in out_relevant:
-            new_end = old2new(path_end)
-            for (P, p_args), p_dst in list(out_grammar.rules.items()):
-                if any(arg == path_end for arg in p_args) and (
-                    sketch or len(path) == 0 or path.last()[0] != P
-                ):
-                    possibles = [
-                        [arg] if arg != path_end else [arg, new_end] for arg in p_args
-                    ]
-                    for new_args in product(*possibles):
-                        out_grammar.rules[(P, new_args)] = p_dst
-        # Now add initial transition
-        for path, path_end in out_relevant:
-            new_end = old2new(path_end)
-            for (P, p_args), p_dst in list(out_grammar.rules.items()):
-                if p_dst == path_end and P in token.allowed:
-                    out_grammar.rules[(P, p_args)] = new_end
-
-            # Now we have to go back the track
-            if len(path) == 0:
-                if path_end in out_grammar.finals:
-                    out_grammar.finals.remove(path_end)
-                    out_grammar.finals.add(new_end)
-                relevant.append((path, new_end))  # type: ignore
-            else:
-                P, p_args, i = path.last()
-                if p_args[i] not in producables:
-                    continue
-                print("\t" * level, "path", path, "end", path_end)
-                candidate_predecessors = []
-                for P, p_args, i in path.predecessors:
-                    old_dst = out_grammar.rules[(P, p_args)]
-                    new_dst = old2new(old_dst) if sketch else old_dst
-                    possibles = [
-                        [arg, old2new(arg)] if j != i or not sketch else [old2new(arg)]
-                        for j, arg in enumerate(p_args)
-                    ]
-                    candidates = []
-                    for new_args in product(*possibles):
-                        out_grammar.rules[(P, new_args)] = new_dst
-                        candidates.append((P, new_args, i))
-                        print("\t" * (level + 1), P, new_args, "->", new_dst)
-                    candidate_predecessors.append(candidates)
-                    if old_dst in old_finals:
-                        out_grammar.finals.add(new_dst)
-                        if old_dst in out_grammar.finals and sketch:
-                            out_grammar.finals.remove(old_dst)
-
-                P, p_args, i = path.last()
-                if not sketch:
-                    del out_grammar.rules[(P, p_args)]
-                for new_preds in product(*candidate_predecessors):
-                    new_path = Path(list(new_preds))
-                    # Relevant if not a sketch or if it is
-                    # only the case where we match the sketch
-                    if not sketch or new_path.last()[1][i][1][1] == 1:
-                        _, dst_args, i = new_path.last()
-                        relevant.append((new_path, dst_args[i]))
-        out_grammar.reduce()
-        relevant = [
-            (path, path_end) for path, path_end in relevant if path.exists(out_grammar)
-        ]
-        # We don't need to go deeper in relevant since this is an end node
-        print(out_grammar)
-        print("\t" * level, "out_relevant", relevant)
-        return out_grammar, relevant
+        allowed_P = token.allowed
+        out_grammar = __tag__(grammar, lambda P, _, __: P in allowed_P)
+        return out_grammar, 1, [1]
 
     elif isinstance(token, (TokenAtMost, TokenAtLeast)):
-        assert relevant is not None
-        out_grammar, out_relevant = __augment__(grammar, relevant)
-        out_grammar, out_relevant = __count__(
-            out_grammar,
-            out_relevant,
+        out_grammar = __count__(
+            grammar,
             token.count,
             token.to_count,
             isinstance(token, TokenAtMost),
         )
-        # What happens now?
+        allowed = []
         if isinstance(token, TokenAtMost):
-            # We need to reset count at some points
-            for path, path_end in out_relevant:
-                pass
-            pass
-        # TODO
-        print(out_grammar)
-        out_grammar.reduce()
-        print("\t" * level, "out_relevant:", out_relevant)
-        return out_grammar, out_relevant  # type: ignore
+            allowed = list(range(token.count + 1))
+            print("\tallowed:", allowed)
+        else:
+            allowed = [token.count]
+        return out_grammar, 1, allowed
 
     elif isinstance(token, TokenForbidSubtree):
-        return __process__(
-            grammar, TokenAtMost(token.forbidden, 0), sketch, relevant, level, pstate
-        )
+        return __process__(grammar, TokenAtMost(token.forbidden, 0), sketch, level)
     elif isinstance(token, TokenForceSubtree):
-        return __process__(
-            grammar, TokenAtLeast(token.forced, 1), sketch, relevant, level, pstate
-        )
+        return __process__(grammar, TokenAtLeast(token.forced, 1), sketch, level)
     elif isinstance(token, TokenAnything):
-        assert relevant is not None
-        return grammar, relevant
+        return grammar, 0, []
     assert False, f"Not implemented: {token}"
 
 
@@ -469,14 +247,18 @@ def add_dfta_constraints(
 
     if progress:
         pbar = tqdm.tqdm(total=len(parsed_constraints), desc="constraints", smoothing=1)
-    pstate = ProcessState()
     for constraint in parsed_constraints:
-        dfta = __process__(dfta, constraint, sketch, pstate=pstate)[0]
+        dfta = __process__(dfta, constraint, sketch)[0]
         if progress:
             pbar.update(1)
     if progress:
         pbar.close()
+
+    print("=" * 80)
+    print(dfta)
+    print("-" * 80)
     # print(dfta)
     dfta.reduce()
     print(dfta)
     return dfta  # type: ignore # .minimise()  # type: ignore
+    # return dfta.minimise()  # type: ignore
