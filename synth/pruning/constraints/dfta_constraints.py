@@ -82,6 +82,14 @@ def __augment__(
     return new_dfta
 
 
+def __flatten__(t: Tuple[U, int]) -> TList[int]:
+    if isinstance(t, int):
+        return []
+    out = __flatten__(t[0]) #type: ignore
+    out.append(t[1])
+    return out
+
+
 def __tuples_get__(t: Tuple[U, int], index: int) -> int:
     if index == 0:
         return t[1]
@@ -153,18 +161,30 @@ def __tag__(
     return out_grammar
 
 
+def __is_intermediary__(counting: TList[bool], dst: Tuple[Type, Tuple[U, int]]) -> bool:
+    dst_nos = __flatten__(dst[1])
+    for i, count in enumerate(counting):
+        minus = -(len(counting) - i)
+        if dst_nos[minus] and not count:
+            return True
+    return False
+
+
 def __process__(
     grammar: DFTA[Tuple[Type, U], DerivableProgram],
     token: Token,
+    counting: TList[bool],
     sketch: bool,
     level: int = 0,
-) -> Tuple[DFTA[Tuple[Type, Any], DerivableProgram], int, TList[int]]:
-    print("\t" * level, "processing:", token)
+) -> Tuple[DFTA[Tuple[Type, Any], DerivableProgram], int, TList[int], TList[bool]]:
+    # print("\t" * level, "processing:", token)
     if isinstance(token, TokenFunction):
         possibles = []
         added_length = []
         for arg in token.args:
-            grammar, no_added, corrects = __process__(grammar, arg, sketch, level + 1)
+            grammar, no_added, corrects, counting = __process__(
+                grammar, arg, counting, sketch, level + 1
+            )
             added_length.append(no_added)
             possibles.append(corrects)
         # Compile what we need to check
@@ -186,18 +206,32 @@ def __process__(
             if sketch:
                 out_grammar.finals = {q for q in out_grammar.finals if q[1][1] == 1}
             else:
-                # TODO: think
+                counting.append(False)
+                do_not_consume = set()
                 for (P, p_args), p_dst in list(out_grammar.rules.items()):
                     if P in token.function.allowed and p_dst[1][1] == 0:
-                        pass
+                        if __is_intermediary__(counting, p_dst):
+                            do_not_consume.add(p_dst)
+                            if p_dst in out_grammar.finals:
+                                out_grammar.finals.remove(p_dst)
+                        else:
+                            del out_grammar.rules[(P, p_args)]
+                # We also need to forbid other P from consuming intermediaries
+                for (P, p_args), p_dst in list(out_grammar.rules.items()):
+                    if (
+                        p_dst not in do_not_consume
+                        and p_dst[1][1] == 0
+                        and any(arg in do_not_consume for arg in p_args)
+                    ):
+                        del out_grammar.rules[(P, p_args)]
 
-        return out_grammar, length_so_far, [1]
+        return out_grammar, length_so_far, [1], counting + [False]
 
     elif isinstance(token, TokenAllow):
         # We need to augment grammar to tell that this we detected this the correct thing
         allowed_P = token.allowed
         out_grammar = __tag__(grammar, lambda P, _, __: P in allowed_P)
-        return out_grammar, 1, [1]
+        return out_grammar, 1, [1], counting + [False]
 
     elif isinstance(token, (TokenAtMost, TokenAtLeast)):
         out_grammar = __count__(
@@ -209,17 +243,20 @@ def __process__(
         allowed = []
         if isinstance(token, TokenAtMost):
             allowed = list(range(token.count + 1))
-            print("\tallowed:", allowed)
         else:
             allowed = [token.count]
-        return out_grammar, 1, allowed
+        return out_grammar, 1, allowed, counting + [True]
 
     elif isinstance(token, TokenForbidSubtree):
-        return __process__(grammar, TokenAtMost(token.forbidden, 0), sketch, level)
+        return __process__(
+            grammar, TokenAtMost(token.forbidden, 0), counting, sketch, level
+        )
     elif isinstance(token, TokenForceSubtree):
-        return __process__(grammar, TokenAtLeast(token.forced, 1), sketch, level)
+        return __process__(
+            grammar, TokenAtLeast(token.forced, 1), counting, sketch, level
+        )
     elif isinstance(token, TokenAnything):
-        return grammar, 0, []
+        return grammar, 0, [], counting
     assert False, f"Not implemented: {token}"
 
 
@@ -248,17 +285,10 @@ def add_dfta_constraints(
     if progress:
         pbar = tqdm.tqdm(total=len(parsed_constraints), desc="constraints", smoothing=1)
     for constraint in parsed_constraints:
-        dfta = __process__(dfta, constraint, sketch)[0]
+        dfta = __process__(dfta, constraint, [], sketch)[0]
         if progress:
             pbar.update(1)
     if progress:
         pbar.close()
-
-    print("=" * 80)
-    print(dfta)
-    print("-" * 80)
-    # print(dfta)
     dfta.reduce()
-    print(dfta)
-    return dfta  # type: ignore # .minimise()  # type: ignore
-    # return dfta.minimise()  # type: ignore
+    return dfta.minimise()  # type: ignore
