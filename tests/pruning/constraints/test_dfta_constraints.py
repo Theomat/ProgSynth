@@ -48,59 +48,119 @@ def test_restriction() -> None:
     assert dsl.parse_program("(+ 1 1)", cfg.type_request) in new_cfg
 
 
-# def test_multi_level() -> None:
-#     new_cfg = UCFG.from_DFTA(add_dfta_constraints(cfg, ["(+ 1 (+ _ 1))"], sketch=True, progress=False))
-#     print(new_cfg)
-#     assert dsl.parse_program("(- 1 (+ 1 1))", cfg.type_request) not in new_cfg
-#     assert dsl.parse_program("(- 1 (- 1 1))", cfg.type_request) not in new_cfg
-#     assert dsl.parse_program("(+ 1 (+ 1 1))", cfg.type_request) in new_cfg
-#     assert dsl.parse_program("(+ 1 1)", cfg.type_request) not in new_cfg
-#     assert dsl.parse_program("(+ 1 (+ 1 (+ 1 1)))", cfg.type_request) not in new_cfg
-#     assert dsl.parse_program("(+ 1 (+ (+ 1 1) 1))", cfg.type_request) in new_cfg
+def test_multi_level() -> None:
+    new_cfg = UCFG.from_DFTA(
+        add_dfta_constraints(cfg, ["(+ 1 (+ _ 1))"], sketch=True, progress=False)
+    )
+    print(new_cfg)
+    assert dsl.parse_program("(- 1 (+ 1 1))", cfg.type_request) not in new_cfg
+    assert dsl.parse_program("(- 1 (- 1 1))", cfg.type_request) not in new_cfg
+    assert dsl.parse_program("(+ 1 (+ 1 1))", cfg.type_request) in new_cfg
+    assert dsl.parse_program("(+ 1 1)", cfg.type_request) not in new_cfg
+    assert dsl.parse_program("(+ 1 (+ 1 (+ 1 1)))", cfg.type_request) not in new_cfg
+    assert dsl.parse_program("(+ 1 (+ (+ 1 1) 1))", cfg.type_request) in new_cfg
 
-#     new_cfg = UCFG.from_DFTA(add_dfta_constraints(cfg, ["(+ 1 (+ _ 1))"], sketch=False, progress=False))
-#     print(new_cfg)
-#     assert dsl.parse_program("(- 1 (+ 1 1))", cfg.type_request) not in new_cfg
-#     assert dsl.parse_program("(- 1 (- 1 1))", cfg.type_request) in new_cfg
-#     assert dsl.parse_program("(+ 1 (+ 1 1))", cfg.type_request) in new_cfg
-#     assert dsl.parse_program("(+ 1 1)", cfg.type_request) not in new_cfg
-#     assert dsl.parse_program("(+ 1 (+ 1 (+ 1 1)))", cfg.type_request) not in new_cfg
-#     assert dsl.parse_program("(+ 1 (+ (+ 1 1) 1))", cfg.type_request) not in new_cfg
-
-
-# def test_at_most() -> None:
-#     new_cfg = UCFG.from_DFTA(add_dfta_constraints(cfg, ["(- #(1)<=1 _)"], sketch=True, progress=False))
-#     print(new_cfg)
-#     assert dsl.parse_program("(- 1 (+ 1 1))", cfg.type_request) in new_cfg
-#     assert dsl.parse_program("(- 1 (- 1 1))", cfg.type_request) in new_cfg
-#     assert dsl.parse_program("(+ 1 (+ 1 1))", cfg.type_request) not in new_cfg
-#     assert dsl.parse_program("(- (- 1 1) 1)", cfg.type_request) not in new_cfg
-#     assert dsl.parse_program("(+ 1 (+ 1 (- 1 1)))", cfg.type_request) not in new_cfg
-#     assert dsl.parse_program("(+ 1 (+ (+ 1 1) 1))", cfg.type_request) not in new_cfg
-
-#     new_cfg = UCFG.from_DFTA(add_dfta_constraints(cfg, ["(- #(1)<=1 _)"], sketch=False, progress=False))
-#     print(new_cfg)
-#     assert dsl.parse_program("(- 1 (+ 1 1))", cfg.type_request) in new_cfg
-#     assert dsl.parse_program("(- 1 (- 1 1))", cfg.type_request) in new_cfg
-#     assert dsl.parse_program("(+ 1 (+ 1 1))", cfg.type_request) in new_cfg
-#     assert dsl.parse_program("(- (- 1 1) 1)", cfg.type_request) not in new_cfg
-#     assert dsl.parse_program("(+ 1 (+ 1 (- 1 1)))", cfg.type_request) in new_cfg
-#     assert dsl.parse_program("(+ 1 (+ (+ 1 1) 1))", cfg.type_request) in new_cfg
+    new_cfg = UCFG.from_DFTA(
+        add_dfta_constraints(cfg, ["(+ 1 (+ _ 1))"], sketch=False, progress=False)
+    )
+    print(new_cfg)
+    assert dsl.parse_program("(+ 1 1)", cfg.type_request) not in new_cfg
+    assert dsl.parse_program("(- 1 (- 1 1))", cfg.type_request) in new_cfg
+    assert dsl.parse_program("(+ 1 (+ 1 1))", cfg.type_request) in new_cfg
+    assert dsl.parse_program("(- 1 (+ 1 1))", cfg.type_request) not in new_cfg
+    assert dsl.parse_program("(+ 1 (+ 1 (+ 1 1)))", cfg.type_request) not in new_cfg
+    assert dsl.parse_program("(+ 1 (+ (+ 1 1) 1))", cfg.type_request) not in new_cfg
 
 
-# def test_var_dep() -> None:
-#     new_cfg = UCFG.from_DFTA(add_dfta_constraints(cfg, ["(+ >^(var0) _)"], sketch=True, progress=False))
-#     print(new_cfg)
-#     assert dsl.parse_program("(- 1 (+ 1 1))", cfg.type_request) not in new_cfg
-#     assert dsl.parse_program("(- 1 (- 1 1))", cfg.type_request) not in new_cfg
-#     assert dsl.parse_program("(+ 1 (+ 1 1))", cfg.type_request) in new_cfg
-#     assert dsl.parse_program("(+ var0 1)", cfg.type_request) not in new_cfg
-#     assert dsl.parse_program("(+ 1 (+ 1 (+ var0 1)))", cfg.type_request) in new_cfg
+def test_at_most() -> None:
+    new_cfg = UCFG.from_DFTA(
+        add_dfta_constraints(cfg, ["(- #(1)<=1 _)"], sketch=True, progress=False)
+    )
+    print(new_cfg)
+    assert dsl.parse_program("(- 1 (+ 1 1))", cfg.type_request) in new_cfg
+    assert dsl.parse_program("(- 1 (- 1 1))", cfg.type_request) in new_cfg
+    assert dsl.parse_program("(+ 1 (+ 1 1))", cfg.type_request) not in new_cfg
+    assert dsl.parse_program("(- (- 1 1) 1)", cfg.type_request) not in new_cfg
+    assert dsl.parse_program("(+ 1 (+ 1 (- 1 1)))", cfg.type_request) not in new_cfg
+    assert dsl.parse_program("(+ 1 (+ (+ 1 1) 1))", cfg.type_request) not in new_cfg
 
-#     new_cfg = UCFG.from_DFTA(add_dfta_constraints(cfg, ["(+ >^(var0) _)"], sketch=False, progress=False))
-#     print(new_cfg)
-#     assert dsl.parse_program("(- 1 (+ 1 1))", cfg.type_request) in new_cfg
-#     assert dsl.parse_program("(- 1 (- 1 1))", cfg.type_request) in new_cfg
-#     assert dsl.parse_program("(+ 1 (+ 1 1))", cfg.type_request) in new_cfg
-#     assert dsl.parse_program("(+ var0 1)", cfg.type_request) not in new_cfg
-#     assert dsl.parse_program("(+ 1 (+ 1 (+ var0 1)))", cfg.type_request) not in new_cfg
+    new_cfg = UCFG.from_DFTA(
+        add_dfta_constraints(cfg, ["(- #(1)<=1 _)"], sketch=False, progress=False)
+    )
+    print(new_cfg)
+    assert dsl.parse_program("(- 1 (+ 1 1))", cfg.type_request) in new_cfg
+    assert dsl.parse_program("(- 1 (- 1 1))", cfg.type_request) in new_cfg
+    assert dsl.parse_program("(+ 1 (+ 1 1))", cfg.type_request) in new_cfg
+    assert dsl.parse_program("(- (- 1 1) 1)", cfg.type_request) not in new_cfg
+    assert dsl.parse_program("(+ 1 (+ 1 (- 1 1)))", cfg.type_request) in new_cfg
+    assert dsl.parse_program("(+ 1 (+ (+ 1 1) 1))", cfg.type_request) in new_cfg
+
+
+def test_at_least() -> None:
+    new_cfg = UCFG.from_DFTA(
+        add_dfta_constraints(cfg, ["(- _ #(1)>=2)"], sketch=True, progress=False)
+    )
+    print(new_cfg)
+    assert dsl.parse_program("(- 1 (+ 1 1))", cfg.type_request) in new_cfg
+    assert dsl.parse_program("(- 1 (- 1 1))", cfg.type_request) in new_cfg
+    assert dsl.parse_program("(+ 1 (+ 1 1))", cfg.type_request) not in new_cfg
+    assert dsl.parse_program("(- (- 1 1) 1)", cfg.type_request) not in new_cfg
+    assert dsl.parse_program("(+ 1 (+ 1 (- 1 1)))", cfg.type_request) not in new_cfg
+    assert dsl.parse_program("(- 1 (- (+ 1 1) 1))", cfg.type_request) in new_cfg
+
+    new_cfg = UCFG.from_DFTA(
+        add_dfta_constraints(cfg, ["(- _ #(1)>=2)"], sketch=False, progress=False)
+    )
+    print(new_cfg)
+    assert dsl.parse_program("(- 1 (+ 1 1))", cfg.type_request) in new_cfg
+    assert dsl.parse_program("(- 1 (- 1 1))", cfg.type_request) not in new_cfg
+    assert dsl.parse_program("(+ 1 (+ 1 1))", cfg.type_request) in new_cfg
+    assert dsl.parse_program("(- (- 1 1) 1)", cfg.type_request) not in new_cfg
+    assert dsl.parse_program("(+ 1 (+ 1 (- 1 1)))", cfg.type_request) not in new_cfg
+    assert dsl.parse_program("(- 1 (- 1 (+ 1 1)))", cfg.type_request) in new_cfg
+
+
+def test_forbid_subtree() -> None:
+    new_cfg = UCFG.from_DFTA(
+        add_dfta_constraints(cfg, ["(+ >^(var0) _)"], sketch=True, progress=False)
+    )
+    print(new_cfg)
+    assert dsl.parse_program("(- 1 (+ 1 1))", cfg.type_request) not in new_cfg
+    assert dsl.parse_program("(- 1 (- 1 1))", cfg.type_request) not in new_cfg
+    assert dsl.parse_program("(+ 1 (+ 1 1))", cfg.type_request) in new_cfg
+    assert dsl.parse_program("(+ var0 1)", cfg.type_request) not in new_cfg
+    assert dsl.parse_program("(+ 1 (+ 1 (+ var0 1)))", cfg.type_request) in new_cfg
+
+    new_cfg = UCFG.from_DFTA(
+        add_dfta_constraints(cfg, ["(+ >^(var0) _)"], sketch=False, progress=False)
+    )
+    print(new_cfg)
+    assert dsl.parse_program("(- 1 (+ 1 1))", cfg.type_request) in new_cfg
+    assert dsl.parse_program("(- 1 (- 1 1))", cfg.type_request) in new_cfg
+    assert dsl.parse_program("(+ 1 (+ 1 1))", cfg.type_request) in new_cfg
+    assert dsl.parse_program("(+ var0 1)", cfg.type_request) not in new_cfg
+    assert dsl.parse_program("(+ 1 (+ 1 (+ var0 1)))", cfg.type_request) not in new_cfg
+
+
+def test_force_subtree() -> None:
+    new_cfg = UCFG.from_DFTA(
+        add_dfta_constraints(cfg, ["(+ >(var0) _)"], sketch=True, progress=False)
+    )
+    print(new_cfg)
+    assert dsl.parse_program("(- 1 (+ 1 1))", cfg.type_request) not in new_cfg
+    assert dsl.parse_program("(- 1 (- 1 1))", cfg.type_request) not in new_cfg
+    assert dsl.parse_program("(+ 1 (+ 1 1))", cfg.type_request) not in new_cfg
+    assert dsl.parse_program("(+ var0 1)", cfg.type_request) in new_cfg
+    assert dsl.parse_program("(+ 1 (+ 1 (+ var0 1)))", cfg.type_request) not in new_cfg
+    assert dsl.parse_program("(+ (+ 1 (+ var0 1)) 1)", cfg.type_request) in new_cfg
+
+    new_cfg = UCFG.from_DFTA(
+        add_dfta_constraints(cfg, ["(+ >(var0) _)"], sketch=False, progress=False)
+    )
+    print(new_cfg)
+    assert dsl.parse_program("(- 1 (+ 1 1))", cfg.type_request) not in new_cfg
+    assert dsl.parse_program("(- 1 (- 1 1))", cfg.type_request) in new_cfg
+    assert dsl.parse_program("(+ 1 (+ 1 1))", cfg.type_request) not in new_cfg
+    assert dsl.parse_program("(+ var0 1)", cfg.type_request) in new_cfg
+    assert dsl.parse_program("(+ 1 (+ 1 (+ var0 1)))", cfg.type_request) not in new_cfg
+    assert dsl.parse_program("(+ (+ 1 (+ var0 1)) 1)", cfg.type_request) in new_cfg
