@@ -85,7 +85,7 @@ def __augment__(
 def __flatten__(t: Tuple[U, int]) -> TList[int]:
     if isinstance(t, int):
         return []
-    out = __flatten__(t[0]) #type: ignore
+    out = __flatten__(t[0])  # type: ignore
     out.append(t[1])
     return out
 
