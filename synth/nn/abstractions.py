@@ -9,6 +9,21 @@ T = TypeVar("T")
 S = TypeVar("S")
 
 
+def ucfg_bigram(
+    ctx: Tuple[Type, Tuple[NGram, T]]
+) -> Optional[Tuple[DerivableProgram, int]]:
+    """
+    Abstract away a TTCFG into tuples of (parent, no_arg).
+    We lose any other information.
+    """
+    _, (ngram, __) = ctx
+    while not isinstance(ngram, NGram):
+        ngram = ngram[0]  # type: ignore
+    if len(ngram) > 0:
+        return ngram.last()
+    return None
+
+
 def ttcfg_bigram(
     ctx: Tuple[Type, Tuple[S, T]]
 ) -> Optional[Tuple[DerivableProgram, int]]:

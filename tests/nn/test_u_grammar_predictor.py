@@ -2,6 +2,7 @@ import numpy as np
 import torch
 from torch.functional import Tensor
 
+from synth.nn.abstractions import ucfg_bigram
 from synth.nn.u_grammar_predictor import UGrammarPredictorLayer
 from synth.syntax.grammars.u_cfg import UCFG
 from synth.syntax.dsl import DSL
@@ -21,20 +22,19 @@ syntax = {
 dsl = DSL(syntax)
 cfg = UCFG.depth_constraint(dsl, FunctionType(INT, INT), 4)
 cfg2 = UCFG.depth_constraint(dsl, FunctionType(FunctionType(INT, INT), INT, INT), 5)
-cfg_bigram_without_depth = lambda s: s
 
 
 def test_forward() -> None:
-    layer = UGrammarPredictorLayer(50, {cfg}, cfg_bigram_without_depth)
+    layer = UGrammarPredictorLayer(50, {cfg}, ucfg_bigram)
     generator = torch.manual_seed(0)
     for _ in range(20):
         x = torch.randn((100, 50), generator=generator)
         y: Tensor = layer(x)
-        assert y.shape == torch.Size([x.shape[0], 32])
+        assert y.shape == torch.Size([x.shape[0], 16])
 
 
 def test_to_logpcfg() -> None:
-    layer = UGrammarPredictorLayer(50, {cfg}, cfg_bigram_without_depth)
+    layer = UGrammarPredictorLayer(50, {cfg}, ucfg_bigram)
     generator = torch.manual_seed(0)
     for _ in range(20):
         x = torch.randn((5, 50), generator=generator)
@@ -52,7 +52,7 @@ def test_to_logpcfg() -> None:
 
 
 def test_logpcfg2pcfg() -> None:
-    layer = UGrammarPredictorLayer(50, {cfg}, cfg_bigram_without_depth)
+    layer = UGrammarPredictorLayer(50, {cfg}, ucfg_bigram)
     generator = torch.manual_seed(0)
     for _ in range(20):
         x = torch.randn((5, 50), generator=generator)
@@ -76,7 +76,7 @@ def test_logpcfg2pcfg() -> None:
 
 
 def test_var_as_function() -> None:
-    layer = UGrammarPredictorLayer(50, {cfg2, cfg}, cfg_bigram_without_depth)
+    layer = UGrammarPredictorLayer(50, {cfg2, cfg}, ucfg_bigram)
     generator = torch.manual_seed(0)
     for _ in range(5):
         for c in [cfg, cfg2]:
@@ -97,7 +97,7 @@ def test_var_as_function() -> None:
 
 
 def test_varprob() -> None:
-    layer = UGrammarPredictorLayer(10, {cfg}, cfg_bigram_without_depth)
+    layer = UGrammarPredictorLayer(10, {cfg}, ucfg_bigram)
     opti = torch.optim.AdamW(layer.parameters(), lr=1e-1)
     steps = 10
     batch_size = 10
@@ -132,7 +132,7 @@ def test_varprob() -> None:
 
 
 def test_learning() -> None:
-    layer = UGrammarPredictorLayer(10, {cfg}, cfg_bigram_without_depth)
+    layer = UGrammarPredictorLayer(10, {cfg}, ucfg_bigram)
     opti = torch.optim.AdamW(layer.parameters(), lr=1e-1)
     steps = 10
     mean_prob = []
@@ -168,7 +168,7 @@ def test_learning() -> None:
 
 
 def test_learning_cross_entropy() -> None:
-    layer = UGrammarPredictorLayer(10, {cfg}, cfg_bigram_without_depth)
+    layer = UGrammarPredictorLayer(10, {cfg}, ucfg_bigram)
     opti = torch.optim.AdamW(layer.parameters(), lr=1e-1)
     steps = 10
     mean_prob = []
