@@ -291,6 +291,7 @@ def add_dfta_constraints(
         )
     for constraint in parsed_constraints:
         dfta = __process__(dfta, constraint, [], False)[0]
+        dfta.reduce()
         if progress:
             pbar.update(1)
     if sketch is not None:
@@ -299,8 +300,8 @@ def add_dfta_constraints(
         )[0]
         if progress:
             pbar.update(1)
+        dfta.reduce()
 
     if progress:
         pbar.close()
-    dfta.reduce()
     return dfta.minimise()  # type: ignore
