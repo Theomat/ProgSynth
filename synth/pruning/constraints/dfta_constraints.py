@@ -5,6 +5,7 @@ from typing import (
     Dict,
     Iterable,
     List as TList,
+    Optional,
     Set,
     Tuple,
     TypeVar,
@@ -263,9 +264,9 @@ def __process__(
 def add_dfta_constraints(
     current_grammar: CFG,
     constraints: Iterable[str],
-    sketch: bool = False,
+    sketch: Optional[str] = None,
     progress: bool = True,
-) -> DFTA[Set, DerivableProgram]:
+) -> DFTA[Tuple[Type, Set], DerivableProgram]:
     """
     Add constraints to the specified grammar.
 
@@ -283,11 +284,22 @@ def add_dfta_constraints(
     dfta.reduce()
 
     if progress:
-        pbar = tqdm.tqdm(total=len(parsed_constraints), desc="constraints", smoothing=1)
+        pbar = tqdm.tqdm(
+            total=len(parsed_constraints) + int(sketch is not None),
+            desc="constraints",
+            smoothing=1,
+        )
     for constraint in parsed_constraints:
-        dfta = __process__(dfta, constraint, [], sketch)[0]
+        dfta = __process__(dfta, constraint, [], False)[0]
         if progress:
             pbar.update(1)
+    if sketch is not None:
+        dfta = __process__(
+            dfta, parse_specification(sketch, current_grammar), [], True
+        )[0]
+        if progress:
+            pbar.update(1)
+
     if progress:
         pbar.close()
     dfta.reduce()
