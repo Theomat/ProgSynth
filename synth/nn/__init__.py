@@ -1,7 +1,7 @@
 """
 Module that contains anything relevant to neural networks
 """
-from synth.nn.grammar_predictor import GrammarPredictorLayer
+from synth.nn.det_grammar_predictor import DetGrammarPredictorLayer
 import synth.nn.abstractions as abstractions
 from synth.nn.utils import (
     AutoPack,

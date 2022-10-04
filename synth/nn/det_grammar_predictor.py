@@ -58,7 +58,7 @@ class TensorLogProbDetGrammar(TaggedDetGrammar[Tensor, U, V, W]):
         return ProbDetGrammar(self.grammar, probabilities)
 
 
-class GrammarPredictorLayer(nn.Module, Generic[A, U, V, W]):
+class DetGrammarPredictorLayer(nn.Module, Generic[A, U, V, W]):
     """
 
     Parameters:
@@ -75,7 +75,7 @@ class GrammarPredictorLayer(nn.Module, Generic[A, U, V, W]):
         abstraction: Callable[[Tuple[Type, U]], A],
         variable_probability: float = 0.2,
     ):
-        super(GrammarPredictorLayer, self).__init__()
+        super(DetGrammarPredictorLayer, self).__init__()
 
         self.grammar_dictionary = {
             grammar.type_request: grammar for grammar in grammars
@@ -274,11 +274,11 @@ class GrammarPredictorLayer(nn.Module, Generic[A, U, V, W]):
 
 
 def __reduce_encoder__(
-    t: Tuple[GrammarPredictorLayer[A, U, V, W], Tensor],
+    t: Tuple[DetGrammarPredictorLayer[A, U, V, W], Tensor],
     S: Tuple[Type, U],
     P: DerivableProgram,
     _: V,
-) -> Tuple[GrammarPredictorLayer[A, U, V, W], Tensor]:
+) -> Tuple[DetGrammarPredictorLayer[A, U, V, W], Tensor]:
     if isinstance(P, Primitive):
         G, tensor = t
         start, __, symbol2index = G.abs2index[G.real2abs[S]]
