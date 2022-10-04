@@ -5,7 +5,19 @@ Some constants may need to be chnaged directly in the script.
 from argparse import ArgumentParser
 import importlib
 from types import SimpleNamespace
-from typing import Callable, Dict, Iterable, List, Optional, Tuple, Union
+from typing import Callable, Dict, Iterable, List, Optional, Tuple, TypeVar, Union
+
+U = TypeVar("U")
+
+
+def __try_names__(name: str, f: Callable[[str], U]) -> U:
+    try:
+        return f(name)
+    except ModuleNotFoundError:
+        try:
+            return f("pbe." + name)
+        except ModuleNotFoundError:
+            return f("examples.pbe." + name)
 
 
 def __base_loader(
@@ -20,9 +32,9 @@ def __base_loader(
 
     def loader(fully_load: bool = True) -> Optional[SimpleNamespace]:
         if not fully_load:
-            return importlib.util.find_spec(name)
+            return __try_names__(name, importlib.util.find_spec)
 
-        module = importlib.import_module(name)
+        module = __try_names__(name, importlib.import_module)
         out = {}
         for key in keys:
             get, set = key if isinstance(key, tuple) else (key, key)
