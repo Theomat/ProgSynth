@@ -33,6 +33,9 @@ class TaggedDetGrammar(DetGrammar[U, V, W], Generic[T, U, V, W]):
         self.grammar = grammar
         self.tags = tags
 
+    def programs(self) -> int:
+        return self.grammar.programs()
+
     def __hash__(self) -> int:
         return hash((self.start, self.grammar, str(self.tags)))
 

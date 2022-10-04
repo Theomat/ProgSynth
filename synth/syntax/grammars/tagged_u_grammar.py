@@ -35,6 +35,9 @@ class TaggedUGrammar(UGrammar[U, V, W], Generic[T, U, V, W]):
         self.tags = tags
         self.start_tags = start_tags
 
+    def programs(self) -> int:
+        return self.grammar.programs()
+
     def __hash__(self) -> int:
         return hash((self.start_tags, self.grammar, str(self.tags)))
 

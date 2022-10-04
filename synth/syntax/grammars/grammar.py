@@ -52,3 +52,10 @@ class Grammar(ABC):
         Clean the grammar.
         """
         pass
+
+    @abstractmethod
+    def programs(self) -> int:
+        """
+        Return the number of programs contained within this grammar.
+        """
+        pass
