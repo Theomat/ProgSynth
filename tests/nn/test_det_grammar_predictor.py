@@ -2,7 +2,7 @@ import numpy as np
 import torch
 from torch.functional import Tensor
 
-from synth.nn.grammar_predictor import GrammarPredictorLayer
+from synth.nn.det_grammar_predictor import DetGrammarPredictorLayer
 from synth.nn.abstractions import cfg_bigram_without_depth
 from synth.syntax.grammars.cfg import CFG
 from synth.syntax.dsl import DSL
@@ -25,7 +25,7 @@ cfg2 = CFG.depth_constraint(dsl, FunctionType(FunctionType(INT, INT), INT, INT),
 
 
 def test_forward() -> None:
-    layer = GrammarPredictorLayer(50, {cfg}, cfg_bigram_without_depth)
+    layer = DetGrammarPredictorLayer(50, {cfg}, cfg_bigram_without_depth)
     generator = torch.manual_seed(0)
     for _ in range(20):
         x = torch.randn((100, 50), generator=generator)
@@ -34,7 +34,7 @@ def test_forward() -> None:
 
 
 def test_to_logpcfg() -> None:
-    layer = GrammarPredictorLayer(50, {cfg}, cfg_bigram_without_depth)
+    layer = DetGrammarPredictorLayer(50, {cfg}, cfg_bigram_without_depth)
     generator = torch.manual_seed(0)
     for _ in range(20):
         x = torch.randn((5, 50), generator=generator)
@@ -51,7 +51,7 @@ def test_to_logpcfg() -> None:
 
 
 def test_logpcfg2pcfg() -> None:
-    layer = GrammarPredictorLayer(50, {cfg}, cfg_bigram_without_depth)
+    layer = DetGrammarPredictorLayer(50, {cfg}, cfg_bigram_without_depth)
     generator = torch.manual_seed(0)
     for _ in range(20):
         x = torch.randn((5, 50), generator=generator)
@@ -74,7 +74,7 @@ def test_logpcfg2pcfg() -> None:
 
 
 def test_var_as_function() -> None:
-    layer = GrammarPredictorLayer(50, {cfg2, cfg}, cfg_bigram_without_depth)
+    layer = DetGrammarPredictorLayer(50, {cfg2, cfg}, cfg_bigram_without_depth)
     generator = torch.manual_seed(0)
     for _ in range(5):
         for c in [cfg, cfg2]:
@@ -93,7 +93,7 @@ def test_var_as_function() -> None:
 
 
 def test_varprob() -> None:
-    layer = GrammarPredictorLayer(10, {cfg}, cfg_bigram_without_depth)
+    layer = DetGrammarPredictorLayer(10, {cfg}, cfg_bigram_without_depth)
     opti = torch.optim.AdamW(layer.parameters(), lr=1e-1)
     steps = 10
     batch_size = 10
@@ -128,7 +128,7 @@ def test_varprob() -> None:
 
 
 def test_learning() -> None:
-    layer = GrammarPredictorLayer(10, {cfg}, cfg_bigram_without_depth)
+    layer = DetGrammarPredictorLayer(10, {cfg}, cfg_bigram_without_depth)
     opti = torch.optim.AdamW(layer.parameters(), lr=1e-1)
     steps = 10
     mean_prob = []
@@ -164,7 +164,7 @@ def test_learning() -> None:
 
 
 def test_learning_cross_entropy() -> None:
-    layer = GrammarPredictorLayer(10, {cfg}, cfg_bigram_without_depth)
+    layer = DetGrammarPredictorLayer(10, {cfg}, cfg_bigram_without_depth)
     opti = torch.optim.AdamW(layer.parameters(), lr=1e-1)
     steps = 10
     mean_prob = []
