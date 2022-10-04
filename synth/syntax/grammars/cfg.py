@@ -1,5 +1,5 @@
 from collections import deque
-from math import prod
+from functools import lru_cache
 from typing import Deque, Dict, Literal, Set, Tuple, List
 
 from synth.syntax.dsl import DSL
@@ -28,6 +28,21 @@ class CFG(TTCFG[CFGState, NoneType]):
     def clean(self) -> None:
         self._remove_non_productive_()
         self._remove_non_reachable_()
+
+    @lru_cache()
+    def programs(self) -> int:
+        count: Dict[Tuple[Type, CFGState], int] = {}
+
+        for S in sorted(self.rules.keys(), key=lambda s: -s[1][0][1]):
+            total = 0
+            for P in self.rules[S]:
+                local = 1
+                for arg in self.rules[S][P][0]:
+                    local *= count[arg]
+                total += local
+            count[(S[0], S[1][0])] = total
+        S = self.start
+        return count[(S[0], S[1][0])]
 
     def _remove_non_reachable_(self) -> None:
         """
