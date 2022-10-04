@@ -250,7 +250,9 @@ def __preprocess_grammar__(grammar: TTCFG[U, V]) -> TTCFG[Tuple[U, int], V]:
             derlst, state = grammar.rules[S][P]
             new_rules[SS][P] = ([(t, (d, 0)) for t, d in derlst], state)
     return TTCFG(
-        (grammar.start[0], ((grammar.start[1][0], 0), grammar.start[1][1])), new_rules
+        (grammar.start[0], ((grammar.start[1][0], 0), grammar.start[1][1])),
+        new_rules,
+        clean=False,
     )
 
 
