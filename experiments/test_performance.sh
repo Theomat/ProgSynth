@@ -63,4 +63,4 @@ if [ $? != "0" ]; then
     exit 4
 fi
 # Plotting
-python examples/pbe/plot_results.py --dataset $TEST_DATASET --folder $EXPERIMENT_FOLDER
+python examples/plot_results.py --dataset $TEST_DATASET --folder $EXPERIMENT_FOLDER
