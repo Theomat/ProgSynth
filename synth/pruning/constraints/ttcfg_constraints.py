@@ -517,7 +517,7 @@ def __process__(
 def add_constraints(
     current_grammar: TTCFG[U, V],
     constraints: Iterable[str],
-    sketch: bool = False,
+    sketch: Optional[str] = None,
     progress: bool = True,
 ) -> TTCFG[Tuple[U, int], Any]:
     """
@@ -536,13 +536,27 @@ def add_constraints(
     preprocessed = __preprocess_grammar__(current_grammar)
 
     if progress:
-        pbar = tqdm.tqdm(total=len(parsed_constraints), desc="constraints", smoothing=1)
+        pbar = tqdm.tqdm(
+            total=len(parsed_constraints) + int(sketch is not None),
+            desc="constraints",
+            smoothing=1,
+        )
     state = ProcessState()
     for constraint in parsed_constraints:
-        preprocessed, _, __ = __process__(preprocessed, constraint, sketch, state=state)
+        preprocessed = __process__(preprocessed, constraint, False, state=state)[0]
         preprocessed.clean()
         if progress:
             pbar.update(1)
+    if sketch is not None:
+        preprocessed = __process__(
+            preprocessed,
+            parse_specification(sketch, current_grammar),
+            True,
+            state=state,
+        )[0]
+        if progress:
+            pbar.update(1)
+        preprocessed.clean()
     if progress:
         pbar.close()
     return preprocessed

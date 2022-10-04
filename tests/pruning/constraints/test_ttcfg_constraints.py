@@ -25,7 +25,7 @@ cfg = TTCFG.size_constraint(dsl, FunctionType(INT, INT), 9)
 
 
 def test_restriction() -> None:
-    new_cfg = add_constraints(cfg, ["(+ 1 _)"], sketch=True, progress=False)
+    new_cfg = add_constraints(cfg, [], "(+ 1 _)", progress=False)
     print(new_cfg)
     assert dsl.parse_program("(- 1 (+ 1 1))", cfg.type_request) not in new_cfg
     assert dsl.parse_program("(- 1 (- 1 1))", cfg.type_request) not in new_cfg
@@ -34,7 +34,7 @@ def test_restriction() -> None:
     assert dsl.parse_program("(+ 1 (+ 1 (+ 1 1)))", cfg.type_request) in new_cfg
     assert dsl.parse_program("(+ 1 1)", cfg.type_request) in new_cfg
 
-    new_cfg = add_constraints(cfg, ["(+ 1 _)"], sketch=False, progress=False)
+    new_cfg = add_constraints(cfg, ["(+ 1 _)"], progress=False)
     print(new_cfg)
     assert dsl.parse_program("(- 1 (+ 1 1))", cfg.type_request) in new_cfg
     assert dsl.parse_program("(- 1 (- 1 1))", cfg.type_request) in new_cfg
@@ -45,7 +45,7 @@ def test_restriction() -> None:
 
 
 def test_multi_level() -> None:
-    new_cfg = add_constraints(cfg, ["(+ 1 (+ _ 1))"], sketch=True, progress=False)
+    new_cfg = add_constraints(cfg, [], "(+ 1 (+ _ 1))", progress=False)
     print(new_cfg)
     assert dsl.parse_program("(- 1 (+ 1 1))", cfg.type_request) not in new_cfg
     assert dsl.parse_program("(- 1 (- 1 1))", cfg.type_request) not in new_cfg
@@ -54,7 +54,7 @@ def test_multi_level() -> None:
     assert dsl.parse_program("(+ 1 (+ 1 (+ 1 1)))", cfg.type_request) not in new_cfg
     assert dsl.parse_program("(+ 1 (+ (+ 1 1) 1))", cfg.type_request) in new_cfg
 
-    new_cfg = add_constraints(cfg, ["(+ 1 (+ _ 1))"], sketch=False, progress=False)
+    new_cfg = add_constraints(cfg, ["(+ 1 (+ _ 1))"], progress=False)
     print(new_cfg)
     assert dsl.parse_program("(- 1 (+ 1 1))", cfg.type_request) not in new_cfg
     assert dsl.parse_program("(- 1 (- 1 1))", cfg.type_request) in new_cfg
@@ -65,7 +65,7 @@ def test_multi_level() -> None:
 
 
 def test_at_most() -> None:
-    new_cfg = add_constraints(cfg, ["(- #(1)<=1 _)"], sketch=True, progress=False)
+    new_cfg = add_constraints(cfg, [], "(- #(1)<=1 _)", progress=False)
     print(new_cfg)
     assert dsl.parse_program("(- 1 (+ 1 1))", cfg.type_request) in new_cfg
     assert dsl.parse_program("(- 1 (- 1 1))", cfg.type_request) in new_cfg
@@ -74,7 +74,7 @@ def test_at_most() -> None:
     assert dsl.parse_program("(+ 1 (+ 1 (- 1 1)))", cfg.type_request) not in new_cfg
     assert dsl.parse_program("(+ 1 (+ (+ 1 1) 1))", cfg.type_request) not in new_cfg
 
-    new_cfg = add_constraints(cfg, ["(- #(1)<=1 _)"], sketch=False, progress=False)
+    new_cfg = add_constraints(cfg, ["(- #(1)<=1 _)"], progress=False)
     print(new_cfg)
     assert dsl.parse_program("(- 1 (+ 1 1))", cfg.type_request) in new_cfg
     assert dsl.parse_program("(- 1 (- 1 1))", cfg.type_request) in new_cfg
@@ -85,7 +85,7 @@ def test_at_most() -> None:
 
 
 def test_var_dep() -> None:
-    new_cfg = add_constraints(cfg, ["(+ >^(var0) _)"], sketch=True, progress=False)
+    new_cfg = add_constraints(cfg, [], "(+ >^(var0) _)", progress=False)
     print(new_cfg)
     assert dsl.parse_program("(- 1 (+ 1 1))", cfg.type_request) not in new_cfg
     assert dsl.parse_program("(- 1 (- 1 1))", cfg.type_request) not in new_cfg
@@ -93,7 +93,7 @@ def test_var_dep() -> None:
     assert dsl.parse_program("(+ var0 1)", cfg.type_request) not in new_cfg
     assert dsl.parse_program("(+ 1 (+ 1 (+ var0 1)))", cfg.type_request) in new_cfg
 
-    new_cfg = add_constraints(cfg, ["(+ >^(var0) _)"], sketch=False, progress=False)
+    new_cfg = add_constraints(cfg, ["(+ >^(var0) _)"], progress=False)
     print(new_cfg)
     assert dsl.parse_program("(- 1 (+ 1 1))", cfg.type_request) in new_cfg
     assert dsl.parse_program("(- 1 (- 1 1))", cfg.type_request) in new_cfg
