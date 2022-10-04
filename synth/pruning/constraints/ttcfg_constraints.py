@@ -544,7 +544,6 @@ def add_constraints(
     state = ProcessState()
     for constraint in parsed_constraints:
         preprocessed = __process__(preprocessed, constraint, False, state=state)[0]
-        preprocessed.clean()
         if progress:
             pbar.update(1)
     if sketch is not None:
@@ -556,7 +555,7 @@ def add_constraints(
         )[0]
         if progress:
             pbar.update(1)
-        preprocessed.clean()
+    preprocessed.clean()
     if progress:
         pbar.close()
     return preprocessed
