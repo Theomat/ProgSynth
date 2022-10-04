@@ -18,7 +18,7 @@ def ucfg_bigram(
     """
     _, (ngram, __) = ctx
     while not isinstance(ngram, NGram):
-        ngram = ngram[0]  # type: ignore
+        ngram = ngram[0]
     if len(ngram) > 0:
         return ngram.last()
     return None
