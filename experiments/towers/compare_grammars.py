@@ -34,10 +34,10 @@ seed = 1
 def produce_grammars(depth: int) -> Dict[str, int]:
     cfg = CFG.depth_constraint(dsl, type_request, depth)
     ttcfg = add_constraints(
-        add_constraints(cfg, constraints, progress=True),
-        [sketch],
-        sketch=True,
-        progress=False,
+        cfg,
+        constraints,
+        sketch,
+        progress=True,
     )
     ucfg = UCFG.from_DFTA_with_ngrams(
         add_dfta_constraints(
