@@ -27,7 +27,7 @@ from synth.syntax import (
     Arrow,
     Type,
 )
-from synth.pruning.type_constraints.utils import SYMBOL_ANYTHING, SYMBOL_FORBIDDEN
+from synth.pruning.constraints.parsing import SYMBOL_ANYTHING, SYMBOL_FORBIDDEN
 from synth.utils import chrono
 
 

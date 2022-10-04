@@ -23,7 +23,7 @@ from examples.pbe.transduction.knowledge_graph.preprocess_tasks import sketch
 
 from synth import Dataset, PBE, Task
 from synth.nn import (
-    GrammarPredictorLayer,
+    DetGrammarPredictorLayer,
     Task2Tensor,
     abstractions,
     free_pytorch_memory,
@@ -216,7 +216,7 @@ def produce_pcfgs(
     class MyPredictor(nn.Module):
         def __init__(self, size: int) -> None:
             super().__init__()
-            self.bigram_layer = GrammarPredictorLayer(
+            self.bigram_layer = DetGrammarPredictorLayer(
                 size,
                 cfgs,
                 abstractions.cfg_bigram_without_depth_and_equi_prim,

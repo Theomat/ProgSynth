@@ -19,7 +19,7 @@ from dsl_loader import add_dsl_choice_arg, load_DSL
 
 from synth import Dataset, PBE, Task
 from synth.nn import (
-    GrammarPredictorLayer,
+    DetGrammarPredictorLayer,
     abstractions,
     Task2Tensor,
     print_model_summary,
@@ -219,7 +219,7 @@ print(f"Lexicon: [{min(lexicon)};{max(lexicon)}]")
 class MyPredictor(nn.Module):
     def __init__(self, size: int) -> None:
         super().__init__()
-        self.bigram_layer = GrammarPredictorLayer(
+        self.bigram_layer = DetGrammarPredictorLayer(
             size,
             cfgs,
             abstractions.cfg_bigram_without_depth_and_equi_prim,
