@@ -346,6 +346,24 @@ __primitive_types__ = {
     "5": INT,
 }
 
+constraints = [
+    "(+ ^+,0 ^*,0)",
+    "(- _ ^0)",
+    "(* ^*,2,1,0 ^+,2,1,0)",
+    "(max ^max _)",
+    "(min ^min _)",
+    "(is-mod ^0,1 _)",
+    "(mod ^0,1 _)",
+    "(length ^range,cdr,map,cons)",
+    "(not ^not)",
+    "(index ^0 _)",
+    "(if ^not _ _)" "(empty? ^range,map)",
+    "(range ^0)",
+    "(car ^range)",
+    "(le? ^- _)",
+    "(gt? ^- _)",
+]
+
 
 dsl = DSL(__primitive_types__)
 evaluator = DSLEvaluator(__semantics__)
