@@ -17,6 +17,7 @@ from typing import (
 from synth.syntax.dsl import DSL
 from synth.syntax.automata.dfa import DFA
 from synth.syntax.grammars.grammar import DerivableProgram, NGram
+from synth.syntax.grammars.tagged_det_grammar import ProbDetGrammar
 from synth.syntax.program import Constant, Primitive, Variable
 from synth.syntax.type_system import Arrow, Type, UnknownType
 from synth.syntax.grammars.det_grammar import DetGrammar
@@ -303,6 +304,22 @@ class TTCFG(
             return output
 
         return sum(c for _, c in __compute__(self.start).items())
+
+    def programs_stochastic(
+        self, cfg: "TTCFG", samples: int = 10000, seed: Optional[int] = None
+    ) -> float:
+        """
+        Provides an estimate of the number of programs in this grammar based on cfg.
+        cfg must contain this grammar.
+        Returns: the fraction of programs of cfg that this grammar contains
+        """
+        pcfg = ProbDetGrammar.uniform(cfg)
+        pcfg.init_sampling(seed)
+        inside = 0
+        for _ in range(samples):
+            if pcfg.sample_program() in self:
+                inside += 1
+        return inside / samples
 
     def possible_outcomes_after(
         self,

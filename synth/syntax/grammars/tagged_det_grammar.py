@@ -7,11 +7,14 @@ from typing import (
     Optional,
     Tuple,
     TypeVar,
+    TYPE_CHECKING,
 )
 
 import numpy as np
 import vose
-from synth.syntax.grammars.cfg import CFG, CFGNonTerminal, CFGState, NoneType
+
+if TYPE_CHECKING:
+    from synth.syntax.grammars.cfg import CFG, CFGNonTerminal, CFGState, NoneType
 
 from synth.syntax.grammars.det_grammar import DerivableProgram, DetGrammar
 from synth.syntax.program import Function, Program
@@ -196,7 +199,7 @@ class ProbDetGrammar(TaggedDetGrammar[float, U, V, W]):
 
     @classmethod
     def pcfg_from_samples(
-        cls, cfg: CFG, samples: Iterable[Program]
+        cls, cfg: "CFG", samples: Iterable[Program]
     ) -> "ProbDetGrammar[Tuple[CFGState, NoneType], Tuple[List[Tuple[Type, CFGState]], NoneType], List[Tuple[Type, CFGState]]]":
         rules_cnt: Dict[CFGNonTerminal, Dict[DerivableProgram, int]] = {}
         for S in cfg.rules:
