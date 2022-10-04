@@ -10,11 +10,11 @@ from typing import (
     Union,
     overload,
 )
+
 from synth.syntax.automata.tree_automaton import DFTA
 from synth.syntax.dsl import DSL
-
 from synth.syntax.grammars.cfg import CFG, CFGState
-from synth.syntax.grammars.grammar import DerivableProgram
+from synth.syntax.grammars.grammar import DerivableProgram, NGram
 from synth.syntax.grammars.u_grammar import UGrammar
 from synth.syntax.type_system import Type, UnknownType
 
@@ -199,5 +199,50 @@ class UCFG(UGrammar[U, List[Tuple[Type, U]], List[Tuple[Type, U]]], Generic[U]):
                 for new_state in args:
                     if d2state(new_state) not in new_rules:
                         stack.append(d2state(new_state))
+
+        return UCFG(starts, new_rules)
+
+    @classmethod
+    def from_DFTA_with_ngrams(
+        cls,
+        dfta: Union[
+            DFTA[Tuple[Tuple[Type, U], ...], DerivableProgram],
+            DFTA[Tuple[Type, U], DerivableProgram],
+        ],
+        ngram: int,
+    ) -> "Union[UCFG[Tuple[NGram, U]], UCFG[Tuple[NGram, Tuple[U, ...]]]]":
+        d2state = lambda t, v: (t[0], (v if v is not None else NGram(ngram), t[1]))
+        match = lambda a, b: a[0] == b[0] and a[1][1] == b[1][1]
+        some_final = list(dfta.finals)[0]
+        if isinstance(some_final[0], tuple):
+            d2state = lambda t, v: (
+                t[0][0],
+                (v if v is not None else NGram(ngram), tuple(tt[1] for tt in t)),
+            )
+
+        starts = {d2state(q, None) for q in dfta.finals}
+
+        new_rules: Dict[
+            Tuple[Type, Tuple[NGram, U]],
+            Dict[DerivableProgram, List[List[Tuple[Type, Tuple[NGram, U]]]]],
+        ] = {}
+
+        stack = [el for el in starts]
+        while stack:
+            tgt = stack.pop()
+            if tgt in new_rules:
+                continue
+            new_rules[tgt] = defaultdict(list)
+            last: NGram = tgt[1][0]
+            for (P, args), dst in dfta.rules.items():
+                if not match(d2state(dst, None), tgt):
+                    continue
+                new_args = [
+                    d2state(arg, last.successor((P, i))) for i, arg in enumerate(args)
+                ]
+                new_rules[tgt][P].append(new_args)
+                for new_state in new_args:
+                    if new_state not in new_rules:
+                        stack.append(new_state)
 
         return UCFG(starts, new_rules)
