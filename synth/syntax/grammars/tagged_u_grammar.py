@@ -59,7 +59,7 @@ class TaggedUGrammar(UGrammar[U, V, W], Generic[T, U, V, W]):
                 out = self.grammar.rules[S][P]
                 for possible in out:
                     s += "   {} ~> {}\n".format(
-                        self.tags[S][P][possible],
+                        self.tags[S][P][tuple(possible)], #type: ignore
                         self.grammar.__rule_to_str__(P, possible),
                     )
         return s
@@ -130,22 +130,15 @@ class ProbUGrammar(TaggedUGrammar[float, U, V, W]):
         program: Program,
         start: Optional[Tuple[Type, U]] = None,
     ) -> float:
-        if start is None:
-            for start in self.starts:
-                p = self.probability(program, start)
-                if p > 0:
-                    return p * self.start_tags[start]
+        try:
+            return self.reduce_derivations(
+                lambda current, S, P, V: current * self.tags[S][P][tuple(V)], #type: ignore
+                1.0,
+                program,
+                start,
+            )[0]
+        except KeyError:
             return 0
-        else:
-            try:
-                return self.reduce_derivations(
-                    lambda current, S, P, V: current * self.tags[S][P][V],
-                    1.0,
-                    program,
-                    start,
-                )[0]
-            except:
-                return 0
 
     def init_sampling(self, seed: Optional[int] = None) -> None:
         """
