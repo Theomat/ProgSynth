@@ -59,7 +59,7 @@ class TaggedUGrammar(UGrammar[U, V, W], Generic[T, U, V, W]):
                 out = self.grammar.rules[S][P]
                 for possible in out:
                     s += "   {} ~> {}\n".format(
-                        self.tags[S][P][tuple(possible)], #type: ignore
+                        self.tags[S][P][tuple(possible)],  # type: ignore
                         self.grammar.__rule_to_str__(P, possible),
                     )
         return s
@@ -132,7 +132,7 @@ class ProbUGrammar(TaggedUGrammar[float, U, V, W]):
     ) -> float:
         try:
             return self.reduce_derivations(
-                lambda current, S, P, V: current * self.tags[S][P][tuple(V)], #type: ignore
+                lambda current, S, P, V: current * self.tags[S][P][tuple(V)],  # type: ignore
                 1.0,
                 program,
                 start,
