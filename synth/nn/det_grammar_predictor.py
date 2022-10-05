@@ -193,7 +193,7 @@ class DetGrammarPredictorLayer(nn.Module, Generic[A, U, V, W]):
                         normalised_variable_logprob = np.log(
                             np.exp(normalised_variable_logprob) - 1e-7
                         )
-            else:
+            elif total > 0:
                 # We still need to normalise probabilities
                 # Since all derivations aren't possible
                 to_add = np.log(1 / total)
