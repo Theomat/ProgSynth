@@ -39,7 +39,7 @@ class TaggedUGrammar(UGrammar[U, V, W], Generic[T, U, V, W]):
         return self.grammar.programs()
 
     def __hash__(self) -> int:
-        return hash((self.start_tags, self.grammar, str(self.tags)))
+        return hash((str(self.start_tags), self.grammar, str(self.tags)))
 
     def __eq__(self, o: object) -> bool:
         return (
