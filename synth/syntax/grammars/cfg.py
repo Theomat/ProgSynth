@@ -166,7 +166,7 @@ class CFG(TTCFG[CFGState, NoneType]):
                 # Try to add constants from the DSL
                 for P in dsl.list_primitives:
                     type_P = P.type
-                    if not isinstance(type_P, Arrow) and type_P == current_type:
+                    if type_P == current_type:
                         rules[non_terminal][P] = ([], None)
                 # Function call
                 if depth < max_depth - 1:
