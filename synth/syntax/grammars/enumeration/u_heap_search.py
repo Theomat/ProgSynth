@@ -14,7 +14,7 @@ from typing import (
 from abc import ABC, abstractmethod
 
 from synth.syntax.grammars.enumeration.heap_search import HeapElement, Bucket
-from synth.syntax.program import Program, Function, Variable
+from synth.syntax.program import Primitive, Program, Function, Variable
 from synth.syntax.grammars.tagged_u_grammar import ProbUGrammar
 from synth.syntax.type_system import Type
 from synth.utils.ordered import Ordered
@@ -59,7 +59,7 @@ class UHSEnumerator(ABC, Generic[U, V, W]):
         self._init: Set[Tuple[Type, U]] = set()
 
         self.max_priority: Dict[
-            Union[Tuple[Type, U], Tuple[Tuple[Type, U], Program]], Program
+            Union[Tuple[Type, U], Tuple[Tuple[Type, U], Program, V]], Program
         ] = {}
 
     def __return_unique__(self, P: Program) -> Program:
@@ -128,13 +128,14 @@ class UHSEnumerator(ABC, Generic[U, V, W]):
                             arguments=arguments,
                         )
                         priority = self.compute_priority(S, new_program)
-                        self.max_priority[(S, P)] = new_program
+                        self.max_priority[(S, P, __wrap__(v))] = new_program  # type: ignore
                         if not best_priority or priority < best_priority:
                             best_program = new_program
                             best_priority = priority
             else:
+                some_v = list(self.G.tags[S][P].keys())[0]
                 priority = self.compute_priority(S, P)
-                self.max_priority[(S, P)] = P
+                self.max_priority[(S, P, some_v)] = P
                 if not best_priority or priority < best_priority:
                     best_program = P
                     best_priority = priority
@@ -143,19 +144,20 @@ class UHSEnumerator(ABC, Generic[U, V, W]):
 
         # 2) add P(max(S1),max(S2), ...) to self.heaps[S]
         for P in self.G.rules[S]:
-            program = self.max_priority[(S, P)]
-            hash_program = hash(program)
-            # Remark: the program cannot already be in self.heaps[S]
-            assert hash_program not in self.hash_table_program[S]
-            self.hash_table_program[S].add(hash_program)
-            # we assume that the programs from max_probability
-            # are represented by the same object
-            self.hash_table_global[hash_program] = program
-            priority = self.compute_priority(S, program)
-            heappush(
-                self.heaps[S],
-                HeapElement(priority, program),
-            )
+            for v in self.G.tags[S][P]:
+                program = self.max_priority[(S, P, v)]
+                hash_program = hash(program)
+                # Remark: the program cannot already be in self.heaps[S]
+                assert hash_program not in self.hash_table_program[S]
+                self.hash_table_program[S].add(hash_program)
+                # we assume that the programs from max_probability
+                # are represented by the same object
+                self.hash_table_global[hash_program] = program
+                priority = self.compute_priority(S, program)
+                heappush(
+                    self.heaps[S],
+                    HeapElement(priority, program),
+                )
 
         # 3) Do the 1st query
         self.query(S, None)
@@ -187,6 +189,14 @@ class UHSEnumerator(ABC, Generic[U, V, W]):
         if i >= len(succ.arguments):
             return
         # Si is non-terminal symbol used to derive the i-th argument
+        program = succ.arguments[i]
+        if isinstance(program, Function) and program.function not in self.G.rules[Si]:
+            return
+        if (
+            isinstance(program, (Primitive, Variable))
+            and program not in self.G.rules[Si]
+        ):
+            return
         succ_sub_program = self.query(Si, succ.arguments[i])
         if succ_sub_program:
             new_arguments = succ.arguments[:]
@@ -234,10 +244,6 @@ class UHSEnumerator(ABC, Generic[U, V, W]):
             for info, lst in self.G.derive_all(self.G.start_information(), S, F):
                 Si = lst[-1][0]
                 self.__add_successors_to_heap__(succ, S, Si, info, 0)
-
-        if isinstance(succ, Variable):
-            return succ  # if succ is a variable, there is no successor so we stop here
-
         return succ
 
     @abstractmethod
