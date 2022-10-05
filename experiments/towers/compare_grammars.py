@@ -21,7 +21,7 @@ from synth.pruning.constraints import add_constraints, add_dfta_constraints
 # Change parameters here
 # ===============================================================
 min_depth: int = 3
-max_depth: int = 4
+max_depth: int = 7
 type_request: Type = FunctionType(INT, INT, BLOCK)
 dsl_name: str = "towers"
 dsl = DSL(syntax)
@@ -33,12 +33,13 @@ seed = 1
 
 def produce_grammars(depth: int) -> Dict[str, int]:
     cfg = CFG.depth_constraint(dsl, type_request, depth)
-    ttcfg = add_constraints(
-        cfg,
-        constraints,
-        sketch,
-        progress=True,
-    )
+    if depth == 3:
+        ttcfg = add_constraints(
+            cfg,
+            constraints,
+            sketch,
+            progress=False,
+        )
     ucfg = UCFG.from_DFTA_with_ngrams(
         add_dfta_constraints(
             cfg, constraints + dfta_constraints, sketch, progress=True
@@ -48,7 +49,9 @@ def produce_grammars(depth: int) -> Dict[str, int]:
     return {
         "cfg": cfg.programs(),
         "ucfg": ucfg.programs(),
-        "ttcfg": ttcfg.programs_stochastic(cfg, 100000, seed) * cfg.programs(),
+        "ttcfg": ttcfg.programs_stochastic(cfg, 100000, seed) * cfg.programs()
+        if depth == 3
+        else -1,
     }
 
 

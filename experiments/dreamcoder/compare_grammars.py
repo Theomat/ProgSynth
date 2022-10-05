@@ -31,14 +31,18 @@ seed = 1
 
 def produce_grammars(depth: int) -> Dict[str, int]:
     cfg = CFG.depth_constraint(dsl, type_request, depth)
-    ttcfg = add_constraints(cfg, constraints, progress=False)
+    if depth == 3:
+
+        ttcfg = add_constraints(cfg, constraints, progress=False)
     ucfg = UCFG.from_DFTA_with_ngrams(
-        add_dfta_constraints(cfg, constraints, progress=False), 2
+        add_dfta_constraints(cfg, constraints, progress=True), 2
     )
     return {
         "cfg": cfg.programs(),
         "ucfg": ucfg.programs(),
-        "ttcfg": ttcfg.programs_stochastic(cfg, 100000, seed) * cfg.programs(),
+        "ttcfg": ttcfg.programs_stochastic(cfg, 100000, seed) * cfg.programs()
+        if depth == 3
+        else -1,
     }
 
 
