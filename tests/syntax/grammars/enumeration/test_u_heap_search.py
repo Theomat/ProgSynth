@@ -1,10 +1,11 @@
-from typing import Tuple, TypeVar, List as TList
+from typing import TypeVar
+from synth.pruning.constraints import add_dfta_constraints
+from synth.syntax.grammars.cfg import CFG
 from synth.syntax.grammars.enumeration.u_heap_search import (
     Bucket,
     enumerate_prob_u_grammar,
     enumerate_bucket_prob_u_grammar,
 )
-from synth.syntax.grammars.grammar import DerivableProgram
 from synth.syntax.grammars.u_cfg import UCFG
 from synth.syntax.grammars.tagged_u_grammar import ProbUGrammar
 from synth.syntax.dsl import DSL
@@ -15,7 +16,6 @@ from synth.syntax.type_system import (
     List,
     PolymorphicType,
     PrimitiveType,
-    Type,
 )
 
 import pytest
@@ -23,15 +23,24 @@ import pytest
 
 syntax = {
     "+": FunctionType(INT, INT, INT),
+    "-": FunctionType(INT, INT, INT),
     "head": FunctionType(List(PolymorphicType("a")), PolymorphicType("a")),
     "non_reachable": PrimitiveType("non_reachable"),
     "1": INT,
+    "0": INT,
     "non_productive": FunctionType(INT, STRING),
 }
 dsl = DSL(syntax)
 dsl.instantiate_polymorphic_types()
 testdata = [
     UCFG.depth_constraint(dsl, FunctionType(INT, INT), 3),
+    UCFG.from_DFTA_with_ngrams(
+        add_dfta_constraints(
+            CFG.depth_constraint(dsl, FunctionType(INT, INT), 4),
+            ["(+ ^+,0 ^0)", "(- _ ^0)"],
+        ),
+        2,
+    ),
 ]
 
 
