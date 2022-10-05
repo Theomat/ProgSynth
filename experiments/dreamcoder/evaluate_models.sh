@@ -36,6 +36,20 @@ if [  ! -f "$TRAIN_DATASET" ]; then
         exit 1
     fi
 fi
+# Train ucfg model
+if [  ! -f "$MODEL_UCFG_FILE" ]; then
+    echo "[Training] Creating the UCFG model."
+    python examples/pbe/model_trainer.py --dsl dreamcoder --dataset $TRAIN_DATASET --seed $SEED --b $BATCH_SIZE -o $MODEL_UCFG_FILE -e $EPOCHS --constrained
+    if [ $? != "0" ]; then
+        exit 4
+    fi
+fi
+# Evaluate ucfg model
+echo "[Evaluation] Evaluating the UCFG model."
+python examples/pbe/evaluate.py --dsl dreamcoder --dataset $TEST_DATASET --b $BATCH_SIZE --model $MODEL_UCFG_FILE -o $EXPERIMENT_FOLDER -t $TIMEOUT --constrained --support $TRAIN_DATASET
+if [ $? != "0" ]; then
+    exit 5
+fi
 # Train cfg model
 if [  ! -f "$MODEL_CFG_FILE" ]; then
     echo "[Training] Creating the CFG model."
@@ -46,23 +60,9 @@ if [  ! -f "$MODEL_CFG_FILE" ]; then
 fi
 # Evaluate cfg model
 echo "[Evaluation] Evaluating the CFG model."
-python examples/pbe/evaluate.py --dsl dreamcoder --dataset $TEST_DATASET --b $BATCH_SIZE --model $MODEL_CFG_FILE -o $EXPERIMENT_FOLDER -t $TIMEOUT
+python examples/pbe/evaluate.py --dsl dreamcoder --dataset $TEST_DATASET --b $BATCH_SIZE --model $MODEL_CFG_FILE -o $EXPERIMENT_FOLDER -t $TIMEOUT --support $TRAIN_DATASET
 if [ $? != "0" ]; then
     exit 3
-fi
-# Train cfg model
-if [  ! -f "$MODEL_UCFG_FILE" ]; then
-    echo "[Training] Creating the UCFG model."
-    python examples/pbe/model_trainer.py --dsl dreamcoder --dataset $TRAIN_DATASET --seed $SEED --b $BATCH_SIZE -o $MODEL_UCFG_FILE -e $EPOCHS --constrained
-    if [ $? != "0" ]; then
-        exit 4
-    fi
-fi
-# Evaluate cfg model
-echo "[Evaluation] Evaluating the UCFG model."
-python examples/pbe/evaluate.py --dsl dreamcoder --dataset $TEST_DATASET --b $BATCH_SIZE --model $MODEL_UCFG_FILE -o $EXPERIMENT_FOLDER -t $TIMEOUT --constrained
-if [ $? != "0" ]; then
-    exit 5
 fi
 # Plotting
 python examples/plot_results.py --dataset $TEST_DATASET --folder $EXPERIMENT_FOLDER
