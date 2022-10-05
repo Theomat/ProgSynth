@@ -240,7 +240,11 @@ class Primitive(Program):
         return format(self.primitive)
 
     def __eq__(self, other: Any) -> bool:
-        return isinstance(other, Primitive) and self.primitive == other.primitive
+        return (
+            isinstance(other, Primitive)
+            and self.primitive == other.primitive
+            and self.type == other.type
+        )
 
 
 import copyreg
