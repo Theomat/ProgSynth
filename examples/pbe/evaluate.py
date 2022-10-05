@@ -240,7 +240,12 @@ def produce_pcfgs(
 
     cfgs = [
         CFG.depth_constraint(
-            dsl, t, max_depth, upper_bound_type_size=10, constant_types=set()
+            dsl,
+            t,
+            max_depth,
+            upper_bound_type_size=10,
+            constant_types=set(),
+            min_variable_depth=0,
         )
         for t in all_type_requests
     ]

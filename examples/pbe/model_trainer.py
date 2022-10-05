@@ -215,6 +215,7 @@ cfgs = [
         max_depth,
         upper_bound_type_size=upper_bound_type_size,
         constant_types=dsl_constant_types,
+        min_variable_depth=0,
     )
     for t in all_type_requests
 ]
