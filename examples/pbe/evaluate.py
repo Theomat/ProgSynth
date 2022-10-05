@@ -33,7 +33,6 @@ from synth.syntax import (
     Program,
 )
 from synth.syntax.grammars.enumeration.heap_search import HSEnumerator
-from synth.syntax.grammars.enumeration.u_heap_search import UHSEnumerator
 from synth.syntax.program import Function, Primitive, Variable
 from synth.syntax.type_system import STRING, Arrow
 from synth.utils import chrono
@@ -66,6 +65,12 @@ gg.add_argument(
     action="store_true",
     default=False,
     help="use unambigous grammar to include constraints in the grammar if available",
+)
+gg.add_argument(
+    "--support",
+    type=str,
+    default=None,
+    help="train dataset to get the set of supported type requests",
 )
 gg.add_argument(
     "-v",
@@ -113,6 +118,7 @@ hidden_size: int = parameters.hidden_size
 task_timeout: float = parameters.timeout
 batch_size: int = parameters.batch_size
 constrained: bool = parameters.constrained
+support: str = parameters.support.format(dsl_name=dsl_name)
 
 
 if not os.path.exists(model_file) or not os.path.isfile(model_file):
@@ -121,7 +127,11 @@ if not os.path.exists(model_file) or not os.path.isfile(model_file):
 elif not os.path.exists(dataset_file) or not os.path.isfile(dataset_file):
     print("Dataset must be a valid dataset file!", file=sys.stderr)
     sys.exit(1)
-
+elif support is not None and (
+    not os.path.exists(support) or not os.path.isfile(support)
+):
+    print("Support dataset must be a valid dataset file!", file=sys.stderr)
+    sys.exit(1)
 if search_algo == "heap_search":
     custom_enumerate = (
         enumerate_prob_grammar if not constrained else enumerate_prob_u_grammar
@@ -146,6 +156,8 @@ start_index = (
     else (len(dataset_file) - dataset_file[::-1].index(os.path.sep))
 )
 dataset_name = dataset_file[start_index : dataset_file.index(".", start_index)]
+
+supported_type_requests = Dataset.load(support).type_requests() if support else None
 
 # ================================
 # Load constants specific to dataset
@@ -199,12 +211,18 @@ def produce_pcfgs(
         with open(file, "rb") as fd:
             pcfgs = pickle.load(fd)
     tasks = full_dataset.tasks
+    tasks = [
+        t
+        for t in tasks
+        if supported_type_requests is None or t.type_request in supported_type_requests
+    ]
     done = len(pcfgs)
     # ================================
     # Skip if possible
     # ================================
     if done >= len(tasks):
         return pcfgs
+
     # Get device
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print("Using device:", device)
@@ -212,7 +230,9 @@ def produce_pcfgs(
     # Neural Network creation
     # ================================
     # Generate the CFG dictionnary
-    all_type_requests = full_dataset.type_requests()
+    all_type_requests = (
+        full_dataset.type_requests() if support is None else supported_type_requests
+    )
     if all(task.solution is not None for task in full_dataset):
         max_depth = max(task.solution.depth() for task in full_dataset)
     else:
@@ -311,7 +331,12 @@ def enumerative_search(
     i = 0
     solved = 0
     total = 0
-    for task, pcfg in zip(dataset.tasks[start:], pcfgs[start:]):
+    tasks = [
+        t
+        for t in dataset.tasks
+        if supported_type_requests is None or t.type_request in supported_type_requests
+    ]
+    for task, pcfg in zip(tasks[start:], pcfgs[start:]):
         total += 1
         try:
             out = method(evaluator, task, pcfg, custom_enumerate)
