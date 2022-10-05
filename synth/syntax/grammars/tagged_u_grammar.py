@@ -167,8 +167,9 @@ class ProbUGrammar(TaggedUGrammar[float, U, V, W]):
                     np.array(
                         [p for p in self.tags[S][P].values()],
                         dtype=float,
-                    ),
-                    seed=seed + i if seed else None,
+                    )
+                    / sum(p for p in self.tags[S][P].values()),
+                    seed=seed + 7 * i if seed else None,
                 )
             self.sampling_map[S] = P_list
         self._int2start = list(self.starts)
