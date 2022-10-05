@@ -2,7 +2,7 @@ import atexit
 from collections import defaultdict
 import os
 import sys
-from typing import Callable, Iterable, List, Optional, Tuple
+from typing import Callable, Iterable, List, Optional, Tuple, Union
 import csv
 import pickle
 
@@ -14,12 +14,7 @@ import torch.nn as nn
 from torch.nn.utils.rnn import PackedSequence
 
 from dsl_loader import add_dsl_choice_arg, load_DSL
-from examples.pbe.transduction.knowledge_graph.kg_path_finder import (
-    build_wrapper,
-    choose_best_path,
-    find_paths_from_level,
-)
-from examples.pbe.transduction.knowledge_graph.preprocess_tasks import sketch
+
 
 from synth import Dataset, PBE, Task
 from synth.nn import (
@@ -28,19 +23,26 @@ from synth.nn import (
     abstractions,
     free_pytorch_memory,
 )
+from synth.nn.u_grammar_predictor import UGrammarPredictorLayer
 from synth.pbe import IOEncoder
+from synth.pruning.constraints.dfta_constraints import add_dfta_constraints
 from synth.semantic import DSLEvaluator
 from synth.semantic.evaluator import DSLEvaluatorWithConstant
 from synth.specification import Example, PBEWithConstants
 from synth.syntax import (
     CFG,
+    UCFG,
     ProbDetGrammar,
+    ProbUGrammar,
     enumerate_prob_grammar,
+    enumerate_prob_u_grammar,
     enumerate_bucket_prob_grammar,
+    enumerate_bucket_prob_u_grammar,
     DSL,
     Program,
 )
 from synth.syntax.grammars.enumeration.heap_search import HSEnumerator
+from synth.syntax.grammars.enumeration.u_heap_search import UHSEnumerator
 from synth.syntax.program import Function, Primitive, Variable
 from synth.syntax.type_system import STRING, Arrow
 from synth.utils import chrono
@@ -68,6 +70,12 @@ parser.add_argument(
     "-o", "--output", type=str, default="./", help="output folder (default: './')"
 )
 gg = parser.add_argument_group("model parameters")
+gg.add_argument(
+    "--constrained",
+    action="store_true",
+    default=False,
+    help="use unambigous grammar to include constraints in the grammar if available",
+)
 gg.add_argument(
     "-v",
     "--var-prob",
@@ -113,6 +121,7 @@ encoding_dimension: int = parameters.encoding_dimension
 hidden_size: int = parameters.hidden_size
 task_timeout: float = parameters.timeout
 batch_size: int = parameters.batch_size
+constrained: bool = parameters.constrained
 
 
 if not os.path.exists(model_file) or not os.path.isfile(model_file):
@@ -123,9 +132,15 @@ elif not os.path.exists(dataset_file) or not os.path.isfile(dataset_file):
     sys.exit(1)
 
 if search_algo == "heap_search":
-    custom_enumerate = enumerate_prob_grammar
+    custom_enumerate = (
+        enumerate_prob_grammar if not constrained else enumerate_prob_u_grammar
+    )
 elif search_algo == "bucket_search":
-    custom_enumerate = lambda x: enumerate_bucket_prob_grammar(x, 3)
+    custom_enumerate = (
+        lambda x: enumerate_bucket_prob_grammar(x, 3)
+        if not constrained
+        else enumerate_bucket_prob_u_grammar(x, 3)
+    )
     # TODO: add parameter for bucket_search size
 else:
     print(
@@ -147,10 +162,13 @@ dataset_name = dataset_file[start_index : dataset_file.index(".", start_index)]
 
 
 def load_dataset() -> Tuple[
-    Dataset[PBE], DSL, DSLEvaluatorWithConstant, List[int], str
+    Dataset[PBE], DSL, DSLEvaluatorWithConstant, List[int], str, List[str]
 ]:
     dsl_module = load_DSL(dsl_name)
     dsl, evaluator, lexicon = dsl_module.dsl, dsl_module.evaluator, dsl_module.lexicon
+    constraints = []
+    if constrained and hasattr(dsl_module, "constraints"):
+        constraints = dsl_module.constraints
     # ================================
     # Load dataset
     # ================================
@@ -166,14 +184,14 @@ def load_dataset() -> Tuple[
         else (len(model_file) - model_file[::-1].index(os.path.sep))
     )
     model_name = model_file[start_index : model_file.index(".", start_index)]
-    return full_dataset, dsl, evaluator, lexicon, model_name
+    return full_dataset, dsl, evaluator, lexicon, model_name, constraints
 
 
 # Produce PCFGS ==========================================================
 @torch.no_grad()
 def produce_pcfgs(
-    full_dataset: Dataset[PBE], dsl: DSL, lexicon: List[int]
-) -> List[CFG]:
+    full_dataset: Dataset[PBE], dsl: DSL, lexicon: List[int], constraints: List[str]
+) -> Union[List[ProbDetGrammar], List[ProbUGrammar]]:
     # ================================
     # Load already done PCFGs
     # ================================
@@ -185,7 +203,7 @@ def produce_pcfgs(
     )
     model_name = model_file[start_index : model_file.index(".", start_index)]
     file = os.path.join(dir, f"pcfgs_{dataset_name}_{model_name}.pickle")
-    pcfgs: List[ProbDetGrammar] = []
+    pcfgs: Union[List[ProbDetGrammar], List[ProbUGrammar]] = []
     if os.path.exists(file):
         with open(file, "rb") as fd:
             pcfgs = pickle.load(fd)
@@ -212,14 +230,28 @@ def produce_pcfgs(
         CFG.depth_constraint(dsl, t, max_depth, min_variable_depth=0)
         for t in all_type_requests
     ]
+    cfgs = [
+        UCFG.from_DFTA_with_ngrams(
+            add_dfta_constraints(cfg, constraints, progress=False), 2
+        )
+        if constrained
+        else cfg
+        for cfg in cfgs
+    ]
+    layer = UGrammarPredictorLayer if constrained else DetGrammarPredictorLayer
+    abstraction = (
+        abstractions.ucfg_bigram
+        if constrained
+        else abstractions.cfg_bigram_without_depth_and_equi_prim
+    )
 
     class MyPredictor(nn.Module):
         def __init__(self, size: int) -> None:
             super().__init__()
-            self.bigram_layer = DetGrammarPredictorLayer(
+            self.bigram_layer = layer(
                 size,
                 cfgs,
-                abstractions.cfg_bigram_without_depth_and_equi_prim,
+                abstraction,
                 variable_probability,
             )
 
@@ -263,10 +295,11 @@ def produce_pcfgs(
         batch_outputs = predictor(batch)
 
         for task, tensor in zip(batch, batch_outputs):
+            obj = predictor.bigram_layer.tensor2log_prob_grammar(
+                tensor, task.type_request
+            )
             pcfgs.append(
-                predictor.bigram_layer.tensor2log_prob_grammar(
-                    tensor, task.type_request
-                ).to_prob_det_grammar()
+                obj.to_prob_u_grammar() if constrained else obj.to_prob_det_grammar()
             )
     pbar.close()
     with open(file, "wb") as fd:
@@ -296,13 +329,13 @@ def save(trace: Iterable) -> None:
 def enumerative_search(
     dataset: Dataset[PBE],
     evaluator: DSLEvaluatorWithConstant,
-    pcfgs: List[ProbDetGrammar],
+    pcfgs: Union[List[ProbDetGrammar], List[ProbUGrammar]],
     trace: List[Tuple[bool, float]],
     method: Callable[
-        [DSLEvaluatorWithConstant, Task[PBE], ProbDetGrammar],
+        [DSLEvaluatorWithConstant, Task[PBE], Union[ProbDetGrammar, ProbUGrammar]],
         Tuple[bool, float, int, Optional[Program]],
     ],
-    custom_enumerate: Callable[[ProbDetGrammar], HSEnumerator],
+    custom_enumerate: Callable[[Union[ProbDetGrammar, ProbUGrammar]], HSEnumerator],
 ) -> None:
 
     start = len(trace)
@@ -334,8 +367,8 @@ def enumerative_search(
 def base(
     evaluator: DSLEvaluator,
     task: Task[PBE],
-    pcfg: ProbDetGrammar,
-    custom_enumerate: Callable[[ProbDetGrammar], HSEnumerator],
+    pcfg: Union[ProbDetGrammar, ProbUGrammar],
+    custom_enumerate: Callable[[Union[ProbDetGrammar, ProbUGrammar]], HSEnumerator],
 ) -> Tuple[bool, float, int, Optional[Program]]:
     time = 0.0
     programs = 0
@@ -365,8 +398,8 @@ def base(
 def constants_injector(
     evaluator: DSLEvaluatorWithConstant,
     task: Task[PBEWithConstants],
-    pcfg: ProbDetGrammar,
-    custom_enumerate: Callable[[ProbDetGrammar], HSEnumerator],
+    pcfg: Union[ProbDetGrammar, ProbUGrammar],
+    custom_enumerate: Callable[[Union[ProbDetGrammar, ProbUGrammar]], HSEnumerator],
 ) -> Tuple[bool, float, int, Optional[Program]]:
     time = 0.0
     programs = 0
@@ -422,9 +455,16 @@ def constants_injector(
 def sketched_base(
     evaluator: DSLEvaluator,
     task: Task[PBE],
-    pcfg: ProbDetGrammar,
-    custom_enumerate: Callable[[ProbDetGrammar], HSEnumerator],
+    pcfg: Union[ProbDetGrammar, ProbUGrammar],
+    custom_enumerate: Callable[[Union[ProbDetGrammar, ProbUGrammar]], HSEnumerator],
 ) -> Tuple[bool, float, int, Optional[Program]]:
+    from examples.pbe.transduction.knowledge_graph.kg_path_finder import (
+        build_wrapper,
+        choose_best_path,
+        find_paths_from_level,
+    )
+    from examples.pbe.transduction.knowledge_graph.preprocess_tasks import sketch
+
     programs = 0
     global task_timeout
     if task.metadata.get("constants", None) is not None:
@@ -600,8 +640,8 @@ def sketched_base(
 
 if __name__ == "__main__":
     full_dataset, dsl, evaluator, lexicon, model_name = load_dataset()
-    method = sketched_base
-    name = "sketched_base"
+    method = base
+    name = "base"
     # if isinstance(evaluator, DSLEvaluatorWithConstant):
     #     method = constants_injector
     #     name = "constants_injector"
