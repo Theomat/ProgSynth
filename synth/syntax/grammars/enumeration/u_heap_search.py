@@ -158,29 +158,28 @@ class UHSEnumerator(ABC, Generic[U, V, W]):
                     self.heaps[S],
                     HeapElement(priority, program),
                 )
+                if S in self.G.starts:
+                    heappush(
+                        self._start_heap,
+                        (
+                            HeapElement(
+                                self.adjust_priority_for_start(priority, S), program
+                            ),
+                            S,
+                        ),
+                    )
 
         # 3) Do the 1st query
         self.query(S, None)
 
     def start_query(self) -> Optional[Program]:
         if len(self._init) == 0:
-            # INIT start heap
             for start in self.G.starts:
-                prog = self.query(start, None)
-                assert prog
-                prio = self.adjust_priority_for_start(
-                    self.compute_priority(start, prog), start
-                )
-                heappush(self._start_heap, (HeapElement(prio, prog), start))
+                self.query(start, None)
         if len(self._start_heap) == 0:
             return None
         elem, start = heappop(self._start_heap)
-        prog = self.query(start, elem.program)
-        if prog is not None:
-            prio = self.adjust_priority_for_start(
-                self.compute_priority(start, prog), start
-            )
-            heappush(self._start_heap, (HeapElement(prio, prog), start))
+        self.query(start, elem.program)
         return elem.program
 
     def __add_successors_to_heap__(
@@ -208,6 +207,16 @@ class UHSEnumerator(ABC, Generic[U, V, W]):
                 # try:
                 priority: Ordered = self.compute_priority(S, new_program)
                 heappush(self.heaps[S], HeapElement(priority, new_program))
+                if S in self.G.starts:
+                    heappush(
+                        self._start_heap,
+                        (
+                            HeapElement(
+                                self.adjust_priority_for_start(priority, S), new_program
+                            ),
+                            S,
+                        ),
+                    )
                 # except KeyError:
                 # pass
         for info, lst in self.G.derive_all(info, Si, succ.arguments[i]):
