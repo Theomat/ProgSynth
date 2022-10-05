@@ -44,6 +44,12 @@ parser.add_argument(
     default=False,
     help="does not try to generate unique tasks",
 )
+parser.add_argument(
+    "--constrained",
+    action="store_true",
+    default=False,
+    help="tries to add constraints of the DSL to the grammar",
+)
 parameters = parser.parse_args()
 dsl_name: str = parameters.dsl
 dataset_file: str = parameters.dataset.format(dsl_name=dsl_name)
@@ -53,6 +59,7 @@ max_depth: int = parameters.max_depth
 gen_dataset_size: int = parameters.size
 uniform: bool = parameters.uniform
 no_unique: bool = parameters.no_unique
+constrained: bool = parameters.constrained
 # ================================
 # Load constants specific to DSL
 # ================================
@@ -65,6 +72,9 @@ if hasattr(dsl_module, "reproduce_dataset"):
 else:
     from synth.pbe.task_generator import reproduce_int_dataset as reproduce_dataset
 
+constraints = []
+if hasattr(dsl_module, "constraints") and constrained:
+    constraints = dsl_module.constraints
 
 if dsl_name == DREAMCODER:
     max_list_length = 10
@@ -88,6 +98,7 @@ with chrono.clock("dataset.reproduce") as c:
         max_list_length=max_list_length,
         default_max_depth=max_depth,
         uniform_pgrammar=uniform,
+        constraints=constraints,
     )
     print("done in", c.elapsed_time(), "s")
 # Add some exceptions that are ignored during task generation
