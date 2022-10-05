@@ -125,7 +125,7 @@ class UHSEnumerator(ABC, Generic[U, V, W]):
                         Si, information, 0, [], nargs
                     ):
                         new_program = Function(
-                            function=P_unique,
+                            function=P,
                             arguments=arguments,
                         )
                         P_unique = new_program
