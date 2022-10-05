@@ -166,9 +166,9 @@ def __is_intermediary__(counting: TList[bool], dst: Tuple[Type, Tuple[U, int]]) 
     dst_nos = __flatten__(dst[1])
     for i, count in enumerate(counting):
         minus = -(len(counting) - i)
-        if dst_nos[minus] and not count:
-            return True
-    return False
+        if dst_nos[minus] != 1 and not count:
+            return False
+    return True
 
 
 def __process__(
@@ -182,6 +182,7 @@ def __process__(
     if isinstance(token, TokenFunction):
         possibles = []
         added_length = []
+        counting_before = counting[:]
         for arg in token.args:
             grammar, no_added, corrects, counting = __process__(
                 grammar, arg, counting, sketch, level + 1
@@ -209,14 +210,38 @@ def __process__(
             else:
                 counting.append(False)
                 do_not_consume = set()
+                deleted = set()
+                map2new = lambda s: (s[0], (s[1][0], 2))
+                counting_last_level = counting[len(counting_before) :]
+                # print("counting_last_level:", counting_last_level)
                 for (P, p_args), p_dst in list(out_grammar.rules.items()):
                     if P in token.function.allowed and p_dst[1][1] == 0:
-                        if __is_intermediary__(counting, p_dst):
+                        if __is_intermediary__(counting_last_level, p_dst):
+                            # print("\t", P, "args:", p_args, "=>", p_dst, "is intermediary")
                             do_not_consume.add(p_dst)
                             if p_dst in out_grammar.finals:
                                 out_grammar.finals.remove(p_dst)
+                                out_grammar.finals.add(map2new(p_dst))
+                                do_not_consume.add(map2new(p_dst))
+
+                                deleted.add(p_dst)
                         else:
                             del out_grammar.rules[(P, p_args)]
+                # We need for all deleted to duplicate them
+                for (P, p_args), p_dst in list(out_grammar.rules.items()):
+                    if p_dst in deleted or any(arg in deleted for arg in p_args):
+                        if P in token.function.allowed and p_dst in deleted:
+                            continue
+                        for new_args in product(
+                            *[
+                                [arg, map2new(arg)] if arg in deleted else [arg]
+                                for arg in p_args
+                            ]
+                        ):
+                            out_grammar.rules[(P, new_args)] = (
+                                map2new(p_dst) if p_dst in deleted else p_dst
+                            )
+
                 # We also need to forbid other P from consuming intermediaries
                 for (P, p_args), p_dst in list(out_grammar.rules.items()):
                     if (
@@ -225,7 +250,6 @@ def __process__(
                         and any(arg in do_not_consume for arg in p_args)
                     ):
                         del out_grammar.rules[(P, p_args)]
-
         return out_grammar, length_so_far, [1], counting + [False]
 
     elif isinstance(token, TokenAllow):
