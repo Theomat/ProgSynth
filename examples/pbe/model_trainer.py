@@ -233,6 +233,7 @@ type2cfg = {
     else cfg
     for cfg in cfgs
 }
+cfgs = list(type2cfg.values())
 print(f"{len(all_type_requests)} type requests supported.")
 print(f"Lexicon: [{min(lexicon)};{max(lexicon)}]")
 
@@ -304,10 +305,6 @@ def do_batch(iter_number: int) -> None:
         writer.add_scalar("program/length", mean_length, iter_number)
     with chrono.clock("train.do_batch.inference"):
         batch_outputs: Tensor = predictor(batch)
-    with chrono.clock("train.do_batch.embed"):
-        batch_programs = [
-            type2cfg[task.type_request].embed(task.solution) for task in batch
-        ]
 
     # Gradient descent
     with chrono.clock("train.do_batch.loss"):
