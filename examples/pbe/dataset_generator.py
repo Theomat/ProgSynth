@@ -1,8 +1,10 @@
 import argparse
 from dsl_loader import add_dsl_choice_arg, load_DSL
+import tqdm
 
 from synth import Dataset, PBE
-from synth.utils import chrono, gen_take
+from synth.utils import chrono
+from synth.syntax import CFG
 
 DREAMCODER = "dreamcoder"
 REGEXP = "regexp"
@@ -100,6 +102,12 @@ with chrono.clock("dataset.reproduce") as c:
         uniform_pgrammar=uniform,
         constraints=constraints,
     )
+    cfgs = task_generator.type2pgrammar
+    if constrained:
+        cfgs = {
+            t: CFG.depth_constraint(dsl, t, max_depth, min_variable_depth=0)
+            for t in task_generator.type2pgrammar
+        }
     print("done in", c.elapsed_time(), "s")
 # Add some exceptions that are ignored during task generation
 task_generator.skip_exceptions.add(TypeError)
@@ -107,8 +115,18 @@ task_generator.uniques = not no_unique
 task_generator.verbose = True
 print("Generating dataset...", gen_dataset_size, end="", flush=True)
 with chrono.clock("dataset.generate") as c:
+    tasks = []
+    pbar = tqdm.tqdm(total=gen_dataset_size, desc="tasks generated")
+    for task in task_generator.generator():
+        if constrained and task.solution not in cfgs[task.type_request]:
+            continue
+        pbar.update(1)
+        tasks.append(task)
+        if len(tasks) == gen_dataset_size:
+            break
+    pbar.close()
     gen_dataset = Dataset(
-        gen_take(task_generator.generator(), gen_dataset_size, progress=True),
+        tasks,
         {
             "seed": seed,
             "max_depth": max_depth,
