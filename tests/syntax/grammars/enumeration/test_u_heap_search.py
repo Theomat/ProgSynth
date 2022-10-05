@@ -48,7 +48,7 @@ testdata = [
 
 
 def test_equality() -> None:
-    base = CFG.depth_constraint(dsl, FunctionType(INT, INT), 3, min_variable_depth=0)
+    base = CFG.depth_constraint(dsl, FunctionType(INT, INT), 5, min_variable_depth=0)
     ucfg = UCFG.from_DFTA_with_ngrams(
         add_dfta_constraints(base, [], progress=False),
         2,
@@ -57,9 +57,13 @@ def test_equality() -> None:
     seen = set()
     for program in enumerate_prob_u_grammar(ProbUGrammar.uniform(ucfg)):
         seen.add(program)
+        if len(seen) == 50000:
+            break
     seen2 = set()
     for program in enumerate_prob_grammar(ProbDetGrammar.uniform(base)):
         seen2.add(program)
+        if len(seen2) == 50000:
+            break
     assert len(seen.difference(seen2)) == 0
 
 
