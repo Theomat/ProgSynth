@@ -36,10 +36,10 @@ testdata = [
     UCFG.depth_constraint(dsl, FunctionType(INT, INT), 3),
     UCFG.from_DFTA_with_ngrams(
         add_dfta_constraints(
-            CFG.depth_constraint(dsl, FunctionType(INT, INT), 4),
-            ["(+ ^+,0 ^0)", "(- _ ^0)"],
+            CFG.depth_constraint(dsl, FunctionType(INT, INT), 3),
+            ["(+ 1 ^0)", "(- _ ^0)"],
         ),
-        2,
+        1,
     ),
 ]
 
@@ -60,7 +60,7 @@ def test_order_heapSearch(cfg: UCFG) -> None:
     last = 1.0
     for program in enumerate_prob_u_grammar(pcfg):
         p = pcfg.probability(program)
-        assert p <= last
+        assert (p - last) <= 1e-7
         last = p
 
 
