@@ -10,11 +10,15 @@ from typing import (
     Tuple,
     Type as PythonType,
     TypeVar,
+    Union,
 )
 from collections.abc import Container
 
 import numpy as np
 
+from synth.pruning.constraints.dfta_constraints import add_dfta_constraints
+from synth.syntax.grammars.tagged_u_grammar import ProbUGrammar
+from synth.syntax.grammars.u_cfg import UCFG
 from synth.task import Dataset, Task
 from synth.specification import PBE, Example
 from synth.semantic.evaluator import Evaluator
@@ -39,7 +43,7 @@ class TaskGenerator:
         evaluator: Evaluator,
         gen_random_type_request: Sampler[Type],
         gen_random_sample_number: Sampler[int],
-        pgrammars: Iterable[ProbDetGrammar],
+        pgrammars: Iterable[Union[ProbUGrammar, ProbDetGrammar]],
         output_validator: Callable[[Any], bool],
         max_tries: int = 100,
         uniques: bool = False,
@@ -213,6 +217,7 @@ def reproduce_int_dataset(
     int_bound: int = 1000,
     default_max_depth: int = 5,
     max_list_length: Optional[int] = None,
+    **kwargs: Any
 ) -> Tuple[TaskGenerator, TList[int]]:
 
     int_range: TList[int] = [999999999, 0]
@@ -255,6 +260,7 @@ def reproduce_int_dataset(
         max_tries,
         default_max_depth,
         max_list_length,
+        **kwargs
     )
 
 
@@ -275,6 +281,7 @@ def reproduce_dataset(
     max_tries: int = 100,
     default_max_depth: int = 5,
     max_list_length: Optional[int] = None,
+    constraints: TList[str] = [],
 ) -> Tuple[TaskGenerator, TList]:
     """
 
@@ -349,10 +356,26 @@ def reproduce_dataset(
     if max_depth == -1:
         max_depth = default_max_depth
     if uniform_pgrammar:
-        pgrammars = {
-            ProbDetGrammar.uniform(CFG.depth_constraint(dsl, t, max_depth))
-            for t in allowed_types
-        }
+        pgrammars: Set[Union[ProbUGrammar, ProbDetGrammar]] = set()
+        if constraints:
+            pgrammars = {
+                ProbUGrammar.uniform(
+                    UCFG.from_DFTA_with_ngrams(
+                        add_dfta_constraints(
+                            CFG.depth_constraint(dsl, t, max_depth),
+                            constraints,
+                            progress=False,
+                        ),
+                        2,
+                    )
+                )
+                for t in allowed_types
+            }
+        else:
+            pgrammars = {
+                ProbDetGrammar.uniform(CFG.depth_constraint(dsl, t, max_depth))
+                for t in allowed_types
+            }
     else:
         type2grammar = {
             t: CFG.depth_constraint(dsl, t, max_depth) for t in allowed_types
