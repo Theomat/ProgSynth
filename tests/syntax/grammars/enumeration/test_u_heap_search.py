@@ -1,11 +1,14 @@
 from typing import TypeVar
 from synth.pruning.constraints import add_dfta_constraints
 from synth.syntax.grammars.cfg import CFG
+from synth.syntax.grammars.enumeration.heap_search import enumerate_prob_grammar
 from synth.syntax.grammars.enumeration.u_heap_search import (
     Bucket,
     enumerate_prob_u_grammar,
     enumerate_bucket_prob_u_grammar,
 )
+from synth.syntax.grammars.tagged_det_grammar import ProbDetGrammar
+from synth.syntax.grammars.u_cfg import UCFG
 from synth.syntax.grammars.u_cfg import UCFG
 from synth.syntax.grammars.tagged_u_grammar import ProbUGrammar
 from synth.syntax.dsl import DSL
@@ -42,6 +45,22 @@ testdata = [
         1,
     ),
 ]
+
+
+def test_equality() -> None:
+    base = CFG.depth_constraint(dsl, FunctionType(INT, INT), 3, min_variable_depth=0)
+    ucfg = UCFG.from_DFTA_with_ngrams(
+        add_dfta_constraints(base, [], progress=False),
+        2,
+    )
+
+    seen = set()
+    for program in enumerate_prob_u_grammar(ProbUGrammar.uniform(ucfg)):
+        seen.add(program)
+    seen2 = set()
+    for program in enumerate_prob_grammar(ProbDetGrammar.uniform(base)):
+        seen2.add(program)
+    assert len(seen.difference(seen2)) == 0
 
 
 @pytest.mark.parametrize("cfg", testdata)
