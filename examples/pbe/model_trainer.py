@@ -213,6 +213,7 @@ writer = SummaryWriter()
 all_type_requests = full_dataset.type_requests()
 if all(task.solution is not None for task in full_dataset):
     max_depth = max(task.solution.depth() for task in full_dataset)
+    print("max depth:", max_depth)
 else:
     max_depth = 15  # TODO: set as parameter
 cfgs = [
@@ -239,9 +240,7 @@ print(f"Lexicon: [{min(lexicon)};{max(lexicon)}]")
 
 layer = UGrammarPredictorLayer if constrained else DetGrammarPredictorLayer
 abstraction = (
-    abstractions.ucfg_bigram
-    if constrained
-    else abstractions.cfg_bigram_without_depth_and_equi_prim
+    abstractions.ucfg_bigram if constrained else abstractions.cfg_bigram_without_depth
 )
 
 

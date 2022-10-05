@@ -242,7 +242,7 @@ def produce_pcfgs(
     abstraction = (
         abstractions.ucfg_bigram
         if constrained
-        else abstractions.cfg_bigram_without_depth_and_equi_prim
+        else abstractions.cfg_bigram_without_depth
     )
 
     class MyPredictor(nn.Module):
