@@ -195,7 +195,6 @@ class DFTA(Generic[U, V]):
         ] = {}
         for (l, args), dst in self.rules.items():
             t_args = tuple([cls2states[state2cls[q]] for q in args])
-            hash(t_args)
             new_rules[(l, t_args)] = cls2states[state2cls[dst]]
         return DFTA(new_rules, {cls2states[state2cls[q]] for q in self.finals})
 
