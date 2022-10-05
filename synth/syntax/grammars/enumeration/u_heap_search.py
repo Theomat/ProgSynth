@@ -303,7 +303,9 @@ class UHeapSearch(UHSEnumerator[U, V, W]):
                     found = True
                     probability = prob * probability
                     break
-            assert found, f"Could not find successor of {new_program} in {S}"
+            assert (
+                found
+            ), f"Could not find {new_program} in {S} [{self.G.__contains_rec__(new_program, S, self.G.start_information())[0]}]"
         else:
             possibles = self.G.derive_all(self.G.start_information(), S, new_program)
             assert len(possibles) == 1
