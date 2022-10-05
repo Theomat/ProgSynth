@@ -1,4 +1,5 @@
 from collections import defaultdict
+from dataclasses import dataclass, field
 from heapq import heappush, heappop
 from typing import (
     Dict,
@@ -24,6 +25,16 @@ V = TypeVar("V")
 W = TypeVar("W")
 
 
+@dataclass(order=True, frozen=True)
+class StartHeapElement(Generic[U]):
+    priority: Ordered
+    program: Program = field(compare=False)
+    start: Tuple[Type, U] = field(compare=False)
+
+    def __repr__(self) -> str:
+        return f"({self.priority}, {self.program}, {self.start})"
+
+
 def __wrap__(el: Union[U, List[U]]) -> Union[U, Tuple[U, ...]]:
     if isinstance(el, list):
         return tuple(el)
@@ -38,7 +49,7 @@ class UHSEnumerator(ABC, Generic[U, V, W]):
         # self.heaps[S] is a heap containing programs generated from the non-terminal S
         self.heaps: Dict[Tuple[Type, U], List[HeapElement]] = {S: [] for S in symbols}
 
-        self._start_heap: List[Tuple[HeapElement, Tuple[Type, U]]] = []
+        self._start_heap: List[StartHeapElement[U]] = []
 
         # the same program can be pushed in different heaps, with different probabilities
         # however, the same program cannot be pushed twice in the same heap
@@ -161,11 +172,8 @@ class UHSEnumerator(ABC, Generic[U, V, W]):
                 if S in self.G.starts:
                     heappush(
                         self._start_heap,
-                        (
-                            HeapElement(
-                                self.adjust_priority_for_start(priority, S), program
-                            ),
-                            S,
+                        StartHeapElement(
+                            self.adjust_priority_for_start(priority, S), program, S
                         ),
                     )
 
@@ -178,8 +186,8 @@ class UHSEnumerator(ABC, Generic[U, V, W]):
                 self.query(start, None)
         if len(self._start_heap) == 0:
             return None
-        elem, start = heappop(self._start_heap)
-        self.query(start, elem.program)
+        elem = heappop(self._start_heap)
+        self.query(elem.start, elem.program)
         return elem.program
 
     def __add_successors_to_heap__(
@@ -210,11 +218,8 @@ class UHSEnumerator(ABC, Generic[U, V, W]):
                 if S in self.G.starts:
                     heappush(
                         self._start_heap,
-                        (
-                            HeapElement(
-                                self.adjust_priority_for_start(priority, S), new_program
-                            ),
-                            S,
+                        StartHeapElement(
+                            self.adjust_priority_for_start(priority, S), new_program, S
                         ),
                     )
                 # except KeyError:
