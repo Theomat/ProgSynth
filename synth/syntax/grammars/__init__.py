@@ -5,7 +5,9 @@ from synth.syntax.grammars.det_grammar import DetGrammar
 from synth.syntax.grammars.tagged_det_grammar import ProbDetGrammar, TaggedDetGrammar
 from synth.syntax.grammars.enumeration import (
     enumerate_prob_grammar,
+    enumerate_prob_u_grammar,
     enumerate_bucket_prob_grammar,
+    enumerate_bucket_prob_u_grammar,
     # split
 )
 from synth.syntax.grammars.u_grammar import UGrammar
