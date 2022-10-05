@@ -160,3 +160,17 @@ def test_force_subtree() -> None:
     assert dsl.parse_program("(+ var0 1)", cfg.type_request) in new_cfg
     assert dsl.parse_program("(+ 1 (+ 1 (+ var0 1)))", cfg.type_request) not in new_cfg
     assert dsl.parse_program("(+ (+ (+ var0 1) 1) 1)", cfg.type_request) in new_cfg
+
+
+def test_multi_cosntraints() -> None:
+    new_cfg = UCFG.from_DFTA(
+        add_dfta_constraints(cfg, ["(+ 1 ^0)", "(- _ ^0)"], progress=False)
+    )
+    print(new_cfg)
+    assert dsl.parse_program("(- 1 (+ 1 1))", cfg.type_request) in new_cfg
+    assert dsl.parse_program("(- 1 (- 1 1))", cfg.type_request) in new_cfg
+    assert dsl.parse_program("(+ 1 (+ 1 1))", cfg.type_request) in new_cfg
+    assert dsl.parse_program("(+ (+ 1 1) 1)", cfg.type_request) not in new_cfg
+    assert dsl.parse_program("(+ var0 1)", cfg.type_request) in new_cfg
+    assert dsl.parse_program("(+ 1 (+ 1 (+ var0 1)))", cfg.type_request) not in new_cfg
+    assert dsl.parse_program("(+ 1 (+ 1 (+ 1 var0)))", cfg.type_request) not in new_cfg
