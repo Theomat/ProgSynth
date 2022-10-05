@@ -127,7 +127,6 @@ class CFG(TTCFG[CFGState, NoneType]):
         """
         dsl.instantiate_polymorphic_types(upper_bound_type_size)
 
-        dsl.instantiate_forbidden()
         forbidden_sets = dsl.forbidden_patterns
 
         if isinstance(type_request, Arrow):

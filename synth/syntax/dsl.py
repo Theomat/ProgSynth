@@ -136,39 +136,8 @@ class DSL:
                 return Variable(varno, vart)
             assert False, f"can't parse: {program}"
 
-    def instantiate_forbidden(self) -> None:
-        if self._forbidden_computed:
-            return
-        self._forbidden_computed = True
-        forbidden_sets = self.forbidden_patterns
-
-        # Complete sets
-        for source, forbid_set in forbidden_sets.items():
-            for P1 in list(forbid_set):
-                for P2 in self.list_primitives:
-                    if are_equivalent_primitives(P1, P2):
-                        forbid_set.add(P2.primitive)
-
-        # Now we have to complete keys
-        for source, forbid_set in list(forbidden_sets.items()):
-            for P in self.list_primitives:
-                if are_equivalent_primitives(P, source[0]):
-                    forbidden_sets[(P.primitive, source[1])] = forbidden_sets[source]
-
     def get_primitive(self, name: str) -> Optional[Primitive]:
         for P in self.list_primitives:
             if P.primitive == name:
                 return P
         return None
-
-
-def are_equivalent_primitives(
-    p1: Union[str, Primitive], p2: Union[str, Primitive]
-) -> bool:
-    name1 = p1 if isinstance(p1, str) else p1.primitive
-    name2 = p2 if isinstance(p2, str) else p2.primitive
-    if "@" in name1:
-        name1 = name1[: name1.find("@")]
-    if "@" in name2:
-        name2 = name2[: name2.find("@")]
-    return name1 == name2

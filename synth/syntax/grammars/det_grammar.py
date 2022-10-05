@@ -12,7 +12,6 @@ from typing import (
 from functools import lru_cache
 import copy
 
-from synth.syntax.dsl import are_equivalent_primitives
 from synth.syntax.grammars.grammar import DerivableProgram, Grammar
 from synth.syntax.program import Constant, Function, Primitive, Program, Variable
 from synth.syntax.type_system import Arrow, Type
@@ -226,7 +225,7 @@ class DetGrammar(Grammar, ABC, Generic[U, V, W]):
                 P
                 for P in self.rules[start]
                 if isinstance(P, Primitive)
-                and are_equivalent_primitives(P, program.function)
+                and P.primitive == program.function.primitive
             ]
             for function in possible_choices:
                 args_P = program.arguments
@@ -249,7 +248,7 @@ class DetGrammar(Grammar, ABC, Generic[U, V, W]):
             possible_choices = [
                 P
                 for P in self.rules[start]
-                if isinstance(P, Primitive) and are_equivalent_primitives(P, program)
+                if isinstance(P, Primitive) and P.primitive == program.primitive
             ]
             if len(possible_choices) == 0:
                 return None
