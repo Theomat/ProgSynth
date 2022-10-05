@@ -8,24 +8,16 @@ import tqdm
 
 import torch
 from torch import Tensor
-import torch.nn as nn
-from torch.nn.utils.rnn import PackedSequence
 from torch.utils.tensorboard import SummaryWriter
 
 import numpy as np
 
 from dsl_loader import add_dsl_choice_arg, load_DSL
+from examples.pbe.model_loader import MyPredictor
 
 
 from synth import Dataset, PBE, Task
-from synth.nn import (
-    DetGrammarPredictorLayer,
-    UGrammarPredictorLayer,
-    abstractions,
-    Task2Tensor,
-    print_model_summary,
-)
-from synth.pbe import IOEncoder
+from synth.nn import print_model_summary
 from synth.syntax import CFG, UCFG
 from synth.utils import chrono
 from synth.pruning.constraints import add_dfta_constraints
@@ -238,41 +230,16 @@ cfgs = list(type2cfg.values())
 print(f"{len(all_type_requests)} type requests supported.")
 print(f"Lexicon: [{min(lexicon)};{max(lexicon)}]")
 
-layer = UGrammarPredictorLayer if constrained else DetGrammarPredictorLayer
-abstraction = (
-    abstractions.ucfg_bigram if constrained else abstractions.cfg_bigram_without_depth
-)
 
-
-class MyPredictor(nn.Module):
-    def __init__(self, size: int) -> None:
-        super().__init__()
-        self.bigram_layer = layer(
-            size,
-            cfgs,
-            abstraction,
-            variable_probability,
-        )
-        encoder = IOEncoder(encoding_dimension, lexicon)
-        self.packer = Task2Tensor(
-            encoder, nn.Embedding(len(encoder.lexicon), size), size, device=device
-        )
-        self.rnn = nn.LSTM(size, size, 1)
-        self.end = nn.Sequential(
-            nn.Linear(size, size),
-            nn.ReLU(),
-            nn.Linear(size, size),
-            nn.ReLU(),
-        )
-
-    def forward(self, x: List[Task[PBE]]) -> Tensor:
-        seq: PackedSequence = self.packer(x)
-        _, (y, _) = self.rnn(seq)
-        y: Tensor = y.squeeze(0)
-        return self.bigram_layer(self.end(y))
-
-
-predictor = MyPredictor(hidden_size).to(device)
+predictor = MyPredictor(
+    hidden_size,
+    constrained,
+    cfgs,
+    variable_probability,
+    encoding_dimension,
+    device,
+    lexicon,
+).to(device)
 print_model_summary(predictor)
 optim = torch.optim.AdamW(predictor.parameters(), lr, weight_decay=weight_decay)
 scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optim, "min")

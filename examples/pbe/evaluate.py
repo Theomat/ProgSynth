@@ -9,22 +9,13 @@ import pickle
 import tqdm
 
 import torch
-from torch import Tensor
-import torch.nn as nn
-from torch.nn.utils.rnn import PackedSequence
 
 from dsl_loader import add_dsl_choice_arg, load_DSL
+from examples.pbe.model_loader import MyPredictor
 
 
 from synth import Dataset, PBE, Task
-from synth.nn import (
-    DetGrammarPredictorLayer,
-    Task2Tensor,
-    abstractions,
-    free_pytorch_memory,
-)
-from synth.nn.u_grammar_predictor import UGrammarPredictorLayer
-from synth.pbe import IOEncoder
+from synth.nn import free_pytorch_memory
 from synth.pruning.constraints.dfta_constraints import add_dfta_constraints
 from synth.semantic import DSLEvaluator
 from synth.semantic.evaluator import DSLEvaluatorWithConstant
@@ -225,9 +216,12 @@ def produce_pcfgs(
     if all(task.solution is not None for task in full_dataset):
         max_depth = max(task.solution.depth() for task in full_dataset)
     else:
-        max_depth = 10  # TODO: set as parameter
+        max_depth = 5  # TODO: set as parameter
+
     cfgs = [
-        CFG.depth_constraint(dsl, t, max_depth, min_variable_depth=0)
+        CFG.depth_constraint(
+            dsl, t, max_depth, upper_bound_type_size=10, constant_types=set()
+        )
         for t in all_type_requests
     ]
     cfgs = [
@@ -238,42 +232,16 @@ def produce_pcfgs(
         else cfg
         for cfg in cfgs
     ]
-    layer = UGrammarPredictorLayer if constrained else DetGrammarPredictorLayer
-    abstraction = (
-        abstractions.ucfg_bigram
-        if constrained
-        else abstractions.cfg_bigram_without_depth
+
+    predictor = MyPredictor(
+        hidden_size,
+        constrained,
+        cfgs,
+        variable_probability,
+        encoding_dimension,
+        device,
+        lexicon,
     )
-
-    class MyPredictor(nn.Module):
-        def __init__(self, size: int) -> None:
-            super().__init__()
-            self.bigram_layer = layer(
-                size,
-                cfgs,
-                abstraction,
-                variable_probability,
-            )
-
-            encoder = IOEncoder(encoding_dimension, lexicon)
-            self.packer = Task2Tensor(
-                encoder, nn.Embedding(len(encoder.lexicon), size), size, device=device
-            )
-            self.rnn = nn.LSTM(size, size, 1)
-            self.end = nn.Sequential(
-                nn.Linear(size, size),
-                nn.ReLU(),
-                nn.Linear(size, size),
-                nn.ReLU(),
-            )
-
-        def forward(self, x: List[Task[PBE]]) -> Tensor:
-            seq: PackedSequence = self.packer(x)
-            _, (y, _) = self.rnn(seq)
-            y: Tensor = y.squeeze(0)
-            return self.bigram_layer(self.end(y))
-
-    predictor = MyPredictor(hidden_size)
     predictor.load_state_dict(torch.load(model_file))
     predictor = predictor.to(device)
     predictor.eval()
@@ -639,14 +607,14 @@ def sketched_base(
 # Main ====================================================================
 
 if __name__ == "__main__":
-    full_dataset, dsl, evaluator, lexicon, model_name = load_dataset()
+    full_dataset, dsl, evaluator, lexicon, model_name, constraints = load_dataset()
     method = base
     name = "base"
     # if isinstance(evaluator, DSLEvaluatorWithConstant):
     #     method = constants_injector
     #     name = "constants_injector"
 
-    pcfgs = produce_pcfgs(full_dataset, dsl, lexicon)
+    pcfgs = produce_pcfgs(full_dataset, dsl, lexicon, constraints)
     file = os.path.join(
         output_folder, f"{dataset_name}_{model_name}_{search_algo}_{name}.csv"
     )
