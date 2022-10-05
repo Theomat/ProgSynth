@@ -116,7 +116,6 @@ class UHSEnumerator(ABC, Generic[U, V, W]):
         best_priority: Optional[Ordered] = None
         for P in self.G.rules[S]:
             nargs = self.G.arguments_length_for(S, P)
-            P_unique: Program = P
             if nargs > 0:
                 for information, Si, v in self.G.derive(
                     self.G.start_information(), S, P
@@ -128,17 +127,16 @@ class UHSEnumerator(ABC, Generic[U, V, W]):
                             function=P,
                             arguments=arguments,
                         )
-                        P_unique = new_program
-                        priority = self.compute_priority(S, P_unique)
-                        self.max_priority[(S, P)] = P_unique
+                        priority = self.compute_priority(S, new_program)
+                        self.max_priority[(S, P)] = new_program
                         if not best_priority or priority < best_priority:
-                            best_program = P_unique
+                            best_program = new_program
                             best_priority = priority
             else:
-                priority = self.compute_priority(S, P_unique)
-                self.max_priority[(S, P)] = P_unique
+                priority = self.compute_priority(S, P)
+                self.max_priority[(S, P)] = P
                 if not best_priority or priority < best_priority:
-                    best_program = P_unique
+                    best_program = P
                     best_priority = priority
         assert best_program
         self.max_priority[S] = best_program
@@ -168,14 +166,18 @@ class UHSEnumerator(ABC, Generic[U, V, W]):
             for start in self.G.starts:
                 prog = self.query(start, None)
                 assert prog
-                prio = self.compute_priority(start, prog)
+                prio = self.adjust_priority_for_start(
+                    self.compute_priority(start, prog), start
+                )
                 heappush(self._start_heap, (HeapElement(prio, prog), start))
         if len(self._start_heap) == 0:
             return None
         elem, start = heappop(self._start_heap)
         prog = self.query(start, elem.program)
         if prog is not None:
-            prio = self.compute_priority(start, prog)
+            prio = self.adjust_priority_for_start(
+                self.compute_priority(start, prog), start
+            )
             heappush(self._start_heap, (HeapElement(prio, prog), start))
         return elem.program
 
@@ -242,6 +244,12 @@ class UHSEnumerator(ABC, Generic[U, V, W]):
     def compute_priority(self, S: Tuple[Type, U], new_program: Program) -> Ordered:
         pass
 
+    @abstractmethod
+    def adjust_priority_for_start(
+        self, priority: Ordered, start: Tuple[Type, U]
+    ) -> Ordered:
+        pass
+
 
 class UHeapSearch(UHSEnumerator[U, V, W]):
     def __init__(self, G: ProbUGrammar[U, V, W]) -> None:
@@ -250,11 +258,18 @@ class UHeapSearch(UHSEnumerator[U, V, W]):
             lambda: {}
         )
 
+    def adjust_priority_for_start(
+        self, priority: Ordered, start: Tuple[Type, U]
+    ) -> Ordered:
+        return priority * self.G.start_tags[start]  # type: ignore
+
     def __prob__(
         self, succ: Function, S: Tuple[Type, U], Si: Tuple[Type, U], info: W, i: int
     ) -> float:
         # Si is non-terminal symbol used to derive the i-th argument
         arg = succ.arguments[i]
+        if Si not in self.probabilities[arg]:
+            return -1
         probability = self.probabilities[arg][Si]
         if i + 1 >= len(succ.arguments):
             return probability
@@ -271,6 +286,7 @@ class UHeapSearch(UHSEnumerator[U, V, W]):
             return -self.probabilities[new_program][S]
         if isinstance(new_program, Function):
             F = new_program.function
+            found = False
             for information, lst in self.G.derive_all(self.G.start_information(), S, F):
                 Si = lst[-1][0]
                 v = __wrap__(lst[-1][-1])
@@ -278,8 +294,10 @@ class UHeapSearch(UHSEnumerator[U, V, W]):
                 probability = self.G.probabilities[S][F][v]  # type: ignore
                 prob = self.__prob__(new_program, S, Si, information, 0)
                 if prob >= 0:
+                    found = True
+                    probability = prob * probability
                     break
-            probability = prob * probability
+            assert found
         else:
             possibles = self.G.derive_all(self.G.start_information(), S, new_program)
             assert len(possibles) == 1
@@ -301,11 +319,18 @@ class BucketSearch(UHSEnumerator[U, V, W]):
         )
         self.bucket_size = bucket_size
 
+    def adjust_priority_for_start(
+        self, priority: Ordered, start: Tuple[Type, U]
+    ) -> Ordered:
+        return priority.add_prob_uniform(self.G.start_tags[start])  # type: ignore
+
     def __prob__(
         self, succ: Function, S: Tuple[Type, U], Si: Tuple[Type, U], info: W, i: int
     ) -> Optional[Bucket]:
         # Si is non-terminal symbol used to derive the i-th argument
         arg = succ.arguments[i]
+        if Si not in self.bucket_tuples[arg]:
+            return None
         bucket = self.bucket_tuples[arg][Si]
         if i + 1 >= len(succ.arguments):
             return bucket
