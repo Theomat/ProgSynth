@@ -59,7 +59,7 @@ for depth in tqdm.trange(min_depth, max_depth + 1):
         output.append(["depth"] + order)
     output.append([depth] + [f"{all_grammars[name]:e}" for name in order])
 
-file = f"./grammar_sizes_{min_depth}_to_{max_depth}.csv"
+file = f"./{dsl_name}_grammar_sizes_{min_depth}_to_{max_depth}.csv"
 with open(file, "w") as fd:
     csv.writer(fd).writerows(output)
 print("saved to", file)
