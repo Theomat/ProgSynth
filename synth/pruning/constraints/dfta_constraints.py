@@ -63,7 +63,7 @@ def __cfg2dfta__(
                     )
                 for nargs in all_cases[key]:
                     dfta_rules[(P, nargs)] = (
-                        P.type.returns(),
+                        S[0],
                         max(i for _, i in nargs) + 1,
                     )
     r = grammar.type_request.returns()
