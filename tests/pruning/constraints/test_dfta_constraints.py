@@ -18,6 +18,7 @@ syntax = {
     "head": FunctionType(List(PolymorphicType("a")), PolymorphicType("a")),
     "non_reachable": PrimitiveType("non_reachable"),
     "1": INT,
+    "0": INT,
     "non_productive": FunctionType(INT, STRING),
 }
 dsl = DSL(syntax)
@@ -166,7 +167,7 @@ def test_multi_cosntraints() -> None:
     new_cfg = UCFG.from_DFTA(
         add_dfta_constraints(cfg, ["(+ 1 ^0)", "(- _ ^0)"], progress=False)
     )
-    print(new_cfg)
+    # print(new_cfg)
     assert dsl.parse_program("(- 1 (+ 1 1))", cfg.type_request) in new_cfg
     assert dsl.parse_program("(- 1 (- 1 1))", cfg.type_request) in new_cfg
     assert dsl.parse_program("(+ 1 (+ 1 1))", cfg.type_request) in new_cfg
