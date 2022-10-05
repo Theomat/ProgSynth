@@ -20,13 +20,15 @@ from dsl_loader import add_dsl_choice_arg, load_DSL
 from synth import Dataset, PBE, Task
 from synth.nn import (
     DetGrammarPredictorLayer,
+    UGrammarPredictorLayer,
     abstractions,
     Task2Tensor,
     print_model_summary,
 )
 from synth.pbe import IOEncoder
-from synth.syntax import CFG
+from synth.syntax import CFG, UCFG
 from synth.utils import chrono
+from synth.pruning.constraints import add_dfta_constraints
 
 DREAMCODER = "dreamcoder"
 DEEPCODER = "deepcoder"
@@ -72,6 +74,12 @@ parser.add_argument(
     help="do not produce stats increasing speed",
 )
 gg = parser.add_argument_group("model parameters")
+gg.add_argument(
+    "--constrained",
+    action="store_true",
+    default=False,
+    help="use unambigous grammar to include constraints in the grammar if available",
+)
 gg.add_argument(
     "-v",
     "--var-prob",
@@ -146,7 +154,7 @@ cpu_only: bool = parameters.cpu
 no_clean: bool = parameters.no_clean
 no_shuffle: bool = parameters.no_shuffle
 no_stats: bool = parameters.no_stats
-should_generate_dataset: bool = False
+constrained: bool = parameters.constrained
 
 random.seed(seed)
 torch.manual_seed(seed)
@@ -169,6 +177,12 @@ elif dsl_name == TRANSDUCTION:
 
 if hasattr(dsl_module, "constant_types"):
     dsl_constant_types = dsl_module.constant_types
+constraints = []
+if hasattr(dsl_module, "constraints"):
+    constraints = dsl_module.constraints
+else:
+    constrained = False
+
 # ================================
 # Load dataset & Task Generator
 # ================================
@@ -211,18 +225,32 @@ cfgs = [
     )
     for t in all_type_requests
 ]
-type2cfg = {cfg.type_request: cfg for cfg in cfgs}
+type2cfg = {
+    cfg.type_request: UCFG.from_DFTA_with_ngrams(
+        add_dfta_constraints(cfg, constraints, progress=False), 2
+    )
+    if constrained
+    else cfg
+    for cfg in cfgs
+}
 print(f"{len(all_type_requests)} type requests supported.")
 print(f"Lexicon: [{min(lexicon)};{max(lexicon)}]")
+
+layer = UGrammarPredictorLayer if constrained else DetGrammarPredictorLayer
+abstraction = (
+    abstractions.ucfg_bigram
+    if constrained
+    else abstractions.cfg_bigram_without_depth_and_equi_prim
+)
 
 
 class MyPredictor(nn.Module):
     def __init__(self, size: int) -> None:
         super().__init__()
-        self.bigram_layer = DetGrammarPredictorLayer(
+        self.bigram_layer = layer(
             size,
             cfgs,
-            abstractions.cfg_bigram_without_depth_and_equi_prim,
+            abstraction,
             variable_probability,
         )
         encoder = IOEncoder(encoding_dimension, lexicon)
