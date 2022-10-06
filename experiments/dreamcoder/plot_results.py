@@ -194,12 +194,12 @@ for file in glob(os.path.join(output_folder, "*.csv")):
     max_tasks = max(len(trace), max_tasks)
 
     to_plot.append((name, trace))
-   
-    
-solved_by_any = [any(t[i][0] for  _, t in to_plot) for i in range(max_tasks)]
+
+
+solved_by_any = [any(t[i][0] for _, t in to_plot) for i in range(max_tasks)]
 for name, trace in to_plot:
     trace = [row for i, row in enumerate(trace) if solved_by_any[i] or not no_failure]
-     # Plot tasks wrt time
+    # Plot tasks wrt time
     trace_time = trace if no_sort else sorted(trace, key=lambda x: x[1])
     cum_sol1, cum_time = np.cumsum([row[0] for row in trace_time]), np.cumsum(
         [row[1] for row in trace_time]
