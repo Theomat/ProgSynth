@@ -1,3 +1,4 @@
+from cProfile import label
 from glob import glob
 import os
 from typing import List
@@ -197,6 +198,11 @@ for file in glob(os.path.join(output_folder, "*.csv")):
 
 
 solved_by_any = [any(t[i][0] for _, t in to_plot) for i in range(max_tasks)]
+mini = [
+    min(t[i][2] for _, t in to_plot)
+    for i in range(max_tasks)
+    if solved_by_any[i] or not no_failure
+]
 for name, trace in to_plot:
     trace = [row for i, row in enumerate(trace) if solved_by_any[i] or not no_failure]
     # Plot tasks wrt time
@@ -217,6 +223,7 @@ for name, trace in to_plot:
     print(name, "solved", cum_sol2[-1], "/", len(trace))
     if no_failure:
         max_tasks = len(trace)
+
 ax1.hlines(
     [max_tasks],
     xmin=0,
@@ -243,3 +250,36 @@ ax1.legend()
 pub.save_fig(os.path.join(output_folder, "results.png"))
 if not no_show:
     plt.show()
+plt.figure()
+
+all_data = []
+labels = [name for name, _ in to_plot]
+for name, trace in to_plot:
+    trace = [row for i, row in enumerate(trace) if solved_by_any[i] or not no_failure]
+    all_data.append(np.array([1 + a[2] - mi for a, mi in zip(trace, mini)]))
+    # plt.plot(, label=name, linestyle='None', markersize = 10.0, marker='x')
+bplot = plt.boxplot(
+    all_data,
+    patch_artist=True,  # vertical box alignment)  # fill with color)
+    showmeans=True,  # vertical box alignment)  # fill with color)
+    vert=True,
+)  # vertical box alignment)  # fill with color)
+colors = ["lightblue", "lightgreen"]
+for patch, color in zip(bplot["boxes"], colors):
+    patch.set_facecolor(color)
+
+# bplot = plt.violinplot(all_data,
+#             showmeans=True,  # vertical box alignment)  # fill with color)
+#             vert=True,)  # vertical box alignment)  # fill with color)
+
+plt.gca().set_xticks([y + 1 for y in range(len(all_data))], labels=labels)
+plt.grid(True)
+plt.yscale("log", base=10)
+# plt.xlim(0, max_tasks)
+plt.ylim(1, np.max(all_data))
+plt.xlabel("Model")
+plt.ylabel(
+    "Distribution of Number of Programs Enumerated after best model found a solution"
+)
+plt.legend()
+plt.show()
