@@ -192,41 +192,47 @@ class UHSEnumerator(ABC, Generic[U, V, W]):
 
     def __add_successors_to_heap__(
         self, succ: Function, S: Tuple[Type, U], Si: Tuple[Type, U], info: W, i: int
-    ) -> None:
+    ) -> bool:
         if i >= len(succ.arguments):
-            return
+            return True
         # Si is non-terminal symbol used to derive the i-th argument
         program = succ.arguments[i]
+        # Check if we are not using the correct derivation of S -> P
+        # If it is not the right one (from which we can dervie back its arguments) then we can't generate successors
         if isinstance(program, Function) and program.function not in self.G.rules[Si]:
-            return
+            return False
         if (
             isinstance(program, (Primitive, Variable))
             and program not in self.G.rules[Si]
         ):
-            return
-        succ_sub_program = self.query(Si, succ.arguments[i])
-        if succ_sub_program:
-            new_arguments = succ.arguments[:]
-            new_arguments[i] = succ_sub_program
-            new_program = self.__return_unique__(Function(succ.function, new_arguments))
-            hash_new_program = hash(new_program)
-            if hash_new_program not in self.hash_table_program[S]:
-                self.hash_table_program[S].add(hash_new_program)
-                # try:
-                priority: Ordered = self.compute_priority(S, new_program)
-                heappush(self.heaps[S], HeapElement(priority, new_program))
-                if S in self.G.starts:
-                    heappush(
-                        self._start_heap,
-                        StartHeapElement(
-                            self.adjust_priority_for_start(priority, S), new_program, S
-                        ),
-                    )
-                # except KeyError:
-                # pass
+            return False
         for info, lst in self.G.derive_all(info, Si, succ.arguments[i]):
             Sip1 = lst[-1][0]
-            self.__add_successors_to_heap__(succ, S, Sip1, info, i + 1)
+            if self.__add_successors_to_heap__(succ, S, Sip1, info, i + 1):
+                succ_sub_program = self.query(Si, succ.arguments[i])
+                if succ_sub_program:
+                    new_arguments = succ.arguments[:]
+                    new_arguments[i] = succ_sub_program
+                    new_program = self.__return_unique__(
+                        Function(succ.function, new_arguments)
+                    )
+                    hash_new_program = hash(new_program)
+                    if hash_new_program not in self.hash_table_program[S]:
+                        self.hash_table_program[S].add(hash_new_program)
+                        # try:
+                        priority: Ordered = self.compute_priority(S, new_program)
+                        heappush(self.heaps[S], HeapElement(priority, new_program))
+                        if S in self.G.starts:
+                            heappush(
+                                self._start_heap,
+                                StartHeapElement(
+                                    self.adjust_priority_for_start(priority, S),
+                                    new_program,
+                                    S,
+                                ),
+                            )
+                return True
+        return False
 
     def query(self, S: Tuple[Type, U], program: Optional[Program]) -> Optional[Program]:
         """
@@ -255,9 +261,11 @@ class UHSEnumerator(ABC, Generic[U, V, W]):
         # now we need to add all potential successors of succ in heaps[S]
         if isinstance(succ, Function):
             F = succ.function
+            found = False
             for info, lst in self.G.derive_all(self.G.start_information(), S, F):
                 Si = lst[-1][0]
-                self.__add_successors_to_heap__(succ, S, Si, info, 0)
+                found |= self.__add_successors_to_heap__(succ, S, Si, info, 0)
+            assert found
         return succ
 
     @abstractmethod
