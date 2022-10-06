@@ -65,4 +65,4 @@ if [ $? != "0" ]; then
     exit 3
 fi
 # Plotting
-python experiments/dreamcoder/plot_results.py --dataset $TEST_DATASET --folder $EXPERIMENT_FOLDER
+python experiments/dreamcoder/plot_results.py --dataset $TEST_DATASET --folder $EXPERIMENT_FOLDER --support $TRAIN_DATASET
