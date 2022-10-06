@@ -336,7 +336,7 @@ class UHeapSearch(UHSEnumerator[U, V, W]):
         else:
             possibles = self.G.derive_all(self.G.start_information(), S, new_program)
             assert len(possibles) == 1
-            v = __wrap__(possibles[0][-1][-1][-1]) # type: ignore
+            v = __wrap__(possibles[0][-1][-1][-1])  # type: ignore
             probability = self.G.probabilities[S][new_program][v]  # type: ignore
         self.probabilities[new_program][S] = probability
         return -probability
