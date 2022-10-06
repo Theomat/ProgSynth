@@ -46,6 +46,16 @@ def produce_grammars(depth: int) -> Dict[str, int]:
     }
 
 
+def int2scientific(i: int) -> str:
+    try:
+        return f"{i:e}"
+    except OverflowError:
+        s = int2scientific(i // int(10**100))
+        e_index = s.index("e") + 1
+        exp = int(s[e_index + 1 :]) + 100
+        return s[:e_index] + "e+" + str(exp)
+
+
 # ===============================================================
 # No changes under here
 # ===============================================================
@@ -57,7 +67,7 @@ for depth in tqdm.trange(min_depth, max_depth + 1):
     if len(output) == 0:
         order = list(all_grammars.keys())
         output.append(["depth"] + order)
-    output.append([depth] + [f"{all_grammars[name]:e}" for name in order])
+    output.append([depth] + [f"{int2scientific(all_grammars[name])}" for name in order])
 
 file = f"./{dsl_name}_grammar_sizes_{min_depth}_to_{max_depth}.csv"
 with open(file, "w") as fd:
