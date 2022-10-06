@@ -139,16 +139,16 @@ class UHSEnumerator(ABC, Generic[U, V, W]):
                             function=P,
                             arguments=arguments,
                         )
-                        priority = self.compute_priority(S, new_program)
                         self._keys[S][new_program] = v
+                        priority = self.compute_priority(S, new_program)
                         self.max_priority[(S, P, __wrap__(v))] = new_program  # type: ignore
                         if not best_priority or priority < best_priority:
                             best_program = new_program
                             best_priority = priority
             else:
                 some_v = list(self.G.tags[S][P].keys())[0]
-                priority = self.compute_priority(S, P)
                 self._keys[S][P] = some_v
+                priority = self.compute_priority(S, P)
                 self.max_priority[(S, P, some_v)] = P
                 if not best_priority or priority < best_priority:
                     best_program = P
@@ -323,24 +323,20 @@ class UHeapSearch(UHSEnumerator[U, V, W]):
             return -self.probabilities[new_program][S]
         if isinstance(new_program, Function):
             F = new_program.function
-            found = False
-            for information, lst in self.G.derive_all(self.G.start_information(), S, F):
-                Si = lst[-1][0]
-                v = __wrap__(lst[-1][-1])
-                # We guarantee that F is a Primitive
-                probability = self.G.probabilities[S][F][v]  # type: ignore
-                prob = self.__prob__(new_program, S, Si, information, 0)
-                if prob >= 0:
-                    found = True
-                    probability = prob * probability
-                    break
+            v = self._keys[S][new_program]
+            out = self.G.derive_specific(self.G.start_information(), S, F, v)  # type: ignore
+            assert out is not None
+            information, Si = out
+            # We guarantee that F is a Primitive
+            probability = self.G.probabilities[S][F][__wrap__(v)]  # type: ignore
+            probability *= self.__prob__(new_program, S, Si, information, 0)
             assert (
-                found
+                probability >= 0
             ), f"Could not find {new_program} in {S} [{self.G.__contains_rec__(new_program, S, self.G.start_information())[0]}]"
         else:
             possibles = self.G.derive_all(self.G.start_information(), S, new_program)
             assert len(possibles) == 1
-            v = __wrap__(possibles[0][-1][-1][-1])
+            v = __wrap__(possibles[0][-1][-1][-1]) # type: ignore
             probability = self.G.probabilities[S][new_program][v]  # type: ignore
         self.probabilities[new_program][S] = probability
         return -probability
