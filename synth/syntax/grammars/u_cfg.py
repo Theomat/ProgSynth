@@ -3,6 +3,7 @@ from functools import lru_cache
 from typing import (
     Dict,
     List,
+    Optional,
     Set,
     Tuple,
     TypeVar,
@@ -77,6 +78,27 @@ class UCFG(UGrammar[U, List[Tuple[Type, U]], List[Tuple[Type, U]]], Generic[U]):
                 # This indicates the end of a derivation
                 out.append(([], (UnknownType(), self._some_start[1]), []))
         return out
+
+    def derive_specific(
+        self,
+        information: List[Tuple[Type, U]],
+        S: Tuple[Type, U],
+        P: DerivableProgram,
+        v: List[Tuple[Type, U]],
+    ) -> Optional[Tuple[List[Tuple[Type, U]], Tuple[Type, U]]]:
+        """
+        Given the current information and the derivation S -> P, produces the new information state and the next S after this derivation.
+        """
+        if len(v) == 0:
+            if information:
+                return (information[1:], information[0])
+            else:
+                # This indicates the end of a derivation
+                return ([], (UnknownType(), self._some_start[1]))
+        for args in self.rules[S][P]:
+            if args == v:
+                return (args[1:] + information, args[0])
+        return None
 
     @lru_cache()
     def programs(self) -> int:

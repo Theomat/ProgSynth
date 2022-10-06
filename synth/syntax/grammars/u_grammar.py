@@ -139,6 +139,17 @@ class UGrammar(Grammar, ABC, Generic[U, V, W]):
         """
         pass
 
+    def derive_specific(
+        self, information: W, S: Tuple[Type, U], P: DerivableProgram, v: V
+    ) -> Optional[Tuple[W, Tuple[Type, U]]]:
+        """
+        Given the current information and the derivation S -> P, produces the new information state and the next S after this derivation.
+        """
+        for a, b, c in self.derive(information, S, P):
+            if c == v:
+                return a, b
+        return None
+
     def derive_all(
         self,
         information: W,

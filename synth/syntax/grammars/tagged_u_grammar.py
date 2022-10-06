@@ -75,6 +75,11 @@ class TaggedUGrammar(UGrammar[U, V, W], Generic[T, U, V, W]):
     ) -> List[Tuple[W, Tuple[Type, U], V]]:
         return self.grammar.derive(information, S, P)
 
+    def derive_specific(
+        self, information: W, S: Tuple[Type, U], P: DerivableProgram, v: V
+    ) -> Optional[Tuple[W, Tuple[Type, U]]]:
+        return self.grammar.derive_specific(information, S, P, v)
+
     def start_information(self) -> W:
         return self.grammar.start_information()
 
