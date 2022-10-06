@@ -166,6 +166,10 @@ for file in glob(os.path.join(output_folder, "*.csv")):
     if "_" not in name:
         continue
     name = name[name.index("_") + 1 :].replace("_", " ")
+    if "ucfg" in name:
+        name = "UCFG"
+    else:
+        name = "CFG"
     trace = []
     original = read_csv(os.path.join(output_folder, file))
     trace = [(row[0] == "True", float(row[1]), int(row[2])) for row in original]
@@ -184,7 +188,7 @@ for file in glob(os.path.join(output_folder, "*.csv")):
         [row[1] for row in trace_time]
     )
     max_time = max(max_time, cum_time[-1])
-    ax1.plot(cum_time, cum_sol1, label=name.capitalize())
+    ax1.plot(cum_time, cum_sol1, label=name)
     # Plot tasks wrt programs
     trace_programs = trace if no_sort else sorted(trace, key=lambda x: x[2])
     cum_sol2, cum_programs = np.cumsum([row[0] for row in trace_programs]), np.cumsum(
@@ -192,7 +196,7 @@ for file in glob(os.path.join(output_folder, "*.csv")):
     )
     max_programs = max(max_programs, cum_programs[-1])
     if not no_progs:
-        ax2.plot(cum_programs, cum_sol2, label=name.capitalize())
+        ax2.plot(cum_programs, cum_sol2, label=name)
     print(name, "solved", cum_sol2[-1], "/", len(trace))
 ax1.hlines(
     [max_tasks],
