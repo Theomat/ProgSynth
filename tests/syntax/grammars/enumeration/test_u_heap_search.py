@@ -53,16 +53,17 @@ def test_equality() -> None:
         add_dfta_constraints(base, [], progress=False),
         2,
     )
+    total = 100000
 
     seen = set()
     for program in enumerate_prob_u_grammar(ProbUGrammar.uniform(ucfg)):
         seen.add(program)
-        if len(seen) == 50000:
+        if len(seen) == total:
             break
     seen2 = set()
     for program in enumerate_prob_grammar(ProbDetGrammar.uniform(base)):
         seen2.add(program)
-        if len(seen2) == 50000:
+        if len(seen2) == total:
             break
     assert len(seen.difference(seen2)) == 0
 
