@@ -48,6 +48,12 @@ parser.add_argument(
     default=None,
     help="train dataset to get the set of supported type requests",
 )
+parser.add_argument(
+    "--no-failure",
+    action="store_true",
+    default=False,
+    help="does not failed tasks",
+)
 parameters = parser.parse_args()
 dataset_file: str = parameters.dataset
 output_folder: str = parameters.folder
@@ -55,6 +61,9 @@ no_show: bool = parameters.no_show
 no_sort: bool = parameters.no_sort
 no_progs: bool = parameters.no_programs
 support: str = parameters.support.format(dsl_name="dreamcoder")
+no_failure: bool = parameters.no_failure
+
+
 supported_type_requests = Dataset.load(support).type_requests() if support else None
 start_index = (
     0
@@ -158,6 +167,8 @@ for i, task in enumerate(tasks):
         (not any(name.startswith(prefix) for prefix in forbidden)) and not name in exact
     )
 
+
+to_plot = []
 for file in glob(os.path.join(output_folder, "*.csv")):
     file = os.path.relpath(file, output_folder)
     if not file.startswith(dataset_name):
@@ -182,7 +193,13 @@ for file in glob(os.path.join(output_folder, "*.csv")):
     trace = [row for i, row in enumerate(trace) if mask[i]]
     max_tasks = max(len(trace), max_tasks)
 
-    # Plot tasks wrt time
+    to_plot.append((name, trace))
+   
+    
+solved_by_any = [any(t[i][0] for  _, t in to_plot) for i in range(max_tasks)]
+for name, trace in to_plot:
+    trace = [row for i, row in enumerate(trace) if solved_by_any[i] or not no_failure]
+     # Plot tasks wrt time
     trace_time = trace if no_sort else sorted(trace, key=lambda x: x[1])
     cum_sol1, cum_time = np.cumsum([row[0] for row in trace_time]), np.cumsum(
         [row[1] for row in trace_time]
@@ -198,6 +215,8 @@ for file in glob(os.path.join(output_folder, "*.csv")):
     if not no_progs:
         ax2.plot(cum_programs, cum_sol2, label=name)
     print(name, "solved", cum_sol2[-1], "/", len(trace))
+    if no_failure:
+        max_tasks = len(trace)
 ax1.hlines(
     [max_tasks],
     xmin=0,
