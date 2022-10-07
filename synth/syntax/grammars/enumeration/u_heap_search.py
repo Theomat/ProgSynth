@@ -209,12 +209,9 @@ class UHSEnumerator(ABC, Generic[U, V, W]):
         program = succ.arguments[i]
         # Check if we are not using the correct derivation of S -> P
         # If it is not the right one (from which we can dervie back its arguments) then we can't generate successors
-        if program not in self.G.rules[Si] and (
-            not isinstance(program, Function)
-            or program.function not in self.G.rules[Si]
+        for info, lst in self.G.derive_all(
+            info, Si, succ.arguments[i], hints=self._keys
         ):
-            return False
-        for info, lst in self.G.derive_all(info, Si, succ.arguments[i]):
             Sip1 = lst[-1][0]
             if self.__add_successors_to_heap__(succ, S, Sip1, info, i + 1, v):
                 succ_sub_program = self.query(Si, succ.arguments[i])
@@ -305,12 +302,10 @@ class UHeapSearch(UHSEnumerator[U, V, W]):
     ) -> float:
         # Si is non-terminal symbol used to derive the i-th argument
         arg = succ.arguments[i]
-        if Si not in self.probabilities[arg]:
-            return -1
         probability = self.probabilities[arg][Si]
         if i + 1 >= len(succ.arguments):
             return probability
-        for info, lst in self.G.derive_all(info, Si, arg):
+        for info, lst in self.G.derive_all(info, Si, arg, hints=self._keys):
             Sip1 = lst[-1][0]
             prob = self.__prob__(succ, S, Sip1, info, i + 1)
             if prob >= 0:

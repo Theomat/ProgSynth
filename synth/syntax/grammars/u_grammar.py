@@ -156,33 +156,56 @@ class UGrammar(Grammar, ABC, Generic[U, V, W]):
         S: Tuple[Type, U],
         P: Program,
         current: Optional[List[Tuple[Tuple[Type, U], V]]] = None,
+        hints: Optional[Dict[Tuple[Type, U], Dict[Program, V]]] = None,
     ) -> List[Tuple[W, List[Tuple[Tuple[Type, U], V]]]]:
         """
         Given current information and context S, produces the new information and all the contexts the grammar went through to derive program P.
         """
         current = current or []
         if isinstance(P, (Primitive, Variable, Constant)):
-            cur_possibles = self.derive(information, S, P)
-            out = [(info, current + [(ctx, pp)]) for info, ctx, pp in cur_possibles]
-            return out
+            if hints:
+                out_der = self.derive_specific(information, S, P, hints[S][P])
+                assert out_der is not None
+                return [(out_der[0], current + [(out_der[1], hints[S][P])])]
+            else:
+                cur_possibles = self.derive(information, S, P)
+                out = [(info, current + [(ctx, pp)]) for info, ctx, pp in cur_possibles]
+                return out
 
         elif isinstance(P, Function):
             F = P.function
             # current.append(S)
             # information, _ = self.derive_all(information, S, F, current)
-            possibles = self.derive_all(information, S, F, current)
-            for arg in P.arguments:
-                next_possibles = []
-                for possible in possibles:
-                    information, crt = possible
-                    S = crt[-1][0]
-                    possibles_arg = self.derive_all(information, S, arg, current)
-                    for information, next_crt in possibles_arg:
-                        next_possibles.append((information, next_crt))
-                possibles = next_possibles
-                # information, _ = self.derive_all(information, S, arg, current)
-                # S = current[-1]
-            return possibles
+            if hints:
+                out_der = self.derive_specific(information, S, F, hints[S][P])  # type: ignore
+                assert out_der is not None
+                possibles = [(out_der[0], current + [(out_der[1], hints[S][P])])]
+                for arg in P.arguments:
+                    next_possibles = []
+                    for possible in possibles:
+                        information, crt = possible
+                        S = crt[-1][0]
+                        possibles_arg = self.derive_all(
+                            information, S, arg, current, hints
+                        )
+                        for information, next_crt in possibles_arg:
+                            next_possibles.append((information, next_crt))
+                    possibles = next_possibles
+                return possibles
+            else:
+                possibles = self.derive_all(information, S, F, current)
+                for arg in P.arguments:
+                    next_possibles = []
+                    for possible in possibles:
+                        information, crt = possible
+                        S = crt[-1][0]
+                        possibles_arg = self.derive_all(information, S, arg, current)
+                        for information, next_crt in possibles_arg:
+                            next_possibles.append((information, next_crt))
+                    possibles = next_possibles
+                    # information, _ = self.derive_all(information, S, arg, current)
+                    # S = current[-1]
+                return possibles
         assert False
 
     @abstractmethod
