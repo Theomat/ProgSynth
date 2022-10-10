@@ -4,7 +4,8 @@ import tqdm
 from experiments.towers.towers_base import (
     BLOCK,
     syntax,
-    constraints,
+    user,
+    equations,
     sketch,
     dfta_constraints,
 )
@@ -13,7 +14,7 @@ from synth.syntax import (
     CFG,
     DSL,
 )
-from synth.syntax.grammars import Grammar, UCFG
+from synth.syntax.grammars import UCFG
 from synth.syntax.type_system import INT, FunctionType, Type
 from synth.pruning.constraints import add_constraints, add_dfta_constraints
 
@@ -36,18 +37,23 @@ def produce_grammars(depth: int) -> Dict[str, int]:
     if depth == 3:
         ttcfg = add_constraints(
             cfg,
-            constraints,
+            user + equations,
             sketch,
             progress=False,
         )
     ucfg = UCFG.from_DFTA_with_ngrams(
         add_dfta_constraints(
-            cfg, constraints + dfta_constraints, sketch, progress=True
+            cfg, user + equations + dfta_constraints, sketch, progress=True
         ),
+        2,
+    )
+    uucfg = UCFG.from_DFTA_with_ngrams(
+        add_dfta_constraints(cfg, user + dfta_constraints, sketch, progress=True),
         2,
     )
     return {
         "cfg": cfg.programs(),
+        "user-ucfg": uucfg.programs(),
         "ucfg": ucfg.programs(),
         "ttcfg": ttcfg.programs_stochastic(cfg, 100000, seed) * cfg.programs()
         if depth == 3
