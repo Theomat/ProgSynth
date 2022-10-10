@@ -35,6 +35,8 @@ equations = [
     "(* ^*,1,0 ^2,1,0)",
     "(+ ^+,0 ^0)",
     "(is-mod ^0,1 _)",
+    "(max ^max _)",
+    "(min ^min _)",
     "(mod ^0,1 _)",
     "(length ^range,cdr,map,cons)",
     "(index ^0 _)",
@@ -58,7 +60,7 @@ def produce_grammars(depth: int) -> Dict[str, int]:
 
         ttcfg = add_constraints(cfg, user + equations, progress=False)
     ucfg = UCFG.from_DFTA_with_ngrams(
-        add_dfta_constraints(cfg, user + equations, progress=True), 2
+        add_dfta_constraints(cfg, dsl_module.constraints, progress=True), 2
     )
     uucfg = UCFG.from_DFTA_with_ngrams(
         add_dfta_constraints(cfg, user, progress=True), 2
