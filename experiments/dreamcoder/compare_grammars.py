@@ -22,7 +22,30 @@ dsl_name: str = "dreamcoder"
 dsl_module = load_DSL(dsl_name)
 dsl: DSL = dsl_module.dsl
 dsl.instantiate_polymorphic_types()
-constraints: TList[str] = dsl_module.constraints
+
+user = [
+    "(+ _ ^*)",
+    "(+ ^_ ^*)",
+    "(if ^not _ _)",
+    "(le? ^- _)",
+    "(gt? ^- _)",
+]
+
+equations = [
+    "(* ^*,1,0 ^2,1,0)",
+    "(+ ^+,0 ^0)",
+    "(is-mod ^0,1 _)",
+    "(mod ^0,1 _)",
+    "(length ^range,cdr,map,cons)",
+    "(index ^0 _)",
+    "(not ^not)",
+    "(empty? ^range,map)",
+    "(range ^0)",
+    "(car ^range)",
+    "(cdr ^cons,map,filter)",
+    "(- _ ^0)",
+]
+
 seed = 1
 # ===============================================================
 # Fill here with your grammars
@@ -33,13 +56,21 @@ def produce_grammars(depth: int) -> Dict[str, int]:
     cfg = CFG.depth_constraint(dsl, type_request, depth)
     if depth == 3:
 
-        ttcfg = add_constraints(cfg, constraints, progress=False)
+        ttcfg = add_constraints(cfg, user + equations, progress=False)
     ucfg = UCFG.from_DFTA_with_ngrams(
-        add_dfta_constraints(cfg, constraints, progress=True), 2
+        add_dfta_constraints(cfg, user + equations, progress=True), 2
+    )
+    uucfg = UCFG.from_DFTA_with_ngrams(
+        add_dfta_constraints(cfg, user, progress=True), 2
+    )
+    eucfg = UCFG.from_DFTA_with_ngrams(
+        add_dfta_constraints(cfg, equations, progress=True), 2
     )
     return {
         "cfg": cfg.programs(),
         "ucfg": ucfg.programs(),
+        "user-ucfg": uucfg.programs(),
+        "equations-ucfg": eucfg.programs(),
         "ttcfg": ttcfg.programs_stochastic(cfg, 100000, seed) * cfg.programs()
         if depth == 3
         else -1,
@@ -48,12 +79,12 @@ def produce_grammars(depth: int) -> Dict[str, int]:
 
 def int2scientific(i: int) -> str:
     try:
-        return f"{i:e}"
+        return f"{i:.2e}"
     except OverflowError:
         s = int2scientific(i // int(10**100))
         e_index = s.index("e") + 1
         exp = int(s[e_index + 1 :]) + 100
-        return s[:e_index] + "e+" + str(exp)
+        return s[:e_index] + "+" + str(exp)
 
 
 # ===============================================================
