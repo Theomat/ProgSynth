@@ -42,6 +42,7 @@ user = [
     "(* _ ^+)",
     "(+ _ ^*)",
     "(or ^and ^and)",
+    "(not ^and,or)"
 ]
 
 equations = [
