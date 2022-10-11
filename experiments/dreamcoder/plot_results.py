@@ -1,11 +1,9 @@
-from cProfile import label
 from glob import glob
 import os
 from typing import List
 import numpy as np
 import matplotlib.pyplot as plt
 import pltpublish as pub
-import csv
 import argparse
 
 
@@ -38,12 +36,6 @@ parser.add_argument(
     help="does not sort tasks by time taken",
 )
 parser.add_argument(
-    "--no-programs",
-    action="store_true",
-    default=False,
-    help="does not show programs wrt tasks",
-)
-parser.add_argument(
     "--support",
     type=str,
     default=None,
@@ -60,7 +52,6 @@ dataset_file: str = parameters.dataset
 output_folder: str = parameters.folder
 no_show: bool = parameters.no_show
 no_sort: bool = parameters.no_sort
-no_progs: bool = parameters.no_programs
 support: str = parameters.support.format(dsl_name="dreamcoder")
 no_failure: bool = parameters.no_failure
 
@@ -74,10 +65,6 @@ start_index = (
 dataset_name = dataset_file[start_index : dataset_file.index(".", start_index)]
 
 pub.setup()
-if not no_progs:
-    ax1 = plt.subplot(1, 2, 1)
-else:
-    ax1 = plt.subplot(1, 1, 1)
 
 
 def read_csv(
@@ -93,14 +80,6 @@ def read_csv(
     return out
 
 
-plt.xlabel("Time (in s)")
-plt.ylabel("Tasks Completed")
-plt.grid()
-if not no_progs:
-    ax2 = plt.subplot(1, 2, 2)
-    plt.xlabel("# Programs")
-    plt.ylabel("Tasks Completed")
-    plt.grid()
 max_time, max_programs = 0, 0
 max_tasks = 0
 mask = []
@@ -179,9 +158,9 @@ for file in glob(os.path.join(output_folder, "*.csv")):
         continue
     name = name[name.index("_") + 1 :].replace("_", " ")
     if "ucfg" in name:
-        name = "UCFG"
+        name = "U-CFG"
     else:
-        name = "CFG"
+        name = "det-CFG"
     trace = []
     original = read_csv(os.path.join(output_folder, file))
     trace = [(row[0] == "True", float(row[1]), int(row[2])) for row in original]
@@ -203,6 +182,12 @@ mini = [
     for i in range(max_tasks)
     if solved_by_any[i] or not no_failure
 ]
+
+plt.figure()
+plt.xlabel("Time (in s)")
+plt.ylabel("Tasks Completed")
+plt.grid()
+
 for name, trace in to_plot:
     trace = [row for i, row in enumerate(trace) if solved_by_any[i] or not no_failure]
     # Plot tasks wrt time
@@ -211,47 +196,55 @@ for name, trace in to_plot:
         [row[1] for row in trace_time]
     )
     max_time = max(max_time, cum_time[-1])
-    ax1.plot(cum_time, cum_sol1, label=name)
+    plt.plot(cum_time, cum_sol1, label=name)
+    print(name, "solved", cum_sol1[-1], "/", len(trace))
+    if no_failure:
+        max_tasks = len(trace)
+
+
+plt.hlines(
+    [max_tasks],
+    xmin=0,
+    xmax=max_time,
+    label="All solved tasks" if no_failure else "All tasks",
+    color="k",
+    linestyles="dashed",
+)
+plt.xlim(0, max_time)
+plt.ylim(0, max_tasks + 10)
+
+pub.save_fig(os.path.join(output_folder, "time.png"))
+if not no_show:
+    plt.show()
+plt.figure()
+plt.xlabel("# Programs")
+plt.ylabel("Tasks Completed")
+plt.grid()
+for name, trace in to_plot:
+    trace = [row for i, row in enumerate(trace) if solved_by_any[i] or not no_failure]
     # Plot tasks wrt programs
     trace_programs = trace if no_sort else sorted(trace, key=lambda x: x[2])
     cum_sol2, cum_programs = np.cumsum([row[0] for row in trace_programs]), np.cumsum(
         [row[2] for row in trace_programs]
     )
     max_programs = max(max_programs, cum_programs[-1])
-    if not no_progs:
-        ax2.plot(cum_programs, cum_sol2, label=name)
-    print(name, "solved", cum_sol2[-1], "/", len(trace))
-    if no_failure:
-        max_tasks = len(trace)
-
-ax1.hlines(
+    plt.plot(cum_programs, cum_sol2, label=name)
+plt.hlines(
     [max_tasks],
     xmin=0,
-    xmax=max_time,
-    label="All tasks",
+    xmax=max_programs,
+    label="All solved tasks" if no_failure else "All tasks",
     color="k",
     linestyles="dashed",
 )
-ax1.set_xlim(0, max_time)
-ax1.set_ylim(0, max_tasks + 10)
-if not no_progs:
-    ax2.hlines(
-        [max_tasks],
-        xmin=0,
-        xmax=max_programs,
-        label="All tasks",
-        color="k",
-        linestyles="dashed",
-    )
-    ax2.set_xlim(0, max_programs)
-    ax2.set_ylim(0, max_tasks + 10)
-    ax2.legend()
-ax1.legend()
-pub.save_fig(os.path.join(output_folder, "results.png"))
+plt.xlim(0, max_programs)
+plt.ylim(0, max_tasks + 10)
+plt.legend()
+pub.save_fig(os.path.join(output_folder, "programs.png"))
 if not no_show:
     plt.show()
-plt.figure()
 
+plt.figure()
 all_data = []
 labels = [name for name, _ in to_plot]
 for name, trace in to_plot:
