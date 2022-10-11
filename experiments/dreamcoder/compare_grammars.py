@@ -32,21 +32,20 @@ user = [
 ]
 
 equations = [
-    "(* ^*,1,0 ^2,1,0)",
     "(+ ^+,0 ^0)",
-    "(is-mod ^0,1 _)",
+    "(- _ ^0)",
+    "(* ^*,1,0 ^2,1,0)",
     "(max ^max _)",
     "(min ^min _)",
     "(is-mod ^0,1 _)",
     "(mod ^0,1 _)",
     "(length ^range,cdr,map,cons)",
-    "(index ^0 _)",
     "(not ^not)",
+    "(index ^0 _)",
     "(empty? ^range,map)",
     "(range ^0)",
     "(car ^range)",
     "(cdr ^cons,map,filter)",
-    "(- _ ^0)",
 ]
 
 seed = 1
