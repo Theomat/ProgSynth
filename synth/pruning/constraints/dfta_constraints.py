@@ -274,6 +274,8 @@ def __process__(
             allowed = list(range(token.count + 1))
         else:
             allowed = [token.count]
+        if level == 0 and sketch:
+            out_grammar.finals = {q for q in out_grammar.finals if q[1][1] in allowed}
         return out_grammar, 1, allowed, counting + [True]
 
     elif isinstance(token, TokenForbidSubtree):
