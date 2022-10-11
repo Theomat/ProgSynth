@@ -25,7 +25,7 @@ dsl.instantiate_polymorphic_types()
 
 user = [
     "(+ _ ^*)",
-    "(+ ^_ ^*)",
+    "(* _ ^+)",
     "(if ^not _ _)",
     "(le? ^- _)",
     "(gt? ^- _)",
@@ -37,6 +37,7 @@ equations = [
     "(is-mod ^0,1 _)",
     "(max ^max _)",
     "(min ^min _)",
+    "(is-mod ^0,1 _)",
     "(mod ^0,1 _)",
     "(length ^range,cdr,map,cons)",
     "(index ^0 _)",
