@@ -1,3 +1,5 @@
+# Mac files
+.DS_store
 
 # VS code
 .vscode
@@ -22,3 +24,6 @@ docs/build
 
 # csv files
 *.csv
+
+# model files
+*.pt
