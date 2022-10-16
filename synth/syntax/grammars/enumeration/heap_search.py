@@ -51,6 +51,8 @@ class HSEnumerator(ABC, Generic[U, V, W]):
 
         # self.succ[S][P] is the successor of P from S
         self.succ: Dict[Tuple[Type, U], Dict[int, Program]] = {S: {} for S in symbols}
+        # self.pred[S][P] is the hash of the predecessor of P from S
+        self.pred: Dict[Tuple[Type, U], Dict[int, int]] = {S: {} for S in symbols}
 
         # self.hash_table_program[S] is the set of hashes of programs
         # ever added to the heap for S
@@ -149,6 +151,20 @@ class HSEnumerator(ABC, Generic[U, V, W]):
         # 3) Do the 1st query
         self.query(S, None)
 
+    def merge_program(self, representative: Program, other: Program) -> None:
+        """
+        Merge other into representative.
+        In other words, other will no longer be generated through heap search
+        """
+        our_hash = hash(other)
+        self.hash_table_global[our_hash] = representative
+        for S in self.G.rules:
+            if our_hash in self.pred[S]:
+                pred_hash = self.pred[S][our_hash]
+                nxt = self.succ[S][our_hash]
+                self.succ[S][pred_hash] = nxt
+                self.pred[S][hash(nxt)] = pred_hash
+
     def query(self, S: Tuple[Type, U], program: Optional[Program]) -> Optional[Program]:
         """
         computing the successor of program from S
@@ -172,6 +188,7 @@ class HSEnumerator(ABC, Generic[U, V, W]):
             return None  # the heap is empty: there are no successors from S
 
         self.succ[S][hash_program] = succ  # we store the successor
+        self.pred[S][hash(succ)] = hash_program  # we store the predecessor
 
         # now we need to add all potential successors of succ in heaps[S]
         if isinstance(succ, Function):
