@@ -20,8 +20,8 @@ from examples.pbe.regexp.type_regex import (
     regex_search,
 )
 
-CSTE_IN = PrimitiveType("CST_STR_INPUT")
-CSTE_OUT = PrimitiveType("CST_STR_OUTPUT")
+cst_in = PrimitiveType("CST_STR_INPUT")
+cst_out = PrimitiveType("CST_STR_OUTPUT")
 
 
 def __concat__(x, y):
@@ -36,14 +36,14 @@ def __concat_if__(x, y):
     return "" + x + y
 
 
-def __head__(x: str, regexp: str):
+def __split_first__(x: str, regexp: str):
     sbstr = regex_search(Raw(get_regexp(regexp)), x, flags=re.ASCII)
     if sbstr == None:
         return ""
     return x.split(sbstr.match.group(), 1)[0]
 
 
-def __tail__(x: str, regexp: str):
+def __split_snd__(x: str, regexp: str):
     sbstr = regex_search(Raw(get_regexp(regexp)), x, flags=re.ASCII)
     if sbstr == None:
         return ""
@@ -56,9 +56,8 @@ def __match__(x: str, regexp: str):
         return ""
     return sbstr.match.group()
 
-
 # untreated matching, done for constant text inputs (e.g. "." will be considered as a point instead of any char)
-def __head_text__(x: str, text: str):
+def __split_first_cst__(x: str, text: str):
     regexp = "(\\" + text + ")"
     sbstr = regex_search(Raw(regexp), x, flags=re.ASCII)
     if sbstr == None:
@@ -66,7 +65,7 @@ def __head_text__(x: str, text: str):
     return x.split(sbstr.match.group(), 1)[0]
 
 
-def __tail_text__(x: str, text: str):
+def __split_snd_cst__(x: str, text: str):
     regexp = "(\\" + text + ")"
     sbstr = regex_search(Raw(regexp), x, flags=re.ASCII)
     if sbstr == None:
@@ -74,7 +73,7 @@ def __tail_text__(x: str, text: str):
     return x.split(sbstr.match.group(), 1)[1]
 
 
-def __match_text__(x: str, text: str):
+def __match_cst__(x: str, text: str):
     regexp = "(\\" + text + ")"
     sbstr = regex_search(Raw(regexp), x, flags=re.ASCII)
     if sbstr == None:
@@ -88,17 +87,17 @@ def __compose__(x, y):
 
 __semantics = {
     "concat": lambda x: lambda y: __concat__(x, y),
-    "concat_cste": lambda x: lambda y: __concat__(x, y),
+    "concat_cst": lambda x: lambda y: __concat__(x, y),
     "concat_if": lambda x: lambda y: __concat_if__(x, y),
-    "head": lambda x: lambda regexp: __head__(x, regexp),
-    "tail": lambda x: lambda regexp: __tail__(x, regexp),
+    "split_first": lambda x: lambda regexp: __split_first__(x, regexp),
+    "split_snd": lambda x: lambda regexp: __split_snd__(x, regexp),
     "match": lambda x: lambda regexp: __match__(x, regexp),
-    "head_cste": lambda x: lambda text: __head_text__(x, text),
-    "tail_cste": lambda x: lambda text: __tail_text__(x, text),
-    "match_cste": lambda x: lambda text: __match_text__(x, text),
+    "split_first_cst": lambda x: lambda text: __split_first_cst__(x, text),
+    "split_snd_cst": lambda x: lambda text: __split_snd_cst__(x, text),
+    "match_cst": lambda x: lambda text: __match_cst__(x, text),
     "compose": lambda x: lambda y: __compose__(x, y),
-    "cste_in": lambda x: x,
-    "cste_out": lambda x: x,
+    "cst_in": lambda x: x,
+    "cst_out": lambda x: x,
     "$": "$",
     ".": ".",
     "except": lambda x: "([^" + x + "]+",
@@ -107,29 +106,29 @@ __semantics = {
 
 __primitive_types = {
     "concat": Arrow(STRING, Arrow(STRING, STRING)),
-    "concat_cste": Arrow(STRING, Arrow(CSTE_OUT, STRING)),
-    "concat_if": Arrow(STRING, Arrow(CSTE_OUT, STRING)),
-    "head": Arrow(STRING, Arrow(REGEXP, STRING)),
-    "tail": Arrow(STRING, Arrow(REGEXP, STRING)),
+    "concat_cst": Arrow(STRING, Arrow(CST_OUT, STRING)),
+    "concat_if": Arrow(STRING, Arrow(CST_OUT, STRING)),
+    "split_first": Arrow(STRING, Arrow(REGEXP, STRING)),
+    "split_snd": Arrow(STRING, Arrow(REGEXP, STRING)),
     "match": Arrow(STRING, Arrow(REGEXP, STRING)),
-    "head_cste": Arrow(STRING, Arrow(CSTE_IN, STRING)),
-    "tail_cste": Arrow(STRING, Arrow(CSTE_IN, STRING)),
-    "match_cste": Arrow(STRING, Arrow(CSTE_IN, STRING)),
+    "split_first_cst": Arrow(STRING, Arrow(CST_IN, STRING)),
+    "split_snd_cst": Arrow(STRING, Arrow(CST_IN, STRING)),
+    "match_cst": Arrow(STRING, Arrow(CST_IN, STRING)),
     "compose": Arrow(REGEXP, Arrow(REGEXP, REGEXP)),
-    "cste_in": CSTE_IN,
-    "cste_out": CSTE_OUT,
+    "cst_in": CST_IN,
+    "cst_out": CST_OUT,
     "$": REGEXP,
     ".": REGEXP,
-    "except": Arrow(CSTE_IN, REGEXP),
-    "except_end": Arrow(CSTE_IN, REGEXP),
+    "except": Arrow(CST_IN, REGEXP),
+    "except_end": Arrow(CST_IN, REGEXP),
 }
 
 __forbidden_patterns = {}
 
 dsl = DSL(__primitive_types, __forbidden_patterns)
 constant_types: Set[PrimitiveType] = set()
-constant_types.add(CSTE_IN)
-constant_types.add(CSTE_OUT)
+constant_types.add(cst_in)
+constant_types.add(cst_out)
 evaluator = DSLEvaluatorWithConstant(__semantics, constant_types)
 evaluator.skip_exceptions.add(re.error)
 lexicon = list([chr(i) for i in range(32, 126)])
