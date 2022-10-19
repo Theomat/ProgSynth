@@ -56,6 +56,7 @@ def __match__(x: str, regexp: str):
         return ""
     return sbstr.match.group()
 
+
 # untreated matching, done for constant text inputs (e.g. "." will be considered as a point instead of any char)
 def __split_first_cst__(x: str, text: str):
     regexp = "(\\" + text + ")"
