@@ -393,6 +393,48 @@ def base(
     return (False, time, programs, None, None)
 
 
+def semantic_equivalence(
+    evaluator: DSLEvaluator,
+    task: Task[PBE],
+    pcfg: Union[ProbDetGrammar, ProbUGrammar],
+    custom_enumerate: Callable[[Union[ProbDetGrammar, ProbUGrammar]], HSEnumerator],
+) -> Tuple[bool, float, int, Optional[Program]]:
+    time = 0.0
+    programs = 0
+    with chrono.clock("search.semantic_equivalence") as c:
+        results = {}
+        enumerator = custom_enumerate(pcfg)
+        for program in enumerator:
+            time = c.elapsed_time()
+            if time >= task_timeout:
+                return (False, time, programs, None, None)
+            programs += 1
+            failed = False
+            outputs = []
+            for ex in task.specification.examples:
+                out = evaluator.eval(program, ex.inputs)
+                if out != ex.output:
+                    failed = True
+                    if program.depth() > 2:
+                        break
+                    outputs.append(tuple(out))
+            if not failed:
+                return (
+                    True,
+                    c.elapsed_time(),
+                    programs,
+                    program,
+                    pcfg.probability(program),
+                )
+            elif len(outputs) > 0:
+                original = results.get(tuple(outputs))
+                if original is not None:
+                    enumerator.merge_program(original, program)
+                else:
+                    results[tuple(outputs)] = program
+    return (False, time, programs, None, None)
+
+
 def constants_injector(
     evaluator: DSLEvaluatorWithConstant,
     task: Task[PBEWithConstants],
