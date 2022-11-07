@@ -87,7 +87,7 @@ There are some known issues:
 
 - **seed = 0** is the **same as no seeding**.
 - if you get an error after installation try to update/upgrade ``numpy``, it is often due to a discrepancy between the version with which ``vose`` is compiled and the version the environment is running.
-- some dependencies may be missing depending on the DSL you want to use, running any example script with -h will ist you the list of available DSL with your current installation.
+- some dependencies may be missing depending on the DSL you want to use, running any example script with -h will list you the list of available DSL with your current installation.
 
 ## The Team
 
@@ -99,4 +99,4 @@ Former:
 
 ## License
 
-ProgSynth has a MIT license, as found in the [LICENSE](LICENSE) file.
+ProgSynth has a MIT license, as found in the [LICENSE](LICENSE.md) file.
