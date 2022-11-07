@@ -168,6 +168,7 @@ def __str_to_derivable_program__(word: str, grammar: TTCFG) -> TList[DerivablePr
         out: TList[DerivableProgram] = all_primitives  # type: ignore
         out += grammar.variables()
         return out
+    word = word.strip("(){}")
     allowed = set(
         [word] if not SYMBOL_SEPARATOR in word else word.split(SYMBOL_SEPARATOR)
     )
@@ -199,7 +200,7 @@ def __interpret_word__(word: str, grammar: TTCFG) -> Token:
         if str_content.startswith(SYMBOL_FORBIDDEN):
             str_content = str_content[1:]
             cst = TokenForbidSubtree
-        return cst(__str_to_derivable_program__(str_content.strip("()"), grammar))
+        return cst(__str_to_derivable_program__(str_content, grammar))
     elif word == SYMBOL_ANYTHING:
         return TokenAnything()
     elif word.startswith(SYMBOL_AGGREGATOR):
@@ -207,7 +208,7 @@ def __interpret_word__(word: str, grammar: TTCFG) -> Token:
         end_index = max(word.find("<="), word.find(">="))
         most = word[end_index] == "<"
         considered = word[:end_index]
-        content = __str_to_derivable_program__(considered.strip("()"), grammar)
+        content = __str_to_derivable_program__(considered, grammar)
         count = int(word[len(considered) + 2 :])
         if most:
             return TokenAtMost(content, count)

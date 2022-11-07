@@ -133,7 +133,6 @@ by ``And(φ1 , And(φ2 , φ3))``.
 **Note**: While the notations used are chosen to make it easier to understand, in practice when you write them in the code, a few changes occurs:
 
 - ``¬`` is replaced by ``^``
-- ``{ }`` should be replaced with ``( )``
 - global constraints are not written with a ``$`` as prefix, instead there is an additional parameter``global_constraint``
 
 ### Automatically Generated Equations
