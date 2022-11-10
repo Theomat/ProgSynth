@@ -96,6 +96,7 @@ ProgSynth is a project initiated by [Nathanaël Fijalkow](https://nathanael-fija
 Former:
 
 - [Gaëtan Margueritte](https://github.com/gaetanmargueritte) did a four-month internship. He created the regexp and transduction DSLs, the first tutorial and first drafts of code related to the use of user defined constants.
+- Utkarsh Rajan did a two-month internship. He contributed to the implementation of bucket search and worked on the tower DSL.
 
 ## License
 
