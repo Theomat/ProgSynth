@@ -57,7 +57,7 @@ parser.add_argument(
     "--verbose",
     action="store_true",
     default=False,
-    help="does not try to generate unique tasks",
+    help="verbose generation",
 )
 parameters = parser.parse_args()
 dsl_name: str = parameters.dsl
