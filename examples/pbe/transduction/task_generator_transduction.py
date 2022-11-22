@@ -32,19 +32,16 @@ from synth.generation import (
 
 
 class TransductionTaskGenerator(TaskGenerator):
-    def __generate_program__(self, type_request: Type) -> Tuple[Program, bool]:
-        """
-        (program, is_unique)
-        """
-        program, is_unique = super().__generate_program__(type_request)
-        self.__constants = super().__sample_input__([STRING, STRING])
+    def generate_program(self, type_request: Type) -> Tuple[Program, bool]:
+        program, is_unique = super().generate_program(type_request)
+        self.__constants = super().sample_input([STRING, STRING])
         return program, is_unique
 
-    def __sample_input__(self, arguments: TList[Type]) -> TList:
-        arguments = super().__sample_input__(arguments)
+    def sample_input(self, arguments: TList[Type]) -> TList:
+        arguments = super().sample_input(arguments)
         return self.__constants + arguments
 
-    def __make_task__(
+    def make_task(
         self,
         type_request: Type,
         solution: Program,
@@ -157,7 +154,7 @@ def reproduce_transduction_dataset(
         task_generator.output_validator,
         task_generator.max_tries,
         task_generator.uniques,
-        task_generator.verbose,
+        verbose=task_generator.verbose,
     )
 
     generator.skip_exceptions.add(ValueError)

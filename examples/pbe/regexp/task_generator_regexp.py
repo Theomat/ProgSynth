@@ -42,12 +42,12 @@ class RegexpTaskGenerator(TaskGenerator):
         """
         (program, is_unique)
         """
-        program, is_unique = super().__generate_program__(type_request)
+        program, is_unique = super().generate_program(type_request)
         self.__successful_tries = 0
         self.__regexp = "".join(program.__str__().split("(")[2:]).split(" ")
         return program, is_unique
 
-    def __sample_input__(self, arguments: TList[Type]) -> TList:
+    def sample_input(self, arguments: TList[Type]) -> TList:
         new_input = [""]
         # true examples
         if self.__successful_tries < 3:
@@ -76,7 +76,7 @@ class RegexpTaskGenerator(TaskGenerator):
             ]
         return new_input
 
-    def __eval_input__(self, solution: Program, new_input: TList) -> Any:
+    def eval_input(self, solution: Program, new_input: TList) -> Any:
         try:
             output = self.evaluator.eval(solution, new_input)
             if self.__successful_tries < 3 and output:
@@ -140,7 +140,7 @@ def reproduce_regexp_dataset(
             task_generator.output_validator,
             task_generator.max_tries,
             task_generator.uniques,
-            task_generator.verbose,
+            verbose=task_generator.verbose,
         ),
         str_lexicon,
     )

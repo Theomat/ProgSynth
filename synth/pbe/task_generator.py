@@ -69,9 +69,9 @@ class TaskGenerator:
         }
         self.generated_types: Dict[Type, int] = {t: 0 for t in self.type2pgrammar}
 
-    def __generate_program__(self, type_request: Type) -> Tuple[Program, bool]:
+    def generate_program(self, type_request: Type) -> Tuple[Program, bool]:
         """
-        (program, is_unique)
+        Returns (program, is_unique)
         """
         nargs: int = len(type_request.arguments())
         solution: Program = self.type2pgrammar[type_request].sample_program()
@@ -96,7 +96,7 @@ class TaskGenerator:
                 best = solution
         return best, unique_tries < self.max_tries
 
-    def __generate_type_request__(self) -> Type:
+    def generate_type_request(self) -> Type:
         type_request = self.gen_random_type_request.sample()
         i = 0
         while type_request in self._failed_types and i <= self.max_tries:
@@ -106,10 +106,10 @@ class TaskGenerator:
             self.difficulty[type_request] = [0, 0]
         return type_request
 
-    def __sample_input__(self, arguments: TList[Type]) -> TList:
+    def sample_input(self, arguments: TList[Type]) -> TList:
         return [self.input_generator.sample(type=arg_type) for arg_type in arguments]
 
-    def __eval_input__(self, solution: Program, input: TList) -> Any:
+    def eval_input(self, solution: Program, input: TList) -> Any:
         try:
             return self.evaluator.eval(solution, input)
         except Exception as e:
@@ -118,7 +118,7 @@ class TaskGenerator:
             else:
                 raise e
 
-    def __make_task__(
+    def make_task(
         self,
         type_request: Type,
         solution: Program,
@@ -136,11 +136,11 @@ class TaskGenerator:
     def generate_task(self) -> Task[PBE]:
         self._failed_types.clear()
         while True:
-            type_request = self.__generate_type_request__()
+            type_request = self.generate_type_request()
             arguments = type_request.arguments()
 
             # Generate correct program that makes use of all variables
-            solution, is_unique = self.__generate_program__(type_request)
+            solution, is_unique = self.generate_program(type_request)
             # Try to generate the required number of samples
             samples = self.gen_random_sample_number.sample(type=type_request)
             inputs: TList = []
@@ -151,8 +151,8 @@ class TaskGenerator:
                 inputs
             ) >= samples and tries < self.max_tries:
                 tries += 1
-                new_input = self.__sample_input__(arguments)
-                output = self.__eval_input__(solution, new_input)
+                new_input = self.sample_input(arguments)
+                output = self.eval_input(solution, new_input)
 
                 if self.output_validator(output) and output not in outputs:
                     inputs.append(new_input)
