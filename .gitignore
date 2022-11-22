@@ -27,3 +27,6 @@ docs/build
 
 # model files
 *.pt
+
+# VS Code Counter
+.VSCodeCounter
