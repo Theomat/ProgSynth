@@ -52,6 +52,13 @@ parser.add_argument(
     default=False,
     help="tries to add constraints of the DSL to the grammar",
 )
+parser.add_argument(
+    "-v",
+    "--verbose",
+    action="store_true",
+    default=False,
+    help="does not try to generate unique tasks",
+)
 parameters = parser.parse_args()
 dsl_name: str = parameters.dsl
 dataset_file: str = parameters.dataset.format(dsl_name=dsl_name)
@@ -62,6 +69,7 @@ gen_dataset_size: int = parameters.size
 uniform: bool = parameters.uniform
 no_unique: bool = parameters.no_unique
 constrained: bool = parameters.constrained
+verbose: bool = parameters.verbose
 # ================================
 # Load constants specific to DSL
 # ================================
@@ -80,7 +88,6 @@ if hasattr(dsl_module, "constraints") and constrained:
 
 if dsl_name == DREAMCODER:
     max_list_length = 10
-
 # ================================
 # Load dataset & Task Generator
 # ================================
@@ -101,6 +108,7 @@ with chrono.clock("dataset.reproduce") as c:
         default_max_depth=max_depth,
         uniform_pgrammar=uniform,
         constraints=constraints,
+        verbose=verbose,
     )
     cfgs = task_generator.type2pgrammar
     if constrained:

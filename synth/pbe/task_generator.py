@@ -171,7 +171,7 @@ class TaskGenerator:
             self.generated_types[type_request] += 1
             if self.uniques and is_unique:
                 self.seen.add(solution)
-            elif self.verbose:
+            elif self.verbose and not self.uniques:
                 print(
                     "Generated a copy of an existing program for type request:",
                     type_request,
@@ -282,6 +282,7 @@ def reproduce_dataset(
     default_max_depth: int = 5,
     max_list_length: Optional[int] = None,
     constraints: TList[str] = [],
+    **kwargs: Any
 ) -> Tuple[TaskGenerator, TList]:
     """
 
@@ -418,6 +419,7 @@ def reproduce_dataset(
                 or -1,
             ),
             max_tries,
+            **kwargs
         ),
         get_lexicon(out[0]),
     )
