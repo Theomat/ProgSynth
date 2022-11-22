@@ -39,8 +39,8 @@ __primitive_types = {
 
 # Short example of a forbidden patterns (if add1 and sub1 are defined in _semantics and _primitive_types)
 _forbidden_patterns = {
-    "add1": {"sub1"},
-    "sub1": {"add1"},
+    ("add1", 0): {"sub1"},
+    ("sub1", 0): {"add1"},
 }
 
 dsl = DSL(__primitive_types, forbidden_patterns=_forbidden_patterns)
