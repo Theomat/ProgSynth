@@ -118,7 +118,9 @@ hidden_size: int = parameters.hidden_size
 task_timeout: float = parameters.timeout
 batch_size: int = parameters.batch_size
 constrained: bool = parameters.constrained
-support: str = parameters.support.format(dsl_name=dsl_name)
+support: Optional[str] = (
+    None if not parameters.support else parameters.support.format(dsl_name=dsl_name)
+)
 
 
 if not os.path.exists(model_file) or not os.path.isfile(model_file):
