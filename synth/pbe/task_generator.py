@@ -178,7 +178,7 @@ class TaskGenerator:
                     "program:",
                     solution,
                 )
-            return self.__make_task__(
+            return self.make_task(
                 type_request,
                 solution,
                 inputs,
