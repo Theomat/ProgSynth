@@ -4,6 +4,7 @@ from typing import (
     Generic,
     Iterable,
     List,
+    Literal,
     Optional,
     Tuple,
     TypeVar,
@@ -14,8 +15,8 @@ import numpy as np
 import vose
 
 if TYPE_CHECKING:
-    from synth.syntax.grammars.cfg import CFG, CFGNonTerminal, CFGState, NoneType
-
+    from synth.syntax.grammars.cfg import CFG
+from synth.syntax.grammars.grammar import NGram
 from synth.syntax.grammars.det_grammar import DerivableProgram, DetGrammar
 from synth.syntax.program import Function, Program
 from synth.syntax.type_system import Type
@@ -24,6 +25,10 @@ T = TypeVar("T")
 U = TypeVar("U")
 V = TypeVar("V")
 W = TypeVar("W")
+
+NoneType = Literal[None]
+CFGState = Tuple[NGram, int]
+CFGNonTerminal = Tuple[Type, Tuple[CFGState, NoneType]]
 
 
 class TaggedDetGrammar(DetGrammar[U, V, W], Generic[T, U, V, W]):
