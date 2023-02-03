@@ -7,7 +7,8 @@ from experiments.towers.towers_base import (
     user,
     equations,
     sketch,
-    dfta_constraints,
+    user_dfta_constraints,
+    eq_dfta_constraints,
 )
 
 from synth.syntax import (
@@ -43,16 +44,16 @@ def produce_grammars(depth: int) -> Dict[str, int]:
         )
     ucfg = UCFG.from_DFTA_with_ngrams(
         add_dfta_constraints(
-            cfg, user + equations + dfta_constraints, sketch, progress=True
+            cfg, user + equations + user_dfta_constraints, sketch, progress=True
         ),
         2,
     )
     uucfg = UCFG.from_DFTA_with_ngrams(
-        add_dfta_constraints(cfg, user + dfta_constraints, sketch, progress=True),
+        add_dfta_constraints(cfg, user + user_dfta_constraints, sketch, progress=True),
         2,
     )
     eucfg = UCFG.from_DFTA_with_ngrams(
-        add_dfta_constraints(cfg, equations, progress=True),
+        add_dfta_constraints(cfg, equations + eq_dfta_constraints, progress=True),
         2,
     )
     return {
