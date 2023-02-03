@@ -31,7 +31,7 @@ syntax = {
 }
 
 sketch = "(ifY _ _)"
-user_dfta_constraints = ["#(var0,var1)>=1"]
+user_dfta_constraints = []
 user = [
     "(ifY >^(var1) ifX,elifY,EMPTY,1x3,3x1)",
     "(elifY ifY elifY,EMPTY,1x3,3x1)",
@@ -42,18 +42,14 @@ user = [
 ]
 
 equations = [
-    "(+ _ ^*)",
-    "(* ^+ ^+)",
-    "(not ^and,or)",
-    "(/ _ ^*)",
     "(or ^or _)",
     "(and ^and _)",
-    "(not ^not,==,!=)",
+    "(not ^not,==,!=,and,or)",
     "(% ^0,1 ^0,1)",
-    "(/ ^0 ^0,1)",
-    "(+ ^+,0 ^0)",
-    "(- _ ^0)",
-    "(* ^*,2,1,0 ^2,1,0)",
+    "(/ ^0,* ^0,1,*)",
+    "(+ ^+,0 ^0,*,/,-)",
+    "(- ^0 ^0,+)",
+    "(* ^*,2,1,0,+,- ^2,1,0,+,-)",
 ]
 
 eq_dfta_constraints = ["(% #(var0,var1)>=1 _)", "(<=,>=,!= #(var0,var1)>=1 _)"]
