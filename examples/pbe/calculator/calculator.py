@@ -10,7 +10,15 @@ from synth.pbe.task_generator import (
 )
 from synth.semantic import DSLEvaluator, Evaluator
 from synth.specification import PBE
-from synth.syntax import DSL, INT, Arrow, PolymorphicType, PrimitiveType, BOOL, FunctionType
+from synth.syntax import (
+    DSL,
+    INT,
+    Arrow,
+    PolymorphicType,
+    PrimitiveType,
+    BOOL,
+    FunctionType,
+)
 from synth.task import Dataset
 
 # a type representing either an int or a float
