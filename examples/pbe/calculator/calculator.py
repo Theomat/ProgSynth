@@ -10,7 +10,7 @@ from synth.pbe.task_generator import (
 )
 from synth.semantic import DSLEvaluator, Evaluator
 from synth.specification import PBE
-from synth.syntax import DSL, INT, Arrow, PolymorphicType, PrimitiveType, BOOL
+from synth.syntax import DSL, INT, Arrow, PolymorphicType, PrimitiveType, BOOL, FunctionType
 from synth.task import Dataset
 
 # a type representing either an int or a float
@@ -30,7 +30,7 @@ __semantics = {
 __primitive_types = {
     # int|float -> int|float -> int|float
     "+": Arrow(type, Arrow(type, type)),
-    "-": Arrow(type, Arrow(type, type)),
+    "-": FunctionType(type, type, type),
     "int2float": Arrow(INT, FLOAT),
     "1": INT,
     "2": INT,
