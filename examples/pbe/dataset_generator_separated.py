@@ -128,10 +128,34 @@ with chrono.clock("dataset.reproduce") as c:
 task_generator.skip_exceptions.add(TypeError)
 task_generator.uniques = not no_unique
 task_generator.verbose = True
+
+#
+def generate_samples_for(
+    tr: Type, programs: List[Program], 
+    input_sampler: Callable[[], Any], 
+    eval_prog: Callable[[Program, Any], Any]
+) -> List:
+    samples = []
+    equiv_classes = {(,): programs}
+    i = 1
+    while len(equiv_classes) < len(programs):
+        next_equiv_classes = defaultdict(list)
+        ui = input_sampler()
+        for cl, prog in equiv_classes.items():
+            o = eval_prog(prog, ui)
+            next_equiv_classes[(o, cl)].append(prog)
+        if len(next_equiv_classes) >= len(programs) * i / 5:
+            i += 1
+            equiv_classes = next_equiv_classes
+            samples.append(ui)
+     return samples
+#
+
 print("Generating programs...", nb_programs, end="", flush=True)
 type_requests = set()
 with chrono.clock("dataset.generate.programs") as c:
     programs = []
+    programs_by_tr = defaultdict(list)
     assert isinstance(task_generator, TaskGenerator)
     for i in tqdm.trange(nb_programs, desc="programs generated"):
         tr = task_generator.generate_type_request()
@@ -140,6 +164,7 @@ with chrono.clock("dataset.generate.programs") as c:
             tr = task_generator.generate_type_request()
             prob, unique = task_generator.generate_program(tr)
         type_requests.add(tr)
+        programs_by_tr[tr].append(prog)
         programs.append((tr, prog))
     print("done in", c.elapsed_time(), "s")
 print("Generating inputs...", nb_inputs, end="", flush=True)
@@ -150,7 +175,10 @@ with chrono.clock("dataset.generate.inputs") as c:
         args = tr.arguments()
         assert isinstance(task_generator, TaskGenerator)
         for i in tqdm.trange(nb_inputs, desc=f"inputs generated for {tr}"):
-            sample = [task_generator.sample_input(args) for _ in range(5)]
+            sample = generate_samples_for(tr, 
+                                          programs_by_tr[tr], 
+                                          lambda: task_generator.sample_input(args), 
+                                          lambda p, x: task_generator.eval_input(p, x)
             inputs[tr].append(sample)
     print("done in", c.elapsed_time(), "s")
 
