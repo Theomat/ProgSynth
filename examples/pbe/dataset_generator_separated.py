@@ -136,7 +136,7 @@ def generate_samples_for(
     eval_prog: Callable[[Program, Any], Any]
 ) -> List:
     samples = []
-    equiv_classes = {(,): programs}
+    equiv_classes = {None: programs}
     i = 1
     while len(equiv_classes) < len(programs):
         next_equiv_classes = defaultdict(list)
