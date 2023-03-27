@@ -1,13 +1,12 @@
 import argparse
 from collections import defaultdict
-from typing import Any, Callable, Tuple
+from typing import Any, Callable, Tuple, List
 from dsl_loader import add_dsl_choice_arg, load_DSL
 import tqdm
 
 from synth import Dataset, PBE
 from synth.pbe.task_generator import TaskGenerator
 from synth.syntax.program import Program
-from synth.syntax.type_system import List
 from synth.utils import chrono
 from synth.syntax import CFG
 
@@ -138,20 +137,51 @@ def generate_samples_for(
     programs: List[Program],
     input_sampler: Callable[[], Any],
     eval_prog: Callable[[Program, Any], Any],
+    threshold: int = 2000,
+    examples: int = 5,
 ) -> Tuple[List, List[Program]]:
     samples = []
     equiv_classes = {None: programs}
     i = 1
-    while 2 * len(equiv_classes) < len(programs):
+    n = 0
+    pbar = tqdm.tqdm(total=len(programs) // 2)
+    # Nice try
+    best = None
+    best_score = 0
+    while 2 * len(equiv_classes) < len(programs) or i == examples:
         next_equiv_classes = defaultdict(list)
-        ui = input_sampler()
+        if n > threshold:
+            ui = best
+        else:
+            ui = input_sampler()
         for cl, prog in equiv_classes.items():
-            o = eval_prog(prog, ui)
-            next_equiv_classes[(o, cl)].append(prog)
-        if 2 * len(next_equiv_classes) >= len(programs) * i / 5:
+            for p in prog:
+                o = eval_prog(p, ui)
+                if isinstance(o, List):
+                    o = tuple(o)
+                next_equiv_classes[(o, cl)].append(p)
+        ratio = len(next_equiv_classes) / len(equiv_classes)
+        if len(next_equiv_classes) > best_score:
+            best = ui
+            best_score = len(next_equiv_classes)
+        if (
+            n > threshold
+            or len(next_equiv_classes) * (ratio ** (examples - i)) >= len(programs) / 2
+        ):
             i += 1
+            pbar.update(len(next_equiv_classes) - len(equiv_classes))
             equiv_classes = next_equiv_classes
             samples.append(ui)
+            n = 0
+            best_score = len(next_equiv_classes)
+        else:
+            pbar.set_postfix_str(
+                f"{n} tested/ {len(next_equiv_classes)} from {len(equiv_classes)}({len(programs)})"
+            )
+        n += 1
+        # pbar.set_postfix_str(f"{n} tested")
+    # Brute try
+    pbar.close()
     to_keep = [min((p.size(), p) for p in v)[1] for v in equiv_classes.values()]
     return samples, to_keep
 
