@@ -1,9 +1,13 @@
 import argparse
+from collections import defaultdict
+from typing import Any, Callable
 from dsl_loader import add_dsl_choice_arg, load_DSL
 import tqdm
 
 from synth import Dataset, PBE
 from synth.pbe.task_generator import TaskGenerator
+from synth.syntax.program import Program
+from synth.syntax.type_system import List
 from synth.utils import chrono
 from synth.syntax import CFG
 
@@ -131,9 +135,9 @@ task_generator.verbose = True
 
 #
 def generate_samples_for(
-    tr: Type, programs: List[Program], 
-    input_sampler: Callable[[], Any], 
-    eval_prog: Callable[[Program, Any], Any]
+    programs: List[Program],
+    input_sampler: Callable[[], Any],
+    eval_prog: Callable[[Program, Any], Any],
 ) -> List:
     samples = []
     equiv_classes = {None: programs}
@@ -148,7 +152,9 @@ def generate_samples_for(
             i += 1
             equiv_classes = next_equiv_classes
             samples.append(ui)
-     return samples
+    return samples
+
+
 #
 
 print("Generating programs...", nb_programs, end="", flush=True)
@@ -175,10 +181,11 @@ with chrono.clock("dataset.generate.inputs") as c:
         args = tr.arguments()
         assert isinstance(task_generator, TaskGenerator)
         for i in tqdm.trange(nb_inputs, desc=f"inputs generated for {tr}"):
-            sample = generate_samples_for(tr, 
-                                          programs_by_tr[tr], 
-                                          lambda: task_generator.sample_input(args), 
-                                          lambda p, x: task_generator.eval_input(p, x)
+            sample = generate_samples_for(
+                programs_by_tr[tr],
+                lambda: task_generator.sample_input(args),
+                lambda p, x: task_generator.eval_input(p, x),
+            )
             inputs[tr].append(sample)
     print("done in", c.elapsed_time(), "s")
 
