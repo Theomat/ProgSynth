@@ -137,19 +137,21 @@ def generate_samples_for(
     programs: List[Program],
     input_sampler: Callable[[], Any],
     eval_prog: Callable[[Program, Any], Any],
-    threshold: int = 2000,
+    clear_cache: Callable,
+    threshold: int = 1000,
     examples: int = 5,
 ) -> Tuple[List, List[Program]]:
     samples = []
     equiv_classes = {None: programs}
     i = 1
     n = 0
-    pbar = tqdm.tqdm(total=len(programs) // 2)
+    pbar = tqdm.tqdm(total=examples - 1)
     # Nice try
     best = None
     best_score = 0
-    while 2 * len(equiv_classes) < len(programs) or i == examples:
+    while 2 * len(equiv_classes) < len(programs) and i < examples:
         next_equiv_classes = defaultdict(list)
+        clear_cache()
         if n > threshold:
             ui = best
         else:
@@ -169,7 +171,7 @@ def generate_samples_for(
             or len(next_equiv_classes) * (ratio ** (examples - i)) >= len(programs) / 2
         ):
             i += 1
-            pbar.update(len(next_equiv_classes) - len(equiv_classes))
+            pbar.update(1)
             equiv_classes = next_equiv_classes
             samples.append(ui)
             n = 0
@@ -182,7 +184,10 @@ def generate_samples_for(
         # pbar.set_postfix_str(f"{n} tested")
     # Brute try
     pbar.close()
-    to_keep = [min((p.size(), p) for p in v)[1] for v in equiv_classes.values()]
+    to_keep = [
+        min([(p.length(), p) for p in v], key=lambda x: x[0])[1]
+        for v in equiv_classes.values()
+    ]
     return samples, to_keep
 
 
@@ -218,9 +223,11 @@ with chrono.clock("dataset.generate.inputs") as c:
                 programs_by_tr[tr],
                 lambda: task_generator.sample_input(args),
                 lambda p, x: task_generator.eval_input(p, x),
+                task_generator.evaluator.clear_cache,
             )
             inputs[tr].append(sample)
-            filtered_programs.append(to_keep)
+            for p in to_keep:
+                filtered_programs.append((tr, p))
     print("done in", c.elapsed_time(), "s")
     print("Kept", len(filtered_programs), "/", len(programs), "programs")
 
