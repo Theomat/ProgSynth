@@ -46,6 +46,12 @@ parser.add_argument(
     "--max-depth", type=int, default=5, help="solutions max depth (default: 5)"
 )
 parser.add_argument(
+    "--max-examples",
+    type=int,
+    default=5,
+    help="max number of examples per task (default: 5)",
+)
+parser.add_argument(
     "--uniform", action="store_true", default=False, help="use uniform PCFGs"
 )
 parser.add_argument(
@@ -73,6 +79,7 @@ dataset_file: str = parameters.dataset.format(dsl_name=dsl_name)
 output_file: str = parameters.output
 seed: int = parameters.seed
 max_depth: int = parameters.max_depth
+max_examples: int = parameters.max_examples
 nb_programs: int = parameters.programs
 nb_inputs: int = parameters.inputs
 uniform: bool = parameters.uniform
@@ -155,6 +162,7 @@ def generate_programs_and_samples_for(
         lambda: task_generator.sample_input(tr.arguments()),
         task_generator.eval_input,
         task_generator.evaluator.clear_cache,
+        examples=max_examples,
     )
     # Phase 3
     pbar = tqdm.tqdm(total=nb_programs - len(equiv), desc="3: improvement")
