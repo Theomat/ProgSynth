@@ -40,7 +40,7 @@ parser.add_argument(
     "--programs", type=int, default=50, help="generated programs (default: 100)"
 )
 parser.add_argument(
-    "--inputs", type=int, default=20, help="generated inputs (default: 20)"
+    "--inputs", type=int, default=1, help="generated inputs (default: 1)"
 )
 parser.add_argument(
     "--max-depth", type=int, default=5, help="solutions max depth (default: 5)"
