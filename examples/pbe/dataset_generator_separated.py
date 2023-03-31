@@ -142,7 +142,11 @@ task_generator.verbose = True
 
 
 def generate_programs_and_samples_for(
-    tr: Type, nb_programs: int, task_generator: TaskGenerator
+    tr: Type,
+    nb_programs: int,
+    nb_inputs: int,
+    task_generator: TaskGenerator,
+    threshold: int = 1000,
 ):
 
     # 3 Phases algorithm to generate m programs
@@ -163,6 +167,7 @@ def generate_programs_and_samples_for(
         task_generator.eval_input,
         task_generator.evaluator.clear_cache,
         examples=max_examples,
+        threshold=threshold,
     )
     # Phase 3
     pbar = tqdm.tqdm(total=nb_programs - len(equiv), desc="3: improvement")
@@ -191,7 +196,19 @@ def generate_programs_and_samples_for(
     programs = [
         min([(p.length(), p) for p in v], key=lambda x: x[0])[1] for v in equiv.values()
     ]
-    return samples, programs
+    out = [samples]
+    if nb_inputs > 1:
+        for _ in range(nb_inputs - 1):
+            samples, equiv = generate_samples_for(
+                programs,
+                lambda: task_generator.sample_input(tr.arguments()),
+                task_generator.eval_input,
+                task_generator.evaluator.clear_cache,
+                examples=max_examples,
+                threshold=-threshold,
+            )
+            out.append(samples)
+    return out, programs
 
 
 #
@@ -213,7 +230,8 @@ def generate_samples_for(
     while nb_examples < examples:
         next_equiv_classes = defaultdict(list)
         clear_cache()
-        ui = best if nb_tested > threshold else input_sampler()
+        thres_reached = nb_tested * nb_tested > threshold * threshold
+        ui = best if thres_reached else input_sampler()
         for cl, prog in equiv_classes.items():
             for p in prog:
                 o = eval_prog(p, ui)
@@ -225,12 +243,12 @@ def generate_samples_for(
             best = ui
             best_score = len(next_equiv_classes)
         # Early stopping if no new examples is interesting
-        if nb_tested > threshold and best_score == len(equiv_classes):
+        if thres_reached and best_score == len(equiv_classes):
             break
         # If timeout or good example
-        if (
-            nb_tested > threshold
-            or len(next_equiv_classes) * (ratio ** (examples - nb_examples))
+        if thres_reached or (
+            threshold > 0
+            and len(next_equiv_classes) * (ratio ** (examples - nb_examples))
             >= len(programs) / 2
         ):
             nb_examples += 1
@@ -243,7 +261,6 @@ def generate_samples_for(
                 f"{len(equiv_classes)}->{best_score} | {best_score/len(programs):.0%}"
             )
             pbar.n = nb_examples * threshold
-        nb_tested += 1
         pbar.update(1)
     clear_cache()
     pbar.close()
@@ -263,7 +280,9 @@ tasks = []
 print("Generating tasks by type...", flush=True)
 for tr, count in programs_by_tr.items():
     print("\t", tr)
-    samples, programs = generate_programs_and_samples_for(tr, count, task_generator)
+    samples, programs = generate_programs_and_samples_for(
+        tr, count, nb_inputs, task_generator
+    )
     for program in programs:
         tasks.append(
             task_generator.make_task(
