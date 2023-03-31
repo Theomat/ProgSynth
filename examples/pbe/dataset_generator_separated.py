@@ -198,7 +198,7 @@ def generate_programs_and_samples_for(
     ]
     out = [samples]
     if nb_inputs > 1:
-        for _ in range(nb_inputs - 1):
+        for _ in tqdm.trange(nb_inputs - 1, desc="4: additional examples"):
             samples, equiv = generate_samples_for(
                 programs,
                 lambda: task_generator.sample_input(tr.arguments()),
@@ -262,6 +262,7 @@ def generate_samples_for(
             )
             pbar.n = nb_examples * threshold
         pbar.update(1)
+        nb_tested += 1
     clear_cache()
     pbar.close()
     return samples, equiv_classes
