@@ -88,11 +88,12 @@ def __augment__(
 
 
 def __flatten__(t: Tuple[U, int]) -> TList[int]:
-    if isinstance(t, int):
-        return []
-    out = __flatten__(t[0])  # type: ignore
-    out.append(t[1])
-    return out
+    if isinstance(t, tuple):
+        out = __flatten__(t[0])  # type: ignore
+        out.append(t[1])
+        return out
+    else:
+        return [t]
 
 
 def __tuples_get__(t: Tuple[U, int], index: int) -> int:
