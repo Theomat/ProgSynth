@@ -1,7 +1,7 @@
 ![ProgSynth Logo](./images/logo.png)
 
 --------------------------------------------------------------------------------
-[![Tests](https://github.com/nathanael-fijalkow/AutoSynth/actions/workflows/tests.yaml/badge.svg)](https://github.com/nathanael-fijalkow/AutoSynth/actions/workflows/tests.yaml)
+[![Tests](https://github.com/nathanael-fijalkow/ProgSynth/actions/workflows/tests.yaml/badge.svg)](https://github.com/nathanael-fijalkow/AutoSynth/actions/workflows/tests.yaml)
 
 ProgSynth is a high-level framework that enables to leverage program synthesis for other domains such as reinforcement learning or system design.
 
