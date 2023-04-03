@@ -45,11 +45,35 @@ def test_restriction() -> None:
     assert dsl.parse_program("(+ 1 1)", cfg.type_request) in new_cfg
 
 
-def test_multi_level() -> None:
+def test_multi_level_easy() -> None:
+    new_cfg = UCFG.from_DFTA(
+        add_dfta_constraints(cfg, [], "(+ 1 (- _ 1))", progress=False)
+    )
+    # print(new_cfg)
+    assert dsl.parse_program("(- 1 (+ 1 1))", cfg.type_request) not in new_cfg
+    assert dsl.parse_program("(- 1 (- 1 1))", cfg.type_request) not in new_cfg
+    assert dsl.parse_program("(+ 1 (- 1 1))", cfg.type_request) in new_cfg
+    assert dsl.parse_program("(+ 1 1)", cfg.type_request) not in new_cfg
+    assert dsl.parse_program("(+ 1 (- 1 (+ 1 1)))", cfg.type_request) not in new_cfg
+    assert dsl.parse_program("(+ 1 (- (+ 1 1) 1))", cfg.type_request) in new_cfg
+
+    new_cfg = UCFG.from_DFTA(
+        add_dfta_constraints(cfg, ["(+ 1 (- _ 1))"], progress=False)
+    )
+    print(new_cfg)
+    assert dsl.parse_program("(+ 1 1)", cfg.type_request) not in new_cfg
+    assert dsl.parse_program("(- 1 (- 1 1))", cfg.type_request) in new_cfg
+    assert dsl.parse_program("(+ 1 (- 1 1))", cfg.type_request) in new_cfg
+    assert dsl.parse_program("(- 1 (+ 1 1))", cfg.type_request) not in new_cfg
+    assert dsl.parse_program("(+ 1 (+ 1 (+ 1 1)))", cfg.type_request) not in new_cfg
+    assert dsl.parse_program("(+ 1 (- (- 1 1) 1))", cfg.type_request) in new_cfg
+
+
+def test_multi_level_hard() -> None:
     new_cfg = UCFG.from_DFTA(
         add_dfta_constraints(cfg, [], "(+ 1 (+ _ 1))", progress=False)
     )
-    print(new_cfg)
+    # print(new_cfg)
     assert dsl.parse_program("(- 1 (+ 1 1))", cfg.type_request) not in new_cfg
     assert dsl.parse_program("(- 1 (- 1 1))", cfg.type_request) not in new_cfg
     assert dsl.parse_program("(+ 1 (+ 1 1))", cfg.type_request) in new_cfg
