@@ -257,10 +257,10 @@ def generate_samples_for(
             equiv_classes = next_equiv_classes
             samples.append(ui)
             best_score = len(next_equiv_classes)
-            pbar.set_postfix_str(
-                f"{len(equiv_classes)}->{best_score} | {best_score/len(programs):.0%}"
-            )
             pbar.n = nb_examples * threshold
+        pbar.set_postfix_str(
+            f"{len(equiv_classes)}->{best_score} | {best_score/len(programs):.0%}"
+        )
         pbar.update(1)
         nb_tested += 1
     clear_cache()
