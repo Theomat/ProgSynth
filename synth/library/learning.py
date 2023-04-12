@@ -1,8 +1,9 @@
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, Generator, List, Optional, Set, Tuple, Union
+from typing import Dict, Generator, List, Optional, Set, Tuple, Union
 
-from synth.syntax.dsl import DSL
+import tqdm
+
 from synth.syntax.program import Function, Primitive, Program, Variable
 
 
@@ -87,34 +88,13 @@ class _PartialTree:
         edges = graph[1]
         start = self.occurences[occurence_index]
         i = 0
-        show = len(path) > 1  # or path[0] == 0
-        if show:
-            print("\t\t\t\t\tpath start >>>")
-            print("\t\t\t\t\tobject:", graph[0][start])
-            print("\t\t\t\t\tpath:", path)
-
         while i < len(path):
             index = path[-i - 1]
             local_edges = edges[start]
             if len(local_edges) <= index:
                 return -1
-            old_start = start
             start = edges[start][index]
-            if show:
-                print(
-                    "\t\t\t\t\tpath:",
-                    __prim__(graph[0][start]),
-                    "edges:",
-                    [__prim__(graph[0][x]) for x in edges[old_start]],
-                )
-                print(
-                    "\t\t\t\t\tpath:",
-                )
             i += 1
-        if show:
-
-            print("\t\t\t\t\tpath end <<<")
-
         return start
 
     def add_link(
@@ -131,6 +111,8 @@ class _PartialTree:
         # Match with reality
         path = self.path(j)
         new_real_vertex = self.follow_path_in_occurence(graph, occurence_index, path)
+        if new_real_vertex == -1:
+            return [], graph[0][0]
         vertices = graph[0]
         program = vertices[new_real_vertex]
         # Finish structure
@@ -148,17 +130,15 @@ class _PartialTree:
                         next = self.copy()
                         # Add link
                         path, program = next.add_link(graph, vertex, i, k)
+                        # If path is empty we have a type mismatch
+                        if len(path) == 0:
+                            continue
                         # Check unique
                         r = next.unique_repr(graph, k)
                         if r not in done:
                             done.add(r)
                         else:
                             continue
-                        # print("\t\t\tcurrent program:", self.string(graph))
-                        # print("\t\t\ttotal program:", vertices[self.occurences[k]])
-
-                        # print("\t\t\tpath:", path)
-                        # print("\t\t\tadding:", program)
 
                         # Update occurences
                         next_occurences = [self.occurences[k]]
@@ -174,7 +154,6 @@ class _PartialTree:
                                 next_occurences.append(self.occurences[z])
 
                         next.occurences = next_occurences
-                        # print("\t\t\tnew program:", next.string(graph))
 
                         yield next
 
@@ -218,9 +197,7 @@ class _PartialTree:
 def __initial_tree__(graph: _Graph, vertex: int) -> _PartialTree:
     vertices, edges, primitive2indices, vertex2size = graph
     P: Function = vertices[vertex]  # type: ignore
-    # print("INIT:", P)
     occurences = primitive2indices[P.function]  # type: ignore
-    # print("occurences:", occurences)
     max_size = max(vertex2size[v] for v in occurences)
     return _PartialTree(occurences, max_size, {0: [-1 for _ in edges[vertex]]}, {})
 
@@ -232,16 +209,12 @@ def __find_best__(
         return tree
     best = tree
     previous = tree.score() if tree.size() > 1 else -1
-    # print("\tfind best from:", tree.string(graph))
-    # print("\tstats: size:", tree.size(), "occ:", tree.num_occurences())
     local_best_score = previous
     for expansion in tree.expansions(graph, done):
-        # print("\t\texpansion->", expansion.string(graph))
         # Use fact that score only increases then only decreases
         if expansion.score() <= previous:
             continue
         tree = __find_best__(graph, best_score, done, expansion)
-        # print("\t\texpansion<-", tree.string(graph))
         if tree.score() > local_best_score:
             best = tree
     return best
@@ -271,7 +244,7 @@ def __programs_to_graph__(programs: List[Program]) -> _Graph:
     return vertices, edges, primitive2indices, vertex2size
 
 
-def learn(programs: List[Program]) -> Tuple[int, int, str]:
+def learn(programs: List[Program], progress: bool = False) -> Tuple[int, int, str]:
     """
     Learn a new primitive from the specified benchmark
 
@@ -286,7 +259,8 @@ def learn(programs: List[Program]) -> Tuple[int, int, str]:
     vertices = graph[0]
     best_score = 0
     best = None
-    for vertex in range(len(vertices)):
+    enum = range(len(vertices)) if not progress else tqdm.trange(len(vertices))
+    for vertex in enum:
         p = vertices[vertex]
         if not isinstance(p, Function):
             continue
@@ -301,8 +275,6 @@ def learn(programs: List[Program]) -> Tuple[int, int, str]:
             best = tree
             print(f"[BEST] score={best_score} best={best.string(graph)}")
     if best is not None:
-        print(best)
-        print(best.string(graph))
         return best.size(), best.num_occurences(), best.string(graph)
     return 0, 0, ""
 
