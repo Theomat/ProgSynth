@@ -55,7 +55,7 @@ class _PartialTree:
         vertices, edges = graph[0], graph[1]
         start = self.occurences[occurence_index]
         todo: List[Tuple[Optional[int], Optional[int]]] = [(start, 0)]
-        out = (None,)
+        out: Tuple = (None,)
         while todo:
             real_vertex, local_vertex = todo.pop()
             if real_vertex is None or local_vertex is None:
@@ -138,7 +138,7 @@ class _PartialTree:
         return path, program
 
     def expansions(
-        self, graph: _Graph, done: Set
+        self, graph: _Graph, done: Set[Tuple]
     ) -> Generator["_PartialTree", None, None]:
         vertices = graph[0]
         for vertex, edges in self.structure.items():
@@ -182,7 +182,7 @@ class _PartialTree:
         vertices, edges = graph[0], graph[1]
         out = ""
         todo: List[Tuple[Optional[int], Optional[int]]] = [(self.occurences[0], 0)]
-        close_parenthesis = []
+        close_parenthesis: List[int] = []
         while todo:
             real, current = todo.pop(0)
             if current is None or real is None:
@@ -226,7 +226,7 @@ def __initial_tree__(graph: _Graph, vertex: int) -> _PartialTree:
 
 
 def __find_best__(
-    graph: _Graph, best_score: int, done: Set[str], tree: _PartialTree
+    graph: _Graph, best_score: int, done: Set[Tuple], tree: _PartialTree
 ) -> _PartialTree:
     if tree.max_score() <= best_score:
         return tree
@@ -248,18 +248,18 @@ def __find_best__(
 
 
 def __programs_to_graph__(programs: List[Program]) -> _Graph:
-    vertices = {}
-    edges = {}
-    primitive2indices = defaultdict(list)
-    vertex2size = {}
+    vertices: Dict[int, Program] = {}
+    edges: Dict[int, List[int]] = {}
+    primitive2indices: Dict[Union[Primitive, Variable], List[int]] = defaultdict(list)
+    vertex2size: Dict[int, int] = {}
     for program in programs:
-        args_indices = []
+        args_indices: List[int] = []
         for el in program.depth_first_iter():
             i = len(vertices)
             vertices[i] = el
             vertex2size[i] = el.length()
             if isinstance(el, Function):
-                primitive2indices[el.function].append(i)
+                primitive2indices[el.function].append(i)  # type: ignore
                 args_len = len(el.function.type.arguments())
                 edges[i] = args_indices[-args_len:]
                 # Pop all consumed + the one for P.function which we did not consume
@@ -281,7 +281,7 @@ def learn(programs: List[Program]) -> Tuple[int, int, str]:
         - str description of new primitive
     """
 
-    done = set()
+    done: Set[Tuple] = set()
     graph = __programs_to_graph__(programs)
     vertices = graph[0]
     best_score = 0
