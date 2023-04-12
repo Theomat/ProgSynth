@@ -12,6 +12,7 @@ _Graph = Tuple[
     Dict[int, List[int]],
     Dict[Union[Primitive, Variable], List[int]],
     Dict[int, int],
+    Dict[int, int],
 ]
 
 
@@ -25,6 +26,7 @@ def __prim__(p: Program) -> Program:
 @dataclass
 class _PartialTree:
     occurences: List[int]
+    occurences_vertices: List[Set[int]]
     max_size: int
     structure: Dict[int, List[int]]
     parents: Dict[int, Tuple[int, int]]
@@ -41,9 +43,10 @@ class _PartialTree:
     def size(self) -> int:
         return len(self.structure)
 
-    def copy(self) -> "_PartialTree":
+    def partial_copy(self) -> "_PartialTree":
         return _PartialTree(
             self.occurences[:],
+            [],
             self.max_size,
             {k: v[:] for k, v in self.structure.items()},
             {k: (v[0], v[1]) for k, v in self.parents.items()},
@@ -127,7 +130,7 @@ class _PartialTree:
             for i, edge in enumerate(edges):
                 if edge < 0:
                     for k in range(len(self.occurences)):
-                        next = self.copy()
+                        next = self.partial_copy()
                         # Add link
                         path, program = next.add_link(graph, vertex, i, k)
                         # If path is empty we have a type mismatch
@@ -141,21 +144,70 @@ class _PartialTree:
                             continue
 
                         # Update occurences
-                        next_occurences = [self.occurences[k]]
+                        next_occurences = []
+                        to_add = []
                         target_prim = __prim__(program)
                         for z in range(len(self.occurences)):
-                            if z == k:
-                                continue
                             real_vertex = next.follow_path_in_occurence(graph, z, path)
                             if (
                                 real_vertex >= 0
                                 and __prim__(vertices[real_vertex]) == target_prim
                             ):
                                 next_occurences.append(self.occurences[z])
+                                next.occurences_vertices.append(
+                                    self.occurences_vertices[z].copy()
+                                )
+                                to_add.append(real_vertex)
 
                         next.occurences = next_occurences
 
-                        yield next
+                        for x in next.__disambiguity__(graph, to_add):
+                            yield x
+
+    def __disambiguity__(
+        self, graph: _Graph, to_add: List[int], start: int = 0
+    ) -> Generator["_PartialTree", None, None]:
+        vertex2tree = graph[-1]
+        # Check for intersection between intersections
+        inside = [True for _ in self.occurences]
+        for i in range(start, len(self.occurences)):
+            if not inside[i]:
+                continue
+            tree_i = vertex2tree[self.occurences[i]]
+            for j in range(i + 1, len(self.occurences)):
+                if not inside[j]:
+                    continue
+                if vertex2tree[self.occurences[j]] != tree_i:
+                    continue
+                if (
+                    to_add[i] in self.occurences_vertices[j]
+                    or to_add[j] in self.occurences_vertices[j]
+                ):
+                    other = self.partial_copy()
+                    other.occurences = [
+                        x
+                        for z, x in enumerate(other.occurences)
+                        if inside[z] and z != i
+                    ]
+                    other.occurences_vertices = [
+                        x
+                        for z, x in enumerate(self.occurences_vertices)
+                        if inside[z] and z != i
+                    ]
+                    for x in other.__disambiguity__(graph, to_add, i + 1):
+                        yield x
+                    inside[j] = False
+        # Finally add elements
+        for i in range(len(self.occurences)):
+            if inside[i]:
+                self.occurences_vertices[i].add(to_add[i])
+        # Filter
+        self.occurences = [x for z, x in enumerate(self.occurences) if inside[z]]
+        self.occurences_vertices = [
+            x for z, x in enumerate(self.occurences_vertices) if inside[z]
+        ]
+
+        yield self
 
     def string(self, graph: _Graph) -> str:
         vertices, edges = graph[0], graph[1]
@@ -195,11 +247,17 @@ class _PartialTree:
 
 
 def __initial_tree__(graph: _Graph, vertex: int) -> _PartialTree:
-    vertices, edges, primitive2indices, vertex2size = graph
+    vertices, edges, primitive2indices, vertex2size, _ = graph
     P: Function = vertices[vertex]  # type: ignore
     occurences = primitive2indices[P.function]  # type: ignore
     max_size = max(vertex2size[v] for v in occurences)
-    return _PartialTree(occurences, max_size, {0: [-1 for _ in edges[vertex]]}, {})
+    return _PartialTree(
+        occurences,
+        [{x} for x in occurences],
+        max_size,
+        {0: [-1 for _ in edges[vertex]]},
+        {},
+    )
 
 
 def __find_best__(
@@ -225,11 +283,13 @@ def __programs_to_graph__(programs: List[Program]) -> _Graph:
     edges: Dict[int, List[int]] = {}
     primitive2indices: Dict[Union[Primitive, Variable], List[int]] = defaultdict(list)
     vertex2size: Dict[int, int] = {}
-    for program in programs:
+    vertex2tree: Dict[int, int] = {}
+    for tree_no, program in enumerate(programs):
         args_indices: List[int] = []
         for el in program.depth_first_iter():
             vertex = len(vertices)
             vertices[vertex] = el
+            vertex2tree[vertex] = tree_no
             vertex2size[vertex] = el.length()
             if isinstance(el, Function):
                 primitive2indices[el.function].append(vertex)  # type: ignore
@@ -241,7 +301,7 @@ def __programs_to_graph__(programs: List[Program]) -> _Graph:
                 edges[vertex] = []
             args_indices.append(vertex)
         assert len(args_indices) == 1, f"args_indices:{args_indices}"
-    return vertices, edges, primitive2indices, vertex2size
+    return vertices, edges, primitive2indices, vertex2size, vertex2tree
 
 
 def learn(programs: List[Program], progress: bool = False) -> Tuple[int, int, str]:
