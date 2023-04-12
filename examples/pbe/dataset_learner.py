@@ -1,10 +1,4 @@
-from typing import Optional
-
-from colorama import Fore as F
-
 from synth import Dataset, PBE
-from synth.syntax import CFG
-from synth.task import Task
 from synth.utils import chrono
 from synth.library import learn
 
@@ -38,4 +32,8 @@ with chrono.clock("dataset.load") as c:
     full_dataset: Dataset[PBE] = Dataset.load(dataset_file)
     print("done in", c.elapsed_time(), "s")
 
-learn([t.solution for t in full_dataset if t.solution is not None])
+size, occs, prog = learn(
+    [t.solution for t in full_dataset if t.solution is not None], progress=True
+)
+print(f"Found {occs} occurences of {prog}.")
+print(f"This would reduce the size by {(size - 1) * occs}.")
