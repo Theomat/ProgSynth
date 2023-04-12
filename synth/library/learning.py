@@ -1,6 +1,6 @@
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, Generator, List, Set, Tuple, Union
+from typing import Any, Callable, Dict, Generator, List, Optional, Set, Tuple, Union
 
 from synth.syntax.dsl import DSL
 from synth.syntax.program import Function, Primitive, Program, Variable
@@ -54,8 +54,8 @@ class _PartialTree:
         """
         vertices, edges = graph[0], graph[1]
         start = self.occurences[occurence_index]
-        todo = [(start, 0)]
-        out = None
+        todo: List[Tuple[Optional[int], Optional[int]]] = [(start, 0)]
+        out = (None,)
         while todo:
             real_vertex, local_vertex = todo.pop()
             if real_vertex is None or local_vertex is None:
@@ -174,18 +174,18 @@ class _PartialTree:
                                 next_occurences.append(self.occurences[z])
 
                         next.occurences = next_occurences
-                        print("\t\t\tnew program:", next.string(graph))
+                        # print("\t\t\tnew program:", next.string(graph))
 
                         yield next
 
     def string(self, graph: _Graph) -> str:
         vertices, edges = graph[0], graph[1]
         out = ""
-        todo = [(self.occurences[0], 0)]
+        todo: List[Tuple[Optional[int], Optional[int]]] = [(self.occurences[0], 0)]
         close_parenthesis = []
         while todo:
             real, current = todo.pop(0)
-            if current is None:
+            if current is None or real is None:
                 out += "_"
                 close_parenthesis[-1] -= 1
                 if close_parenthesis[-1] == 0:
@@ -217,9 +217,9 @@ class _PartialTree:
 
 def __initial_tree__(graph: _Graph, vertex: int) -> _PartialTree:
     vertices, edges, primitive2indices, vertex2size = graph
-    P = vertices[vertex]
+    P: Function = vertices[vertex]  # type: ignore
     # print("INIT:", P)
-    occurences = primitive2indices[P.function]
+    occurences = primitive2indices[P.function]  # type: ignore
     # print("occurences:", occurences)
     max_size = max(vertex2size[v] for v in occurences)
     return _PartialTree(occurences, max_size, {0: [-1 for _ in edges[vertex]]}, {})
@@ -300,12 +300,13 @@ def learn(programs: List[Program]) -> Tuple[int, int, str]:
             best_score = tree.score()
             best = tree
             print(f"[BEST] score={best_score} best={best.string(graph)}")
+    if best is not None:
+        print(best)
+        print(best.string(graph))
+        return best.size(), best.num_occurences(), best.string(graph)
+    return 0, 0, ""
 
-    print(best)
-    print(best.string(graph))
-    return best.size(), best.num_occurences(), best.string(graph)
 
+# def semantic_from_str(dsl: DSL, semantic: Dict[str, Any], desc: str) -> Callable:
 
-def semantic_from_str(dsl: DSL, semantic: Dict[str, Any], desc: str) -> Callable:
-
-    pass
+#     pass
