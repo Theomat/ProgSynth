@@ -326,8 +326,12 @@ def learn(programs: List[Program], progress: bool = False) -> Tuple[int, int, st
     vertices = graph[0]
     best_score = 0
     best = None
-    enum = range(len(vertices)) if not progress else tqdm.trange(len(vertices))
-    for vertex in enum:
+    pbar = None
+    if progress:
+        pbar = tqdm.tqdm(total=len(vertices))
+    for vertex in range(len(vertices)):
+        if pbar:
+            pbar.update(1)
         p = vertices[vertex]
         if not isinstance(p, Function):
             continue
@@ -341,12 +345,8 @@ def learn(programs: List[Program], progress: bool = False) -> Tuple[int, int, st
         if tree.score() > best_score:
             best_score = tree.score()
             best = tree
-            print(f"[BEST] score={best_score} best={best.string(graph)}")
+            if pbar:
+                pbar.set_postfix_str(f"{best.string(graph)} ({best_score})")
     if best is not None:
         return best.size(), best.num_occurences(), best.string(graph)
     return 0, 0, ""
-
-
-# def semantic_from_str(dsl: DSL, semantic: Dict[str, Any], desc: str) -> Callable:
-
-#     pass
