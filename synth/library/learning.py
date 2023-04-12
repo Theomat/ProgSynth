@@ -250,10 +250,16 @@ def __initial_tree__(graph: _Graph, vertex: int) -> _PartialTree:
     vertices, edges, primitive2indices, vertex2size, _ = graph
     P: Function = vertices[vertex]  # type: ignore
     occurences = primitive2indices[P.function]  # type: ignore
-    max_size = max(vertex2size[v] for v in occurences)
+    occurences_vertices: List[Set[int]] = []
+    max_size: int = 0
+    for v in occurences:
+        s = vertex2size[v]
+        if s > max_size:
+            max_size = s
+        occurences_vertices.append({v})
     return _PartialTree(
         occurences,
-        [{x} for x in occurences],
+        occurences_vertices,
         max_size,
         {0: [-1 for _ in edges[vertex]]},
         {},
@@ -315,6 +321,7 @@ def learn(programs: List[Program], progress: bool = False) -> Tuple[int, int, st
     """
 
     done: Set[Tuple] = set()
+    done_primitives: Set[Program] = set()
     graph = __programs_to_graph__(programs)
     vertices = graph[0]
     best_score = 0
@@ -324,10 +331,11 @@ def learn(programs: List[Program], progress: bool = False) -> Tuple[int, int, st
         p = vertices[vertex]
         if not isinstance(p, Function):
             continue
+        if __prim__(p) in done_primitives:
+            continue
+        done_primitives.add(__prim__(p))
         base_tree = __initial_tree__(graph, vertex)
         r = base_tree.unique_repr(graph, 0)
-        if r in done:
-            continue
         tree = __find_best__(graph, best_score, done, base_tree)
         done.add(r)
         if tree.score() > best_score:
