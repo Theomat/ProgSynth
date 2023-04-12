@@ -255,19 +255,19 @@ def __programs_to_graph__(programs: List[Program]) -> _Graph:
     for program in programs:
         args_indices: List[int] = []
         for el in program.depth_first_iter():
-            i = len(vertices)
-            vertices[i] = el
-            vertex2size[i] = el.length()
+            vertex = len(vertices)
+            vertices[vertex] = el
+            vertex2size[vertex] = el.length()
             if isinstance(el, Function):
-                primitive2indices[el.function].append(i)  # type: ignore
-                args_len = len(el.function.type.arguments())
-                edges[i] = args_indices[-args_len:]
+                primitive2indices[el.function].append(vertex)  # type: ignore
+                args_len = len(el.function.type.arguments()) - len(el.type.arguments())
+                edges[vertex] = args_indices[-args_len:]
                 # Pop all consumed + the one for P.function which we did not consume
                 args_indices = args_indices[: -(args_len + 1)]
             elif isinstance(el, (Primitive, Variable)):
-                edges[i] = []
-            args_indices.append(i)
-        assert len(args_indices) == 1
+                edges[vertex] = []
+            args_indices.append(vertex)
+        assert len(args_indices) == 1, f"args_indices:{args_indices}"
     return vertices, edges, primitive2indices, vertex2size
 
 
