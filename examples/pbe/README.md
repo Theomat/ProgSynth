@@ -4,6 +4,10 @@ This folder contains ready to use scripts and files that you can leverage to rep
 
 <!-- toc -->
 
+- [Scripts](#scripts)
+  - [Dataset Manipulation](#dataset-manipulation)
+  - [Model Training and Evaluation](#model-training-and-evaluation)
+  - [DSL Manipulation](#dsl-manipulation)
 - [DSLs](#dsls)
   - [Calculator](#calculator)
   - [Deepcoder](#deepcoder)
@@ -16,19 +20,36 @@ This folder contains ready to use scripts and files that you can leverage to rep
 - [Example pipeline](#example-pipeline)
 
 <!-- tocstop -->
-Here is an exhaustive list of available scripts, we recommend running them with -h to see the available options:
+## Scripts
 
-- The `dataset_generator.py` loads a dataset, reproduces the task distribution, and generate a new synthetic dataset from scratch.
-- The `dataset_explorer.py` loads a dataset and will provide you with an interactive prompt to explore the dataset. Use `help` to see the list of commands in the interactive prompt.
-- The `evaluate.py` loads a dataset, a model, and runs heap search on every task trying to find a correct solution to the task.
-- The `plot_results.py` plot the results files created by ``evaluate.py``.
-- The `model_trainer.py` loads a dataset then train a neural net to predict the probabilities of the grammar. Metrics are logged with [TensorBoard](https://www.tensorflow.org/tensorboard/) and a report of time spent is printed at the end of the script.
-- The `dataset_improve.py` takes a dataset and a solution file (obtained with `evaluate.py`) and replace the solutions of the dataset by the ones found if they are shorter.
-- The `dsl_analyser.py` loads a dataset and tries to find all redundant derivations at depth 2 such as `(MAP[/4] (MAP[*4] var0))` or `(LENGTH (SORT var0))` and produces constraints to forbid them using pruning.
+### Dataset Manipulation
+
+You can **explore** a dataset with `dataset_explorer.py`. It will provide you with an interactive prompt to explore the dataset. Use `help` to see the list of commands in the interactive prompt.
+
+You can **generate synthetic datasets** based on a existing dataset, reproducing their distribution with:
+
+- `dataset_generator.py`
+- `dataset_generator_unique.py` which has the constraint that programs must uniquely identifiable from the examples. This is the **recommended way** of generating a dataset.
+
+You can **improve solutions of a dataset** with `dataset_improve.py`. It takes a dataset and a solution file (obtained with `evaluate.py`) and replace the solutions of the dataset by the ones found if they are shorter.
+
+### Model Training and Evaluation
+
+You can **train a model** with `model_trainer.py`. It loads a dataset then train a neural net to predict the probabilities of the grammar. Metrics are logged with [TensorBoard](https://www.tensorflow.org/tensorboard/.
+
+You can **evaluate a model** with `evaluate.py`. It loads a dataset, a model, and runs our synthesis algorithm on every task trying to find a correct solution to the task.
+
+You can **plot the results** of `evaluate.py` with `plot_results.py` which is located in the parent folder.
+
+### DSL Manipulation
+
+You can **find equations automatically for a given DSL** with `dsl_equation_generator.py`. loads a dataset and tries to find all redundant derivations at depth 2 such as `(MAP[/4] (MAP[*4] var0))` or `(LENGTH (SORT var0))` and produces constraints to forbid them.
+
+You can **learn new primitives** with `dataset_learner.py`. It loads a dataset and try to learn a new primitive that would most help with expressing the dataset.
 
 ## DSLs
 
-Here is an exhaustive list of available DSLs wit hthis specification.
+Here is an exhaustive list of available DSLs with this specification.
 
 ### Calculator
 
@@ -76,7 +97,7 @@ This is a dataset where there are positive and negative examples the goal is to 
 
 ### Transductions
 
-THis is a dataset of string manipulation, it contains per-task constants, no polymrphic types nor need lambdas.
+This is a dataset of string manipulation, it contains per-task constants, no polymrphic types nor need lambdas.
 This is a dataset in the idea of the string manipulation dataset of FlashFill:
 > *S. Gulwani* Automating String Processing in Spreadsheets using Input-Output Examples. PoPL'11, January 26-28, 2011, Austin, Texas, USA. URL <https://www.microsoft.com/en-us/research/publication/automating-string-processing-spreadsheets-using-input-output-examples/>
 
@@ -88,26 +109,32 @@ The SL files were converted and compressed in some JSON file that is provided in
 ## Example Pipeline
 
 Here is an example pipeline for a DSL.
-This would first produce a ttrain and test dataset, then train a model, evaluate it then plot the results.
+This would first produce a train and test dataset, then train a model, evaluate it then plot the results.
 
 ```bash
 #!/bin/env bash
 # ===================================================================
 # PARAMETERS
 # ===================================================================
-SEED=2
-# size of training dataset
-TRAIN_SIZE=2500
-# useful only if test dataset != base dataset
-TEST_SIZE=500 
-BATCH_SIZE=16
-EPOCHS=2
-# timeout in seconds for the evaluation
-TIMEOUT=60 
-
 DSL_NAME="transduction"
 BASE_DATASET="./flashfill.pickle"
+SEED=2
+### TASK PARAMETERS
+# maximum depth of programs
+MAX_DEPTH=5
+# maximum number of examples per task
+MAX_EXAMPLES=5
+### MODEL TRAINING PARAMETERS
+# size of training dataset
+TRAIN_SIZE=2500
+BATCH_SIZE=16
+EPOCHS=2
+### EVALUATION PARAMETERS
 TEST_DATASET="$BASE_DATASET"
+# useful only if test dataset != base dataset
+TEST_SIZE=500 
+# timeout in seconds for the evaluation
+TIMEOUT=60 
 # ===================================================================
 # CONSTANTS
 # ===================================================================
@@ -117,7 +144,7 @@ MODEL_FILE="$EXPERIMENT_FOLDER/model.pt"
 # ===================================================================
 # MAIN CODE
 # ===================================================================
-# Check deepcoder dataset exists
+# Check base dataset exists
 if [  ! -f "$BASE_DATASET" ]; then
     echo "$BASE_DATASET is missing!"
     exit 1
@@ -127,7 +154,7 @@ mkdir -p $EXPERIMENT_FOLDER
 # Make test dataset
 if [  ! -f "$TEST_DATASET" ]; then
     echo "[Generation] Creating the test dataset."
-    python examples/pbe/dataset_generator.py --dsl $DSL_NAME --dataset $TEST_DATASET --seed $SEED --size $TEST_SIZE -o $TEST_DATASET
+    python examples/pbe/dataset_generator_unique.py --dsl $DSL_NAME --dataset $TEST_DATASET --seed $SEED --programs $TEST_SIZE --inputs 2 -o $TEST_DATASET --max-depth $MAX_DEPTH --max-examples $MAX_EXAMPLES
     if [ $? != "0" ]; then
         exit 2
     fi
@@ -136,7 +163,7 @@ fi
 # Make train dataset
 if [  ! -f "$TRAIN_DATASET" ]; then
     echo "[Generation] Creating the train dataset."
-    python examples/pbe/dataset_generator.py --dsl $DSL_NAME --dataset $TEST_DATASET --seed $SEED --size $TRAIN_SIZE -o $TRAIN_DATASET
+    python examples/pbe/dataset_generator_unique.py --dsl $DSL_NAME --dataset $TEST_DATASET --seed $SEED --programs $TRAIN_SIZE -o $TRAIN_DATASET --inputs 2 --max-depth $MAX_DEPTH --max-examples $MAX_EXAMPLES
     if [ $? != "0" ]; then
         exit 3
     fi
