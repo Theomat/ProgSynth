@@ -63,8 +63,8 @@ with chrono.clock("merge") as c:
             task.solution = dsl.parse_program(new_sol, task.type_request)
             continue
         size = new_sol.count(" ") + 1
-        if size < task.solution.length():
-            saved += task.solution.length() - size
+        if size < task.solution.size():
+            saved += task.solution.size() - size
             task.solution = dsl.parse_program(new_sol, task.type_request)
             replaced += 1
 

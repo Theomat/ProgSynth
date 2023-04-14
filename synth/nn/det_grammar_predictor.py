@@ -259,7 +259,7 @@ class DetGrammarPredictorLayer(nn.Module, Generic[A, U, V, W]):
         """
         if length_normed:
             log_prob_list = [
-                log_pgrammar.log_probability(p) / p.length()
+                log_pgrammar.log_probability(p) / p.size()
                 for p, log_pgrammar in zip(programs, log_pgrammars)
             ]
         else:

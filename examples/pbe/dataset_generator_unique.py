@@ -194,7 +194,7 @@ def generate_programs_and_samples_for(
                 break
 
     programs = [
-        min([(p.length(), p) for p in v], key=lambda x: x[0])[1] for v in equiv.values()
+        min([(p.size(), p) for p in v], key=lambda x: x[0])[1] for v in equiv.values()
     ]
     out = [samples]
     if nb_inputs > 1:

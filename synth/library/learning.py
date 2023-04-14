@@ -296,7 +296,7 @@ def __programs_to_graph__(programs: List[Program]) -> _Graph:
             vertex = len(vertices)
             vertices[vertex] = el
             vertex2tree[vertex] = tree_no
-            vertex2size[vertex] = el.length()
+            vertex2size[vertex] = el.size()
             if isinstance(el, Function):
                 primitive2indices[el.function].append(vertex)  # type: ignore
                 args_len = len(el.function.type.arguments()) - len(el.type.arguments())

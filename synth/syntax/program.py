@@ -42,7 +42,7 @@ class Program(ABC):
     def count_constants(self) -> int:
         return int(self.is_constant())
 
-    def length(self) -> int:
+    def size(self) -> int:
         return 1
 
     def depth(self) -> int:
@@ -169,8 +169,8 @@ class Function(Program):
             [arg.count_constants() for arg in self.arguments]
         )
 
-    def length(self) -> int:
-        return self.function.length() + sum([arg.length() for arg in self.arguments])
+    def size(self) -> int:
+        return self.function.size() + sum([arg.size() for arg in self.arguments])
 
     def depth(self) -> int:
         return 1 + max(

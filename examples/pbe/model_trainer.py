@@ -268,7 +268,7 @@ def do_batch(iter_number: int) -> None:
         writer.add_scalar(
             "program/depth", np.mean([p.depth() for p in batch_programs]), iter_number
         )
-        mean_length = np.mean([p.length() for p in batch_programs])
+        mean_length = np.mean([p.size() for p in batch_programs])
         writer.add_scalar("program/length", mean_length, iter_number)
     with chrono.clock("train.do_batch.inference"):
         batch_outputs: Tensor = predictor(batch)
