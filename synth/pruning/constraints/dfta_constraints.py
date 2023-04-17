@@ -321,4 +321,4 @@ def add_dfta_constraints(
         dfta = dfta.minimise()  # type: ignore
     if pbar:
         pbar.close()
-    return dfta  # type: ignore
+    return dfta or __cfg2dfta__(current_grammar)  # type: ignore
