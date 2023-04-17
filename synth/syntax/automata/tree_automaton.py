@@ -100,15 +100,21 @@ class DFTA(Generic[U, V]):
             Tuple[U, W],
         ] = {}
         finals = set()
+
+        def mix(s1: U, s2: W) -> Tuple[U, W]:
+            return (s1, s2)
+
         for (l1, args1), dst1 in self.rules.items():
             for (l2, args2), dst2 in other.rules.items():
                 if len(args1) != len(args2) or l1 != l2:
                     continue
-                S = (l1, tuple(zip(args1, args2)))
-                if (l1, args1) in self.finals and (l2, args2) in other.finals:
-                    finals.add((dst1, dst2))
-                rules[S] = (dst1, dst2)
-        return DFTA(rules, finals)
+                S = (l1, tuple(mix(a, b) for a, b in zip(args1, args2)))
+                dst = mix(dst1, dst2)
+                if dst1 in self.finals and dst2 in other.finals:
+                    finals.add(dst)
+                rules[S] = dst
+        out = DFTA(rules, finals)
+        return out
 
     def minimise(self) -> "DFTA[Tuple[U, ...], V]":
         """
