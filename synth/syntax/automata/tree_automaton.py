@@ -1,3 +1,4 @@
+from collections import defaultdict
 from typing import Dict, Generic, List, Set, Tuple, TypeVar
 
 U = TypeVar("U")
@@ -53,12 +54,18 @@ class DFTA(Generic[U, V]):
         """
         reachable = set()
         added = True
+        rules = defaultdict(list)
+        for (_, args), dst in self.rules.items():
+            rules[dst].append(args)
         while added:
             added = False
-            for (_, args), dst in self.rules.items():
-                if dst not in reachable and all(s in reachable for s in args):
-                    reachable.add(dst)
-                    added = True
+            for dst in list(rules.keys()):
+                for args in rules[dst]:
+                    if all(s in reachable for s in args):
+                        reachable.add(dst)
+                        added = True
+                        del rules[dst]
+                        break
         return reachable
 
     def __remove_unreachable__(self) -> None:
