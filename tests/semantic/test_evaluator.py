@@ -35,7 +35,7 @@ def test_eval() -> None:
         program = pcfg.sample_program()
         try:
             for i in range(-25, 25):
-                assert eval.eval(program, [i]) == program.length() + i - 1
+                assert eval.eval(program, [i]) == program.size() + i - 1
         except Exception as e:
             assert False, e
 
@@ -48,7 +48,7 @@ def test_supports_list() -> None:
         program = pcfg.sample_program()
         try:
             for i in range(-25, 25):
-                assert eval.eval(program, [i, [i]]) == program.length() + i - 1
+                assert eval.eval(program, [i, [i]]) == program.size() + i - 1
         except Exception as e:
             assert False, e
 
@@ -61,9 +61,7 @@ def test_use_cache() -> None:
         program = pcfg.sample_program()
         try:
             for i in range(-25, 25):
-                assert eval.eval(program, [i]) == program.length() + i - 1
-                assert (
-                    eval._cache[__tuplify__([i])][program] == program.length() + i - 1
-                )
+                assert eval.eval(program, [i]) == program.size() + i - 1
+                assert eval._cache[__tuplify__([i])][program] == program.size() + i - 1
         except Exception as e:
             assert False, e
