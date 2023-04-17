@@ -53,8 +53,8 @@ class UCFG(UGrammar[U, List[Tuple[Type, U]], List[Tuple[Type, U]]], Generic[U]):
         rules: Dict[Tuple[Type, U], Dict[DerivableProgram, List[List[Tuple[Type, U]]]]],
         clean: bool = True,
     ):
+        self._some_start = list(starts)[0]
         super().__init__(starts, rules, clean)
-        self._some_start = list(self.starts)[0]
 
     def name(self) -> str:
         return "UCFG"
@@ -69,8 +69,50 @@ class UCFG(UGrammar[U, List[Tuple[Type, U]], List[Tuple[Type, U]]], Generic[U]):
         """
         Clean this unambiguous grammar by removing non reachable, non productive rules.
         """
-        # TODO
-        pass
+        done: Set[Tuple[Tuple[Tuple[Type, U], ...], Tuple[Type, U]]] = set()
+        reached = {x for x in self.starts}
+        for x in self.starts:
+            done.add((tuple(self.start_information()), x))
+        to_test = [(x, self.start_information()) for x in self.starts]
+
+        while to_test:
+            S, info = to_test.pop()
+            for P in self.rules[S]:
+                for a in self.derive(info, S, P):
+                    new_info, next_S, _ = a
+                    i = len(done)
+                    done.add((tuple(new_info), next_S))
+                    if len(done) == i:
+                        continue
+                    reached.add(next_S)
+                    if isinstance(next_S[0], UnknownType):
+                        continue
+                    to_test.append((next_S, new_info))
+
+        self.rules = {
+            S: {P: possibles for P, possibles in dicP.items()}
+            for S, dicP in self.rules.items()
+            if S in reached
+        }
+
+        # Clean starts
+        next_starts = set()
+        for S in self.starts:
+            has_one = False
+            for P in self.rules[S]:
+                for a in self.derive(self.start_information(), S, P):
+                    new_info, next_S, _ = a
+                    if (tuple(new_info), next_S) in done or isinstance(
+                        next_S[0], UnknownType
+                    ):
+                        has_one = True
+                        break
+                if has_one:
+                    break
+            if has_one:
+                next_starts.add(S)
+
+        self.starts = next_starts
 
     def arguments_length_for(self, S: Tuple[Type, U], P: DerivableProgram) -> int:
         possibles = self.rules[S][P]
