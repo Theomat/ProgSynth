@@ -87,28 +87,16 @@ def __augment__(
     return new_dfta
 
 
-def __flatten__(t: Tuple[U, int]) -> TList[int]:
-    if isinstance(t, tuple):
-        out = __flatten__(t[0])  # type: ignore
-        out.append(t[1])
-        return out
-    else:
-        return [t]
-
-
-def __tuples_get__(t: Tuple[U, int], index: int) -> int:
-    if index == 0:
+def __get_tuple_val__(t: Tuple[U, int], index: int) -> int:
+    if index == -1:
         return t[1]
-    return __tuples_get__(t[0], index - 1)  # type: ignore
+    return __get_tuple_val__(t[0], index + 1)  # type: ignore
 
 
-def __match__(
-    args: TList[Tuple[Type, Tuple[U, int]]], to_check: TList[Tuple[int, TList[int]]]
-) -> bool:
-    for arg, (i, allowed) in zip(args, to_check):
-        if len(allowed) > 0 and __tuples_get__(arg[1], i) not in allowed:
-            return False
-    return True
+def __tuple_len__(t: Tuple[U, ...]) -> int:
+    if isinstance(t, tuple):
+        return 1 + __tuple_len__(t[0])  # type: ignore
+    return 1
 
 
 def __count__(
@@ -167,101 +155,76 @@ def __tag__(
     return out_grammar
 
 
-def __is_intermediary__(counting: TList[bool], dst: Tuple[Type, Tuple[U, int]]) -> bool:
-    dst_nos = __flatten__(dst[1])
-    for i, count in enumerate(counting):
-        minus = -(len(counting) - i)
-        if dst_nos[minus] != 1 and not count:
+def __filter__(
+    grammar: DFTA[Tuple[Type, U], DerivableProgram],
+    check: Callable[
+        [
+            DerivableProgram,
+            Tuple[Tuple[Type, Tuple[U, int]], ...],
+            Tuple[Type, Tuple[U, int]],
+        ],
+        bool,
+    ],
+) -> DFTA[Tuple[Type, U], DerivableProgram]:
+    out_grammar: DFTA[Tuple[Type, U], DerivableProgram] = DFTA(
+        {}, {q for q in grammar.finals}
+    )
+    # Whenever the pattern is correct we tag with 1
+    for (P, p_args), p_dst in grammar.rules.items():
+        if check(P, p_args, p_dst):  # type: ignore
+            out_grammar.rules[(P, p_args)] = p_dst
+    out_grammar.finals = out_grammar.finals.intersection(out_grammar.rules.values())
+    return out_grammar
+
+
+def __match__(
+    args: Tuple[Tuple[Type, Tuple[U, int]], ...],
+    dst: Tuple[Type, Tuple[U, int]],
+    primitive_check: int,
+    indices: TList[int],
+    should_check: TList[bool],
+) -> bool:
+    if __get_tuple_val__(dst[1], -primitive_check - 2) != 1:
+        return False
+    for arg, state_index, check in zip(args, indices, should_check):
+        if not check:
+            continue
+        if __get_tuple_val__(arg[1], -state_index - 2) != 1:
             return False
+
     return True
 
 
 def __process__(
     grammar: DFTA[Tuple[Type, U], DerivableProgram],
     token: Token,
-    counting: TList[bool],
-    sketch: bool,
+    local: bool,
     level: int = 0,
-) -> Tuple[DFTA[Tuple[Type, Any], DerivableProgram], int, TList[int], TList[bool]]:
+) -> DFTA[Tuple[Type, Any], DerivableProgram]:
     # print("\t" * level, "processing:", token)
     if isinstance(token, TokenFunction):
-        possibles = []
-        added_length = []
-        counting_before = counting[:]
+        has_check = []
+        grammar = __process__(grammar, token.function, local, level + 1)
+        lengths = [__tuple_len__(list(grammar.finals)[0][1])]  # type: ignore
         for arg in token.args:
-            grammar, no_added, corrects, counting = __process__(
-                grammar, arg, counting, sketch, level + 1
-            )
-            added_length.append(no_added)
-            possibles.append(corrects)
-        # Compile what we need to check
-        to_check = []
-        length_so_far = 1
-        for allowed, added in zip(possibles[::-1], added_length[::-1]):
-            to_check.append((length_so_far, allowed))
-            length_so_far += added
-        to_check = to_check[::-1]
-        # Augment grammar and mark 1 when right pattern
-        allowed_P = token.function.allowed
+            grammar = __process__(grammar, arg, local, level + 1)
+            cur_len = __tuple_len__(list(grammar.finals)[0][1])  # type: ignore
+            has_check.append(cur_len - lengths[-1] > 0)
+            lengths.append(cur_len)
+
+        indices = [lengths[-1] - l for l in lengths]
+        primitive_check = indices.pop(0)
         out_grammar = __tag__(
             grammar,
-            lambda P, p_args, __: P in allowed_P and __match__(list(p_args), to_check),
+            lambda _, args, dst: __match__(
+                args, dst, primitive_check, indices, has_check
+            ),
         )
-
-        # We need to do something if we are the final node
-        if level == 0:
-            if sketch:
-                out_grammar.finals = {q for q in out_grammar.finals if q[1][1] == 1}
-            else:
-                counting.append(False)
-                do_not_consume = set()
-                deleted = set()
-                map2new = lambda s: (s[0], (s[1][0], 2))
-                counting_last_level = counting[len(counting_before) :]
-                # print("counting_last_level:", counting_last_level)
-                for (P, p_args), p_dst in list(out_grammar.rules.items()):
-                    if P in token.function.allowed and p_dst[1][1] == 0:
-                        if __is_intermediary__(counting_last_level, p_dst):
-                            # print("\t", P, "args:", p_args, "=>", p_dst, "is intermediary")
-                            do_not_consume.add(p_dst)
-                            if p_dst in out_grammar.finals:
-                                out_grammar.finals.remove(p_dst)
-                                out_grammar.finals.add(map2new(p_dst))
-                                do_not_consume.add(map2new(p_dst))
-
-                                deleted.add(p_dst)
-                        else:
-                            del out_grammar.rules[(P, p_args)]
-                # We need for all deleted to duplicate them
-                for (P, p_args), p_dst in list(out_grammar.rules.items()):
-                    if p_dst in deleted or any(arg in deleted for arg in p_args):
-                        if P in token.function.allowed and p_dst in deleted:
-                            continue
-                        for new_args in product(
-                            *[
-                                [arg, map2new(arg)] if arg in deleted else [arg]
-                                for arg in p_args
-                            ]
-                        ):
-                            out_grammar.rules[(P, new_args)] = (
-                                map2new(p_dst) if p_dst in deleted else p_dst
-                            )
-
-                # We also need to forbid other P from consuming intermediaries
-                for (P, p_args), p_dst in list(out_grammar.rules.items()):
-                    if (
-                        p_dst not in do_not_consume
-                        and p_dst[1][1] == 0
-                        and any(arg in do_not_consume for arg in p_args)
-                    ):
-                        del out_grammar.rules[(P, p_args)]
-        return out_grammar, length_so_far, [1], counting + [False]
 
     elif isinstance(token, TokenAllow):
         # We need to augment grammar to tell that this we detected this the correct thing
         allowed_P = token.allowed
         out_grammar = __tag__(grammar, lambda P, _, __: P in allowed_P)
-        return out_grammar, 1, [1], counting + [False]
 
     elif isinstance(token, (TokenAtMost, TokenAtLeast)):
         out_grammar = __count__(
@@ -275,21 +238,32 @@ def __process__(
             allowed = list(range(token.count + 1))
         else:
             allowed = [token.count]
-        if level == 0 and sketch:
-            out_grammar.finals = {q for q in out_grammar.finals if q[1][1] in allowed}
-        return out_grammar, 1, allowed, counting + [True]
+        out_grammar = __tag__(
+            out_grammar, lambda _, __, state: state[1][0][-1] in allowed  # type: ignore
+        )
 
     elif isinstance(token, TokenForbidSubtree):
-        return __process__(
-            grammar, TokenAtMost(token.forbidden, 0), counting, sketch, level
-        )
+        return __process__(grammar, TokenAtMost(token.forbidden, 0), local, level)
     elif isinstance(token, TokenForceSubtree):
-        return __process__(
-            grammar, TokenAtLeast(token.forced, 1), counting, sketch, level
-        )
+        return __process__(grammar, TokenAtLeast(token.forced, 1), local, level)
     elif isinstance(token, TokenAnything):
-        return grammar, 0, [], counting
-    assert False, f"Not implemented: {token}"
+        return grammar
+    else:
+        assert False, f"Not implemented token: {token}({type(token)}) [level={level}]"
+
+    if level == 0:
+        if not local:
+            out_grammar.finals = {q for q in out_grammar.finals if q[1][-1] == 1}
+        else:
+            assert isinstance(
+                token, TokenFunction
+            ), f"Unsupported topmost token for local constraint"
+            out_grammar = __filter__(
+                out_grammar,
+                lambda P, _, dst: P not in token.function.allowed or dst[1][-1] == 1,  # type: ignore
+            )
+            # out_grammar.finals = out_grammar.finals.intersection(set(out_grammar.rules.keys()))
+    return out_grammar
 
 
 def add_dfta_constraints(
@@ -311,9 +285,8 @@ def add_dfta_constraints(
         parse_specification(constraint, current_grammar)
         for _, constraint in constraint_plus
     ]
-    dfta = __cfg2dfta__(current_grammar)
-    dfta.reduce()
-
+    dfta = None
+    pbar = None
     if progress:
         pbar = tqdm.tqdm(
             total=len(parsed_constraints) + int(sketch is not None),
@@ -321,18 +294,28 @@ def add_dfta_constraints(
             smoothing=1,
         )
     for constraint in parsed_constraints:
-        dfta = __process__(dfta, constraint, [], False)[0]
+        a = __process__(__cfg2dfta__(current_grammar), constraint, True)
+        if dfta is None:
+            dfta = a
+        else:
+            dfta = dfta.read_product(a)
         dfta.reduce()
-        if progress:
+        dfta = dfta.minimise()  # type: ignore
+        if pbar:
             pbar.update(1)
     if sketch is not None:
-        dfta = __process__(
-            dfta, parse_specification(sketch, current_grammar), [], True
-        )[0]
-        if progress:
+        a = __process__(
+            __cfg2dfta__(current_grammar),
+            parse_specification(sketch, current_grammar),
+            False,
+        )
+        if dfta is None:
+            dfta = a
+        else:
+            dfta = dfta.read_product(a)  # type: ignore
+        if pbar:
             pbar.update(1)
         dfta.reduce()
-
-    if progress:
+    if pbar:
         pbar.close()
     return dfta.minimise()  # type: ignore
