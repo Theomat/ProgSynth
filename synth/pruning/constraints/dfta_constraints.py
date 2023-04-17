@@ -298,7 +298,8 @@ def add_dfta_constraints(
         if dfta is None:
             dfta = a
         else:
-            dfta = dfta.read_product(a)
+            a.reduce()
+            dfta = dfta.read_product(a.minimise())
         dfta.reduce()
         dfta = dfta.minimise()  # type: ignore
         if pbar:
@@ -312,10 +313,12 @@ def add_dfta_constraints(
         if dfta is None:
             dfta = a
         else:
-            dfta = dfta.read_product(a)  # type: ignore
+            a.reduce()
+            dfta = dfta.read_product(a.minimise())  # type: ignore
         if pbar:
             pbar.update(1)
         dfta.reduce()
+        dfta = dfta.minimise()  # type: ignore
     if pbar:
         pbar.close()
-    return dfta.minimise()  # type: ignore
+    return dfta  # type: ignore
