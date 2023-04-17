@@ -1,479 +1,583 @@
-# from typing import Dict, Generic, List, Optional, Tuple, TypeVar
-# import bisect
-# from dataclasses import dataclass, field
-# import copy
+from collections import defaultdict
+from typing import Dict, Generic, List, Optional, Tuple, TypeVar, Union, overload
+import bisect
+from dataclasses import dataclass, field
+import copy
 
-# import numpy as np
+import numpy as np
 
-# from synth.syntax.grammars.tagged_det_grammar import ProbDetGrammar, DerivableProgram
-# from synth.syntax.program import Program
-# from synth.syntax.type_system import Type
+from synth.syntax.grammars.tagged_det_grammar import ProbDetGrammar, DerivableProgram
+from synth.syntax.grammars.tagged_u_grammar import ProbUGrammar
+from synth.syntax.grammars.u_cfg import UCFG
+from synth.syntax.program import Constant, Primitive, Program, Variable
+from synth.syntax.type_system import Type, UnknownType
 
-# U = TypeVar("U")
-# V = TypeVar("V")
-# W = TypeVar("W")
-
-
-# @dataclass(order=True, frozen=True)
-# class Node(Generic[U, W]):
-#     probability: float
-#     for_next_derivation: Tuple[W, Tuple[Type, U]] = field(compare=False)
-#     program: List[Program] = field(compare=False)
-#     derivation_history: List[Tuple[Type, U]] = field(compare=False)
+U = TypeVar("U")
 
 
-# def __common_prefix__(
-#     a: List[Tuple[Type, U]], b: List[Tuple[Type, U]]
-# ) -> List[Tuple[Type, U]]:
-#     if a == b:
-#         return a
-#     candidates = []
-#     if len(a) > 1:
-#         candidates.append(__common_prefix__(a[1:], b))
-#         if len(b) >= 1 and a[0] == b[0]:
-#             candidates.append([a[0]] + __common_prefix__(a[1:], b[1:]))
-#     if len(b) > 1:
-#         candidates.append(__common_prefix__(a, b[1:]))
-#     # Take longest common prefix
-#     lentghs = [len(x) for x in candidates]
-#     if len(lentghs) == 0:
-#         return []
-#     if max(lentghs) == lentghs[0]:
-#         return candidates[0]
-#     return candidates[1]
+@dataclass(order=True, frozen=True)
+class _Node(Generic[U]):
+    probability: float
+    for_next_derivation: Tuple[List[Tuple[Type, U]], Tuple[Type, U]] = field(
+        compare=False
+    )
+    program: List[Program] = field(compare=False)
+    derivation_history: List[Tuple[Type, U]] = field(compare=False)
+    choices: List[List[Tuple[Type, U]]] = field(compare=False)
 
 
-# def __adapt_ctx__(S: Tuple[Type, U], i: int) -> Tuple[Type, U]:
-#     pred = S.predecessors[0]
-#     return Tuple[Type, U](S.type, [(pred[0], i)] + S.predecessors[1:], S.depth)
+def __node_split__(
+    pcfg: ProbUGrammar[U, List[Tuple[Type, U]], List[Tuple[Type, U]]], node: _Node[U]
+) -> Tuple[bool, List[_Node[U]]]:
+    """
+    Split the specified node accordingly.
+
+    Return: success, nodes:
+    - True, list of children nodes
+    - False, [node]
+    """
+    output: List[_Node[U]] = []
+    info, S = node.for_next_derivation
+    # If there is no next then it means this node can't be split
+    if S not in pcfg.tags:
+        return False, [node]
+    for P in pcfg.rules[S]:
+        p_prob = pcfg.probabilities[S][P]
+        # format is (info_state_stack, current_info_state, possibles)
+        next_derivations = pcfg.derive(info, S, P)
+        # Skip failed derivations
+        if len(next_derivations) == 0:
+            continue
+        for possible in next_derivations:
+            new_root = _Node(
+                node.probability * p_prob[tuple(possible[-1])],  # type: ignore
+                (possible[0], possible[1]),
+                node.program + [P],
+                node.derivation_history + [S],
+                node.choices + [possible[-1]],
+            )
+            output.append(new_root)
+    return True, output
 
 
-# def __create_path__(
-#     rules: PRules,
-#     original_pcfg: ProbDetGrammar[U, V, W],
-#     rule_no: int,
-#     Slist: List[Tuple[Type, U]],
-#     Plist: List[Program],
-#     mapping: Dict[Tuple[Type, U], Tuple[Type, U]],
-#     original_start: Tuple[Type, U],
-# ) -> int:
-#     for i, (S, P) in enumerate(zip(Slist, Plist)):
-#         if i == 0:
-#             S = original_start
-#         derivations = original_pcfg.rules[S][P][0]
-#         # Update derivations
-#         new_derivations = []
-#         for nS in derivations:
-#             if nS not in Slist:
-#                 new_derivations.append(nS)
-#             else:
-#                 if nS in mapping:
-#                     new_derivations.append(mapping[nS])
-#                 else:
-#                     mS = __adapt_ctx__(nS, rule_no)
-#                     mapping[nS] = mS
-#                     new_derivations.append(mS)
-#                     rule_no += 1
-#         derivations = new_derivations
-#         # Update current S
-#         if i > 0:
-#             S = mapping[S]
-#         else:
-#             S = Slist[0]
-#         # Add rule
-#         rules[S] = {}
-#         rules[S][P] = derivations, 1
-#     return rule_no
+def __split_nodes_until_quantity_reached__(
+    pcfg: ProbUGrammar[U, List[Tuple[Type, U]], List[Tuple[Type, U]]], quantity: int
+) -> List[_Node[U]]:
+    """
+    Start from the root node and split most probable node until the threshold number of nodes is reached.
+    """
+    nodes: List[_Node[U]] = []
+    for key, prob in pcfg.start_tags.items():
+        nodes.append(_Node(prob, (pcfg.start_information(), key), [], [], []))
+    while len(nodes) < quantity:
+        i = 1
+        success, new_nodes = __node_split__(pcfg, nodes.pop())
+        while not success:
+            i += 1
+            nodes.append(new_nodes[0])
+            success, new_nodes = __node_split__(pcfg, nodes.pop(-i))
+        for new_node in new_nodes:
+            insertion_index: int = bisect.bisect(nodes, new_node)
+            nodes.insert(insertion_index, new_node)
+
+    return nodes
 
 
-# def __pcfg_from__(
-#     original_pcfg: ProbDetGrammar[U, V, W], group: List[Node]
-# ) -> ProbDetGrammar[U, V, W]:
-#     # Find the common prefix to all
-#     min_prefix = copy.deepcopy(group[0].derivation_history)
-#     for node in group[1:]:
-#         min_prefix = __common_prefix__(min_prefix, node.derivation_history)
-
-#     # Extract the start symbol
-#     start = min_prefix.pop()
-
-#     rules: Dict[Tuple[Type, U], Dict[Program, Tuple[List[Tuple[Type, U]], float]]] = {}
-#     rule_no: int = (
-#         max(
-#             max(x[1] for x in key.predecessors) if key.predecessors else 0
-#             for key in original_pcfg.rules
-#         )
-#         + 1
-#     )
-#     mapping: Dict[Tuple[Type, U], Tuple[Type, U]] = {}
-#     # Our min_prefix may be something like (int, 1, (+, 1))
-#     # which means we already chose +
-#     # But it is not in the PCFG
-#     # Thus we need to add it
-#     # In the general case we may as well have + -> + -> + as prefix this whole prefix needs to be added
-#     original_start = start
-#     if len(min_prefix) > 0:
-#         Slist = group[0].derivation_history[: len(min_prefix) + 1]
-#         Plist = group[0].program[: len(min_prefix) + 1]
-#         rule_no = __create_path__(
-#             rules, original_pcfg, rule_no, Slist, Plist, mapping, Slist[0]
-#         )
-#         original_start = Slist[-1]
-#         start = mapping[original_start]
-
-#     # Now we need to make a path from the common prefix to each node's prefix
-#     # We also need to mark all contexts that should be filled
-#     to_fill: List[Tuple[Type, U]] = []
-#     for node in group:
-#         args, program, prefix = (
-#             node.next_contexts,
-#             node.program,
-#             node.derivation_history,
-#         )
-#         # Create rules to follow the path
-#         i = prefix.index(original_start)
-#         ctx_path = prefix[i:]
-#         program_path = program[i:]
-#         if len(ctx_path) > 0:
-#             ctx_path[0] = start
-#             rule_no = __create_path__(
-#                 rules,
-#                 original_pcfg,
-#                 rule_no,
-#                 ctx_path,
-#                 program_path,
-#                 mapping,
-#                 original_start,
-#             )
-#         # If there is no further derivation
-#         if not args:
-#             continue
-#         # Next derivation should be filled
-#         for arg in args:
-#             to_fill.append(arg)
-
-#     # At this point rules can generate all partial programs
-#     # Get the S to normalize by descending depth order
-#     to_normalise = sorted(list(rules.keys()), key=lambda x: -x.depth)
-
-#     # Build rules from to_fill
-#     while to_fill:
-#         S = to_fill.pop()
-#         rules[S] = {}
-#         for P in original_pcfg.rules[S]:
-#             args, w = original_pcfg.rules[S][P]
-#             rules[S][P] = (args[:], w)  # copy list
-#             for arg in args:
-#                 if arg not in rules:
-#                     to_fill.append(arg)
-#     # At this point we have all the needed rules
-#     # However, the probabilites are incorrect
-#     while to_normalise:
-#         S = to_normalise.pop()
-#         if S not in original_pcfg.rules:
-#             continue
-#         # Compute the updated probabilities
-#         for P in list(rules[S]):
-#             args, _ = rules[S][P]
-#             # We have the following equation:
-#             # (1) w = old_w * remaining_fraction
-#             old_w = original_pcfg.rules[S][P][1]
-#             remaining_fraction: float = 1
-#             # If there is a next derivation use it to compute the remaining_fraction
-#             if args:
-#                 N = args[-1]
-#                 remaining_fraction = sum(rules[N][K][1] for K in rules[N])
-#             # Update according to Equation (1)
-#             rules[S][P] = args, old_w * remaining_fraction
-
-#         # The updated probabilities may not sum to 1 so we need to normalise them
-#         # But let ProbDetGrammar[U, V, W] do it with clean=True
-
-#     start = original_pcfg.start
-
-#     # Ensure rules are depth ordered
-#     rules = {
-#         key: rules[key] for key in sorted(list(rules.keys()), key=lambda x: x.depth)
-#     }
-
-#     return ProbDetGrammar[U, V, W](
-#         start, rules, original_pcfg.max_program_depth, clean=True
-#     )
+def __all_compatible__(
+    pcfg: ProbUGrammar[U, List[Tuple[Type, U]], List[Tuple[Type, U]]],
+    node: _Node[U],
+    group: List[_Node[U]],
+) -> bool:
+    return True  # all(__are_compatible__(pcfg, node, node2) for node2 in group)
 
 
-# def __node_split__(
-#     pcfg: ProbDetGrammar[U, V, W], node: Node
-# ) -> Tuple[bool, List[Node]]:
-#     """
-#     Split the specified node accordingly.
-
-#     Return: success, nodes:
-#     - True, list of children nodes
-#     - False, [node]
-#     """
-#     output: List[Node] = []
-#     info, S = node.for_next_derivation
-#     # If there is no next then it means this node can't be split
-#     if S not in pcfg.tags:
-#         return False, [node]
-#     for P in pcfg.rules[S]:
-#         p_prob = pcfg.probabilities[S][P]
-#         next = pcfg.derive(info, S, P)
-#         new_root = Node(
-#             node.probability * p_prob,
-#             next,
-#             node.program + [P],
-#             node.derivation_history + [S],
-#         )
-#         output.append(new_root)
-#     return True, output
+def __try_split_node_in_group__(
+    pcfg: ProbUGrammar[U, List[Tuple[Type, U]], List[Tuple[Type, U]]],
+    prob_groups: List[List],
+    group_index: int,
+) -> bool:
+    group_a: List[_Node[U]] = prob_groups[group_index][1]
+    # Sort group by ascending probability
+    group_a_bis = sorted(group_a, key=lambda x: x.probability)
+    # Try splitting a node until success
+    i = 1
+    success, new_nodes = __node_split__(pcfg, group_a_bis[-i])
+    while not success and i < len(group_a):
+        i += 1
+        success, new_nodes = __node_split__(pcfg, group_a_bis[-i])
+    if i >= len(group_a):
+        return False
+    # Success, remove old node
+    group_a.pop(-i)
+    # Add new nodes
+    for new_node in new_nodes:
+        group_a.append(new_node)
+    return True
 
 
-# def __split_nodes_until_quantity_reached__(
-#     pcfg: ProbDetGrammar[U, V, W], quantity: int
-# ) -> List[Node]:
-#     """
-#     Start from the root node and split most probable node until the threshold number of nodes is reached.
-#     """
-#     nodes: List[Node] = [Node(1.0, (pcfg.start_information(), pcfg.start), [], [])]
-#     while len(nodes) < quantity:
-#         i = 1
-#         success, new_nodes = __node_split__(pcfg, nodes.pop())
-#         while not success:
-#             i += 1
-#             nodes.append(new_nodes[0])
-#             success, new_nodes = __node_split__(pcfg, nodes.pop(-i))
-#         for new_node in new_nodes:
-#             insertion_index: int = bisect.bisect(nodes, new_node)
-#             nodes.insert(insertion_index, new_node)
+def __find_swap_for_group__(
+    pcfg: ProbUGrammar[U, List[Tuple[Type, U]], List[Tuple[Type, U]]],
+    prob_groups: List[List],
+    group_index: int,
+) -> Optional[Tuple[int, Optional[int], int]]:
+    max_prob: float = prob_groups[-1][1]
+    min_prob: float = prob_groups[0][1]
+    group_a, prob = prob_groups[group_index]
+    best_swap: Optional[Tuple[int, Optional[int], int]] = None
+    current_score: float = max_prob / prob
 
-#     return nodes
+    candidates = (
+        list(range(len(prob_groups) - 1, group_index, -1))
+        if group_index == 0
+        else [len(prob_groups) - 1]
+    )
 
-
-# def __holes_of__(pcfg: ProbDetGrammar[U, V, W], node: Node) -> List[Tuple[Type, U]]:
-#     stack = [pcfg.start]
-#     current = node.program[:]
-#     while current:
-#         S = stack.pop()
-#         P = current.pop(0)
-#         args = pcfg.rules[S][P][0]
-#         for arg in args:
-#             stack.append(arg)
-#     return stack
-
-
-# def __is_fixing_any_hole__(
-#     pcfg: ProbDetGrammar[U, V, W], node: Node, holes: List[Tuple[Type, U]]
-# ) -> bool:
-#     current = node.program[:]
-#     stack = [pcfg.start]
-#     while current:
-#         S = stack.pop()
-#         if S in holes:
-#             return True
-#         P = current.pop(0)
-#         args = pcfg.rules[S][P][0]
-#         for arg in args:
-#             stack.append(arg)
-#     return False
-
-
-# def __are_compatible__(pcfg: ProbDetGrammar[U, V, W], node1: Node, node2: Node) -> bool:
-#     """
-#     Two nodes prefix are compatible if one does not fix a context for the other.
-#     e.g. a -> b -> map -> *  and c -> b -> map -> +1 -> * are incompatible.
-
-#     In both cases map have the same context (bigram context) which is ((predecessor=b, argument=0), depth=2) thus are indistinguishables.
-#     However in the former all derivations are allowed in this context whereas in the latter +1 must be derived.
-#     Thus we cannot create a CFG that enables both.
-#     """
-#     holes1 = __holes_of__(pcfg, node1)
-#     if __is_fixing_any_hole__(pcfg, node2, holes1):
-#         return False
-#     holes2 = __holes_of__(pcfg, node2)
-#     return not __is_fixing_any_hole__(pcfg, node1, holes2)
+    for i in candidates:
+        group_b, prob_b = prob_groups[i]
+        for j, node_a in enumerate(group_a):
+            pa: float = node_a.probability
+            reduced_prob: float = prob - pa
+            # Try all swaps
+            for k, node_b in enumerate(group_b):
+                pb: float = node_b.probability
+                if (
+                    pb < pa
+                    or not __all_compatible__(pcfg, node_a, group_b)
+                    or not __all_compatible__(pcfg, node_b, group_a)
+                ):
+                    continue
+                new_mass_b: float = prob_b - pb + pa
+                mini = min_prob if group_index > 0 else reduced_prob + pb
+                maxi = (
+                    max(new_mass_b, prob_groups[-2][1])
+                    if j == len(prob_groups) - 1
+                    else max_prob
+                )
+                new_score = maxi / mini
+                if new_score < current_score:
+                    best_swap = (i, j, k)
+                    current_score = new_score
+        # Consider taking something from b
+        for k, node_b in enumerate(group_b):
+            if not __all_compatible__(pcfg, node_b, group_a):
+                continue
+            pb = node_b.probability
+            if prob + pb > max_prob:
+                new_score = (prob + pb) / min_prob
+            else:
+                new_score = max_prob / (prob + pb)
+            if new_score < current_score:
+                best_swap = (i, None, k)
+                current_score = new_score
+    return best_swap
 
 
-# def __all_compatible__(
-#     pcfg: ProbDetGrammar[U, V, W], node: Node, group: List[Node]
-# ) -> bool:
-#     return all(__are_compatible__(pcfg, node, node2) for node2 in group)
+def __percolate_down__(prob_groups: List[List], group_index: int) -> None:
+    index = group_index
+    p = prob_groups[group_index][1]
+    while index > 0 and prob_groups[index - 1][1] > p:
+        prob_groups[index - 1], prob_groups[index] = (
+            prob_groups[index],
+            prob_groups[index - 1],
+        )
+        index -= 1
 
 
-# def __try_split_node_in_group__(
-#     pcfg: ProbDetGrammar[U, V, W], prob_groups: List[List], group_index: int
-# ) -> bool:
-#     group_a: List[Node] = prob_groups[group_index][1]
-#     # Sort group by ascending probability
-#     group_a_bis = sorted(group_a, key=lambda x: x.probability)
-#     # Try splitting a node until success
-#     i = 1
-#     success, new_nodes = __node_split__(pcfg, group_a_bis[-i])
-#     while not success and i < len(group_a):
-#         i += 1
-#         success, new_nodes = __node_split__(pcfg, group_a_bis[-i])
-#     if i >= len(group_a):
-#         return False
-#     # Success, remove old node
-#     group_a.pop(-i)
-#     # Add new nodes
-#     for new_node in new_nodes:
-#         group_a.append(new_node)
-#     return True
+def __percolate_up__(prob_groups: List[List], group_index: int) -> None:
+    index = group_index
+    p = prob_groups[group_index][1]
+    while index < len(prob_groups) - 2 and prob_groups[index + 1][1] < p:
+        prob_groups[index + 1], prob_groups[index] = (
+            prob_groups[index],
+            prob_groups[index + 1],
+        )
+        index += 1
 
 
-# def __find_swap_for_group__(
-#     pcfg: ProbDetGrammar[U, V, W], prob_groups: List[List], group_index: int
-# ) -> Optional[Tuple[int, Optional[int], int]]:
-#     max_prob: float = prob_groups[-1][1]
-#     min_prob: float = prob_groups[0][1]
-#     group_a, prob = prob_groups[group_index]
-#     best_swap: Optional[Tuple[int, Optional[int], int]] = None
-#     current_score: float = max_prob / prob
+def __apply_swap__(
+    prob_groups: List[List], group_index: int, swap: Tuple[int, Optional[int], int]
+) -> None:
+    j, k, l = swap
+    # App
+    if k:
+        node_a = prob_groups[group_index][0].pop(k)
+        prob_groups[group_index][1] -= node_a.probability
+        prob_groups[j][0].append(node_a)
+        prob_groups[j][1] += node_a.probability
 
-#     candidates = (
-#         list(range(len(prob_groups) - 1, group_index, -1))
-#         if group_index == 0
-#         else [len(prob_groups) - 1]
-#     )
+    node_b = prob_groups[j][0].pop(l)
+    prob_groups[j][1] -= node_b.probability
+    prob_groups[group_index][0].append(node_b)
+    prob_groups[group_index][1] += node_b.probability
 
-#     for i in candidates:
-#         group_b, prob_b = prob_groups[i]
-#         for j, node_a in enumerate(group_a):
-#             pa: float = node_a.probability
-#             reduced_prob: float = prob - pa
-#             # Try all swaps
-#             for k, node_b in enumerate(group_b):
-#                 pb: float = node_b.probability
-#                 if (
-#                     pb < pa
-#                     or not __all_compatible__(pcfg, node_a, group_b)
-#                     or not __all_compatible__(pcfg, node_b, group_a)
-#                 ):
-#                     continue
-#                 new_mass_b: float = prob_b - pb + pa
-#                 mini = min_prob if group_index > 0 else reduced_prob + pb
-#                 maxi = (
-#                     max(new_mass_b, prob_groups[-2][1])
-#                     if j == len(prob_groups) - 1
-#                     else max_prob
-#                 )
-#                 new_score = maxi / mini
-#                 if new_score < current_score:
-#                     best_swap = (i, j, k)
-#                     current_score = new_score
-#         # Consider taking something from b
-#         for k, node_b in enumerate(group_b):
-#             if not __all_compatible__(pcfg, node_b, group_a):
-#                 continue
-#             pb = node_b.probability
-#             if prob + pb > max_prob:
-#                 new_score = (prob + pb) / min_prob
-#             else:
-#                 new_score = max_prob / (prob + pb)
-#             if new_score < current_score:
-#                 best_swap = (i, None, k)
-#                 current_score = new_score
-#     return best_swap
+    __percolate_down__(prob_groups, -1)
+    __percolate_up__(prob_groups, group_index)
 
 
-# def __percolate_down__(prob_groups: List[List], group_index: int) -> None:
-#     index = group_index
-#     p = prob_groups[group_index][1]
-#     while index > 0 and prob_groups[index - 1][1] > p:
-#         prob_groups[index - 1], prob_groups[index] = (
-#             prob_groups[index],
-#             prob_groups[index - 1],
-#         )
-#         index -= 1
+def __split_into_nodes__(
+    pcfg: ProbUGrammar[U, List[Tuple[Type, U]], List[Tuple[Type, U]]],
+    splits: int,
+    threshold: float,
+) -> Tuple[List[List[_Node[U]]], float]:
+    nodes = __split_nodes_until_quantity_reached__(pcfg, splits)
+    # Create groups
+    groups: List[List[_Node[U]]] = []
+    for node in nodes[:splits]:
+        groups.append([node])
+    for node in nodes[splits:]:
+        # Add to first compatible group
+        added = False
+        for group in groups:
+            if __all_compatible__(pcfg, node, group):
+                group.append(node)
+                added = True
+                break
+        assert added
+    masses: List[float] = [np.sum([x.probability for x in group]) for group in groups]
+    prob_groups = sorted([[g, p] for g, p in zip(groups, masses)], key=lambda x: x[1])  # type: ignore
+    ratio: float = prob_groups[-1][1] / prob_groups[0][1]  # type: ignore
+    made_progress = True
+    while ratio > threshold and made_progress:
+        made_progress = False
+        for i in range(splits - 1):
+            swap = __find_swap_for_group__(pcfg, prob_groups, i)
+            if swap:
+                made_progress = True
+                __apply_swap__(prob_groups, i, swap)
+                break
+        if not made_progress:
+            for i in range(splits - 1, 0, -1):
+                made_progress = __try_split_node_in_group__(pcfg, prob_groups, i)
+                if made_progress:
+                    break
+        ratio = prob_groups[-1][1] / prob_groups[0][1]  # type: ignore
+    return [g for g, _ in prob_groups], ratio  # type: ignore
 
 
-# def __percolate_up__(prob_groups: List[List], group_index: int) -> None:
-#     index = group_index
-#     p = prob_groups[group_index][1]
-#     while index < len(prob_groups) - 2 and prob_groups[index + 1][1] < p:
-#         prob_groups[index + 1], prob_groups[index] = (
-#             prob_groups[index],
-#             prob_groups[index + 1],
-#         )
-#         index += 1
+def __common_prefix__(
+    a: List[Tuple[Type, U]], b: List[Tuple[Type, U]]
+) -> List[Tuple[Type, U]]:
+    if a == b:
+        return a
+    candidates = []
+    if len(a) > 1:
+        candidates.append(__common_prefix__(a[1:], b))
+        if len(b) >= 1 and a[0] == b[0]:
+            candidates.append([a[0]] + __common_prefix__(a[1:], b[1:]))
+    if len(b) > 1:
+        candidates.append(__common_prefix__(a, b[1:]))
+    # Take longest common prefix
+    lentghs = [len(x) for x in candidates]
+    if len(lentghs) == 0:
+        return []
+    if max(lentghs) == lentghs[0]:
+        return candidates[0]
+    return candidates[1]
 
 
-# def __apply_swap__(
-#     prob_groups: List[List], group_index: int, swap: Tuple[int, Optional[int], int]
-# ) -> None:
-#     j, k, l = swap
-#     # App
-#     if k:
-#         node_a = prob_groups[group_index][0].pop(k)
-#         prob_groups[group_index][1] -= node_a.probability
-#         prob_groups[j][0].append(node_a)
-#         prob_groups[j][1] += node_a.probability
+def __create_path__(
+    rules: Dict[
+        Tuple[Type, Tuple[U, int]],
+        Dict[DerivableProgram, List[List[Tuple[Type, Tuple[U, int]]]]],
+    ],
+    probabilities: Dict[
+        Tuple[Type, Tuple[U, int]],
+        Dict[DerivableProgram, Dict[List[Tuple[Type, Tuple[U, int]]], float]],
+    ],
+    original_pcfg: ProbUGrammar[U, List[Tuple[Type, U]], List[Tuple[Type, U]]],
+    rule_no: int,
+    Slist: List[Tuple[Type, U]],
+    Plist: List[Program],
+    Vlist: List[List[Tuple[Type, U]]],
+    mapping: Dict[Tuple[Type, U], Tuple[Type, Tuple[U, int]]],
+    original_start: Tuple[Type, U],
+    to_normalise: List[
+        Tuple[List[Tuple[Type, U]], Tuple[Type, U], Program, List[Tuple[Type, U]]]
+    ],
+) -> int:
+    rule_nos = [rule_no]
 
-#     node_b = prob_groups[j][0].pop(l)
-#     prob_groups[j][1] -= node_b.probability
-#     prob_groups[group_index][0].append(node_b)
-#     prob_groups[group_index][1] += node_b.probability
+    def map_state(s: Tuple[Type, U]) -> Tuple[Type, Tuple[U, int]]:
+        if s in mapping:
+            return mapping[s]
+        mapping[s] = (s[0], (s[1], rule_nos[0]))
+        rule_nos[0] += 1
+        return mapping[s]
 
-#     __percolate_down__(prob_groups, -1)
-#     __percolate_up__(prob_groups, group_index)
+    info = original_pcfg.start_information()
+    for i, (S, P, v) in enumerate(zip(Slist, Plist, Vlist)):
+        if i == 0:
+            S = original_start
+        to_normalise.append((info, S, P, v))
+        derivation = original_pcfg.derive_specific(info, S, P, v)  # type: ignore
+        assert derivation
+        next_derivation, current = derivation
+        # Update derivations
+        assert isinstance(P, (Primitive, Variable, Constant))
+        if isinstance(current[0], UnknownType):
+            rules[map_state(S)] = {P: [[]]}
+        else:
+            rules[map_state(S)] = {
+                P: [[map_state(current)] + [map_state(x) for x in next_derivation]]
+            }
+        mapped_v = tuple(map_state(x) for x in v)
+        probabilities[map_state(S)] = {P: {mapped_v: original_pcfg.probabilities[S][P][tuple(v)]}}  # type: ignore
+        info = next_derivation
+    return rule_nos[0]
 
 
-# def __split_into_nodes__(
-#     pcfg: ProbDetGrammar[U, V, W], splits: int, desired_ratio: float = 2
-# ) -> Tuple[List[List[Node]], float]:
-#     nodes = __split_nodes_until_quantity_reached__(pcfg, splits)
+def __pcfg_from__(
+    original_pcfg: ProbUGrammar[U, List[Tuple[Type, U]], List[Tuple[Type, U]]],
+    group: List[_Node[U]],
+) -> ProbUGrammar[
+    Tuple[U, int], List[Tuple[Type, Tuple[U, int]]], List[Tuple[Type, Tuple[U, int]]]
+]:
+    # Find the common prefix to all
+    min_prefix = copy.deepcopy(group[0].derivation_history)
+    for node in group[1:]:
+        min_prefix = __common_prefix__(min_prefix, node.derivation_history)
 
-#     # Create groups
-#     groups: List[List[Node[U, W]]] = []
-#     for node in nodes[:splits]:
-#         groups.append([node])
-#     for node in nodes[splits:]:
-#         # Add to first compatible group
-#         added = False
-#         for group in groups:
-#             if __all_compatible__(pcfg, node, group):
-#                 group.append(node)
-#                 added = True
-#                 break
-#         assert added
+    # Extract the start symbol
+    start = min_prefix.pop()
 
-#     # Improve
-#     improved = True
-#     masses: List[float] = [np.sum([x.probability for x in group]) for group in groups]
-#     prob_groups = sorted([[g, p] for g, p in zip(groups, masses)], key=lambda x: x[1])  # type: ignore
-#     ratio: float = prob_groups[-1][1] / prob_groups[0][1]  # type: ignore
-#     while improved and ratio > desired_ratio:
-#         improved = False
-#         for i in range(splits - 1):
-#             swap = __find_swap_for_group__(pcfg, prob_groups, i)
-#             if swap:
-#                 improved = True
-#                 __apply_swap__(prob_groups, i, swap)
-#                 break
-#         if not improved:
-#             for i in range(splits - 1, 0, -1):
-#                 improved = __try_split_node_in_group__(pcfg, prob_groups, i)
-#                 if improved:
-#                     break
-#         ratio = prob_groups[-1][1] / prob_groups[0][1]  # type: ignore
-#     return [g for g, _ in prob_groups], ratio  # type: ignore
+    rules: Dict[
+        Tuple[Type, Tuple[U, int]],
+        Dict[DerivableProgram, List[List[Tuple[Type, Tuple[U, int]]]]],
+    ] = {}
+    probabilities: Dict[
+        Tuple[Type, Tuple[U, int]],
+        Dict[DerivableProgram, Dict[List[Tuple[Type, Tuple[U, int]]], float]],
+    ] = {}
+    start_probs: Dict[Tuple[Type, Tuple[U, int]], float] = {}
+    mapping: Dict[Tuple[Type, U], Tuple[Type, Tuple[U, int]]] = {}
+    # List of non-terminals + info we need to normalise weirdly
+    to_normalise: List[
+        Tuple[List[Tuple[Type, U]], Tuple[Type, U], Program, List[Tuple[Type, U]]]
+    ] = []
+    # Our min_prefix may be something like (int, 1, (+, 1))
+    # which means we already chose +
+    # But it is not in the PCFG
+    # Thus we need to add it
+    # In the general case we may as well have + -> + -> + as prefix this whole prefix needs to be added
+    rule_no = 0
+    original_start = start
+    if len(min_prefix) > 0:
+        Slist = group[0].derivation_history[: len(min_prefix) + 1]
+        Plist = group[0].program[: len(min_prefix) + 1]
+        Vlist = group[0].choices[: len(min_prefix) + 1]
+        rule_no = __create_path__(
+            rules,
+            probabilities,
+            original_pcfg,
+            rule_no,
+            Slist,
+            Plist,
+            Vlist,
+            mapping,
+            Slist[0],
+            to_normalise,
+        )
+        original_start = Slist[-1]
 
+    # Now we need to make a path from the common prefix to each node's prefix
+    # We also need to mark all contexts that should be filled
+    to_fill: List[Tuple[List[Tuple[Type, U]], Tuple[Type, U]]] = []
+    for node in group:
+        args, program, prefix = (
+            node.for_next_derivation,
+            node.program,
+            node.derivation_history,
+        )
+        # Create rules to follow the path
+        i = prefix.index(original_start)
+        ctx_path = prefix[i:]
+        program_path = program[i:]
+        v_path = node.choices[i:]
+        if len(ctx_path) > 0:
+            ctx_path[0] = original_start
+            rule_no = __create_path__(
+                rules,
+                probabilities,
+                original_pcfg,
+                rule_no,
+                ctx_path,
+                program_path,
+                v_path,
+                mapping,
+                original_start,
+                to_normalise,
+            )
+        # If there is no further derivation
+        if not args or isinstance(args[1][0], UnknownType):
+            continue
+        # Next derivation should be filled
+        to_fill.append(args)
+
+    rule_nos = [rule_no]
+
+    def map_state(s: Tuple[Type, U]) -> Tuple[Type, Tuple[U, int]]:
+        o = mapping.get(s, None)
+        if o is not None:
+            # print("\t", s, "=>", o)
+            return o
+        # print(s, "does not exist in mapping:", set(mapping.keys()))
+        mapping[s] = (s[0], (s[1], rule_nos[0]))
+        rule_nos[0] += 1
+        return mapping[s]
+
+    computed: Dict[
+        Tuple[Type, Tuple[U, int]],
+        Dict[DerivableProgram, Dict[Tuple[Tuple[Type, Tuple[U, int]], ...], float]],
+    ] = defaultdict(lambda: defaultdict(dict))
+    # Build rules from to_fill
+    while to_fill:
+        info, S = to_fill.pop()
+        Sp = map_state(S)
+        if Sp in rules:
+            continue
+        rules[Sp] = {}
+        probabilities[Sp] = {}
+        # print("\t", S,"//", Sp, ":")
+        for P in original_pcfg.rules[S]:
+            possibles = original_pcfg.rules[S][P]
+            new_list = []
+            probabilities[Sp][P] = {}
+            # print("\t\t", P, "=>")
+            for v in possibles:
+                prob = original_pcfg.probabilities[S][P][tuple(v)]  # type: ignore
+                mapped_v = [map_state(x) for x in v]
+                probabilities[Sp][P][tuple(mapped_v)] = prob  # type: ignore
+                # print(f"\t\t\t{prob}: {v} // {mapped_v}")
+                computed[Sp][P][tuple(mapped_v)] = prob
+                new_list.append(mapped_v)
+                a = original_pcfg.derive_specific(info, S, P, v)
+                if (
+                    a
+                    and map_state(a[1]) not in rules
+                    and not isinstance(a[1][0], UnknownType)
+                ):
+                    to_fill.append(a)
+            rules[Sp][P] = new_list
+
+    # Now we can already have the new grammar
+    starts = {map_state(s) for s in original_pcfg.grammar.starts}
+    new_grammar = UCFG(starts, rules)
+    # At this point we have all the needed rules
+    # However, the probabilites are incorrect
+    while to_normalise:
+        for el in list(to_normalise):
+            info, S, cP, v = el
+            assert isinstance(cP, (Primitive, Variable, Constant))
+            Sp = map_state(S)
+            if Sp not in probabilities:
+                probabilities[Sp] = {}
+            if cP not in probabilities[Sp]:
+                probabilities[Sp][cP] = {}
+            # print("\t", Sp, "->", P)
+            derivation = original_pcfg.derive_specific(info, S, cP, v)
+            assert derivation
+            _, current = derivation
+            # Compute the updated probabilities
+            new_prob = 0.0
+            old_w = original_pcfg.probabilities[S][cP][tuple(v)]  # type: ignore
+            if isinstance(current[0], UnknownType):
+                new_prob = 1
+            else:
+                missed = False
+                currentP = map_state(current)
+                count = 0
+                for Pp, v_dict in computed[currentP].items():
+                    if Pp not in computed[currentP]:
+                        missed = True
+                        break
+                    for cv, p in v_dict.items():
+                        if cv not in v_dict:
+                            missed = True
+                            break
+                        new_prob += p
+                        count += 1
+                if missed or count == 0:
+                    continue
+                # print("for", S, "=>", P, "@", v)
+                # print("\tprob:", new_prob, "count:", count, "missed:", missed)
+            # Update according to Equation (1)
+            tmapped_v = tuple(map_state(x) for x in v)
+            # print("\t\t", Sp, "->", P)
+            probabilities[Sp][cP][tmapped_v] = old_w * new_prob  # type: ignore
+            computed[Sp][cP][tmapped_v] = old_w * new_prob
+            to_normalise.remove(el)
+
+    for start in original_pcfg.start_tags:
+        Sp = map_state(start)
+        if Sp in new_grammar.starts:
+            start_probs[Sp] = original_pcfg.start_tags[start]
+        # The updated probabilities may not sum to 1 so we need to normalise them
+        # But let ProbDetGrammar[U, List[Tuple[Type, U]], List[Tuple[Type, U]]] do it with clean=True
+    # print("START", probabilities)
+    probabilities = {
+        S: {
+            P: {v: p for v, p in dicoV.items() if list(v) in new_grammar.rules[S][P]}
+            for P, dicoV in dicoP.items()
+            if P in new_grammar.rules[S]
+        }
+        for S, dicoP in probabilities.items()
+        if S in new_grammar.rules
+    }
+    # for S, dicoP in probabilities.items():
+    #     print("\t", S, ":")
+    #     for P, possibles in dicoP.items():
+    #         print("\t\t", P, " =>", possibles)
+    #     print()
+    grammar = ProbUGrammar(new_grammar, probabilities, start_probs)
+    grammar.normalise()
+    # print(grammar)
+    # print()
+    # print("=" * 80)
+    # print()
+    return grammar
+
+
+# @overload
+# def split(
+#     pcfg: ProbDetGrammar[U, List[Tuple[Type, U]], List[Tuple[Type, U]]], splits: int, desired_ratio: float = 1.1
+# ) -> Tuple[List[ProbDetGrammar[U, List[Tuple[Type, U]], List[Tuple[Type, U]]]], float]:
+#     pass
+
+# @overload
+# def split(
+#     pcfg: ProbUGrammar[U, List[Tuple[Type, U]], List[Tuple[Type, U]]], splits: int, desired_ratio: float = 1.1
+# ) -> Tuple[List[ProbUGrammar[U, List[Tuple[Type, U]], List[Tuple[Type, U]]]], float]:
+#     pass
 
 # def split(
-#     pcfg: ProbDetGrammar[U, V, W], splits: int, desired_ratio: float = 1.1
-# ) -> Tuple[List[ProbDetGrammar[U, V, W]], float]:
-#     """
-#     Currently use exchange split.
-#     Parameters:
-#     desired_ratio: the max ratio authorized between the most probable group and the least probable pcfg
+#     pcfg: Union[ProbUGrammar[U, List[Tuple[Type, U]], List[Tuple[Type, U]]], ProbDetGrammar[U, List[Tuple[Type, U]], List[Tuple[Type, U]]]], splits: int, desired_ratio: float = 1.1
+# ) -> Union[Tuple[List[ProbUGrammar[U, List[Tuple[Type, U]], List[Tuple[Type, U]]]], float], Tuple[List[ProbDetGrammar[U, List[Tuple[Type, U]], List[Tuple[Type, U]]]], float]]:
+def split(
+    pcfg: ProbUGrammar[U, List[Tuple[Type, U]], List[Tuple[Type, U]]],
+    splits: int,
+    desired_ratio: float = 1.1,
+) -> Tuple[
+    List[
+        ProbUGrammar[
+            Tuple[U, int],
+            List[Tuple[Type, Tuple[U, int]]],
+            List[Tuple[Type, Tuple[U, int]]],
+        ]
+    ],
+    float,
+]:
+    """
+    Currently use exchange split.
+    Parameters:
+    splits: the number of splits (must be > 1, otherwise the pcfg returned does not match the type signature since the input one is returned)
+    desired_ratio: the max ratio authorized between the most probable group and the least probable pcfg
 
-#     Return:
-#     a list of ProbDetGrammar[U, V, W]
-#     the reached threshold
-#     """
-#     if splits == 1:
-#         return [pcfg], 1
-#     assert desired_ratio > 1, "The desired ratio must be > 1!"
-#     groups, ratio = __split_into_nodes__(pcfg, splits, desired_ratio)
-#     return [__pcfg_from__(pcfg, group) for group in groups if len(group) > 0], ratio
+    Return:
+    a list of probabilistic grammars
+    the reached threshold
+    """
+    if splits == 1:
+        return [pcfg], 1  # type: ignore
+    assert desired_ratio > 1, "The desired ratio must be > 1!"
+    groups, ratio = __split_into_nodes__(pcfg, splits, desired_ratio)
+    return [__pcfg_from__(pcfg, group) for group in groups if len(group) > 0], ratio
