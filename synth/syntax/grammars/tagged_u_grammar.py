@@ -54,10 +54,9 @@ class TaggedUGrammar(UGrammar[U, V, W], Generic[T, U, V, W]):
 
     def __str__(self) -> str:
         s = f"Print a {self.name()}\n"
-        s += "start: {}\n".format(self.grammar.starts)
-        s += "start tags: {}\n".format(self.start_tags)
         for S in reversed(self.grammar.rules):
-            s += "#\n {}\n".format(S)
+            add = f" [START p={self.start_tags[S]}]" if S in self.starts else ""
+            s += "#\n {}{}\n".format(S, add)
             for P in self.grammar.rules[S]:
                 out = self.grammar.rules[S][P]
                 for possible in out:
