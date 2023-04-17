@@ -50,14 +50,14 @@ def test_size_constraint(max_size: int) -> None:
     cfg = TTCFG.size_constraint(dsl, FunctionType(INT, INT), max_size)
     size1 = dsl.parse_program("(+ 1 var0)", FunctionType(INT, INT))
     res = size1
-    while res.length() <= max_size:
+    while res.size() <= max_size:
         assert (
             res in cfg
-        ), f"Program size:{res.length()} should be in the TTCFG max_size:{max_size}"
+        ), f"Program size:{res.size()} should be in the TTCFG max_size:{max_size}"
         res = dsl.parse_program(f"(+ {res} var0)", FunctionType(INT, INT))
     assert (
         res not in cfg
-    ), f"Program size:{res.length()} should NOT be in the TTCFG max_size:{max_size}"
+    ), f"Program size:{res.size()} should NOT be in the TTCFG max_size:{max_size}"
 
 
 @pytest.mark.parametrize("max_occ", [3, 4, 5])
@@ -97,11 +97,11 @@ def test_product() -> None:
     assert cfg
     size1 = dsl.parse_program("(+ 1 var0)", FunctionType(INT, INT))
     res = size1
-    while res.length() <= max_size:
+    while res.size() <= max_size:
         assert (
             res in cfg
-        ), f"Program size:{res.length()} should be in the TTCFG max_size:{max_size}"
+        ), f"Program size:{res.size()} should be in the TTCFG max_size:{max_size}"
         res = dsl.parse_program(f"(+ {res} var0)", FunctionType(INT, INT))
     assert (
         res not in cfg
-    ), f"Program size:{res.length()} should NOT be in the TTCFG max_size:{max_size}"
+    ), f"Program size:{res.size()} should NOT be in the TTCFG max_size:{max_size}"
