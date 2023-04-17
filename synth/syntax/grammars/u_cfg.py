@@ -196,10 +196,26 @@ class UCFG(UGrammar[U, List[Tuple[Type, U]], List[Tuple[Type, U]]], Generic[U]):
             DFTA[Tuple[Type, U], DerivableProgram],
         ],
     ) -> "Union[UCFG[U], UCFG[Tuple[U, ...]]]":
-        d2state = lambda x: x
-        some_final = list(dfta.finals)[0]
-        if isinstance(some_final[0], tuple):
-            d2state = lambda t: (t[0][0], tuple(tt[1] for tt in t))
+        def extract(t: Tuple) -> Tuple:
+            while len(t) == 1 and isinstance(t, tuple):
+                t = t[0]
+            return t
+
+        def d2state(
+            t: Union[Tuple[Type, U], Tuple[Tuple[Type, U], ...]]
+        ) -> Tuple[Type, U]:
+            t = extract(t)
+            if isinstance(t[0], tuple):
+                # Get the type
+                our_type = t
+                while isinstance(our_type, tuple):
+                    our_type = our_type[0]  # type: ignore
+                # Compute the rest
+                rest = []
+                for tt in t:
+                    rest.append(extract(tt)[1])
+                return (our_type, tuple(rest))
+            return t  # type: ignore
 
         starts = {d2state(q) for q in dfta.finals}
 
@@ -208,7 +224,7 @@ class UCFG(UGrammar[U, List[Tuple[Type, U]], List[Tuple[Type, U]]], Generic[U]):
             Dict[DerivableProgram, List[List[Tuple[Type, U]]]],
         ] = {}
 
-        stack = [el for el in starts]
+        stack: List[Tuple[Type, U]] = [el for el in starts]
         while stack:
             tgt = stack.pop()
             if tgt in new_rules:
