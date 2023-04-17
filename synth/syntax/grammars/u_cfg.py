@@ -25,6 +25,27 @@ W = TypeVar("W")
 T = TypeVar("T")
 
 
+def __extract__(t: Tuple) -> Tuple:
+    while len(t) == 1 and isinstance(t, tuple):
+        t = t[0]
+    return t
+
+
+def __d2state__(t: Union[Tuple[Type, U], Tuple[Tuple[Type, U], ...]]) -> Tuple[Type, U]:
+    t = __extract__(t)
+    if isinstance(t[0], tuple):
+        # Get the type
+        our_type = t
+        while isinstance(our_type, tuple):
+            our_type = our_type[0]  # type: ignore
+        # Compute the rest
+        rest = []
+        for tt in t:
+            rest.append(__extract__(tt)[1])
+        return (our_type, tuple(rest))
+    return t  # type: ignore
+
+
 class UCFG(UGrammar[U, List[Tuple[Type, U]], List[Tuple[Type, U]]], Generic[U]):
     def __init__(
         self,
@@ -196,28 +217,8 @@ class UCFG(UGrammar[U, List[Tuple[Type, U]], List[Tuple[Type, U]]], Generic[U]):
             DFTA[Tuple[Type, U], DerivableProgram],
         ],
     ) -> "Union[UCFG[U], UCFG[Tuple[U, ...]]]":
-        def extract(t: Tuple) -> Tuple:
-            while len(t) == 1 and isinstance(t, tuple):
-                t = t[0]
-            return t
 
-        def d2state(
-            t: Union[Tuple[Type, U], Tuple[Tuple[Type, U], ...]]
-        ) -> Tuple[Type, U]:
-            t = extract(t)
-            if isinstance(t[0], tuple):
-                # Get the type
-                our_type = t
-                while isinstance(our_type, tuple):
-                    our_type = our_type[0]  # type: ignore
-                # Compute the rest
-                rest = []
-                for tt in t:
-                    rest.append(extract(tt)[1])
-                return (our_type, tuple(rest))
-            return t  # type: ignore
-
-        starts = {d2state(q) for q in dfta.finals}
+        starts = {__d2state__(q) for q in dfta.finals}
 
         new_rules: Dict[
             Tuple[Type, U],
@@ -231,12 +232,12 @@ class UCFG(UGrammar[U, List[Tuple[Type, U]], List[Tuple[Type, U]]], Generic[U]):
                 continue
             new_rules[tgt] = defaultdict(list)
             for (P, args), dst in dfta.rules.items():
-                if d2state(dst) != tgt:
+                if __d2state__(dst) != tgt:
                     continue
-                new_rules[tgt][P].append([d2state(arg) for arg in args])
+                new_rules[tgt][P].append([__d2state__(arg) for arg in args])
                 for new_state in args:
-                    if d2state(new_state) not in new_rules:
-                        stack.append(d2state(new_state))
+                    if __d2state__(new_state) not in new_rules:
+                        stack.append(__d2state__(new_state))
 
         return UCFG(starts, new_rules)
 
@@ -249,16 +250,16 @@ class UCFG(UGrammar[U, List[Tuple[Type, U]], List[Tuple[Type, U]]], Generic[U]):
         ],
         ngram: int,
     ) -> "Union[UCFG[Tuple[NGram, U]], UCFG[Tuple[NGram, Tuple[U, ...]]]]":
-        d2state = lambda t, v: (t[0], (v if v is not None else NGram(ngram), t[1]))
-        match = lambda a, b: a[0] == b[0] and a[1][1] == b[1][1]
-        some_final = list(dfta.finals)[0]
-        if isinstance(some_final[0], tuple):
-            d2state = lambda t, v: (
-                t[0][0],
-                (v if v is not None else NGram(ngram), tuple(tt[1] for tt in t)),
-            )
+        def local_d2state(
+            t: Union[Tuple[Type, U], Tuple[Tuple[Type, U], ...]], v: Optional[NGram]
+        ) -> Tuple[Type, Tuple[NGram, U]]:
+            a, b = __d2state__(t)
+            dst_v = v or NGram(ngram)
+            return (a, (dst_v, b))
 
-        starts = {d2state(q, None) for q in dfta.finals}
+        match = lambda a, b: a[0] == b[0] and a[1][1] == b[1][1]
+
+        starts = {local_d2state(q, None) for q in dfta.finals}
 
         new_rules: Dict[
             Tuple[Type, Tuple[NGram, U]],
@@ -273,10 +274,10 @@ class UCFG(UGrammar[U, List[Tuple[Type, U]], List[Tuple[Type, U]]], Generic[U]):
             new_rules[tgt] = defaultdict(list)
             last: NGram = tgt[1][0]
             for (P, args), dst in dfta.rules.items():
-                if not match(d2state(dst, None), tgt):
+                if not match(local_d2state(dst, None), tgt):
                     continue
                 new_args = [
-                    d2state(arg, last.successor((P, i))) for i, arg in enumerate(args)
+                    local_d2state(arg, last.successor((P, i))) for i, arg in enumerate(args)  # type: ignore
                 ]
                 new_rules[tgt][P].append(new_args)
                 for new_state in new_args:
