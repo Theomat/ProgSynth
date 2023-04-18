@@ -32,5 +32,5 @@ from synth.syntax.grammars import (
     enumerate_prob_u_grammar,
     enumerate_bucket_prob_grammar,
     enumerate_bucket_prob_u_grammar,
-    # split,
+    split,
 )

@@ -8,7 +8,7 @@ from synth.syntax.grammars.enumeration import (
     enumerate_prob_u_grammar,
     enumerate_bucket_prob_grammar,
     enumerate_bucket_prob_u_grammar,
-    # split
+    split,
 )
 from synth.syntax.grammars.u_grammar import UGrammar
 from synth.syntax.grammars.u_cfg import UCFG
