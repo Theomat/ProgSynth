@@ -35,10 +35,18 @@ def test_size(max_depth: int) -> None:
 
 @pytest.mark.parametrize("max_depth", max_depths)
 def test_clean(max_depth: int) -> None:
-    cfg = UCFG.depth_constraint(dsl, FunctionType(INT, INT), max_depth)
-    for rule in cfg.rules:
+    dirty_ucfg = UCFG.from_CFG(
+        CFG.depth_constraint(dsl, FunctionType(INT, INT), max_depth), clean=False
+    )
+    clean_ucfg = UCFG.from_CFG(
+        CFG.depth_constraint(dsl, FunctionType(INT, INT), max_depth), clean=True
+    )
+
+    assert clean_ucfg.programs() == dirty_ucfg.programs()
+
+    for rule in clean_ucfg.rules:
         assert rule[1][1] <= max_depth
-        for P in cfg.rules[rule]:
+        for P in clean_ucfg.rules[rule]:
             if isinstance(P, Primitive):
                 assert P.primitive != "non_reachable"
                 assert P.primitive != "non_productive"
