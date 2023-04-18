@@ -52,6 +52,12 @@ parser.add_argument(
     help="max number of examples per task (default: 5)",
 )
 parser.add_argument(
+    "--test-examples",
+    type=int,
+    default=0,
+    help="number of test examples per task (default: 0)",
+)
+parser.add_argument(
     "--uniform", action="store_true", default=False, help="use uniform PCFGs"
 )
 parser.add_argument(
@@ -80,6 +86,7 @@ output_file: str = parameters.output
 seed: int = parameters.seed
 max_depth: int = parameters.max_depth
 max_examples: int = parameters.max_examples
+test_examples: int = parameters.test_examples
 nb_programs: int = parameters.programs
 nb_inputs: int = parameters.inputs
 uniform: bool = parameters.uniform
@@ -208,6 +215,15 @@ def generate_programs_and_samples_for(
                 threshold=-threshold,
             )
             out.append(samples)
+    if test_examples > 0:
+        out = [
+            x
+            + [
+                task_generator.sample_input(tr.arguments())
+                for _ in range(test_examples)
+            ]
+            for x in out
+        ]
     return out, programs
 
 
@@ -291,6 +307,7 @@ for tr, count in programs_by_tr.items():
                 program,
                 samples,
                 [task_generator.eval_input(program, x) for x in samples],
+                test_examples=test_examples,
             )
         )
 
