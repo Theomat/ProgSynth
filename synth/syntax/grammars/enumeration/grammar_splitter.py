@@ -331,66 +331,31 @@ def __create_path__(
     return info
 
 
-def __pcfg_from__(
-    original_pcfg: ProbUGrammar[U, List[Tuple[Type, U]], List[Tuple[Type, U]]],
-    group: List[_Node[U]],
-) -> ProbUGrammar[
-    Tuple[U, int], List[Tuple[Type, Tuple[U, int]]], List[Tuple[Type, Tuple[U, int]]]
-]:
-
-    # print()
-    # print("=" * 60)
-    # print("NODE")
-    # for node in group:
-    #     print("\t", node.program)
-    # Find the common prefix to all
-    min_prefix = copy.deepcopy(group[0].derivation_history)
-    for node in group[1:]:
-        min_prefix = __common_prefix__(min_prefix, node.derivation_history)
-    # print("MIN PREFIX:", min_prefix)
-
-    # Function to map states automatically
-    rule_nos = [0]
-    mapping: Dict[Tuple[Type, U], Tuple[Type, Tuple[U, int]]] = {}
-
-    def map_state(s: Tuple[Type, U]) -> Tuple[Type, Tuple[U, int]]:
-        o = mapping.get(s, None)
-        if o is not None:
-            # print("\t", s, "=>", o)
-            return o
-        # print(s, "does not exist in mapping:", set(mapping.keys()))
-        mapping[s] = (s[0], (s[1], rule_nos[0]))
-        rule_nos[0] += 1
-        return mapping[s]
-
-    # New start states
-    starts = {map_state(s) for s in original_pcfg.grammar.starts}
-
-    # Extract the start symbol
-    start = min_prefix.pop()
-
+def __create_starts__(
+    min_prefix: List[Tuple[Type, U]],
+    map_state: Callable[[Tuple[Type, U]], Tuple[Type, Tuple[U, int]]],
     rules: Dict[
         Tuple[Type, Tuple[U, int]],
         Dict[DerivableProgram, List[List[Tuple[Type, Tuple[U, int]]]]],
-    ] = {}
+    ],
     probabilities: Dict[
         Tuple[Type, Tuple[U, int]],
         Dict[DerivableProgram, Dict[List[Tuple[Type, Tuple[U, int]]], float]],
-    ] = {}
-    start_probs: Dict[Tuple[Type, Tuple[U, int]], float] = {}
-    # List of non-terminals + info we need to normalise weirdly
+    ],
     to_normalise: List[
         Tuple[List[Tuple[Type, U]], Tuple[Type, U], Program, List[Tuple[Type, U]]]
-    ] = []
-    # Our min_prefix may be something like (int, 1, (+, 1))
-    # which means we already chose +
-    # But it is not in the PCFG
-    # Thus we need to add it
-    # In the general case we may as well have + -> + -> + as prefix this whole prefix needs to be added
-    original_start = start
+    ],
+    group: List[_Node[U]],
+    original_pcfg: ProbUGrammar[U, List[Tuple[Type, U]], List[Tuple[Type, U]]],
+) -> List[Tuple[Type, U]]:
+    """
+    For each node in the group, create the starting path from the start non terminal to each node
+    """
+    # Extract the start symbol
+    original_start = min_prefix.pop()
 
     # We also need to mark all contexts that should be filled
-    to_fill: List[Tuple[List[Tuple[Type, U]], Tuple[Type, U]]] = []
+    to_fill: List[Tuple[Type, U]] = []
     if len(min_prefix) > 0:
         Slist = group[0].derivation_history[: len(min_prefix) + 1]
         Plist = group[0].program[: len(min_prefix) + 1]
@@ -407,7 +372,7 @@ def __pcfg_from__(
             to_normalise,
         )
         if rem and not isinstance(rem[0][0], UnknownType):
-            to_fill.append((rem, rem.pop(0)))
+            to_fill += rem
         original_start = Slist[-1]
 
     # Now we need to make a path from the common prefix to each node's prefix
@@ -439,56 +404,69 @@ def __pcfg_from__(
                 to_normalise,
             )
             if rem and not isinstance(rem[0][0], UnknownType):
-                to_fill.append((rem, rem.pop(0)))
+                to_fill += rem
+    return to_fill
 
-    # print("BEFORE FILLING")
-    # print("to_fill:", to_fill)
-    # print(UCFG(starts, rules, clean=False))
 
+def __fill_grammar__(
+    map_state: Callable[[Tuple[Type, U]], Tuple[Type, Tuple[U, int]]],
+    rules: Dict[
+        Tuple[Type, Tuple[U, int]],
+        Dict[DerivableProgram, List[List[Tuple[Type, Tuple[U, int]]]]],
+    ],
+    probabilities: Dict[
+        Tuple[Type, Tuple[U, int]],
+        Dict[DerivableProgram, Dict[List[Tuple[Type, Tuple[U, int]]], float]],
+    ],
+    original_pcfg: ProbUGrammar[U, List[Tuple[Type, U]], List[Tuple[Type, U]]],
+    to_fill: List[Tuple[Type, U]],
+) -> Dict[
+    Tuple[Type, Tuple[U, int]],
+    Dict[DerivableProgram, Dict[Tuple[Tuple[Type, Tuple[U, int]], ...], float]],
+]:
+    """
+    Fill-in the grammar starting from the initial to_fill contexts.
+    """
     computed: Dict[
         Tuple[Type, Tuple[U, int]],
         Dict[DerivableProgram, Dict[Tuple[Tuple[Type, Tuple[U, int]], ...], float]],
     ] = defaultdict(lambda: defaultdict(dict))
     # Build rules from to_fill
     while to_fill:
-        info, S = to_fill.pop()
+        S = to_fill.pop()
         Sp = map_state(S)
-        already_done = Sp in rules
-        if not already_done:
-            rules[Sp] = {}
-            probabilities[Sp] = {}
-        # print("\t", S,"//", Sp, ":")
-        for P in original_pcfg.rules[S]:
-            possibles = original_pcfg.rules[S][P]
-            new_list = []
-            if P not in probabilities[Sp]:
-                probabilities[Sp][P] = {}
-            # print("\t\t", P, "=>")
-            for v in possibles:
-                if not already_done:
-                    prob = original_pcfg.probabilities[S][P][tuple(v)]  # type: ignore
-                    mapped_v = [map_state(x) for x in v]
-                    probabilities[Sp][P][tuple(mapped_v)] = prob  # type: ignore
-                    # print(f"\t\t\t{prob}: {v} // {mapped_v}")
-                    computed[Sp][P][tuple(mapped_v)] = prob
-                    new_list.append(mapped_v)
-                a = original_pcfg.derive_specific(info, S, P, v)
-                if (
-                    a
-                    and (already_done or map_state(a[1]) not in rules)
-                    and not isinstance(a[1][0], UnknownType)
-                ):
-                    to_fill.append(a)
-            if not already_done:
-                rules[Sp][P] = new_list
+        if Sp not in rules:
+            rules[Sp] = {
+                P: [[map_state(s) for s in v] for v in vList]
+                for P, vList in original_pcfg.rules[S].items()
+            }
+            for P in original_pcfg.rules[S]:
+                for state_list in original_pcfg.rules[S][P]:
+                    for state in state_list:
+                        to_fill.append(state)
+            probabilities[Sp] = {
+                P: {tuple(map_state(s) for s in k): p for k, p in dicoV.items()}  # type: ignore
+                for P, dicoV in original_pcfg.probabilities[S].items()
+            }
+            computed[Sp] = probabilities[Sp]  # type: ignore
+    return computed
 
-    # Now we can already have the new grammar
-    new_grammar = UCFG(starts, rules, clean=True)
-    # print("FINAL GRAMMAR BEFORE CLEANING")
-    # print(new_grammar)
-    # new_grammar.clean()
-    # At this point we have all the needed rules
-    # However, the probabilites are incorrect
+
+def __fix_probabilities__(
+    map_state: Callable[[Tuple[Type, U]], Tuple[Type, Tuple[U, int]]],
+    probabilities: Dict[
+        Tuple[Type, Tuple[U, int]],
+        Dict[DerivableProgram, Dict[List[Tuple[Type, Tuple[U, int]]], float]],
+    ],
+    original_pcfg: ProbUGrammar[U, List[Tuple[Type, U]], List[Tuple[Type, U]]],
+    computed: Dict[
+        Tuple[Type, Tuple[U, int]],
+        Dict[DerivableProgram, Dict[Tuple[Tuple[Type, Tuple[U, int]], ...], float]],
+    ],
+    to_normalise: List[
+        Tuple[List[Tuple[Type, U]], Tuple[Type, U], Program, List[Tuple[Type, U]]]
+    ],
+) -> None:
     while to_normalise:
         for el in list(to_normalise):
             info, S, cP, v = el
@@ -532,13 +510,85 @@ def __pcfg_from__(
             computed[Sp][cP][tmapped_v] = old_w * new_prob
             to_normalise.remove(el)
 
+
+def __pcfg_from__(
+    original_pcfg: ProbUGrammar[U, List[Tuple[Type, U]], List[Tuple[Type, U]]],
+    group: List[_Node[U]],
+) -> ProbUGrammar[
+    Tuple[U, int], List[Tuple[Type, Tuple[U, int]]], List[Tuple[Type, Tuple[U, int]]]
+]:
+
+    # print()
+    # print("=" * 60)
+    # print("NODE")
+    # for node in group:
+    #     print("\t", node.program)
+    # Find the common prefix to all
+    min_prefix = copy.deepcopy(group[0].derivation_history)
+    for node in group[1:]:
+        min_prefix = __common_prefix__(min_prefix, node.derivation_history)
+    # print("MIN PREFIX:", min_prefix)
+
+    # Function to map states automatically
+    rule_nos = [0]
+    mapping: Dict[Tuple[Type, U], Tuple[Type, Tuple[U, int]]] = {}
+
+    def map_state(s: Tuple[Type, U]) -> Tuple[Type, Tuple[U, int]]:
+        o = mapping.get(s, None)
+        if o is not None:
+            # print("\t", s, "=>", o)
+            return o
+        # print(s, "does not exist in mapping:", set(mapping.keys()))
+        mapping[s] = (s[0], (s[1], rule_nos[0]))
+        rule_nos[0] += 1
+        return mapping[s]
+
+    # New start states
+    starts = {map_state(s) for s in original_pcfg.grammar.starts}
+
+    rules: Dict[
+        Tuple[Type, Tuple[U, int]],
+        Dict[DerivableProgram, List[List[Tuple[Type, Tuple[U, int]]]]],
+    ] = {}
+    probabilities: Dict[
+        Tuple[Type, Tuple[U, int]],
+        Dict[DerivableProgram, Dict[List[Tuple[Type, Tuple[U, int]]], float]],
+    ] = {}
+    start_probs: Dict[Tuple[Type, Tuple[U, int]], float] = {}
+    # List of non-terminals + info we need to normalise weirdly
+    to_normalise: List[
+        Tuple[List[Tuple[Type, U]], Tuple[Type, U], Program, List[Tuple[Type, U]]]
+    ] = []
+    # Our min_prefix may be something like (int, 1, (+, 1))
+    # which means we already chose +
+    # But it is not in the PCFG
+    # Thus we need to add it
+    # In the general case we may as well have + -> + -> + as prefix this whole prefix needs to be added
+    to_fill = __create_starts__(
+        min_prefix, map_state, rules, probabilities, to_normalise, group, original_pcfg
+    )
+    # print("BEFORE FILLING")
+    # print("to_fill:", to_fill)
+    # print(UCFG(starts, rules, clean=False))
+    computed = __fill_grammar__(map_state, rules, probabilities, original_pcfg, to_fill)
+    # Now we can already have the new grammar
+    new_grammar = UCFG(starts, rules, clean=False)
+    # print("FINAL GRAMMAR BEFORE CLEANING")
+    # print(new_grammar)
+    new_grammar.clean()
+    # At this point we have all the needed rules
+    # However, the probabilites are incorrect
+    __fix_probabilities__(
+        map_state, probabilities, original_pcfg, computed, to_normalise
+    )
     for start in original_pcfg.start_tags:
         Sp = map_state(start)
         if Sp in new_grammar.starts:
             start_probs[Sp] = original_pcfg.start_tags[start]
-        # The updated probabilities may not sum to 1 so we need to normalise them
-        # But let ProbDetGrammar[U, List[Tuple[Type, U]], List[Tuple[Type, U]]] do it with clean=True
-    # print("START", probabilities)
+    # The updated probabilities may not sum to 1 so we need to normalise them
+    # But let ProbDetGrammar do it with clean=True
+
+    # Make probabilities coherent with rules
     probabilities = {
         S: {
             P: {v: p for v, p in dicoV.items() if list(v) in new_grammar.rules[S][P]}
@@ -548,11 +598,7 @@ def __pcfg_from__(
         for S, dicoP in probabilities.items()
         if S in new_grammar.rules
     }
-    # for S, dicoP in probabilities.items():
-    #     print("\t", S, ":")
-    #     for P, possibles in dicoP.items():
-    #         print("\t\t", P, " =>", possibles)
-    #     print()
+    # Now normalise as said earlier
     grammar = ProbUGrammar(new_grammar, probabilities, start_probs)
     grammar.normalise()
     # print(grammar)
