@@ -208,7 +208,7 @@ class UCFG(UGrammar[U, List[Tuple[Type, U]], List[Tuple[Type, U]]], Generic[U]):
         uppder_bound_size_type: int - is the maximum size type allowed for polymorphic type instanciations
         min_variable_depth: int - min depth at which variables and constants are allowed
         n_gram: int - the context, a bigram depends only in the parent node
-        recursvie: bool - allows the generated programs to call themselves
+        recursive: bool - allows the generated programs to call themselves
         constant_types: Set[Type] - the set of of types allowed for constant objects
         """
         cfg = CFG.depth_constraint(
@@ -221,10 +221,10 @@ class UCFG(UGrammar[U, List[Tuple[Type, U]], List[Tuple[Type, U]]], Generic[U]):
             recursive,
             constant_types,
         )
-        return UCFG.from_CFG(cfg)
+        return UCFG.from_CFG(cfg, True)
 
     @classmethod
-    def from_CFG(cls, cfg: CFG) -> "UCFG[CFGState]":
+    def from_CFG(cls, cfg: CFG, clean: bool = False) -> "UCFG[CFGState]":
         """
         Constructs a UCFG from the specified CFG
         """
@@ -237,17 +237,21 @@ class UCFG(UGrammar[U, List[Tuple[Type, U]], List[Tuple[Type, U]]], Generic[U]):
             rules[nS] = {}
             for P in cfg.rules[S]:
                 rules[nS][P] = [[SS for SS in cfg.rules[S][P][0]]]
-        return UCFG({(cfg.start[0], cfg.start[1][0])}, rules)
+        return UCFG({(cfg.start[0], cfg.start[1][0])}, rules, clean)
 
     @overload
     @classmethod
-    def from_DFTA(cls, dfta: DFTA[Tuple[Type, U], DerivableProgram]) -> "UCFG[U]":
+    def from_DFTA(
+        cls, dfta: DFTA[Tuple[Type, U], DerivableProgram], clean: bool = True
+    ) -> "UCFG[U]":
         pass
 
     @overload
     @classmethod
     def from_DFTA(
-        cls, dfta: DFTA[Tuple[Tuple[Type, U], ...], DerivableProgram]
+        cls,
+        dfta: DFTA[Tuple[Tuple[Type, U], ...], DerivableProgram],
+        clean: bool = True,
     ) -> "UCFG[Tuple[U, ...]]":
         pass
 
@@ -258,6 +262,7 @@ class UCFG(UGrammar[U, List[Tuple[Type, U]], List[Tuple[Type, U]]], Generic[U]):
             DFTA[Tuple[Tuple[Type, U], ...], DerivableProgram],
             DFTA[Tuple[Type, U], DerivableProgram],
         ],
+        clean: bool = True,
     ) -> "Union[UCFG[U], UCFG[Tuple[U, ...]]]":
 
         starts = {__d2state__(q) for q in dfta.finals}
@@ -281,7 +286,7 @@ class UCFG(UGrammar[U, List[Tuple[Type, U]], List[Tuple[Type, U]]], Generic[U]):
                     if __d2state__(new_state) not in new_rules:
                         stack.append(__d2state__(new_state))
 
-        return UCFG(starts, new_rules)
+        return UCFG(starts, new_rules, clean)
 
     @classmethod
     def from_DFTA_with_ngrams(
@@ -291,6 +296,7 @@ class UCFG(UGrammar[U, List[Tuple[Type, U]], List[Tuple[Type, U]]], Generic[U]):
             DFTA[Tuple[Type, U], DerivableProgram],
         ],
         ngram: int,
+        clean: bool = True,
     ) -> "Union[UCFG[Tuple[NGram, U]], UCFG[Tuple[NGram, Tuple[U, ...]]]]":
         def local_d2state(
             t: Union[Tuple[Type, U], Tuple[Tuple[Type, U], ...]], v: Optional[NGram]
@@ -326,4 +332,4 @@ class UCFG(UGrammar[U, List[Tuple[Type, U]], List[Tuple[Type, U]]], Generic[U]):
                     if new_state not in new_rules:
                         stack.append(new_state)
 
-        return UCFG(starts, new_rules)
+        return UCFG(starts, new_rules, clean)
