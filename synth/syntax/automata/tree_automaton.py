@@ -1,5 +1,16 @@
 from collections import defaultdict
-from typing import Dict, Generic, List, Set, Tuple, TypeVar
+from typing import (
+    Callable,
+    Dict,
+    Generic,
+    List,
+    Literal,
+    Set,
+    Tuple,
+    TypeVar,
+    Union,
+    overload,
+)
 
 U = TypeVar("U")
 V = TypeVar("V")
@@ -121,7 +132,17 @@ class DFTA(Generic[U, V]):
         out = DFTA(rules, finals)
         return out
 
-    def minimise(self) -> "DFTA[Tuple[U, ...], V]":
+    @overload
+    def minimise(self, mapping: Callable[[Tuple[U, ...]], W]) -> "DFTA[W, V]":
+        pass
+
+    @overload
+    def minimise(self, mapping: Literal[None] = None) -> "DFTA[Tuple[U, ...], V]":
+        pass
+
+    def minimise(
+        self, mapping: Union[Literal[None], Callable[[Tuple[U, ...]], W]] = None
+    ) -> "Union[DFTA[Tuple[U, ...], V], DFTA[W, V]]":
         """
         Assumes this is a reduced DTFA
 
@@ -197,17 +218,12 @@ class DFTA(Generic[U, V]):
                         # If cls is empty then we can use the previous number- that is i- for the new equivalence class
                         cls2states[i] = tuple(new_cls)
 
-        new_rules: Dict[
-            Tuple[
-                V,
-                Tuple[Tuple[U, ...], ...],
-            ],
-            Tuple[U, ...],
-        ] = {}
+        f = mapping or (lambda x: x) #type: ignore
+        new_rules = {}
         for (l, args), dst in self.rules.items():
-            t_args = tuple([cls2states[state2cls[q]] for q in args])
-            new_rules[(l, t_args)] = cls2states[state2cls[dst]]
-        return DFTA(new_rules, {cls2states[state2cls[q]] for q in self.finals})
+            t_args = tuple([f(cls2states[state2cls[q]]) for q in args])
+            new_rules[(l, t_args)] = f(cls2states[state2cls[dst]])
+        return DFTA(new_rules, {f(cls2states[state2cls[q]]) for q in self.finals})  # type: ignore
 
     def __repr__(self) -> str:
         return str(self)
