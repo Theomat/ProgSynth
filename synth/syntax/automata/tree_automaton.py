@@ -1,10 +1,12 @@
 from collections import defaultdict
+from itertools import product
 from typing import (
     Callable,
     Dict,
     Generic,
     List,
     Literal,
+    Optional,
     Set,
     Tuple,
     TypeVar,
@@ -130,6 +132,59 @@ class DFTA(Generic[U, V]):
             for dst2 in other.finals:
                 finals.add((dst1, dst2))
         out = DFTA(rules, finals)
+        return out
+
+    def read_union(
+        self,
+        other: "DFTA[W, V]",
+        fusion: Callable[[Optional[U], Optional[W]], X] = lambda x, y: (x, y),  # type: ignore
+    ) -> "DFTA[X, V]":
+        rules: Dict[
+            Tuple[
+                V,
+                Tuple[X, ...],
+            ],
+            X,
+        ] = {}
+        # Update rules
+        mapping_s = defaultdict(list)
+        mapping_o = defaultdict(list)
+        # Compute all alternatives
+        finals = set()
+        ostates = other.states
+        for a in self.states:
+            for b in ostates:
+                f = fusion(a, b)
+                mapping_o[b].append(f)
+                mapping_s[a].append(f)
+            mapping_s[a].append(fusion(a, None))
+            if a in self.finals:
+                finals |= set(mapping_s[a])
+        for b in ostates:
+            mapping_o[b].append(fusion(None, b))
+            if b in other.finals:
+                finals |= set(mapping_o[b])
+
+        for (l1, args1), dst1 in self.rules.items():
+            cases = [mapping_s[x] for x in args1]
+            new_dst = fusion(dst1, None)
+            for new_args in product(*cases):
+                rules[(l1, new_args)] = new_dst
+
+        for (l2, args2), dst2 in other.rules.items():
+            cases = [mapping_o[x] for x in args2]
+            new_dst = fusion(None, dst2)
+            for new_args in product(*cases):
+                rules[(l2, new_args)] = new_dst
+        for (l1, args1), dst1 in self.rules.items():
+            for (l2, args2), dst2 in other.rules.items():
+                if len(args1) != len(args2) or l1 != l2:
+                    continue
+                S = (l1, tuple(fusion(a, b) for a, b in zip(args1, args2)))
+                rules[S] = fusion(dst1, dst2)
+
+        out = DFTA(rules, finals)
+        out.reduce()
         return out
 
     @overload
