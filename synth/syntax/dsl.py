@@ -63,6 +63,8 @@ class DSL:
                 for poly_type in set_polymorphic_types_P:
                     new_set_instantiated_types: Set[Type] = set()
                     for type_ in set_types:
+                        if not poly_type.can_be(type_):
+                            continue
                         for instantiated_type in set_instantiated_types:
                             unifier = {str(poly_type): type_}
                             intermediate_type = copy.deepcopy(instantiated_type)
@@ -71,6 +73,15 @@ class DSL:
                                 new_set_instantiated_types.add(new_type)
                     set_instantiated_types = new_set_instantiated_types
                 for type_ in set_instantiated_types:
+                    instantiated_P = Primitive(P.primitive, type=type_)
+                    self.list_primitives.append(instantiated_P)
+                self.list_primitives.remove(P)
+
+        # Duplicate things for Sum types
+        for P in self.list_primitives[:]:
+            versions = P.type.all_versions()
+            if len(versions) > 1:
+                for type_ in versions:
                     instantiated_P = Primitive(P.primitive, type=type_)
                     self.list_primitives.append(instantiated_P)
                 self.list_primitives.remove(P)

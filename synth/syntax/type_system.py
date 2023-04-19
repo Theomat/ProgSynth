@@ -1,6 +1,6 @@
 """
 Objective: define a type system.
-A type can be either PolymorphicType, PrimitiveType, Arrow, or List
+A type can be either PolymorphicType, FixedPolymorphicType, PrimitiveType, Arrow, Sum or List
 """
 from typing import Any, Dict, List as TList, Optional, Set, Tuple
 
@@ -28,11 +28,29 @@ class Type(ABC):
     def arguments(self) -> TList["Type"]:
         return []
 
+    def is_a(self, other: "Type") -> bool:
+        return other.__arg_is_a__(other)
+
+    def __arg_is_a__(self, other: "Type") -> bool:
+        return other == self
+
     def __contains__(self, t: "Type") -> bool:
         return self == t
 
+    def __or__(self, other: "Type") -> "Sum":
+        if isinstance(other, Sum):
+            return Sum(self, *other.types)
+        return Sum(self, other)
+
     def is_polymorphic(self) -> bool:
         return False
+
+    def all_versions(self) -> TList["Type"]:
+        """
+        Return all versions of this type.
+        Versions are created for each sum type.
+        """
+        return [self]
 
     def decompose_type(self) -> Tuple[Set["PrimitiveType"], Set["PolymorphicType"]]:
         """
@@ -104,6 +122,9 @@ class PolymorphicType(Type):
         self.name = name
         self.hash = hash(self.name)
 
+    def __arg_is_a__(self, other: "Type") -> bool:
+        return True
+
     def __pickle__(o: Type) -> Tuple:  # type: ignore[override]
         return PolymorphicType, (o.name,)  # type: ignore
 
@@ -125,6 +146,33 @@ class PolymorphicType(Type):
 
     def unify(self, unifier: Dict[str, "Type"]) -> "Type":
         return unifier.get(self.name, self)
+
+    def can_be(self, other: "Type") -> bool:
+        """
+        Returns if this polymorphic type can be instanciated as the specified type.
+        """
+        return True
+
+
+class FixedPolymorphicType(PolymorphicType):
+    __hash__ = Type.__hash__
+
+    def __init__(self, name: str, *types: Type):
+        super().__init__(name)
+        self.types = types
+
+    def __arg_is_a__(self, other: "Type") -> bool:
+        if isinstance(other, (Sum, FixedPolymorphicType)):
+            return all(any(x.is_a(t) for t in self.types) for x in other.types)
+        return any(other.is_a(t) for t in self.types)
+
+    def __pickle__(o: Type) -> Tuple:  # type: ignore[override]
+        return FixedPolymorphicType, (o.name, *o.types)  # type: ignore
+
+    def can_be(self, other: "Type") -> bool:
+        if isinstance(other, (Sum, FixedPolymorphicType)):
+            return all(any(x.is_a(t) for t in self.types) for x in other.types)
+        return any(other.is_a(x) for x in self.types)
 
 
 class PrimitiveType(Type):
@@ -165,6 +213,18 @@ class Arrow(Type):
 
     def __pickle__(o: Type) -> Tuple:  # type: ignore[override]
         return Arrow, (o.type_in, o.type_out)  # type: ignore
+
+    def all_versions(self) -> TList["Type"]:
+        a = self.type_in.all_versions()
+        b = self.type_out.all_versions()
+        return [Arrow(x, y) for x in a for y in b]
+
+    def __arg_is_a__(self, other: "Type") -> bool:
+        return (
+            isinstance(other, Arrow)
+            and other.type_in.is_a(self.type_in)
+            and other.type_out.is_a(self.type_out)
+        )
 
     def __str__(self) -> str:
         rep_in = format(self.type_in)
@@ -218,12 +278,83 @@ class Arrow(Type):
         return 1 + self.type_in.size() + self.type_out.size()
 
 
+class Sum(Type):
+    """
+    Represents a sum type.
+    """
+
+    __hash__ = Type.__hash__
+
+    def __init__(self, *types: Type):
+        self.types = types
+        self.hash = hash(types)
+
+    def all_versions(self) -> TList["Type"]:
+        v = []
+        for t in self.types:
+            v += t.all_versions()
+        return v
+
+    def __arg_is_a__(self, other: "Type") -> bool:
+        if isinstance(other, Sum):
+            return all(any(x.is_a(t) for t in self.types) for x in other.types)
+        else:
+            return any(other.is_a(t) for t in self.types)
+
+    def __pickle__(o: Type) -> Tuple:  # type: ignore[override]
+        return Sum, tuple(x for x in o.types)  # type: ignore
+
+    def __str__(self) -> str:
+        return "[" + " | ".join(format(x) for x in self.types) + "]"
+
+    def __contains__(self, t: Type) -> bool:
+        return super().__contains__(t) or t in self.types
+
+    def __or__(self, other: "Type") -> "Sum":
+        if isinstance(other, Sum):
+            x = list(other.types) + list(self.types)
+            return Sum(*x)
+        return Sum(other, *self.types)
+
+    def __eq__(self, o: object) -> bool:
+        return (
+            isinstance(o, Sum)
+            and len(set(o.types).symmetric_difference(self.types)) == 0
+        )
+
+    def __decompose_type_rec__(
+        self,
+        set_basic_types: Set["PrimitiveType"],
+        set_polymorphic_types: Set["PolymorphicType"],
+    ) -> None:
+        for t in self.types:
+            t.__decompose_type_rec__(set_basic_types, set_polymorphic_types)
+
+    def is_polymorphic(self) -> bool:
+        return any(t.is_polymorphic() for t in self.types)
+
+    def unify(self, unifier: Dict[str, "Type"]) -> "Type":
+        return Sum(*[x.unify(unifier) for x in self.types])
+
+    def depth(self) -> int:
+        return max(t.depth() for t in self.types)
+
+    def size(self) -> int:
+        return max(t.size() for t in self.types)
+
+
 class List(Type):
     __hash__ = Type.__hash__
 
     def __init__(self, element_type: Type):
         self.element_type = element_type
         self.hash = hash(18923 + hash(self.element_type))
+
+    def all_versions(self) -> TList["Type"]:
+        return [List(x) for x in self.element_type.all_versions()]
+
+    def __arg_is_a__(self, other: "Type") -> bool:
+        return isinstance(other, List) and other.element_type.is_a(self.element_type)
 
     def __pickle__(o: Type) -> Tuple:  # type: ignore[override]
         return List, (o.element_type,)  # type: ignore
@@ -338,11 +469,17 @@ def match(a: Type, b: Type) -> bool:
             return match(a.element_type, b.element_type)  # type: ignore
         elif isinstance(a, Arrow):
             return match(a.type_in, b.type_in) and match(a.type_out, b.type_out)  # type: ignore
+        elif isinstance(a, Sum):
+            return all(any(match(x, y) for y in b.types) for x in a.types) and all(  # type: ignore
+                any(match(x, y) for y in a.types) for x in b.types  # type: ignore
+            )
         elif isinstance(a, UnknownType):
             return False
-        return isinstance(a, PolymorphicType) or a == b
+        return (
+            isinstance(a, PolymorphicType) and a.can_be(b) and b.can_be(a)  # type: ignore
+        ) or a == b
     elif isinstance(a, PolymorphicType):
-        return True
+        return a.can_be(b)
     elif isinstance(b, PolymorphicType):
         return match(b, a)
     return False
@@ -350,5 +487,13 @@ def match(a: Type, b: Type) -> bool:
 
 import copyreg
 
-for cls in [PrimitiveType, PolymorphicType, List, Arrow, UnknownType]:
+for cls in [
+    PrimitiveType,
+    PolymorphicType,
+    FixedPolymorphicType,
+    List,
+    Arrow,
+    Sum,
+    UnknownType,
+]:
     copyreg.pickle(cls, cls.__pickle__)  # type: ignore
