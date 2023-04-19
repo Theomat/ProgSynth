@@ -179,11 +179,14 @@ class DFTA(Generic[U, V]):
         def are_equivalent(a: U, b: U) -> bool:
             for S, k in consumer_of[a]:
                 P, args = S
-                dst_cls = state2cls[self.rules[S]]
+                # Replacing a at index k with b
                 newS = (P, tuple([p if j != k else b for j, p in enumerate(args)]))
+                # Check that rules[S] and rules[newS] go into the same equi. class
+                dst_cls = state2cls[self.rules[S]]
                 out = self.rules.get(newS)
                 if out is None or state2cls[out] != dst_cls:
                     return False
+            # Symmetry with b
             for S, k in consumer_of[b]:
                 P, args = S
                 dst_cls = state2cls[self.rules[S]]
@@ -203,10 +206,13 @@ class DFTA(Generic[U, V]):
                     new_cls = []
                     representative = cls.pop()
                     new_cls.append(representative)
+                    next_cls = []
                     for q in cls:
                         if are_equivalent(representative, q):
                             new_cls.append(q)
-                    cls = [q for q in cls if q not in new_cls]
+                        else:
+                            next_cls.append(q)
+                    cls = next_cls
                     if len(cls) != 0:
                         # Create new equivalence class
                         n += 1
@@ -215,10 +221,12 @@ class DFTA(Generic[U, V]):
                         cls2states[n] = tuple(new_cls)
                         finished = False
                     else:
-                        # If cls is empty then we can use the previous number- that is i- for the new equivalence class
+                        # new_cls (now) has NOT changed from cls (previous iter.), they are the same
+                        # thus we just need to re-set it (because there might have been multiple iterations)
+                        # i is a free slot since other classes are added at the end
                         cls2states[i] = tuple(new_cls)
 
-        f = mapping or (lambda x: x) #type: ignore
+        f = mapping or (lambda x: x)  # type: ignore
         new_rules = {}
         for (l, args), dst in self.rules.items():
             t_args = tuple([f(cls2states[state2cls[q]]) for q in args])
