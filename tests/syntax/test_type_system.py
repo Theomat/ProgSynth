@@ -2,6 +2,7 @@ from synth.syntax.type_system import (
     STRING,
     INT,
     BOOL,
+    FixedPolymorphicType,
     FunctionType,
     PolymorphicType,
     List,
@@ -138,3 +139,28 @@ def test_contains() -> None:
     assert BOOL not in t
     assert PolymorphicType("b") in t
     assert Arrow(INT, EmptyList) in t
+
+
+def test_is_a() -> None:
+    types = [BOOL, INT, List(INT), Arrow(INT, INT)]
+    for i, x in enumerate(types):
+        for y in types[i + 1 :]:
+            print("x:", x)
+            print("y:", y)
+            assert not x.is_a(y)
+            assert not y.is_a(x)
+            assert x.is_a(x | y)
+            assert y.is_a(x | y)
+            assert not (x | y).is_a(x)
+            assert (x | y).is_a(x | y)
+
+    assert List(INT).is_a(List(PolymorphicType("a")))
+    assert List(INT).is_a(List(INT | BOOL))
+    assert not List(STRING).is_a(List(INT | BOOL))
+
+
+def test_can_be() -> None:
+    z = FixedPolymorphicType("z", INT, BOOL)
+    types = [BOOL, INT, List(INT), Arrow(INT, INT)]
+    for i, x in enumerate(types):
+        assert z.can_be(x) == (i <= 1)
