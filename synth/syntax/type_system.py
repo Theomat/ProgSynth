@@ -29,7 +29,7 @@ class Type(ABC):
         return []
 
     def is_a(self, other: "Type") -> bool:
-        return other.__arg_is_a__(other)
+        return other.__arg_is_a__(self)
 
     def __arg_is_a__(self, other: "Type") -> bool:
         return other == self
@@ -296,7 +296,7 @@ class Sum(Type):
         return v
 
     def __arg_is_a__(self, other: "Type") -> bool:
-        if isinstance(other, Sum):
+        if isinstance(other, (Sum, FixedPolymorphicType)):
             return all(any(x.is_a(t) for t in self.types) for x in other.types)
         else:
             return any(other.is_a(t) for t in self.types)
