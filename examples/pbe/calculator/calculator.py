@@ -14,7 +14,7 @@ from synth.syntax import (
     DSL,
     INT,
     Arrow,
-    PolymorphicType,
+    FixedPolymorphicType,
     PrimitiveType,
     BOOL,
     FunctionType,
@@ -22,8 +22,8 @@ from synth.syntax import (
 from synth.task import Dataset
 
 # a type representing either an int or a float
-type = PolymorphicType("int/float")
 FLOAT = PrimitiveType("float")
+type = FixedPolymorphicType("int/float", INT | FLOAT)
 
 __semantics = {
     "+": lambda a: lambda b: round(a + b, 1),
