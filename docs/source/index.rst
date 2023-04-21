@@ -10,6 +10,7 @@ Contents
     introduction
     usage
     tutorial
+    type_system
     examples
     PBE <examples_pbe>
     pruning

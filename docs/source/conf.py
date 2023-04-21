@@ -3,7 +3,7 @@
 # -- Project information
 
 project = "ProgSynth"
-copyright = "2022, Nathanaël Fijalkow & Théo Matricon"
+copyright = "2023, Nathanaël Fijalkow & Théo Matricon"
 author = "Nathanaël Fijalkow & Théo Matricon"
 
 release = "0.1"
