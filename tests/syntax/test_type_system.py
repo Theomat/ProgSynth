@@ -3,7 +3,6 @@ from synth.syntax.type_system import (
     INT,
     BOOL,
     FixedPolymorphicType,
-    FunctionType,
     PolymorphicType,
     List,
     Arrow,
@@ -11,7 +10,6 @@ from synth.syntax.type_system import (
     Type,
     UnknownType,
     match,
-    guess_type,
     EmptyList,
 )
 from typing import List as TList, Set, Tuple
@@ -71,25 +69,6 @@ def test_match() -> None:
             assert match(Arrow(t1.type_in, PolymorphicType("a")), t1)
 
 
-def test_guess_type() -> None:
-    # Bool
-    assert guess_type(True) == BOOL
-    assert guess_type(False) == BOOL
-    # Int
-    random.seed(0)
-    for _ in range(100):
-        assert guess_type(random.randint(-100, 100)) == INT
-    # String
-    assert guess_type("") == STRING
-    # List
-    assert match(guess_type([]), List(PolymorphicType("")))
-    assert guess_type([True]) == List(BOOL)
-    assert guess_type([""]) == List(STRING)
-    assert guess_type([1]) == List(INT)
-    # Unknown
-    assert isinstance(guess_type(int), UnknownType)
-
-
 def test_decompose_type() -> None:
     variations: TList[Tuple[Type, Set[PrimitiveType], Set[PolymorphicType]]] = [
         (INT, set([INT]), set()),
@@ -121,12 +100,6 @@ def test_unify() -> None:
     )
     assert t.unify({"a": BOOL, "b": STRING}) == Arrow(
         Arrow(INT, BOOL), List(Arrow(STRING, BOOL))
-    )
-
-
-def test_FunctionType() -> None:
-    assert FunctionType(INT, BOOL, STRING, List(INT)) == Arrow(
-        INT, Arrow(BOOL, Arrow(STRING, List(INT)))
     )
 
 
