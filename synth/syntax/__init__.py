@@ -3,10 +3,9 @@ Module that contains anything relevant to the syntax
 """
 from synth.syntax.dsl import DSL
 from synth.syntax.program import Primitive, Variable, Function, Lambda, Program
+from synth.syntax.type_helper import guess_type, FunctionType, auto_type
 from synth.syntax.type_system import (
     Type,
-    FunctionType,
-    guess_type,
     match,
     PrimitiveType,
     PolymorphicType,

@@ -424,42 +424,6 @@ UNIT = PrimitiveType("unit")
 EmptyList = List(PolymorphicType("empty"))
 
 
-def FunctionType(*args: Type) -> Type:
-    """
-    Short-hand to create n-ary functions.
-    """
-    types = list(args)
-    base = types.pop()
-    while types:
-        base = Arrow(types.pop(), base)
-    return base
-
-
-def guess_type(element: Any) -> Type:
-    """
-    Guess the type of the given element.
-    Does not work for Arrow and Polymorphic Types.
-    """
-    if isinstance(element, (TList, Tuple)):  # type: ignore
-        if len(element) == 0:
-            return EmptyList
-        current: Type = UnknownType()
-        i = 0
-        while i < len(element) and isinstance(current, UnknownType):
-            current = guess_type(element[i])
-            i += 1
-        return List(current)
-    if isinstance(element, bool):
-        return BOOL
-    elif isinstance(element, int):
-        return INT
-    elif isinstance(element, str):
-        return STRING
-    elif element is None:
-        return UNIT
-    return UnknownType()
-
-
 def match(a: Type, b: Type) -> bool:
     """
     Return true if a and b match, this considers polymorphic instanciations.
