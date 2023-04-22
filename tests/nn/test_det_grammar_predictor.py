@@ -9,8 +9,8 @@ from synth.syntax.dsl import DSL
 from synth.syntax.program import Function, Primitive, Variable
 from synth.syntax.type_system import (
     INT,
-    FunctionType,
 )
+from synth.syntax.type_helper import FunctionType
 
 
 syntax = {

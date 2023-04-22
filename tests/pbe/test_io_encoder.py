@@ -8,9 +8,9 @@ from synth.task import Task, Dataset
 from synth.specification import PBE, Example
 from synth.syntax.type_system import (
     INT,
-    FunctionType,
     List,
 )
+from synth.syntax.type_helper import FunctionType
 
 
 def test_encoding() -> None:

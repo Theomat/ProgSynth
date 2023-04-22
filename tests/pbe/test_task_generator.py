@@ -7,11 +7,11 @@ from synth.syntax.dsl import DSL
 from synth.syntax.type_system import (
     INT,
     STRING,
-    FunctionType,
     List,
     PolymorphicType,
     PrimitiveType,
 )
+from synth.syntax.type_helper import FunctionType
 
 
 syntax = {

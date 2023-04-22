@@ -1,7 +1,8 @@
 import random
 import pathlib
 
-from synth.syntax.type_system import INT, FunctionType
+from synth.syntax.type_system import INT
+from synth.syntax.type_helper import FunctionType
 from synth.syntax.program import Variable
 from synth.task import Task, Dataset
 from synth.specification import PBE, Example

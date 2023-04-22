@@ -4,11 +4,11 @@ from synth.syntax.program import Primitive
 from synth.syntax.type_system import (
     INT,
     STRING,
-    FunctionType,
     List,
     PolymorphicType,
     PrimitiveType,
 )
+from synth.syntax.type_helper import FunctionType
 
 import pytest
 

@@ -7,11 +7,11 @@ from synth.syntax.grammars.ttcfg import TTCFG
 from synth.syntax.type_system import (
     INT,
     STRING,
-    FunctionType,
     List,
     PolymorphicType,
     PrimitiveType,
 )
+from synth.syntax.type_helper import FunctionType
 
 import pytest
 

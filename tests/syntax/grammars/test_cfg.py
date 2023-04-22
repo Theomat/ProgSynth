@@ -5,11 +5,11 @@ from synth.syntax.type_system import (
     INT,
     STRING,
     Arrow,
-    FunctionType,
     List,
     PolymorphicType,
     PrimitiveType,
 )
+from synth.syntax.type_helper import FunctionType
 
 import pytest
 

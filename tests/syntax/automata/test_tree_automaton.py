@@ -5,12 +5,12 @@ from synth.syntax.dsl import DSL
 from synth.syntax.type_system import (
     INT,
     STRING,
-    FunctionType,
     List,
     PolymorphicType,
     PrimitiveType,
     Type,
 )
+from synth.syntax.type_helper import FunctionType
 from synth.syntax.grammars.grammar import DerivableProgram, NGram
 from synth.syntax.automata.tree_automaton import DFTA
 from synth.syntax.grammars.cfg import CFG

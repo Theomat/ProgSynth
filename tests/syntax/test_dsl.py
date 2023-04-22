@@ -1,5 +1,6 @@
 from synth.syntax.dsl import DSL
-from synth.syntax.type_system import INT, FunctionType, PolymorphicType
+from synth.syntax.type_system import INT, PolymorphicType
+from synth.syntax.type_helper import FunctionType
 
 
 syntax = {
