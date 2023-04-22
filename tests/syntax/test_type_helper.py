@@ -46,7 +46,7 @@ def test_auto_type_base() -> None:
     assert PrimitiveType("int") == auto_type("int")
     assert PrimitiveType("bb") == auto_type("bb")
     assert PolymorphicType("bb") == auto_type("'bb")
-    assert PolymorphicType("aa") == auto_type("'aa'")
+    assert PolymorphicType("aa") == auto_type("'aa")
 
 
 def test_auto_type_advanced() -> None:
@@ -68,7 +68,7 @@ def test_auto_type_arrows() -> None:
 
 
 def test_auto_type_fixed_poly() -> None:
-    x = FixedPolymorphicType("z"), PrimitiveType("b") | PrimitiveType("c")
+    x = FixedPolymorphicType("z", PrimitiveType("b") | PrimitiveType("c"))
     assert x == auto_type("'z[b|c]")
     assert x == auto_type("'z [b|c]")
     assert x == auto_type("'z[ b|c ]")
