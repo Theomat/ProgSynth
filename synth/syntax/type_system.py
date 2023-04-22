@@ -174,6 +174,12 @@ class FixedPolymorphicType(PolymorphicType):
             return all(any(x.is_a(t) for t in self.types) for x in other.types)
         return any(other.is_a(x) for x in self.types)
 
+    def __eq__(self, o: object) -> bool:
+        return (
+            isinstance(o, FixedPolymorphicType)
+            and len(set(o.types).symmetric_difference(self.types)) == 0
+        )
+
 
 class PrimitiveType(Type):
     __hash__ = Type.__hash__
