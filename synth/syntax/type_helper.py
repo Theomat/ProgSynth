@@ -7,7 +7,6 @@ from synth.syntax.type_system import (
     Type,
     UnknownType,
     Arrow,
-    Sum,
     EmptyList,
     INT,
     BOOL,
@@ -17,7 +16,7 @@ from synth.syntax.type_system import (
     PolymorphicType,
 )
 
-from typing import Any, Dict, Tuple, Union, overload
+from typing import Any, Dict, Tuple, Union, overload, List as TList
 
 
 def FunctionType(*args: Type) -> Type:
@@ -80,20 +79,21 @@ def __matching__(text: str) -> int:
     return -1
 
 
-_SEP_CHARS = ["|", "-", " "]
+_SEP_CHARS = ["|", "-", " ", "["]
 
 
 def __next_token__(text: str) -> Tuple[str, int, int]:
     if text.startswith("(") or text.startswith("["):
         i = __matching__(text)
-        return text[1:i], _TOK_BRACKETS if text[0] == "(" else _TOK_PARENTHESIS, i
+        return text[1:i], _TOK_BRACKETS if text[0] == "[" else _TOK_PARENTHESIS, i + 1
     elif text.startswith("list") and (len(text) == 4 or text[4] in _SEP_CHARS):
         return "", _TOK_LIST, 4
     elif text.startswith("->"):
         return "", _TOK_ARROW, 2
     elif text.startswith("|"):
         return "", _TOK_OR, 1
-    next_index = min(text.index(c) for c in _SEP_CHARS)
+    next_indices = [text.find(c) for c in _SEP_CHARS]
+    next_index = min((x for x in next_indices if x >= 0), default=len(text))
     is_poly = len(text) > 0 and text[0] == "'"
     return (
         text[is_poly:next_index],
@@ -116,14 +116,13 @@ def auto_type(el: Union[Dict[str, str], str]) -> Union[Dict[str, Type], Type]:
     # Dictionnary part
     if isinstance(el, dict):
         return {k: auto_type(v) for k, v in el.items()}
-
     # String part
     stack = []
     text = el
     last_arrow = 0
     or_flag = -1
     index = 1
-    while index > 0:
+    while len(text) > 0:
         w, token, index = __next_token__(text)
         # index also represents the number of chars consumed
         if token == _TOK_PARENTHESIS:
@@ -142,7 +141,8 @@ def auto_type(el: Union[Dict[str, str], str]) -> Union[Dict[str, Type], Type]:
         elif token == _TOK_POLYMORPHIC:
             stack.append(PolymorphicType(w))
         elif token == _TOK_NONE:
-            stack.append(PrimitiveType(w))
+            if len(w) > 0 and w not in _SEP_CHARS:
+                stack.append(PrimitiveType(w))
         elif token == _TOK_ARROW:
             # Okay a bit complicated since arrows should be built from right to left
             # Notice than in no other case there might be a malformed arrow
@@ -160,11 +160,12 @@ def auto_type(el: Union[Dict[str, str], str]) -> Union[Dict[str, Type], Type]:
 
         # Manage or flags which consume things as they come
         if or_flag == 0:
-            or_flag == 1
+            or_flag = 1
         elif or_flag == 1:
             or_flag = -1
             assert len(stack) >= 2
-            stack.append(stack.pop() | stack.pop())
+            last = stack.pop()
+            stack.append(stack.pop() | last)
 
         # update text
         text = text[index:].strip()
