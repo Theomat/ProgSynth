@@ -4,6 +4,19 @@ The type system in ProgSynth has the vocation of adding constraints for compilat
 
 ProgSynth does not check at any time that the data you manipulate has the correct type, types are only used at compilation time.
 
+<!-- toc -->
+Table of contents:
+
+- [Basic Type](#basic-type)
+- [Advanced Types](#advanced-types)
+  - [List](#list)
+  - [Sum Type](#sum-type)
+  - [Arrow](#arrow)
+- [Polymorphic Types](#polymorphic-types)
+- [Methods of interest](#methods-of-interest)
+
+<!-- tocstop -->
+
 ## Basic Type
 
 Ground types are ``PrimitiveType``.
