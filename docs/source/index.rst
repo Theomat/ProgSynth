@@ -13,6 +13,6 @@ Contents
     type_system
     examples
     PBE <examples_pbe>
-    pruning
+    sharpening
     contributing
     license
