@@ -1,6 +1,6 @@
 """
 Module to change to add your own DSL easily in all scripts.
-Some constants may need to be chnaged directly in the script. 
+Some constants may need to be changed directly in the script. 
 """
 from argparse import ArgumentParser
 import importlib
@@ -49,10 +49,19 @@ def __base_loader(
 #   when the parameter to your loading_func is:
 #       - False, we just want to check we CAN import
 #       - True, we want to import everything and return it in a NameSpace
+# The easiest way is to use the __base_loader(path without the .py to your python file defining the DSL, list of str)
+# the second argument is the list of global variables that you want to make available;
+# instead of a str you can also use a tuple to rename (name of the var in your file, name under which to make it available)
+#
 # /!\ Convention for names in your namespace:
 #   dsl: DSL - the actual DSL
 #   evaluator: Evaluator - the DSL's evaluator
 #   lexicon: List - the DSL's lexicon
+#   /!\ all of the following are optional:
+#   constraints: List[str] - the list of constraints for sharpening
+#   reproduce_dataset: Callable - synth.pbe.task_generator.reproduce_int_dataset like function
+#   pretty_print_inputs: Callable[[List[Any]], str] - a function to change the default format to print the inputs to an example in a task
+#   pretty_print_solution: Callable[[Any], str] - a function to change the default format to print the solution to a task
 # =======================================================================================
 __dsl_funcs: Dict[str, Callable[[bool], Optional[SimpleNamespace]]] = {
     "deepcoder": __base_loader("deepcoder.deepcoder"),
@@ -69,7 +78,7 @@ __dsl_funcs: Dict[str, Callable[[bool], Optional[SimpleNamespace]]] = {
             "evaluator",
             "lexicon",
             "pretty_print_inputs",
-            "pretty_print_inputs",
+            "pretty_print_solution",
             ("reproduce_regexp_dataset", "reproduce_dataset"),
         ],
     ),
