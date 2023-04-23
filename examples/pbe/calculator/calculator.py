@@ -18,6 +18,7 @@ from synth.syntax import (
     PrimitiveType,
     BOOL,
     FunctionType,
+    auto_type,
 )
 from synth.task import Dataset
 
@@ -39,7 +40,7 @@ __primitive_types = {
     # int|float -> int|float -> int|float
     "+": Arrow(type, Arrow(type, type)),
     "-": FunctionType(type, type, type),
-    "int2float": Arrow(INT, FLOAT),
+    "int2float": auto_type("int->float"),
     "1": INT,
     "2": INT,
     "3": INT,
