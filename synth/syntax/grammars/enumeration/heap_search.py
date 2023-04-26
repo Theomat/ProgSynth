@@ -35,8 +35,9 @@ class HeapElement:
 
 
 class HSEnumerator(ABC, Generic[U, V, W]):
-    def __init__(self, G: ProbDetGrammar[U, V, W]) -> None:
+    def __init__(self, G: ProbDetGrammar[U, V, W], threshold: Ordered = 0) -> None:
         self.current: Optional[Program] = None
+        self.threshold = threshold
 
         self.G = G
         self.start = G.start
@@ -143,10 +144,11 @@ class HSEnumerator(ABC, Generic[U, V, W]):
             # are represented by the same object
             self.hash_table_global[hash_program] = program
             priority = self.compute_priority(S, program)
-            heappush(
-                self.heaps[S],
-                HeapElement(priority, program),
-            )
+            if priority < self.threshold:
+                heappush(
+                    self.heaps[S],
+                    HeapElement(priority, program),
+                )
 
         # 3) Do the 1st query
         self.query(S, None)
@@ -209,7 +211,10 @@ class HSEnumerator(ABC, Generic[U, V, W]):
                         self.hash_table_program[S].add(hash_new_program)
                         try:
                             priority: Ordered = self.compute_priority(S, new_program)
-                            heappush(self.heaps[S], HeapElement(priority, new_program))
+                            if priority < self.threshold:
+                                heappush(
+                                    self.heaps[S], HeapElement(priority, new_program)
+                                )
                         except KeyError:
                             pass
                 information, lst = self.G.derive_all(information, S2, succ.arguments[i])
@@ -226,8 +231,8 @@ class HSEnumerator(ABC, Generic[U, V, W]):
 
 
 class HeapSearch(HSEnumerator[U, V, W]):
-    def __init__(self, G: ProbDetGrammar[U, V, W]) -> None:
-        super().__init__(G)
+    def __init__(self, G: ProbDetGrammar[U, V, W], threshold: float = 0) -> None:
+        super().__init__(G, -threshold)
         self.probabilities: Dict[Program, Dict[Tuple[Type, U], float]] = defaultdict(
             lambda: {}
         )
@@ -253,8 +258,10 @@ class HeapSearch(HSEnumerator[U, V, W]):
         return -probability
 
 
-def enumerate_prob_grammar(G: ProbDetGrammar[U, V, W]) -> HeapSearch[U, V, W]:
-    return HeapSearch(G)
+def enumerate_prob_grammar(
+    G: ProbDetGrammar[U, V, W], threshold: float = 0
+) -> HeapSearch[U, V, W]:
+    return HeapSearch(G, threshold)
 
 
 class Bucket(Ordered):

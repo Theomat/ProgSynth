@@ -84,6 +84,25 @@ def test_order_heapSearch(cfg: UCFG) -> None:
 
 
 @pytest.mark.parametrize("cfg", testdata)
+def test_threshold(cfg: UCFG) -> None:
+    pcfg = ProbUGrammar.uniform(cfg)
+    threshold = 0.15
+    seen = set()
+    for program in enumerate_prob_u_grammar(pcfg):
+        p = pcfg.probability(program)
+        if p <= threshold:
+            break
+        seen.add(p)
+    seent = set()
+    for program in enumerate_prob_u_grammar(pcfg, threshold):
+        p = pcfg.probability(program)
+        assert p < threshold
+        seent.add(p)
+
+    assert len(seent.symmetric_difference(seen)) == 0
+
+
+@pytest.mark.parametrize("cfg", testdata)
 def test_unicity_bucketSearch(cfg: UCFG) -> None:
     pcfg = ProbUGrammar.uniform(cfg)
     for bucketSize in range(3, 10):

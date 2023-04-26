@@ -42,9 +42,10 @@ def __wrap__(el: Union[U, List[U]]) -> Union[U, Tuple[U, ...]]:
 
 
 class UHSEnumerator(ABC, Generic[U, V, W]):
-    def __init__(self, G: ProbUGrammar[U, V, W]) -> None:
+    def __init__(self, G: ProbUGrammar[U, V, W], threshold: Ordered = 0) -> None:
         self.G = G
         symbols = [S for S in self.G.rules]
+        self.threshold = threshold
 
         # self.heaps[S] is a heap containing programs generated from the non-terminal S
         self.heaps: Dict[Tuple[Type, U], List[HeapElement]] = {S: [] for S in symbols}
@@ -171,17 +172,18 @@ class UHSEnumerator(ABC, Generic[U, V, W]):
                 self.hash_table_global[hash_program] = program
                 priority = self.compute_priority(S, program)
                 assert program in self._keys[S]
-                heappush(
-                    self.heaps[S],
-                    HeapElement(priority, program),
-                )
-                if S in self.G.starts:
+                if priority < self.threshold:
                     heappush(
-                        self._start_heap,
-                        StartHeapElement(
-                            self.adjust_priority_for_start(priority, S), program, S
-                        ),
+                        self.heaps[S],
+                        HeapElement(priority, program),
                     )
+                    if S in self.G.starts:
+                        heappush(
+                            self._start_heap,
+                            StartHeapElement(
+                                self.adjust_priority_for_start(priority, S), program, S
+                            ),
+                        )
 
         # 3) Do the 1st query
         self.query(S, None)
@@ -229,16 +231,17 @@ class UHSEnumerator(ABC, Generic[U, V, W]):
                         # try:
                         self._keys[S][new_program] = v
                         priority: Ordered = self.compute_priority(S, new_program)
-                        heappush(self.heaps[S], HeapElement(priority, new_program))
-                        if S in self.G.starts:
-                            heappush(
-                                self._start_heap,
-                                StartHeapElement(
-                                    self.adjust_priority_for_start(priority, S),
-                                    new_program,
-                                    S,
-                                ),
-                            )
+                        if priority < self.threshold:
+                            heappush(self.heaps[S], HeapElement(priority, new_program))
+                            if S in self.G.starts:
+                                heappush(
+                                    self._start_heap,
+                                    StartHeapElement(
+                                        self.adjust_priority_for_start(priority, S),
+                                        new_program,
+                                        S,
+                                    ),
+                                )
                 return True
         return False
 
@@ -303,8 +306,8 @@ class UHSEnumerator(ABC, Generic[U, V, W]):
 
 
 class UHeapSearch(UHSEnumerator[U, V, W]):
-    def __init__(self, G: ProbUGrammar[U, V, W]) -> None:
-        super().__init__(G)
+    def __init__(self, G: ProbUGrammar[U, V, W], threshold: float = 0) -> None:
+        super().__init__(G, -threshold)
         self.probabilities: Dict[Program, Dict[Tuple[Type, U], float]] = defaultdict(
             lambda: {}
         )
@@ -354,8 +357,10 @@ class UHeapSearch(UHSEnumerator[U, V, W]):
         return -probability
 
 
-def enumerate_prob_u_grammar(G: ProbUGrammar[U, V, W]) -> UHeapSearch[U, V, W]:
-    return UHeapSearch(G)
+def enumerate_prob_u_grammar(
+    G: ProbUGrammar[U, V, W], threshold: float = 0
+) -> UHeapSearch[U, V, W]:
+    return UHeapSearch(G, threshold)
 
 
 class BucketSearch(UHSEnumerator[U, V, W]):
