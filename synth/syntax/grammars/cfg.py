@@ -129,12 +129,8 @@ class CFG(TTCFG[CFGState, NoneType]):
 
         forbidden_sets = dsl.forbidden_patterns
 
-        if isinstance(type_request, Arrow):
-            return_type = type_request.returns()
-            args = type_request.arguments()
-        else:
-            return_type = type_request
-            args = []
+        return_type = type_request.returns()
+        args = type_request.arguments()
 
         rules: Dict[
             CFGNonTerminal,

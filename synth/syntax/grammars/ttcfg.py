@@ -454,12 +454,8 @@ def __saturation_build__(
         Dict[DerivableProgram, Tuple[List[Tuple[Type, S]], T]],
     ] = {}
 
-    if isinstance(type_request, Arrow):
-        return_type = type_request.returns()
-        args = type_request.arguments()
-    else:
-        return_type = type_request
-        args = []
+    return_type = type_request.returns()
+    args = type_request.arguments()
 
     list_to_be_treated: Deque[Tuple[Tuple[Type, S], T, List[Tuple[Type, S]]]] = deque()
     list_to_be_treated.append(((return_type, init[0]), init[1], []))
