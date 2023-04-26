@@ -382,7 +382,7 @@ class TTCFG(
             size, future = state[1][1]
             if size > max_size:
                 return False, (0, 0)
-            if not isinstance(derivation.type, Arrow):
+            if not derivation.type.is_instance(Arrow):
                 if future > 0:
                     return size + future <= max_size, (size + 1, future - 1)
                 return size + 1 + future <= max_size, (size + 1, future)

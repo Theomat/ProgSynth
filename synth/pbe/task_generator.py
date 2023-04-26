@@ -309,8 +309,8 @@ def reproduce_dataset(
     def analyze(element: Any, type: Type, depth: int = 1) -> None:
         if depth > max_list_depth[0]:
             max_list_depth[0] = depth
-        if isinstance(type, List):
-            elt_type = type.element_type
+        if type.is_instance(List):
+            elt_type: Type = type.types[0]  # type: ignore
             if len(element) > 0:
                 __multi_discrete_distribution__(list_length, type, len(element))
                 for el in element:

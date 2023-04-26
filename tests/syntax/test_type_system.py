@@ -59,14 +59,14 @@ def test_match() -> None:
         assert match(PolymorphicType("a"), t1)
         assert match(t1, PolymorphicType("a"))
 
-        if isinstance(t1, List):
+        if t1.is_instance(List):
             assert match(t1, List(PolymorphicType("a")))
             assert match(List(PolymorphicType("a")), t1)
-        elif isinstance(t1, Arrow):
-            assert match(t1, Arrow(PolymorphicType("a"), t1.type_out))
-            assert match(t1, Arrow(t1.type_in, PolymorphicType("a")))
-            assert match(Arrow(PolymorphicType("a"), t1.type_out), t1)
-            assert match(Arrow(t1.type_in, PolymorphicType("a")), t1)
+        elif t1.is_instance(Arrow):
+            assert match(t1, Arrow(PolymorphicType("a"), t1.types[1]))
+            assert match(t1, Arrow(t1.types[0], PolymorphicType("a")))
+            assert match(Arrow(PolymorphicType("a"), t1.types[1]), t1)
+            assert match(Arrow(t1.types[0], PolymorphicType("a")), t1)
 
 
 def test_decompose_type() -> None:
@@ -120,16 +120,16 @@ def test_is_a() -> None:
         for y in types[i + 1 :]:
             print("x:", x)
             print("y:", y)
-            assert not x.is_a(y)
-            assert not y.is_a(x)
-            assert x.is_a(x | y)
-            assert y.is_a(x | y)
-            assert not (x | y).is_a(x)
-            assert (x | y).is_a(x | y)
+            assert not x.is_instance(y)
+            assert not y.is_instance(x)
+            assert x.is_instance(x | y)
+            assert y.is_instance(x | y)
+            assert not (x | y).is_instance(x)
+            assert (x | y).is_instance(x | y)
 
-    assert List(INT).is_a(List(PolymorphicType("a")))
-    assert List(INT).is_a(List(INT | BOOL))
-    assert not List(STRING).is_a(List(INT | BOOL))
+    assert List(INT).is_instance(List(PolymorphicType("a")))
+    assert List(INT).is_instance(List(INT | BOOL))
+    assert not List(STRING).is_instance(List(INT | BOOL))
 
 
 def test_can_be() -> None:

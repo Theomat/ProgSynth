@@ -121,7 +121,7 @@ class DSL:
                     return l[0]
                 current = l.pop(0)
                 f_call = function_calls.pop(0)
-                if isinstance(current.type, Arrow) and f_call > 0:
+                if current.type.is_instance(Arrow) and f_call > 0:
                     args = [
                         parse_stack(l, function_calls)
                         for _ in current.type.arguments()[:f_call]
@@ -142,7 +142,7 @@ class DSL:
             if program.startswith("var"):
                 varno = int(program[3:])
                 vart = type_request
-                if isinstance(type_request, Arrow):
+                if type_request.is_instance(Arrow):
                     vart = type_request.arguments()[varno]
                 return Variable(varno, vart)
             assert False, f"can't parse: {program}"
