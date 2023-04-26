@@ -58,9 +58,10 @@ def guess_type(element: Any) -> Type:
 _TOK_NONE = -1
 _TOK_PARENTHESIS = 0
 _TOK_BRACKETS = 1
-_TOK_ARROW = 2
+_TOK_INFIX = 2
 _TOK_POLYMORPHIC = 3
 _TOK_OR = 4
+_TOK_ARROW = 5
 
 
 def __matching__(text: str) -> int:
@@ -78,24 +79,27 @@ def __matching__(text: str) -> int:
     return -1
 
 
-_SEP_CHARS = ["|", "-", " ", "["]
-
-
 def __next_token__(text: str) -> Tuple[str, int, int]:
     if text.startswith("(") or text.startswith("["):
         i = __matching__(text)
         return text[1:i], _TOK_BRACKETS if text[0] == "[" else _TOK_PARENTHESIS, i + 1
     elif text.startswith("->"):
-        return "", _TOK_ARROW, 2
+        return "->", _TOK_ARROW, 2
     elif text.startswith("|"):
         return "", _TOK_OR, 1
-    next_indices = [text.find(c) for c in _SEP_CHARS]
-    next_index = min((x for x in next_indices if x >= 0), default=len(text))
+    elif not text[0].isalpha() and not text[0] == "'":
+        i = 1
+        while i < len(text) and not (text[i].isalpha() or text[i] == " "):
+            i += 1
+        return text[:i], _TOK_INFIX, i
+    i = 1
+    while i < len(text) and text[i].isalpha() and not text[i] == " ":
+        i += 1
     is_poly = len(text) > 0 and text[0] == "'"
     return (
-        text[is_poly:next_index],
+        text[is_poly:i],
         _TOK_POLYMORPHIC if is_poly else _TOK_NONE,
-        next_index,
+        i,
     )
 
 
@@ -117,6 +121,8 @@ def auto_type(el: Union[Dict[str, str], str]) -> Union[Dict[str, Type], Type]:
     stack = []
     text = el
     last_arrow = 0
+    last_infix = 0
+    infix_stack = []
     or_flag = -1
     index = 1
     while len(text) > 0:
@@ -135,8 +141,8 @@ def auto_type(el: Union[Dict[str, str], str]) -> Union[Dict[str, Type], Type]:
         elif token == _TOK_POLYMORPHIC:
             stack.append(PolymorphicType(w))
         elif token == _TOK_NONE:
-            if len(w) > 0 and w not in _SEP_CHARS:
-                if last_arrow < len(stack) and or_flag < 0:
+            if len(w) > 0:
+                if last_infix < len(stack) and or_flag < 0:
                     stack.append(Generic(w, stack.pop()))
                 else:
                     stack.append(PrimitiveType(w))
@@ -152,6 +158,11 @@ def auto_type(el: Union[Dict[str, str], str]) -> Union[Dict[str, Type], Type]:
                 stack
             ), f"Invalid parsing: parsed:{stack} remaining:{text}"
             last_arrow += 1
+            last_infix += 1
+            infix_stack.append(w)
+        elif token == _TOK_INFIX:
+            last_infix += 1
+            infix_stack.append(w)
         elif token == _TOK_OR:
             or_flag = 0
 
@@ -167,7 +178,8 @@ def auto_type(el: Union[Dict[str, str], str]) -> Union[Dict[str, Type], Type]:
         # update text
         text = text[index:].strip()
     assert len(stack) >= 1
+    print(stack, infix_stack)
     while len(stack) > 1:
         last = stack.pop()
-        stack.append(Arrow(stack.pop(), last))
+        stack.append(Generic(infix_stack.pop(), stack.pop(), last, infix=True))
     return stack.pop()

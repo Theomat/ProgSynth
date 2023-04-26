@@ -3,6 +3,7 @@ from synth.syntax.type_system import (
     INT,
     BOOL,
     FixedPolymorphicType,
+    Generic,
     GenericFunctor,
     PolymorphicType,
     List,
@@ -70,6 +71,8 @@ def test_auto_type_arrows() -> None:
     assert FunctionType(a, b) == auto_type("a->b")
     assert FunctionType(a, b, b) == auto_type("a->b->b")
     assert FunctionType(a, FunctionType(a, b), b) == auto_type("a->(a->b)->b")
+
+    assert Generic("*", a, b, infix=True) == auto_type("a*b")
 
 
 def test_auto_type_fixed_poly() -> None:
