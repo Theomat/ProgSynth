@@ -9,9 +9,9 @@ Table of contents:
 
 - [Basic Type](#basic-type)
 - [Advanced Types](#advanced-types)
-  - [List](#list)
   - [Sum Type](#sum-type)
   - [Arrow](#arrow)
+  - [Generic](#generic)
 - [Polymorphic Types](#polymorphic-types)
 - [Methods of interest](#methods-of-interest)
 
@@ -30,13 +30,9 @@ ProgSynth already defines the following types: ``INT``, ``BOOL``, ``STRING``, ``
 Advanced types are built from other types.
 There are three:
 
-- List;
 - Sum Type;
-- Arrow.
-
-### List
-
-You can make a list type out of any type using ``List(t)``.
+- Arrow;
+- Generic.
 
 ### Sum Type
 
@@ -49,6 +45,20 @@ Arrow represent functions.
 They can be built with ``Arrow(t1, t2)``.
 A function ``int->int->int`` would have type ``Arrow(int, Arrow(int, int))``.
 An easier way to construct these arrows is to use ``FunctionType(int, int, int)`` in this case. While ``Arrow`` is a binary constructor, ``FunctionType`` allows any number of arguments and ensure that the ``Arrow``are built correctly especially if you are using higher order functions.
+
+### Generic
+
+Generic are parametric types. For example, the previous type ``Arrow``is a generic, the ``List``type is also one. You can make a list type out of any type using ``List(t)``.
+To instanciate a Generic builder you can use the ``GenericFunctor``:
+
+```python
+List = GenericFunctor("list", min_args=1, max_args=1)
+Arrow = GenericFunctor(
+    " -> ",
+    min_args=2,
+    custom_print=lambda s, types: "(" + s.join(map(format, types)) + ")",
+)
+```
 
 ## Polymorphic Types
 
@@ -84,10 +94,13 @@ t = auto_type("'a[int | float] -> 'a[int | float]")
 # a = FixedPolymorphicType("a", PrimitiveType("int") | PrimitiveType("float))
 # in
 # Arrow(a, a)
+
+t = auto_type("int optional")
+# Generic("optional", PrimitiveType("int"))
 ```
 
-- ``t1.is_a(t2)`` computes wether type ``t1`` is a ``t2``, that is mainly to say ``t1`` is an instance of ``t2``.
-Note that there might be questions regarding covariant and contravariant types, but since our types are completely removed from classes and inheritance, those two notions are not relevant for our type system;
+- ``t1.is_instance(t2)`` computes wether type ``t1`` is an instance of ``t2``, notice that ``t2`` can be a python type, some type in our system or a ``TypeFunctor`` such as a ``GenericFunctor`` like ``List`` or ``Arrow``.
+Note that there might be questions regarding covariant and contravariant types, but since our types are completely removed from the notion of subtype, those two notions are not relevant to our type system;
 - ``t.arguments()`` returns the list of arguments consumed by this type if this is an arrow, if this not an arrow then an empty list is returned;
 - ``t.returns()`` returns the type returned by this arrow, if this is not an arrow return the type ``t`` itself.
 - ``t.all_versions()`` returns the list of all types that this type can take, this is only relevant for sum types, basically each sum type will take all its possible values;
