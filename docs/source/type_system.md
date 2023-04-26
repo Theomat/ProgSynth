@@ -56,6 +56,7 @@ List = GenericFunctor("list", min_args=1, max_args=1)
 Arrow = GenericFunctor(
     "->",
     min_args=2,
+    max_args=2,
     infix=True,
 )
 
