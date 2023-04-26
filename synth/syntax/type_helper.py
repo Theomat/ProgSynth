@@ -2,7 +2,7 @@
 An helper file that contains useful methods to make type creation and manipulation very easy.
 
 """
-from synth.syntax.type_system import FixedPolymorphicType, PrimitiveType
+from synth.syntax.type_system import FixedPolymorphicType, Generic, PrimitiveType
 from synth.syntax.type_system import (
     Type,
     UnknownType,
@@ -60,8 +60,7 @@ _TOK_PARENTHESIS = 0
 _TOK_BRACKETS = 1
 _TOK_ARROW = 2
 _TOK_POLYMORPHIC = 3
-_TOK_LIST = 4
-_TOK_OR = 5
+_TOK_OR = 4
 
 
 def __matching__(text: str) -> int:
@@ -86,8 +85,6 @@ def __next_token__(text: str) -> Tuple[str, int, int]:
     if text.startswith("(") or text.startswith("["):
         i = __matching__(text)
         return text[1:i], _TOK_BRACKETS if text[0] == "[" else _TOK_PARENTHESIS, i + 1
-    elif text.startswith("list") and (len(text) == 4 or text[4] in _SEP_CHARS):
-        return "", _TOK_LIST, 4
     elif text.startswith("->"):
         return "", _TOK_ARROW, 2
     elif text.startswith("|"):
@@ -135,14 +132,14 @@ def auto_type(el: Union[Dict[str, str], str]) -> Union[Dict[str, Type], Type]:
             ), f"Cannot restrain a non polymorphic type:{last}"
             r = auto_type(w)
             stack.append(FixedPolymorphicType(last.name, r))
-        elif token == _TOK_LIST:
-            assert len(stack) > 0
-            stack.append(List(stack.pop()))
         elif token == _TOK_POLYMORPHIC:
             stack.append(PolymorphicType(w))
         elif token == _TOK_NONE:
             if len(w) > 0 and w not in _SEP_CHARS:
-                stack.append(PrimitiveType(w))
+                if last_arrow < len(stack) and or_flag < 0:
+                    stack.append(Generic(w, stack.pop()))
+                else:
+                    stack.append(PrimitiveType(w))
         elif token == _TOK_ARROW:
             # Okay a bit complicated since arrows should be built from right to left
             # Notice than in no other case there might be a malformed arrow

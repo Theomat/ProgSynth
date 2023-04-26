@@ -3,17 +3,15 @@ from synth.syntax.type_system import (
     INT,
     BOOL,
     FixedPolymorphicType,
+    GenericFunctor,
     PolymorphicType,
     List,
     Arrow,
     PrimitiveType,
-    Type,
     UnknownType,
     match,
-    EmptyList,
 )
 from synth.syntax.type_helper import auto_type, FunctionType, guess_type
-from typing import List as TList, Set, Tuple
 import random
 
 
@@ -52,6 +50,13 @@ def test_auto_type_base() -> None:
 def test_auto_type_advanced() -> None:
     assert List(PrimitiveType("int")) == auto_type("int list")
     assert List(PolymorphicType("a")) == auto_type("'a list")
+
+    some = GenericFunctor("some", min_args=1, max_args=1)
+    opt = GenericFunctor("optional", min_args=1, max_args=1)
+
+    assert some(PolymorphicType("a")) == auto_type("'a some")
+    assert opt(PolymorphicType("a")) == auto_type("'a optional")
+    assert opt(some(PolymorphicType("a"))) == auto_type("'a some optional")
 
     x = PrimitiveType("bb") | PolymorphicType("aa")
     assert x == auto_type("bb | 'aa")
