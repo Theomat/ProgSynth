@@ -54,10 +54,11 @@ To instanciate a Generic builder you can use the ``GenericFunctor``:
 ```python
 List = GenericFunctor("list", min_args=1, max_args=1)
 Arrow = GenericFunctor(
-    " -> ",
+    "->",
     min_args=2,
-    custom_print=lambda s, types: "(" + s.join(map(format, types)) + ")",
+    infix=True,
 )
+
 ```
 
 ## Polymorphic Types

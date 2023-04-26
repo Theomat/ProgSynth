@@ -298,12 +298,12 @@ class Generic(Type):
         self,
         name: str,
         *types: Type,
-        custom_print: Optional[Callable[[str, Tuple[Type, ...]], str]] = None,
+        infix: bool = False,
     ):
         self.types = types
         self.name = name
         self.hash = hash((self.name, self.types))
-        self.custom_print = custom_print
+        self.infix = infix
 
     def all_versions(self) -> TList["Type"]:
         v = []
@@ -322,12 +322,14 @@ class Generic(Type):
         )
 
     def __pickle__(o: Type) -> Tuple:  # type: ignore[override]
-        return Generic, (self.name, tuple(x for x in o.types))  # type: ignore
+        return Generic, (o.name, tuple(x for x in o.types), o.infix)  # type: ignore
 
     def __str__(self) -> str:
-        if self.custom_print:
-            return self.custom_print(self.name, self.types)
-        return " ".join(format(x) for x in self.types) + " " + self.name
+        base = " " if not self.infix else f" {self.name} "
+        base = base.join(format(x) for x in self.types)
+        if self.infix:
+            return f"({base})"
+        return base + " " + self.name
 
     def __contains__(self, t: Type) -> bool:
         return super().__contains__(t) or any(t in tt for tt in self.types)
@@ -370,13 +372,13 @@ class GenericFunctor(TypeFunctor):
         name: str,
         min_args: int = -1,
         max_args: int = -1,
-        custom_print: Optional[Callable[[str, Tuple[Type, ...]], str]] = None,
+        infix: bool = False,
     ) -> None:
         super().__init__()
         self.name = name
         self.min_args = min_args
         self.max_args = max_args
-        self.custom_print = custom_print
+        self.infix = infix
 
     def __call__(self, *types: Type) -> Type:
         assert (
@@ -385,7 +387,7 @@ class GenericFunctor(TypeFunctor):
         assert (
             self.min_args <= 0 or len(types) >= self.min_args
         ), f"Too few arguments:{len(types)}<{self.min_args} to build a {self.name}"
-        return Generic(self.name, *types, custom_print=self.custom_print)
+        return Generic(self.name, *types, infix=self.infix)
 
     def __is_arg_an_instance__(self, arg: Type) -> bool:
         return isinstance(arg, Generic) and arg.name == self.name
@@ -393,9 +395,9 @@ class GenericFunctor(TypeFunctor):
 
 List = GenericFunctor("list", min_args=1, max_args=1)
 Arrow = GenericFunctor(
-    " -> ",
+    "->",
     min_args=2,
-    custom_print=lambda s, types: "(" + s.join(map(format, types)) + ")",
+    infix=True,
 )
 
 
