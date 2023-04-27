@@ -1,90 +1,145 @@
 # Tutorial
 
-In this section, an overview of how to create a DSL is shown, based on the example of the *calculator* DSL, whose source code can be found in the folder ``./examples/pbe/calculator``.
+This tutorial will show you how to:
 
-## DSL Structure
+- [create a new DSL from scratch](#create-a-dsl-from-scratch);
 
-Several files have been implemented in order to create a DSL allowing int-to-int or float-to-float additions and substractions.
+afterward everything is PBE specific:
 
-* ``calculator/calculator.py``, contains the DSL implementation;
-* `calculator/convert_calculator` is a runnable python script which enables you to convert the original calculator dataset file to the ProgSynth format;
-* `calculator/calculator_task_generator`, an adapted version of the file `task_generator` that allows us to create a synthetic dataset, based on the one created with `convert_calculator`.
+- [add a DSL to the already existing PBE pipeline](#making-your-dsl-usable-by-scripts);
+- [create your first dataset for this DSL](#creating-a-dataset);
+- [explore a dataset](#explore-a-dataset);
+- [create a task generator for that pipeline](#creating-a-task-generator);
+- [generate synthetics datasets](#generating-a-synthetic-dataset);
+- [train a model](#train-a-model);
+- [evaluate a model](#evaluate-a-model);
+- [synthesize a program](#simple-synthesis).
 
-A single already existing file has to be modified in `./examples/pbe` and this tutorial will explain how to change it later.
+This example is the *calculator* DSL, whose source code can be found in the folder ``./examples/pbe/calculator``.
 
-### DSL (`calculator/calculator.py`)
+## Create a DSL from scratch
 
-The DSL is mainly represented by two dictionaries, representing the semantic and the syntax of the DSL.
-Both associate to a string- the name of the primitive- either  its semantic or its type.
+A DSL has two main objects: the syntax and the semantic.
+The relevant file is ``calculator/calculator.py``.
 
-#### Syntax
+A primitive is a function or a constant that you might need to use in the solution program, it is typed and has a semantic.
 
-A more detailed explanation of the type system is available in [Type System](type_system.md).
+The syntax is a mapping from primitives to their type.
+The semantic is a mapping from primitives to their semantic.
 
-Primitives in ProgSynth are strongly typed, therefore you need to specify their types when declaring a new primitive.
-Note that ProgSynth does not check that the actual data you are passing has any consistency with the declared type.
+For detailed information about types [see the page on the type system](type_system.md).
 
-If you know what OCaml types look like, you can use ``auto_type("my_ocaml_type_syntax")``to automatically create your desired type, there are some differences such as tuples that we do not support.
+### The Syntax
 
-The addition and substraction primitives should accept either 2 ints or 2 floats as parameters, we wish to define a custom type that can represent both.
+The syntax object is a dictionnary where keys are unique strings identifying your primitives and values are ProgSynth types. It might be a bit long to explain all the different type features supported by ProgSynth, however ProgSynth provides the ``auto_type`` function which dramatically speed up the syntax writing process.
+Here is an example:
 
-A function is logically represented by arrows, indicating the parameters of the primitive and the output.
-Either you can use arrows: `Arrow(type, Arrow(type, type))`
- or the `FunctionType` helper `FunctionType(type, type, type)`, both are equivalent to `type -> type -> type` or you can use the magic helper ``auto_type("type -> type -> type")``.
+```python
+from synth.syntax import auto_type, DSL
 
-**Example**:
-    `int2float` takes an int as input and will return a float. Thus, its type is `int -> float`.
+syntax = auto_type({
+  "+": "'a [int | float] -> 'a [int | float] -> 'a [int | float]",
+  "-": "'a [int | float] -> 'a [int | float] -> 'a [int | float]",
+  "int2float": "int -> float",
+  "1": "int",
+  "2": "int",
+  "3": "int",
+  "3.0": "float"
+})
 
-ProgSynth uses custom-defined types:
+dsl = DSL(syntax)
+```
 
-* `PrimitiveType`, this is a base type solely defined by its name. ProgSynth already defines as `PrimitiveType` the following: INT, BOOL, STRING, UNIT. In our case, INT was already defined by ProgSynth. We simply need to define the `PrimitiveType` FLOAT for our DSL.
-* `PolymorphicType`, these types can be any type that can be encoutered in the DSL. In practice ProgSynth will generate all different versions of the polymorphic type, remove the useless ones and add them in the DSL. To see how to constrain a polymorphic type see the detailed explanation of the [type system](type_system.md). It is also uniquely identified by its name.
-  
-  * As we have defined 2 `PrimitiveType`, the methods `+` and `-` will each be developped in two different versions: one allowing operations between integers and another one allowing operations between floats, there is no int and float version because it is the same polymorphic type object used.
-  * As the DSL needs to know which `PrimitiveType`s can be encountered in order to replace any `PolymorphicType`, we define some constants in our DSL with the correct type (at least one per type).
+The notation might seem complex to you but we will briefly explain what happens.
+When you put a string such as ``"int"`` or ``"float`` then this is transformed into a ground type, the ``"->"`` translates into a function.
+The ``"'"`` prefix tells us ``"'a"`` is a polymorphic type; however the ``[int | float]`` right after that this polymorphic type can only take the following values: ``int`` or ``float``.
+So that means we will have a ``+`` only for ``int`` and a ``+`` only for ``float``, but both will share the same semantic, since they both are named ``"+"``.
+For detailed information about types and on how this works [see the page on the type system](type_system.md).
 
-#### Semantics
+Notice that we can directly instanciate a DSL object with only the syntax since the DSL is purely a syntactic object, however we cannot execute our programs this is why we need a semantic.
 
-Simply put, the semantics are short snippets of code that will be executed when the primitive is used. This enables ProgSynth to combine these **primitives** in order to synthetise the program that we want to obtain.
+### The Semantic
 
-For instance, as we want to solve tasks made of additions and substractions between two numbers of the same type, we only need to define only 3 primitives: +, - and int2float and the constants.
+The semantic object is a dictionnary where keys are unique strings identifying your primitives and values are unary functions or constants.
 
-Here, we consider that an integer is a sub-type of float. Thus, we only need in this case to convert integers to float numbers using int2float.
+Here is the semantic for the primitives we defined earlier:
 
-To sum up, you can define the semantics for a primitive by creating a key associated with its name where the value is the actual function to execute or the value if it is a constant.
-Observe that + is a binary function but the value associated is `lambda a: lambda b: round(a+b, 1)`, in order for ProgSynth to partially apply functions in Python, you must use only provide unary functions. As of now, we have not yet found a way to automatically convert functions to unary functions without a significant performance hit during evaluation so you will have to do it yourself.
+```python
+from synth.semantic import DSLEvaluator
 
-#### Lexicon
+semantic = {
+    "+": lambda a: lambda b: round(a + b, 1),
+    "-": lambda a: lambda b: round(a - b, 1),
+    "int2float": lambda a: float(a),
+    "1": 1,
+    "2": 2,
+    "3": 3,
+    "3.0": 3.0,
+}
 
-In order to generate tasks and in order to use neural networks, a lexicon is needed for the DSL, a lexicon is a list of all base values that can be encountered in the DSL.
+evaluator = DSLEvaluator(semantic)
+```
+
+First for constants, they are just associated to their value.
+Then for functions, notice that while ``+`` is a binary function, here we have a unary function that returns another unary function.
+ProgSynth needs functions in unary form in order to be able to do partial applications.
+Python's system to automatically transform a n-ary function to a unary function as of now induces a relatively high execution cost, which makes it prohibitive for ProgSynth.
+
+### Syntactic Constraints
+
+You might want to add syntactic constraints on the generated grammar, this is covered in [sharpening](sharpening.md).
+
+### Lexicon (PBE Specific)
+
+In the PBE specification, a lexicon is needed in order to:
+
+- create synthetic tasks and thus synthetic datasets;
+- use neural networks for prediction.
+
+A lexicon is a list of all base values that can be encountered in the DSL.
  Here, we limit our DSL to float numbers rounded to one decimal, in the range [-256.0, 257[.
 For example, if our DSL were to manipulate lists of int or float, we would not have to add anything to the lexicon since lists are not a base type (`PrimitiveType`).
 
-#### Forbidden patterns (Optional)
+## Making your DSL usable by scripts
 
-In some cases, we wish to stop the DSL to derive a specific primitive from another one:
-For instance, let us say that we want to extend the `calculator` DSL with a primitive to `add1` to an integer and another one to `sub1` to an integer.
-Because doing `(add1 (sub1 x))` or `(sub1 (add1 x))` is the same as doing nothing, we can forbid the second pattern from being derived from the first one, in that case the patterns would be `{ "add1": {"sub1}, "sub1": {"add1"}`.
-For more information see [sharpening](sharpening.md) which describes in much more details the different capabilities available to reduce the size of the grammar, more powerful mechanisms are available.
+Most if not all scripts in the ``pbe`` folder should work with little to no changes for most DSLs.
+These scripts use the ``dsl_loader.py`` file that manages DSLs and provides a streamline approach for all scripts to load and use them.
+You should add your DSL to that script to be able to use all these scripts for free.
 
-## Creating a dataset (`calculator/convert_calculator.py`)
+Your only point of interest in this file is the ``__dsl_funcs`` dictionnary that should be surrounded by comments.
+Here is the line that we added to the dictionnary for our calculator DSL:
 
-We need to create a dataset. For this example, we created a short JSON file named `dataset/calculator_dataset.json` that is built with the following fields:
+```python
+"calculator": __base_loader(
+        "calculator.calculator",
+        [
+            "dsl",
+            "evaluator",
+            "lexicon",
+            ("reproduce_calculator_dataset", "reproduce_dataset"),
+        ],
+    ),
+```
 
-* *program*, that contains therepresentation of the program, the parsing is done automatically from the DSL object (`dsl.parse`) so you don't need to parse it yourself. Here is a representation of a program that computes `f(x, y)= x + y * x` in our DSL: `(+ var0 (* var0 var1))`;
+It tells the loader that the DSL is defined in the file ``calculator/calculator.py``, then when it loads this file, it loads the following variables ``dsl, evaluator, lexicon, reproduce_calculator_dataset``.
+These variables will be made available under the following fields respectively ``dsl, evaluator, lexicon, reproduce_dataset``.
+Notice that the tuple notation allows renaming.
+The first three are necessary while the last one is optional, in the sense that you might not need to redefine a ``reproduce_dataset`` function.
 
-* *examples*, displaying what are the expected inputs and outputs of the program.
+## Creating a dataset
+
+The relevant file is ``calculator/convert_calculator.py``.
+
+To generate a synthethic dataset we need to create a dataset.
+For this example, we created a short JSON file named `dataset/calculator_dataset.json` that is built with the following fields:
+
+- *program*: that contains the representation of the program, the parsing is done automatically by the DSL object (`dsl.parse`) so you don't need to parse it yourself. Here is a representation of a program that computes `f(x, y)= x + y * x` in our DSL: `(+ var0 (* var1 var0))`;
+- *examples*: displaying what are the expected inputs and outputs of the program.
 
 Once the dataset is done, we need to create a file converting it to the ProgSynth format, done here in `convert_calculator.py`.
-An important point to note is that we need to develop the `PolymorphicType`, as described in the previous sub-section.
+An important point to note is that we need to develop the `PolymorphicType`, since our ``+`` and ``-`` depend on it so before parsing we need to call `dsl.instantiate_polymorphic_types()`.
 
-It is done automatically by calling the method `dsl.instantiate_polymorphic_types(upper_bound)`.
-As we only want to develop `+` and `-` as methods with a size of 5 (INT -> INT -> INT or FLOAT -> FLOAT -> FLOAT, 3 types + 2 arrows = 5), we define its upper bound type size to 5.
-
-
-If you want to adapt the code of `calculator/convert_calculator` for your own custom DSL, it should work almost out of the box with ProgSynth, note that ProgSynth needs to guess your type request and it does so from your examples. If you are manipulating types that are not guessed by ProgSynth, it wil fill them with UnknownType silently, in that case you may need to add your own function to guess type request or modify the one from ProgSynth which is `synth/syntax/type_system.py@guess_type`.
-
-### Usage
+If you want to adapt the code of `calculator/convert_calculator` for your own custom DSL, it should work almost out of the box with ProgSynth, note that ProgSynth needs to guess your type request and it does so from your examples. If you are manipulating types that are not guessed by ProgSynth, it wil fill them with ``UnknownType`` silently, in that case you may need to add your own function to guess type request or modify the one from ProgSynth which is `synth/syntax/type_helper.py@guess_type`.
 
 We can simply use this file by command line, from the folder `./examples/pbe/calculator`.
 
@@ -92,26 +147,113 @@ We can simply use this file by command line, from the folder `./examples/pbe/cal
 python convert_calculator.py dataset/calculator_dataset.json -o calculator.pickle
 ```
 
+## Explore a dataset
+
+You might want to check that you correctly translated your task to the ProgSynth format.
+This can be done easily by visualizing the tasks of a dataset with the dataset explorer.
+A dataset can be explored using `dataset_explorer.py`.
+
+```bash
+python dataset_explorer.py --dsl calculator --dataset calculator.pickle
+```
+
+## Creating a Task Generator
+
+Most often you don't need to use a custom TaskGenerator and the default one will work, however if you have more than one ground type you will need to do so, this is the case with the calculator DSL.
+The code is at the end of ``calculator/calculator.py``.
+
+**TODO: explain in more details**
+
 ## Generating a synthetic dataset
 
-Once the DSL and a short dataset are created, we wish to generate automatically a dataset reproducing the task distribution.
+Now we can create synthetic datasets.
+There is already existing script that does all of the job for us.
 
 The dataset generator works out of the box for our DSL but that may not always be the case, you can check out other DSLs files and look at the `task_generator_*.py` files.
 
-### Usage
-
-Once the DSL has been added to the `examples/pbe/dsl_loader.py` then you can generate datasets using:
+You can generate datasets using:
 
 ```bash
 python dataset_generator_unique.py --dsl calculator --dataset calculator/calculator.pickle -o dataset.pickle --inputs 1 --programs 1000
 ```
 
-The generated dataset can be explored using `dataset_explorer.py`.
+## Train a model
+
+You can easily train a model using:
 
 ```bash
-python dataset_explorer.py --dsl calculator --dataset dataset.pickle
+python examples/pbe/model_trainer.py --dsl calculator --dataset my_train_dataset.pickle --seed 42 --b 32 -o my_model.pt -e 2
 ```
 
-## Conclusion
+There are various options to configure your model and everything which we do not dwelve into.
 
-Once the dataset and the DSL are done, we simply need to add our DSL to the `dsl_loader.py` script, in-depth instructions are provided in the file. Then, the usage is the same as described in the section [usage](usage.rst).
+## Evaluate a model
+
+You might want to evaluate a model to see if it learned anything relevant, this can be easily done but is time consuming.
+To evaluate a model, we actually try to solve program synthesis tasks for a DSL so this is not simply an inference task.
+If you are directly interested in synthesizing your first program then jump over to [the next section](#simple-synthesis) which tells you exactly how to do that.
+You can easily evaluate a model using:
+
+```bash
+python examples/pbe/evaluate.py --dsl calculator --dataset my_test_dataset.pickle --b 16 --model my_model.pt -o . -t 60 --support my_train_dataset.pickle
+```
+
+The most important parameter is perhaps ``-t 60`` which gives a timeout of 60 seconds per task.
+The ``--support my_train_dataset.pickle`` is only used to filter the test set on type requests that were also present in the train set.
+
+This will produce a CSV file in the output folder (``.`` above).
+This result file can then be plotted using:
+
+```bash
+python experiments/plot_results.py --dataset my_test_dataset.pickle --folder . --support my_train_dataset.pickle
+```
+
+Again there's a plethora of options available, so feel free to play with them.
+
+## Simple synthesis
+
+Here is a simple function that takes your task, the PCFG and the evaluator and generates a synthetised program.
+
+**TODO: explain how to produce a PCFG from a model**
+
+```python
+from synth import Task, PBE
+from synth.semantic import DSLEvaluator
+from synth.syntax import ProbDetGrammar, enumerate_prob_grammar
+
+def synthesis(
+    evaluator: DSLEvaluator,
+    task: Task[PBE],
+    pcfg: ProbDetGrammar,
+    task_timeout: float = 60
+) -> Tuple[bool, float, int, Optional[Program], Optional[float]]:
+    """
+    Returns:
+      - True if and only if a program was found 
+      - time elapsed in seconds
+      - the number of programs enumerated
+      - the program found if one was found otherwise None
+      - the program's probability if one was found otherwise None
+    """
+    start_time = time.time()
+    programs = 0
+    for program in enumerate_prob_grammar(pcfg):
+      current_time = time.time()
+      if current_time - start_time >= task_timeout:
+        return (False, time, programs, None, None)
+      programs += 1
+      failed = False
+      for ex in task.specification.examples:
+        if evaluator.eval(program, ex.inputs) != ex.output:
+          failed = True
+          break
+      if not failed:
+        return (
+                True,
+                time.time() - start_time,
+                programs,
+                program,
+                pcfg.probability(program),
+                )
+  return (False, time, programs, None, None)
+```
