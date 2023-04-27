@@ -12,7 +12,7 @@ Contents
     usage
     tutorial
     type_system
-    examples
+    Specifications <examples>
     PBE <examples_pbe>
     sharpening
     contributing
