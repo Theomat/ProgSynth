@@ -7,6 +7,7 @@ ProgSynth is a high-level framework that enables to leverage program synthesis f
 Contents
 ---------
 .. toctree::
+    about
     introduction
     usage
     tutorial
