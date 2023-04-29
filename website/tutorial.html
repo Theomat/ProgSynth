@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tutorial &mdash; ProgSynth 0.1 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="author" title="About these documents" href="about.html" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="The Type System" href="type_system.html" />
+    <link rel="prev" title="Usage of ProgSynth" href="usage.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            ProgSynth
+          </a>
+              <div class="version">
+                0.1.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="about.html">About</a></li>
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage.html">Usage of ProgSynth</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Tutorial</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#create-a-dsl-from-scratch">Create a DSL from scratch</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#the-syntax">The Syntax</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#the-semantic">The Semantic</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#syntactic-constraints">Syntactic Constraints</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#lexicon-pbe-specific">Lexicon (PBE Specific)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#making-your-dsl-usable-by-scripts">Making your DSL usable by scripts</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#creating-a-dataset">Creating a dataset</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#explore-a-dataset">Explore a dataset</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#creating-a-task-generator">Creating a Task Generator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#generating-a-synthetic-dataset">Generating a synthetic dataset</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#train-a-model">Train a model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#evaluate-a-model">Evaluate a model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#simple-synthesis">Simple synthesis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="type_system.html">The Type System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Specifications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples_pbe.html">PBE</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sharpening.html">Sharpening</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing to ProgSynth</a></li>
+<li class="toctree-l1"><a class="reference internal" href="license.html">License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">ProgSynth</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Tutorial</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/tutorial.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="tutorial">
+<h1>Tutorial<a class="headerlink" href="#tutorial" title="Permalink to this heading"></a></h1>
+<p>This tutorial will show you how to:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#create-a-dsl-from-scratch"><span class="xref myst">create a new DSL from scratch</span></a>;</p></li>
+</ul>
+<p>afterward everything is PBE specific:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#making-your-dsl-usable-by-scripts"><span class="xref myst">add a DSL to the already existing PBE pipeline</span></a>;</p></li>
+<li><p><a class="reference internal" href="#creating-a-dataset"><span class="xref myst">create your first dataset for this DSL</span></a>;</p></li>
+<li><p><a class="reference internal" href="#explore-a-dataset"><span class="xref myst">explore a dataset</span></a>;</p></li>
+<li><p><a class="reference internal" href="#creating-a-task-generator"><span class="xref myst">create a task generator for that pipeline</span></a>;</p></li>
+<li><p><a class="reference internal" href="#generating-a-synthetic-dataset"><span class="xref myst">generate synthetics datasets</span></a>;</p></li>
+<li><p><a class="reference internal" href="#train-a-model"><span class="xref myst">train a model</span></a>;</p></li>
+<li><p><a class="reference internal" href="#evaluate-a-model"><span class="xref myst">evaluate a model</span></a>;</p></li>
+<li><p><a class="reference internal" href="#simple-synthesis"><span class="xref myst">synthesize a program</span></a>.</p></li>
+</ul>
+<p>This example is the <em>calculator</em> DSL, whose source code can be found in the folder <code class="docutils literal notranslate"><span class="pre">./examples/pbe/calculator</span></code>.</p>
+<section id="create-a-dsl-from-scratch">
+<h2>Create a DSL from scratch<a class="headerlink" href="#create-a-dsl-from-scratch" title="Permalink to this heading"></a></h2>
+<p>A DSL has two main objects: the syntax and the semantic.
+The relevant file is <code class="docutils literal notranslate"><span class="pre">calculator/calculator.py</span></code>.</p>
+<p>A primitive is a function or a constant that you might need to use in the solution program, it is typed and has a semantic.</p>
+<p>The syntax is a mapping from primitives to their type.
+The semantic is a mapping from primitives to their semantic.</p>
+<p>For detailed information about types <a class="reference internal" href="type_system.html"><span class="std std-doc">see the page on the type system</span></a>.</p>
+<section id="the-syntax">
+<h3>The Syntax<a class="headerlink" href="#the-syntax" title="Permalink to this heading"></a></h3>
+<p>The syntax object is a dictionnary where keys are unique strings identifying your primitives and values are ProgSynth types. It might be a bit long to explain all the different type features supported by ProgSynth, however ProgSynth provides the <code class="docutils literal notranslate"><span class="pre">auto_type</span></code> function which dramatically speed up the syntax writing process.
+Here is an example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">synth.syntax</span> <span class="kn">import</span> <span class="n">auto_type</span><span class="p">,</span> <span class="n">DSL</span>
+
+<span class="n">syntax</span> <span class="o">=</span> <span class="n">auto_type</span><span class="p">({</span>
+  <span class="s2">&quot;+&quot;</span><span class="p">:</span> <span class="s2">&quot;&#39;a [int | float] -&gt; &#39;a [int | float] -&gt; &#39;a [int | float]&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;-&quot;</span><span class="p">:</span> <span class="s2">&quot;&#39;a [int | float] -&gt; &#39;a [int | float] -&gt; &#39;a [int | float]&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;int2float&quot;</span><span class="p">:</span> <span class="s2">&quot;int -&gt; float&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;1&quot;</span><span class="p">:</span> <span class="s2">&quot;int&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;2&quot;</span><span class="p">:</span> <span class="s2">&quot;int&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;3&quot;</span><span class="p">:</span> <span class="s2">&quot;int&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;3.0&quot;</span><span class="p">:</span> <span class="s2">&quot;float&quot;</span>
+<span class="p">})</span>
+
+<span class="n">dsl</span> <span class="o">=</span> <span class="n">DSL</span><span class="p">(</span><span class="n">syntax</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The notation might seem complex to you but we will briefly explain what happens.
+When you put a string such as <code class="docutils literal notranslate"><span class="pre">&quot;int&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;float</span></code> then this is transformed into a ground type, the <code class="docutils literal notranslate"><span class="pre">&quot;-&gt;&quot;</span></code> translates into a function.
+The <code class="docutils literal notranslate"><span class="pre">&quot;'&quot;</span></code> prefix tells us <code class="docutils literal notranslate"><span class="pre">&quot;'a&quot;</span></code> is a polymorphic type; however the <code class="docutils literal notranslate"><span class="pre">[int</span> <span class="pre">|</span> <span class="pre">float]</span></code> right after that this polymorphic type can only take the following values: <code class="docutils literal notranslate"><span class="pre">int</span></code> or <code class="docutils literal notranslate"><span class="pre">float</span></code>.
+So that means we will have a <code class="docutils literal notranslate"><span class="pre">+</span></code> only for <code class="docutils literal notranslate"><span class="pre">int</span></code> and a <code class="docutils literal notranslate"><span class="pre">+</span></code> only for <code class="docutils literal notranslate"><span class="pre">float</span></code>, but both will share the same semantic, since they both are named <code class="docutils literal notranslate"><span class="pre">&quot;+&quot;</span></code>.
+For detailed information about types and on how this works <a class="reference internal" href="type_system.html"><span class="std std-doc">see the page on the type system</span></a>.</p>
+<p>Notice that we can directly instanciate a DSL object with only the syntax since the DSL is purely a syntactic object, however we cannot execute our programs this is why we need a semantic.</p>
+</section>
+<section id="the-semantic">
+<h3>The Semantic<a class="headerlink" href="#the-semantic" title="Permalink to this heading"></a></h3>
+<p>The semantic object is a dictionnary where keys are unique strings identifying your primitives and values are unary functions or constants.</p>
+<p>Here is the semantic for the primitives we defined earlier:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">synth.semantic</span> <span class="kn">import</span> <span class="n">DSLEvaluator</span>
+
+<span class="n">semantic</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;+&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">a</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">b</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">a</span> <span class="o">+</span> <span class="n">b</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+    <span class="s2">&quot;-&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">a</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">b</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">a</span> <span class="o">-</span> <span class="n">b</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+    <span class="s2">&quot;int2float&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">a</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">a</span><span class="p">),</span>
+    <span class="s2">&quot;1&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="s2">&quot;2&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+    <span class="s2">&quot;3&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+    <span class="s2">&quot;3.0&quot;</span><span class="p">:</span> <span class="mf">3.0</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="n">evaluator</span> <span class="o">=</span> <span class="n">DSLEvaluator</span><span class="p">(</span><span class="n">semantic</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>First for constants, they are just associated to their value.
+Then for functions, notice that while <code class="docutils literal notranslate"><span class="pre">+</span></code> is a binary function, here we have a unary function that returns another unary function.
+ProgSynth needs functions in unary form in order to be able to do partial applications.
+Python’s system to automatically transform a n-ary function to a unary function as of now induces a relatively high execution cost, which makes it prohibitive for ProgSynth.</p>
+</section>
+<section id="syntactic-constraints">
+<h3>Syntactic Constraints<a class="headerlink" href="#syntactic-constraints" title="Permalink to this heading"></a></h3>
+<p>You might want to add syntactic constraints on the generated grammar, this is covered in <a class="reference internal" href="sharpening.html"><span class="std std-doc">sharpening</span></a>.</p>
+</section>
+<section id="lexicon-pbe-specific">
+<h3>Lexicon (PBE Specific)<a class="headerlink" href="#lexicon-pbe-specific" title="Permalink to this heading"></a></h3>
+<p>In the PBE specification, a lexicon is needed in order to:</p>
+<ul class="simple">
+<li><p>create synthetic tasks and thus synthetic datasets;</p></li>
+<li><p>use neural networks for prediction.</p></li>
+</ul>
+<p>A lexicon is a list of all base values that can be encountered in the DSL.
+Here, we limit our DSL to float numbers rounded to one decimal, in the range [-256.0, 257[.
+For example, if our DSL were to manipulate lists of int or float, we would not have to add anything to the lexicon since lists are not a base type (<code class="docutils literal notranslate"><span class="pre">PrimitiveType</span></code>).</p>
+</section>
+</section>
+<section id="making-your-dsl-usable-by-scripts">
+<h2>Making your DSL usable by scripts<a class="headerlink" href="#making-your-dsl-usable-by-scripts" title="Permalink to this heading"></a></h2>
+<p>Most if not all scripts in the <code class="docutils literal notranslate"><span class="pre">pbe</span></code> folder should work with little to no changes for most DSLs.
+These scripts use the <code class="docutils literal notranslate"><span class="pre">dsl_loader.py</span></code> file that manages DSLs and provides a streamline approach for all scripts to load and use them.
+You should add your DSL to that script to be able to use all these scripts for free.</p>
+<p>Your only point of interest in this file is the <code class="docutils literal notranslate"><span class="pre">__dsl_funcs</span></code> dictionnary that should be surrounded by comments.
+Here is the line that we added to the dictionnary for our calculator DSL:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;calculator&quot;</span><span class="p">:</span> <span class="n">__base_loader</span><span class="p">(</span>
+        <span class="s2">&quot;calculator.calculator&quot;</span><span class="p">,</span>
+        <span class="p">[</span>
+            <span class="s2">&quot;dsl&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;evaluator&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;lexicon&quot;</span><span class="p">,</span>
+            <span class="p">(</span><span class="s2">&quot;reproduce_calculator_dataset&quot;</span><span class="p">,</span> <span class="s2">&quot;reproduce_dataset&quot;</span><span class="p">),</span>
+        <span class="p">],</span>
+    <span class="p">),</span>
+</pre></div>
+</div>
+<p>It tells the loader that the DSL is defined in the file <code class="docutils literal notranslate"><span class="pre">calculator/calculator.py</span></code>, then when it loads this file, it loads the following variables <code class="docutils literal notranslate"><span class="pre">dsl,</span> <span class="pre">evaluator,</span> <span class="pre">lexicon,</span> <span class="pre">reproduce_calculator_dataset</span></code>.
+These variables will be made available under the following fields respectively <code class="docutils literal notranslate"><span class="pre">dsl,</span> <span class="pre">evaluator,</span> <span class="pre">lexicon,</span> <span class="pre">reproduce_dataset</span></code>.
+Notice that the tuple notation allows renaming.
+The first three are necessary while the last one is optional, in the sense that you might not need to redefine a <code class="docutils literal notranslate"><span class="pre">reproduce_dataset</span></code> function.</p>
+</section>
+<section id="creating-a-dataset">
+<h2>Creating a dataset<a class="headerlink" href="#creating-a-dataset" title="Permalink to this heading"></a></h2>
+<p>The relevant file is <code class="docutils literal notranslate"><span class="pre">calculator/convert_calculator.py</span></code>.</p>
+<p>To generate a synthethic dataset we need to create a dataset.
+For this example, we created a short JSON file named <code class="docutils literal notranslate"><span class="pre">dataset/calculator_dataset.json</span></code> that is built with the following fields:</p>
+<ul class="simple">
+<li><p><em>program</em>: that contains the representation of the program, the parsing is done automatically by the DSL object (<code class="docutils literal notranslate"><span class="pre">dsl.parse</span></code>) so you don’t need to parse it yourself. Here is a representation of a program that computes <code class="docutils literal notranslate"><span class="pre">f(x,</span> <span class="pre">y)=</span> <span class="pre">x</span> <span class="pre">+</span> <span class="pre">y</span> <span class="pre">*</span> <span class="pre">x</span></code> in our DSL: <code class="docutils literal notranslate"><span class="pre">(+</span> <span class="pre">var0</span> <span class="pre">(*</span> <span class="pre">var1</span> <span class="pre">var0))</span></code>;</p></li>
+<li><p><em>examples</em>: displaying what are the expected inputs and outputs of the program.</p></li>
+</ul>
+<p>Once the dataset is done, we need to create a file converting it to the ProgSynth format, done here in <code class="docutils literal notranslate"><span class="pre">convert_calculator.py</span></code>.
+An important point to note is that we need to develop the <code class="docutils literal notranslate"><span class="pre">PolymorphicType</span></code>, since our <code class="docutils literal notranslate"><span class="pre">+</span></code> and <code class="docutils literal notranslate"><span class="pre">-</span></code> depend on it so before parsing we need to call <code class="docutils literal notranslate"><span class="pre">dsl.instantiate_polymorphic_types()</span></code>.</p>
+<p>If you want to adapt the code of <code class="docutils literal notranslate"><span class="pre">calculator/convert_calculator</span></code> for your own custom DSL, it should work almost out of the box with ProgSynth, note that ProgSynth needs to guess your type request and it does so from your examples. If you are manipulating types that are not guessed by ProgSynth, it wil fill them with <code class="docutils literal notranslate"><span class="pre">UnknownType</span></code> silently, in that case you may need to add your own function to guess type request or modify the one from ProgSynth which is <code class="docutils literal notranslate"><span class="pre">synth/syntax/type_helper.py&#64;guess_type</span></code>.</p>
+<p>We can simply use this file by command line, from the folder <code class="docutils literal notranslate"><span class="pre">./examples/pbe/calculator</span></code>.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>convert_calculator.py<span class="w"> </span>dataset/calculator_dataset.json<span class="w"> </span>-o<span class="w"> </span>calculator.pickle
+</pre></div>
+</div>
+</section>
+<section id="explore-a-dataset">
+<h2>Explore a dataset<a class="headerlink" href="#explore-a-dataset" title="Permalink to this heading"></a></h2>
+<p>You might want to check that you correctly translated your task to the ProgSynth format.
+This can be done easily by visualizing the tasks of a dataset with the dataset explorer.
+A dataset can be explored using <code class="docutils literal notranslate"><span class="pre">dataset_explorer.py</span></code>.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>dataset_explorer.py<span class="w"> </span>--dsl<span class="w"> </span>calculator<span class="w"> </span>--dataset<span class="w"> </span>calculator.pickle
+</pre></div>
+</div>
+</section>
+<section id="creating-a-task-generator">
+<h2>Creating a Task Generator<a class="headerlink" href="#creating-a-task-generator" title="Permalink to this heading"></a></h2>
+<p>Most often you don’t need to use a custom TaskGenerator and the default one will work, however if you have more than one ground type you will need to do so, this is the case with the calculator DSL.
+The code is at the end of <code class="docutils literal notranslate"><span class="pre">calculator/calculator.py</span></code>.</p>
+<p><strong>TODO: explain in more details</strong></p>
+</section>
+<section id="generating-a-synthetic-dataset">
+<h2>Generating a synthetic dataset<a class="headerlink" href="#generating-a-synthetic-dataset" title="Permalink to this heading"></a></h2>
+<p>Now we can create synthetic datasets.
+There is already existing script that does all of the job for us.</p>
+<p>The dataset generator works out of the box for our DSL but that may not always be the case, you can check out other DSLs files and look at the <code class="docutils literal notranslate"><span class="pre">task_generator_*.py</span></code> files.</p>
+<p>You can generate datasets using:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>dataset_generator_unique.py<span class="w"> </span>--dsl<span class="w"> </span>calculator<span class="w"> </span>--dataset<span class="w"> </span>calculator/calculator.pickle<span class="w"> </span>-o<span class="w"> </span>dataset.pickle<span class="w"> </span>--inputs<span class="w"> </span><span class="m">1</span><span class="w"> </span>--programs<span class="w"> </span><span class="m">1000</span>
+</pre></div>
+</div>
+</section>
+<section id="train-a-model">
+<h2>Train a model<a class="headerlink" href="#train-a-model" title="Permalink to this heading"></a></h2>
+<p>You can easily train a model using:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>examples/pbe/model_trainer.py<span class="w"> </span>--dsl<span class="w"> </span>calculator<span class="w"> </span>--dataset<span class="w"> </span>my_train_dataset.pickle<span class="w"> </span>--seed<span class="w"> </span><span class="m">42</span><span class="w"> </span>--b<span class="w"> </span><span class="m">32</span><span class="w"> </span>-o<span class="w"> </span>my_model.pt<span class="w"> </span>-e<span class="w"> </span><span class="m">2</span>
+</pre></div>
+</div>
+<p>There are various options to configure your model and everything which we do not dwelve into.</p>
+</section>
+<section id="evaluate-a-model">
+<h2>Evaluate a model<a class="headerlink" href="#evaluate-a-model" title="Permalink to this heading"></a></h2>
+<p>You might want to evaluate a model to see if it learned anything relevant, this can be easily done but is time consuming.
+To evaluate a model, we actually try to solve program synthesis tasks for a DSL so this is not simply an inference task.
+If you are directly interested in synthesizing your first program then jump over to <a class="reference internal" href="#simple-synthesis"><span class="xref myst">the next section</span></a> which tells you exactly how to do that.
+You can easily evaluate a model using:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>examples/pbe/evaluate.py<span class="w"> </span>--dsl<span class="w"> </span>calculator<span class="w"> </span>--dataset<span class="w"> </span>my_test_dataset.pickle<span class="w"> </span>--b<span class="w"> </span><span class="m">16</span><span class="w"> </span>--model<span class="w"> </span>my_model.pt<span class="w"> </span>-o<span class="w"> </span>.<span class="w"> </span>-t<span class="w"> </span><span class="m">60</span><span class="w"> </span>--support<span class="w"> </span>my_train_dataset.pickle
+</pre></div>
+</div>
+<p>The most important parameter is perhaps <code class="docutils literal notranslate"><span class="pre">-t</span> <span class="pre">60</span></code> which gives a timeout of 60 seconds per task.
+The <code class="docutils literal notranslate"><span class="pre">--support</span> <span class="pre">my_train_dataset.pickle</span></code> is only used to filter the test set on type requests that were also present in the train set.</p>
+<p>This will produce a CSV file in the output folder (<code class="docutils literal notranslate"><span class="pre">.</span></code> above).
+This result file can then be plotted using:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>experiments/plot_results.py<span class="w"> </span>--dataset<span class="w"> </span>my_test_dataset.pickle<span class="w"> </span>--folder<span class="w"> </span>.<span class="w"> </span>--support<span class="w"> </span>my_train_dataset.pickle
+</pre></div>
+</div>
+<p>Again there’s a plethora of options available, so feel free to play with them.</p>
+</section>
+<section id="simple-synthesis">
+<h2>Simple synthesis<a class="headerlink" href="#simple-synthesis" title="Permalink to this heading"></a></h2>
+<p>Here is a simple function that takes your task, the PCFG and the evaluator and generates a synthetised program.</p>
+<p><strong>TODO: explain how to produce a PCFG from a model</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">synth</span> <span class="kn">import</span> <span class="n">Task</span><span class="p">,</span> <span class="n">PBE</span>
+<span class="kn">from</span> <span class="nn">synth.semantic</span> <span class="kn">import</span> <span class="n">DSLEvaluator</span>
+<span class="kn">from</span> <span class="nn">synth.syntax</span> <span class="kn">import</span> <span class="n">ProbDetGrammar</span><span class="p">,</span> <span class="n">enumerate_prob_grammar</span>
+
+<span class="k">def</span> <span class="nf">synthesis</span><span class="p">(</span>
+    <span class="n">evaluator</span><span class="p">:</span> <span class="n">DSLEvaluator</span><span class="p">,</span>
+    <span class="n">task</span><span class="p">:</span> <span class="n">Task</span><span class="p">[</span><span class="n">PBE</span><span class="p">],</span>
+    <span class="n">pcfg</span><span class="p">:</span> <span class="n">ProbDetGrammar</span><span class="p">,</span>
+    <span class="n">task_timeout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">60</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Program</span><span class="p">],</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns:</span>
+<span class="sd">      - True if and only if a program was found </span>
+<span class="sd">      - time elapsed in seconds</span>
+<span class="sd">      - the number of programs enumerated</span>
+<span class="sd">      - the program found if one was found otherwise None</span>
+<span class="sd">      - the program&#39;s probability if one was found otherwise None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="n">programs</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">program</span> <span class="ow">in</span> <span class="n">enumerate_prob_grammar</span><span class="p">(</span><span class="n">pcfg</span><span class="p">):</span>
+      <span class="n">current_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+      <span class="k">if</span> <span class="n">current_time</span> <span class="o">-</span> <span class="n">start_time</span> <span class="o">&gt;=</span> <span class="n">task_timeout</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">programs</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+      <span class="n">programs</span> <span class="o">+=</span> <span class="mi">1</span>
+      <span class="n">failed</span> <span class="o">=</span> <span class="kc">False</span>
+      <span class="k">for</span> <span class="n">ex</span> <span class="ow">in</span> <span class="n">task</span><span class="o">.</span><span class="n">specification</span><span class="o">.</span><span class="n">examples</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">evaluator</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="n">program</span><span class="p">,</span> <span class="n">ex</span><span class="o">.</span><span class="n">inputs</span><span class="p">)</span> <span class="o">!=</span> <span class="n">ex</span><span class="o">.</span><span class="n">output</span><span class="p">:</span>
+          <span class="n">failed</span> <span class="o">=</span> <span class="kc">True</span>
+          <span class="k">break</span>
+      <span class="k">if</span> <span class="ow">not</span> <span class="n">failed</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">(</span>
+                <span class="kc">True</span><span class="p">,</span>
+                <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span><span class="p">,</span>
+                <span class="n">programs</span><span class="p">,</span>
+                <span class="n">program</span><span class="p">,</span>
+                <span class="n">pcfg</span><span class="o">.</span><span class="n">probability</span><span class="p">(</span><span class="n">program</span><span class="p">),</span>
+                <span class="p">)</span>
+  <span class="k">return</span> <span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">programs</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="usage.html" class="btn btn-neutral float-left" title="Usage of ProgSynth" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="type_system.html" class="btn btn-neutral float-right" title="The Type System" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Nathanaël Fijalkow &amp; Théo Matricon.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
