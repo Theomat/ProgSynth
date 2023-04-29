@@ -19,7 +19,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: 'pip' # caching pip dependencies
-      - uses: actions/setup-python@v4
+      - name: Install Dependencies
         run: pip install sphinx sphinx-rtd-theme myst-parser
       #----------------------------------------------
       # Build documentation
