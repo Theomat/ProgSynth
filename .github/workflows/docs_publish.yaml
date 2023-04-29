@@ -31,7 +31,7 @@ jobs:
       # Move documentation
       #----------------------------------------------
       - name: Move documentation
-        run: mkdir website && mv docs/build/html website
+        run: mkdir website && mv docs/build/html/* website
       #----------------------------------------------
       # format, type check, and test your code
       #----------------------------------------------
