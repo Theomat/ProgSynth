@@ -31,14 +31,14 @@ jobs:
       # Move documentation
       #----------------------------------------------
       - name: Move documentation
-        run: mkdir website && mv docs/build/html/* website
+        run: mv docs/build/html/* docs
       #----------------------------------------------
       # format, type check, and test your code
       #----------------------------------------------
       - name: Checkout other branch
         uses: EndBug/add-and-commit@v9
         with:
-          add: -f website
+          add: -f docs
           author_name: Theomat
           author_email: theomatricon@gmail.com
           message: GitHub Actions publish documentation
