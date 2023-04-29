@@ -32,9 +32,9 @@ jobs:
       - name: Publish generated content to GitHub Pages
         uses: EndBug/add-and-commit@v9
         with:
-          add: docs/build/html
+          add: -f docs/build/html
           author_name: Theomat
           author_email: theomatricon@gmail.com
           message: GitHub Actions publish documentation
           new_branch: gh-pages
-          token: ${{ secrets.ACCESS_TOKEN }}
+          github_token: ${{ secrets.ACCESS_TOKEN }}
