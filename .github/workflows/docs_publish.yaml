@@ -30,8 +30,11 @@ jobs:
       # format, type check, and test your code
       #----------------------------------------------
       - name: Publish generated content to GitHub Pages
-        uses: tsunematsu21/actions-publish-gh-pages@v1.0.2
+        uses: EndBug/add-and-commit@v9
         with:
-          dir: docs/build/html
-          branch: gh-pages
+          add: docs/build/html
+          author_name: Theomat
+          author_email: theomatricon@gmail.com
+          message: GitHub Actions publish documentation
+          new_branch: gh-pages
           token: ${{ secrets.ACCESS_TOKEN }}
