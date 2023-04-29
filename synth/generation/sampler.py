@@ -117,14 +117,13 @@ class ListSampler(RequestSampler[Union[TList, U]]):
 
     def sample_for(self, type: Type, **kwargs: Any) -> Union[TList, U]:
         assert self.max_depth < 0 or type.depth() <= self.max_depth
-        if isinstance(type, List):
+        if type.is_instance(List):
+            element_type: Type = type.types[0]  # type: ignore
             sampler: Sampler = self
-            if not isinstance(type.element_type, List):
+            if not element_type.is_instance(List):
                 sampler = self.element_sampler
             length: int = self.__gen_length__(type)
-            return [
-                sampler.sample(type=type.element_type, **kwargs) for _ in range(length)
-            ]
+            return [sampler.sample(type=element_type, **kwargs) for _ in range(length)]
         else:
             return self.element_sampler.sample(type=type, **kwargs)
 

@@ -125,7 +125,6 @@ class Function(Program):
     def __init__(self, function: Program, arguments: TList[Program]):
         # Build automatically the type of the function
         type = function.type
-        assert isinstance(type, Arrow), f"{type} is not an arrow!"
         args = type.arguments()[len(arguments) :]
         my_type = FunctionType(*args, type.returns())
 

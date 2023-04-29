@@ -17,7 +17,7 @@ class UseAllVariablesPruner(SyntacticPruner):
 
     def __get_var_set__(self, treq: Type) -> Set[int]:
         if treq not in self._cached_variables_set:
-            if isinstance(treq, Arrow):
+            if treq.is_instance(Arrow):
                 self._cached_variables_set[treq] = set(range(len(treq.arguments())))
             else:
                 self._cached_variables_set[treq] = set()
