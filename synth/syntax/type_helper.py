@@ -61,7 +61,6 @@ _TOK_BRACKETS = 1
 _TOK_INFIX = 2
 _TOK_POLYMORPHIC = 3
 _TOK_OR = 4
-_TOK_ARROW = 5
 
 
 def __matching__(text: str) -> int:
@@ -79,21 +78,22 @@ def __matching__(text: str) -> int:
     return -1
 
 
+__SPECIAL_TOKENS = " ()"
+
+
 def __next_token__(text: str) -> Tuple[str, int, int]:
     if text.startswith("(") or text.startswith("["):
         i = __matching__(text)
         return text[1:i], _TOK_BRACKETS if text[0] == "[" else _TOK_PARENTHESIS, i + 1
-    elif text.startswith("->"):
-        return "->", _TOK_ARROW, 2
     elif text.startswith("|"):
         return "", _TOK_OR, 1
     elif not text[0].isalpha() and not text[0] == "'":
         i = 1
-        while i < len(text) and not (text[i].isalpha() or text[i] == " "):
+        while i < len(text) and not (text[i].isalpha() or text[i] in __SPECIAL_TOKENS):
             i += 1
         return text[:i], _TOK_INFIX, i
     i = 1
-    while i < len(text) and text[i].isalpha() and not text[i] == " ":
+    while i < len(text) and text[i].isalpha():
         i += 1
     is_poly = len(text) > 0 and text[0] == "'"
     return (
@@ -120,7 +120,6 @@ def auto_type(el: Union[Dict[str, str], str]) -> Union[Dict[str, Type], Type]:
     # String part
     stack = []
     text = el
-    last_arrow = 0
     last_infix = 0
     infix_stack = []
     or_flag = -1
@@ -146,7 +145,8 @@ def auto_type(el: Union[Dict[str, str], str]) -> Union[Dict[str, Type], Type]:
                     stack.append(Generic(w, stack.pop()))
                 else:
                     stack.append(PrimitiveType(w))
-        elif token == _TOK_ARROW:
+        elif token == _TOK_INFIX:
+            # old comment about arrows but the same for infix operators
             # Okay a bit complicated since arrows should be built from right to left
             # Notice than in no other case there might be a malformed arrow
             # therefore it happens at the top level
@@ -154,13 +154,6 @@ def auto_type(el: Union[Dict[str, str], str]) -> Union[Dict[str, Type], Type]:
             # even more interesting part:
             # if the expression is well-formed then
             # we just need to put arrows between all elements of the stacks
-            assert last_arrow + 1 == len(
-                stack
-            ), f"Invalid parsing: parsed:{stack} remaining:{text}"
-            last_arrow += 1
-            last_infix += 1
-            infix_stack.append(w)
-        elif token == _TOK_INFIX:
             last_infix += 1
             infix_stack.append(w)
         elif token == _TOK_OR:
@@ -178,8 +171,11 @@ def auto_type(el: Union[Dict[str, str], str]) -> Union[Dict[str, Type], Type]:
         # update text
         text = text[index:].strip()
     assert len(stack) >= 1
-    print(stack, infix_stack)
     while len(stack) > 1:
         last = stack.pop()
-        stack.append(Generic(infix_stack.pop(), stack.pop(), last, infix=True))
+        w = infix_stack.pop()
+        if w == "->":
+            stack.append(Arrow(stack.pop(), last))
+        else:
+            stack.append(Generic(w, stack.pop(), last, infix=True))
     return stack.pop()

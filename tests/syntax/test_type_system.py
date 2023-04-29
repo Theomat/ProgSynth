@@ -1,3 +1,4 @@
+import copy
 from synth.syntax.type_system import (
     STRING,
     INT,
@@ -8,12 +9,10 @@ from synth.syntax.type_system import (
     Arrow,
     PrimitiveType,
     Type,
-    UnknownType,
     match,
     EmptyList,
 )
 from typing import List as TList, Set, Tuple
-import random
 
 
 def test_hash() -> None:
@@ -63,10 +62,10 @@ def test_match() -> None:
             assert match(t1, List(PolymorphicType("a")))
             assert match(List(PolymorphicType("a")), t1)
         elif t1.is_instance(Arrow):
-            assert match(t1, Arrow(PolymorphicType("a"), t1.types[1]))
-            assert match(t1, Arrow(t1.types[0], PolymorphicType("a")))
-            assert match(Arrow(PolymorphicType("a"), t1.types[1]), t1)
-            assert match(Arrow(t1.types[0], PolymorphicType("a")), t1)
+            assert match(t1, Arrow(PolymorphicType("a"), t1.type_out))  # type: ignore
+            assert match(t1, Arrow(t1.type_in, PolymorphicType("a")))  # type: ignore
+            assert match(Arrow(PolymorphicType("a"), t1.type_out), t1)  # type: ignore
+            assert match(Arrow(t1.type_in, PolymorphicType("a")), t1)  # type: ignore
 
 
 def test_decompose_type() -> None:
@@ -137,3 +136,17 @@ def test_can_be() -> None:
     types = [BOOL, INT, List(INT), Arrow(INT, INT)]
     for i, x in enumerate(types):
         assert z.can_be(x) == (i <= 1)
+
+
+def test_pickle() -> None:
+    types = [
+        BOOL,
+        INT,
+        List(INT),
+        Arrow(INT, INT),
+        PolymorphicType("a"),
+        FixedPolymorphicType("b", INT),
+    ]
+    for t in types:
+        tprime = copy.deepcopy(t)
+        assert tprime == t
