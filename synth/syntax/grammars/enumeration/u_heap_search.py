@@ -15,7 +15,7 @@ from typing import (
 from abc import ABC, abstractmethod
 
 from synth.syntax.grammars.enumeration.heap_search import HeapElement, Bucket
-from synth.syntax.program import Primitive, Program, Function, Variable
+from synth.syntax.program import Program, Function
 from synth.syntax.grammars.tagged_u_grammar import ProbUGrammar
 from synth.syntax.type_system import Type
 from synth.utils.ordered import Ordered
@@ -42,7 +42,9 @@ def __wrap__(el: Union[U, List[U]]) -> Union[U, Tuple[U, ...]]:
 
 
 class UHSEnumerator(ABC, Generic[U, V, W]):
-    def __init__(self, G: ProbUGrammar[U, V, W], threshold: Ordered = 0) -> None:
+    def __init__(
+        self, G: ProbUGrammar[U, V, W], threshold: Optional[Ordered] = None
+    ) -> None:
         self.G = G
         symbols = [S for S in self.G.rules]
         self.threshold = threshold
@@ -172,7 +174,7 @@ class UHSEnumerator(ABC, Generic[U, V, W]):
                 self.hash_table_global[hash_program] = program
                 priority = self.compute_priority(S, program)
                 assert program in self._keys[S]
-                if priority < self.threshold:
+                if not self.threshold or priority < self.threshold:
                     heappush(
                         self.heaps[S],
                         HeapElement(priority, program),
@@ -231,7 +233,7 @@ class UHSEnumerator(ABC, Generic[U, V, W]):
                         # try:
                         self._keys[S][new_program] = v
                         priority: Ordered = self.compute_priority(S, new_program)
-                        if priority < self.threshold:
+                        if not self.threshold or priority < self.threshold:
                             heappush(self.heaps[S], HeapElement(priority, new_program))
                             if S in self.G.starts:
                                 heappush(

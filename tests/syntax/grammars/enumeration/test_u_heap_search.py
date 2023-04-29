@@ -96,7 +96,7 @@ def test_threshold(cfg: UCFG) -> None:
     seent = set()
     for program in enumerate_prob_u_grammar(pcfg, threshold):
         p = pcfg.probability(program)
-        assert p < threshold
+        assert p > threshold
         seent.add(p)
 
     assert len(seent.symmetric_difference(seen)) == 0

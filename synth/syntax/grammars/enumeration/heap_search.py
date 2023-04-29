@@ -35,7 +35,9 @@ class HeapElement:
 
 
 class HSEnumerator(ABC, Generic[U, V, W]):
-    def __init__(self, G: ProbDetGrammar[U, V, W], threshold: Ordered = 0) -> None:
+    def __init__(
+        self, G: ProbDetGrammar[U, V, W], threshold: Optional[Ordered] = None
+    ) -> None:
         self.current: Optional[Program] = None
         self.threshold = threshold
 
@@ -144,7 +146,7 @@ class HSEnumerator(ABC, Generic[U, V, W]):
             # are represented by the same object
             self.hash_table_global[hash_program] = program
             priority = self.compute_priority(S, program)
-            if priority < self.threshold:
+            if not self.threshold or priority < self.threshold:
                 heappush(
                     self.heaps[S],
                     HeapElement(priority, program),
@@ -211,7 +213,7 @@ class HSEnumerator(ABC, Generic[U, V, W]):
                         self.hash_table_program[S].add(hash_new_program)
                         try:
                             priority: Ordered = self.compute_priority(S, new_program)
-                            if priority < self.threshold:
+                            if not self.threshold or priority < self.threshold:
                                 heappush(
                                     self.heaps[S], HeapElement(priority, new_program)
                                 )
