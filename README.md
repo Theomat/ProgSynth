@@ -14,6 +14,8 @@ ProgSynth is a high-level framework that enables to leverage program synthesis f
   - [From Source](#from-source)
     - [Install ProgSynth](#install-progsynth)
 - [Documentation](#documentation)
+  - [Online](https://nathanael-fijalkow.github.io/ProgSynth/)
+  - [Local](#documentation)
 - [Troubleshooting](#troubleshooting)
 - [Examples](./examples)
 - [The Team](#the-team)
@@ -67,6 +69,9 @@ pip install .
 ```
 
 ## Documentation
+
+[Online Documentation](https://nathanael-fijalkow.github.io/ProgSynth/)
+
 
 You might want to generate html pages of the documentation locally, where usage, contribution guidelines and more can be found.
 In which case, you will need to use [Sphinx](https://www.sphinx-doc.org/en/master/). 
