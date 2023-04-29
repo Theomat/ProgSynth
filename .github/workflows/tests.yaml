@@ -2,7 +2,8 @@ name: Tests
 
 on:
   push:
-    branches: [ '*' ]
+    branches:
+      - "!gh-pages"
   pull_request:
     branches: [ main ]
 jobs:
