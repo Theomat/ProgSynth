@@ -1,5 +1,0 @@
-About
-===
-
-```{include} ../../README.md
----
