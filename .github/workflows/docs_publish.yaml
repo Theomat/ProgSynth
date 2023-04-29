@@ -26,13 +26,19 @@ jobs:
       #----------------------------------------------
       - name: Build documentation
         run: sphinx-build -b html docs/source docs/build/html
+
+      #----------------------------------------------
+      # Move documentation
+      #----------------------------------------------
+      - name: Move documentation
+        run: mkdir website && mv docs/build/html website
       #----------------------------------------------
       # format, type check, and test your code
       #----------------------------------------------
-      - name: Publish generated content to GitHub Pages
+      - name: Checkout other branch
         uses: EndBug/add-and-commit@v9
         with:
-          add: -f docs/build/html
+          add: -f website
           author_name: Theomat
           author_email: theomatricon@gmail.com
           message: GitHub Actions publish documentation
