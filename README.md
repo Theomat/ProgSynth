@@ -56,7 +56,7 @@ For example, you can split probabilistic grammars into disjoint sub grammars to 
 
 ### From Source
 
-If you are installing from source, you will need Python 3.7.1 or later.
+If you are installing from source, you will need Python 3.8 or later.
 
 #### Install ProgSynth
 
