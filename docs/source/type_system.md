@@ -48,11 +48,12 @@ An easier way to construct these arrows is to use ``FunctionType(int, int, int)`
 
 ### Generic
 
-Generic are parametric types. For example, the previous type ``Arrow``is a generic, the ``List``type is also one. You can make a list type out of any type using ``List(t)``.
+Generic are parametric types. For example, the previous type ``Arrow``is *almost* a generic, the ``List``type is one. You can make a list type out of any type using ``List(t)``.
 To instanciate a Generic builder you can use the ``GenericFunctor``:
 
 ```python
 List = GenericFunctor("list", min_args=1, max_args=1)
+# Arrow behaves almost like a Generic defined the following way:
 Arrow = GenericFunctor(
     "->",
     min_args=2,
@@ -102,7 +103,7 @@ t = auto_type("int optional")
 ```
 
 - ``t1.is_instance(t2)`` computes wether type ``t1`` is an instance of ``t2``, notice that ``t2`` can be a python type, some type in our system or a ``TypeFunctor`` such as a ``GenericFunctor`` like ``List`` or ``Arrow``.
-Note that there might be questions regarding covariant and contravariant types, but since our types are completely removed from the notion of subtype, those two notions are not relevant to our type system;
+Note that there is notion of covariant or contravariant types in our type system;
 - ``t.arguments()`` returns the list of arguments consumed by this type if this is an arrow, if this not an arrow then an empty list is returned;
 - ``t.returns()`` returns the type returned by this arrow, if this is not an arrow return the type ``t`` itself.
 - ``t.all_versions()`` returns the list of all types that this type can take, this is only relevant for sum types, basically each sum type will take all its possible values;
