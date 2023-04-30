@@ -1,4 +1,4 @@
-from abc import ABC, abstractstaticmethod
+from abc import ABC, abstractmethod
 from typing import Generator, List as TList, Any, Optional, Set, Tuple
 
 from synth.syntax.type_system import (
@@ -51,7 +51,8 @@ class Program(ABC):
     def depth_first_iter(self) -> Generator["Program", None, None]:
         yield self
 
-    @abstractstaticmethod
+    @staticmethod
+    @abstractmethod
     def __pickle__(o: "Program") -> Tuple:
         pass
 
