@@ -28,21 +28,26 @@ jobs:
         run: sphinx-build -b html docs/source docs/build/html
 
       #----------------------------------------------
+      # Clone documentation
+      #----------------------------------------------
+      - name: Clone current documentation
+        run: git clone --single-branch --branch gh-pages https://github.com/nathanael-fijalkow/ProgSynth.git tmp
+      #----------------------------------------------
       # Move documentation
       #----------------------------------------------
       - name: Move documentation
-        run: mv docs/build/html/* docs
+        run: mv docs/build/html/* tmp/docs
       #----------------------------------------------
-      # format, type check, and test your code
+      # Commit & Push changes
       #----------------------------------------------
       - name: Checkout other branch
         uses: EndBug/add-and-commit@v9
         continue-on-error: true
         with:
+          cwd: tmp
           add: -f docs
           author_name: Theomat
           author_email: theomatricon@gmail.com
           message: GitHub Actions publish documentation
-          new_branch: gh-pages
           github_token: ${{ secrets.ACCESS_TOKEN }}
           # pull: --rebase --autostash
