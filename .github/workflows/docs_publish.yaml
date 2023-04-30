@@ -37,8 +37,10 @@ jobs:
       #----------------------------------------------
       - name: Checkout other branch
         uses: EndBug/add-and-commit@v9
+        continue-on-error: true
         with:
           add: -f docs
+          pull: --rebase --autostash
           author_name: Theomat
           author_email: theomatricon@gmail.com
           message: GitHub Actions publish documentation
