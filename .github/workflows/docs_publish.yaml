@@ -25,29 +25,26 @@ jobs:
       # Build documentation
       #----------------------------------------------
       - name: Build documentation
-        run: sphinx-build -b html docs/source docs/build/html
+        run: sphinx-build -b html docs/source tmp
 
       #----------------------------------------------
       # Clone documentation
       #----------------------------------------------
-      - name: Clone current documentation
-        run: git clone --single-branch --branch gh-pages https://github.com/nathanael-fijalkow/ProgSynth.git tmp
+      - uses: actions/checkout@v3
+        with:
+          ref: gh-pages
       #----------------------------------------------
       # Move documentation
       #----------------------------------------------
       - name: Move documentation
-        run: rm -r tmp/docs/* && mv -f docs/build/html/* tmp/docs
+        run: rm -r docs/* && mv -f tmp/* docs
       #----------------------------------------------
       # Commit & Push changes
       #----------------------------------------------
-      - name: Checkout other branch
-        uses: EndBug/add-and-commit@v9
-        continue-on-error: true
-        with:
-          cwd: tmp
-          add: -f docs
-          author_name: Theomat
-          author_email: theomatricon@gmail.com
-          message: GitHub Actions publish documentation
-          github_token: ${{ secrets.ACCESS_TOKEN }}
-          # pull: --rebase --autostash
+      - name: Commit and Push
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add -f docs/
+          git commit -m "Updated documentation"
+          git push
