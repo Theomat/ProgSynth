@@ -40,9 +40,9 @@ jobs:
         continue-on-error: true
         with:
           add: -f docs
-          pull: --rebase --autostash
           author_name: Theomat
           author_email: theomatricon@gmail.com
           message: GitHub Actions publish documentation
           new_branch: gh-pages
           github_token: ${{ secrets.ACCESS_TOKEN }}
+          # pull: --rebase --autostash
