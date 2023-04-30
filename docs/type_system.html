@@ -141,9 +141,10 @@ An easier way to construct these arrows is to use <code class="docutils literal 
 </section>
 <section id="generic">
 <h3>Generic<a class="headerlink" href="#generic" title="Permalink to this heading"></a></h3>
-<p>Generic are parametric types. For example, the previous type <code class="docutils literal notranslate"><span class="pre">Arrow</span></code>is a generic, the <code class="docutils literal notranslate"><span class="pre">List</span></code>type is also one. You can make a list type out of any type using <code class="docutils literal notranslate"><span class="pre">List(t)</span></code>.
+<p>Generic are parametric types. For example, the previous type <code class="docutils literal notranslate"><span class="pre">Arrow</span></code>is <em>almost</em> a generic, the <code class="docutils literal notranslate"><span class="pre">List</span></code>type is one. You can make a list type out of any type using <code class="docutils literal notranslate"><span class="pre">List(t)</span></code>.
 To instanciate a Generic builder you can use the <code class="docutils literal notranslate"><span class="pre">GenericFunctor</span></code>:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">List</span> <span class="o">=</span> <span class="n">GenericFunctor</span><span class="p">(</span><span class="s2">&quot;list&quot;</span><span class="p">,</span> <span class="n">min_args</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_args</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="c1"># Arrow behaves almost like a Generic defined the following way:</span>
 <span class="n">Arrow</span> <span class="o">=</span> <span class="n">GenericFunctor</span><span class="p">(</span>
     <span class="s2">&quot;-&gt;&quot;</span><span class="p">,</span>
     <span class="n">min_args</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
@@ -192,7 +193,7 @@ At compilation, a polymorphic type will take as possible values any ground type 
 </div>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">t1.is_instance(t2)</span></code> computes wether type <code class="docutils literal notranslate"><span class="pre">t1</span></code> is an instance of <code class="docutils literal notranslate"><span class="pre">t2</span></code>, notice that <code class="docutils literal notranslate"><span class="pre">t2</span></code> can be a python type, some type in our system or a <code class="docutils literal notranslate"><span class="pre">TypeFunctor</span></code> such as a <code class="docutils literal notranslate"><span class="pre">GenericFunctor</span></code> like <code class="docutils literal notranslate"><span class="pre">List</span></code> or <code class="docutils literal notranslate"><span class="pre">Arrow</span></code>.
-Note that there might be questions regarding covariant and contravariant types, but since our types are completely removed from the notion of subtype, those two notions are not relevant to our type system;</p></li>
+Note that there is notion of covariant or contravariant types in our type system;</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">t.arguments()</span></code> returns the list of arguments consumed by this type if this is an arrow, if this not an arrow then an empty list is returned;</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">t.returns()</span></code> returns the type returned by this arrow, if this is not an arrow return the type <code class="docutils literal notranslate"><span class="pre">t</span></code> itself.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">t.all_versions()</span></code> returns the list of all types that this type can take, this is only relevant for sum types, basically each sum type will take all its possible values;</p></li>

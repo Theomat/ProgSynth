@@ -3,6 +3,7 @@
 This tutorial will show you how to:
 
 - [create a new DSL from scratch](#create-a-dsl-from-scratch);
+- [add a semantic to the DSL](#add-a-semantic-to-the-dsl);
 
 afterward everything is PBE specific:
 
@@ -19,17 +20,14 @@ This example is the *calculator* DSL, whose source code can be found in the fold
 
 ## Create a DSL from scratch
 
-A DSL has two main objects: the syntax and the semantic.
+A DSL is a syntactic object thus it only defines the syntax of our primitives.
 The relevant file is ``calculator/calculator.py``.
 
-A primitive is a function or a constant that you might need to use in the solution program, it is typed and has a semantic.
+A primitive is a function or a constant that you might need to use in the solution program, it is typed and usually has a semantic, but the semantic is not defined in the DSL.
 
 The syntax is a mapping from primitives to their type.
-The semantic is a mapping from primitives to their semantic.
 
 For detailed information about types [see the page on the type system](type_system.md).
-
-### The Syntax
 
 The syntax object is a dictionnary where keys are unique strings identifying your primitives and values are ProgSynth types. It might be a bit long to explain all the different type features supported by ProgSynth, however ProgSynth provides the ``auto_type`` function which dramatically speed up the syntax writing process.
 Here is an example:
@@ -38,13 +36,13 @@ Here is an example:
 from synth.syntax import auto_type, DSL
 
 syntax = auto_type({
-  "+": "'a [int | float] -> 'a [int | float] -> 'a [int | float]",
-  "-": "'a [int | float] -> 'a [int | float] -> 'a [int | float]",
-  "int2float": "int -> float",
   "1": "int",
   "2": "int",
   "3": "int",
   "3.0": "float"
+  "int2float": "int -> float",
+  "+": "'a [int | float] -> 'a [int | float] -> 'a [int | float]",
+  "-": "'a [int | float] -> 'a [int | float] -> 'a [int | float]",
 })
 
 dsl = DSL(syntax)
@@ -52,14 +50,18 @@ dsl = DSL(syntax)
 
 The notation might seem complex to you but we will briefly explain what happens.
 When you put a string such as ``"int"`` or ``"float`` then this is transformed into a ground type, the ``"->"`` translates into a function.
-The ``"'"`` prefix tells us ``"'a"`` is a polymorphic type; however the ``[int | float]`` right after that this polymorphic type can only take the following values: ``int`` or ``float``.
+The ``"'"`` prefix tells us ``"'a"`` is a polymorphic type; however the ``[int | float]`` right after that indicates this polymorphic type can only take the following values: ``int`` or ``float``.
 So that means we will have a ``+`` only for ``int`` and a ``+`` only for ``float``, but both will share the same semantic, since they both are named ``"+"``.
 For detailed information about types and on how this works [see the page on the type system](type_system.md).
 
-Notice that we can directly instanciate a DSL object with only the syntax since the DSL is purely a syntactic object, however we cannot execute our programs this is why we need a semantic.
+You can now use your DSL to generate grammars!
 
-### The Semantic
+You might want to add *syntactic constraints* on the generated grammars, this is covered in [sharpening](sharpening.md).
 
+## Add a semantic to the DSL
+
+The relevant file is ``calculator/calculator.py``.
+It's great that we can produce grammars and everything with our DSL but we cannot execute our program! It is time to gave them a semantic!
 The semantic object is a dictionnary where keys are unique strings identifying your primitives and values are unary functions or constants.
 
 Here is the semantic for the primitives we defined earlier:
@@ -85,11 +87,26 @@ Then for functions, notice that while ``+`` is a binary function, here we have a
 ProgSynth needs functions in unary form in order to be able to do partial applications.
 Python's system to automatically transform a n-ary function to a unary function as of now induces a relatively high execution cost, which makes it prohibitive for ProgSynth.
 
-### Syntactic Constraints
+You can now use your evaluator to eval your program, the syntax is ``evaluator.eval(program, inputs_as_a_list)``.
 
-You might want to add syntactic constraints on the generated grammar, this is covered in [sharpening](sharpening.md).
+As a side note, it might happen that in your evaluation, exceptions occur and you do not want to interrupt the python process, in that case you can use ``evaluator.skip_exceptions.add(My_Exception)``. When such an exception occurs, it is caught and instead a ``None`` is returned.
 
-### Lexicon (PBE Specific)
+The evaluator cached the evaluation of programs, so the value is computed only once on the same input. However, in some cases, you might need to clear the cache since it can take a lot of space which can be done using: ``evaluator.clear_cache()``.
+
+---
+**Everything after is PBE specific.**
+
+---
+
+## Making your DSL usable by scripts
+
+Most if not all scripts in the ``pbe`` folder should work with little to no changes for most DSLs.
+These scripts use the ``dsl_loader.py`` file that manages DSLs and provides a streamline approach for all scripts to load and use them.
+You should add your DSL to that script to be able to use all these scripts for free.
+
+But since this is PBE specific we need to define a lexicon in ``calculator/calculator.py``.
+
+### Lexicon
 
 In the PBE specification, a lexicon is needed in order to:
 
@@ -100,11 +117,7 @@ A lexicon is a list of all base values that can be encountered in the DSL.
  Here, we limit our DSL to float numbers rounded to one decimal, in the range [-256.0, 257[.
 For example, if our DSL were to manipulate lists of int or float, we would not have to add anything to the lexicon since lists are not a base type (`PrimitiveType`).
 
-## Making your DSL usable by scripts
-
-Most if not all scripts in the ``pbe`` folder should work with little to no changes for most DSLs.
-These scripts use the ``dsl_loader.py`` file that manages DSLs and provides a streamline approach for all scripts to load and use them.
-You should add your DSL to that script to be able to use all these scripts for free.
+### Finally adding your DSL
 
 Your only point of interest in this file is the ``__dsl_funcs`` dictionnary that should be surrounded by comments.
 Here is the line that we added to the dictionnary for our calculator DSL:

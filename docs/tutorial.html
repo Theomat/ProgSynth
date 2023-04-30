@@ -49,14 +49,13 @@
 <li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="usage.html">Usage of ProgSynth</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Tutorial</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#create-a-dsl-from-scratch">Create a DSL from scratch</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#the-syntax">The Syntax</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#the-semantic">The Semantic</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#syntactic-constraints">Syntactic Constraints</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#lexicon-pbe-specific">Lexicon (PBE Specific)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#create-a-dsl-from-scratch">Create a DSL from scratch</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#add-a-semantic-to-the-dsl">Add a semantic to the DSL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#making-your-dsl-usable-by-scripts">Making your DSL usable by scripts</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#lexicon">Lexicon</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#finally-adding-your-dsl">Finally adding your DSL</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#making-your-dsl-usable-by-scripts">Making your DSL usable by scripts</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#creating-a-dataset">Creating a dataset</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#explore-a-dataset">Explore a dataset</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#creating-a-task-generator">Creating a Task Generator</a></li>
@@ -103,6 +102,7 @@
 <p>This tutorial will show you how to:</p>
 <ul class="simple">
 <li><p><a class="reference internal" href="#create-a-dsl-from-scratch"><span class="xref myst">create a new DSL from scratch</span></a>;</p></li>
+<li><p><a class="reference internal" href="#add-a-semantic-to-the-dsl"><span class="xref myst">add a semantic to the DSL</span></a>;</p></li>
 </ul>
 <p>afterward everything is PBE specific:</p>
 <ul class="simple">
@@ -118,26 +118,23 @@
 <p>This example is the <em>calculator</em> DSL, whose source code can be found in the folder <code class="docutils literal notranslate"><span class="pre">./examples/pbe/calculator</span></code>.</p>
 <section id="create-a-dsl-from-scratch">
 <h2>Create a DSL from scratch<a class="headerlink" href="#create-a-dsl-from-scratch" title="Permalink to this heading"></a></h2>
-<p>A DSL has two main objects: the syntax and the semantic.
+<p>A DSL is a syntactic object thus it only defines the syntax of our primitives.
 The relevant file is <code class="docutils literal notranslate"><span class="pre">calculator/calculator.py</span></code>.</p>
-<p>A primitive is a function or a constant that you might need to use in the solution program, it is typed and has a semantic.</p>
-<p>The syntax is a mapping from primitives to their type.
-The semantic is a mapping from primitives to their semantic.</p>
+<p>A primitive is a function or a constant that you might need to use in the solution program, it is typed and usually has a semantic, but the semantic is not defined in the DSL.</p>
+<p>The syntax is a mapping from primitives to their type.</p>
 <p>For detailed information about types <a class="reference internal" href="type_system.html"><span class="std std-doc">see the page on the type system</span></a>.</p>
-<section id="the-syntax">
-<h3>The Syntax<a class="headerlink" href="#the-syntax" title="Permalink to this heading"></a></h3>
 <p>The syntax object is a dictionnary where keys are unique strings identifying your primitives and values are ProgSynth types. It might be a bit long to explain all the different type features supported by ProgSynth, however ProgSynth provides the <code class="docutils literal notranslate"><span class="pre">auto_type</span></code> function which dramatically speed up the syntax writing process.
 Here is an example:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">synth.syntax</span> <span class="kn">import</span> <span class="n">auto_type</span><span class="p">,</span> <span class="n">DSL</span>
 
 <span class="n">syntax</span> <span class="o">=</span> <span class="n">auto_type</span><span class="p">({</span>
-  <span class="s2">&quot;+&quot;</span><span class="p">:</span> <span class="s2">&quot;&#39;a [int | float] -&gt; &#39;a [int | float] -&gt; &#39;a [int | float]&quot;</span><span class="p">,</span>
-  <span class="s2">&quot;-&quot;</span><span class="p">:</span> <span class="s2">&quot;&#39;a [int | float] -&gt; &#39;a [int | float] -&gt; &#39;a [int | float]&quot;</span><span class="p">,</span>
-  <span class="s2">&quot;int2float&quot;</span><span class="p">:</span> <span class="s2">&quot;int -&gt; float&quot;</span><span class="p">,</span>
   <span class="s2">&quot;1&quot;</span><span class="p">:</span> <span class="s2">&quot;int&quot;</span><span class="p">,</span>
   <span class="s2">&quot;2&quot;</span><span class="p">:</span> <span class="s2">&quot;int&quot;</span><span class="p">,</span>
   <span class="s2">&quot;3&quot;</span><span class="p">:</span> <span class="s2">&quot;int&quot;</span><span class="p">,</span>
   <span class="s2">&quot;3.0&quot;</span><span class="p">:</span> <span class="s2">&quot;float&quot;</span>
+  <span class="s2">&quot;int2float&quot;</span><span class="p">:</span> <span class="s2">&quot;int -&gt; float&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;+&quot;</span><span class="p">:</span> <span class="s2">&quot;&#39;a [int | float] -&gt; &#39;a [int | float] -&gt; &#39;a [int | float]&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;-&quot;</span><span class="p">:</span> <span class="s2">&quot;&#39;a [int | float] -&gt; &#39;a [int | float] -&gt; &#39;a [int | float]&quot;</span><span class="p">,</span>
 <span class="p">})</span>
 
 <span class="n">dsl</span> <span class="o">=</span> <span class="n">DSL</span><span class="p">(</span><span class="n">syntax</span><span class="p">)</span>
@@ -145,14 +142,17 @@ Here is an example:</p>
 </div>
 <p>The notation might seem complex to you but we will briefly explain what happens.
 When you put a string such as <code class="docutils literal notranslate"><span class="pre">&quot;int&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;float</span></code> then this is transformed into a ground type, the <code class="docutils literal notranslate"><span class="pre">&quot;-&gt;&quot;</span></code> translates into a function.
-The <code class="docutils literal notranslate"><span class="pre">&quot;'&quot;</span></code> prefix tells us <code class="docutils literal notranslate"><span class="pre">&quot;'a&quot;</span></code> is a polymorphic type; however the <code class="docutils literal notranslate"><span class="pre">[int</span> <span class="pre">|</span> <span class="pre">float]</span></code> right after that this polymorphic type can only take the following values: <code class="docutils literal notranslate"><span class="pre">int</span></code> or <code class="docutils literal notranslate"><span class="pre">float</span></code>.
+The <code class="docutils literal notranslate"><span class="pre">&quot;'&quot;</span></code> prefix tells us <code class="docutils literal notranslate"><span class="pre">&quot;'a&quot;</span></code> is a polymorphic type; however the <code class="docutils literal notranslate"><span class="pre">[int</span> <span class="pre">|</span> <span class="pre">float]</span></code> right after that indicates this polymorphic type can only take the following values: <code class="docutils literal notranslate"><span class="pre">int</span></code> or <code class="docutils literal notranslate"><span class="pre">float</span></code>.
 So that means we will have a <code class="docutils literal notranslate"><span class="pre">+</span></code> only for <code class="docutils literal notranslate"><span class="pre">int</span></code> and a <code class="docutils literal notranslate"><span class="pre">+</span></code> only for <code class="docutils literal notranslate"><span class="pre">float</span></code>, but both will share the same semantic, since they both are named <code class="docutils literal notranslate"><span class="pre">&quot;+&quot;</span></code>.
 For detailed information about types and on how this works <a class="reference internal" href="type_system.html"><span class="std std-doc">see the page on the type system</span></a>.</p>
-<p>Notice that we can directly instanciate a DSL object with only the syntax since the DSL is purely a syntactic object, however we cannot execute our programs this is why we need a semantic.</p>
+<p>You can now use your DSL to generate grammars!</p>
+<p>You might want to add <em>syntactic constraints</em> on the generated grammars, this is covered in <a class="reference internal" href="sharpening.html"><span class="std std-doc">sharpening</span></a>.</p>
 </section>
-<section id="the-semantic">
-<h3>The Semantic<a class="headerlink" href="#the-semantic" title="Permalink to this heading"></a></h3>
-<p>The semantic object is a dictionnary where keys are unique strings identifying your primitives and values are unary functions or constants.</p>
+<section id="add-a-semantic-to-the-dsl">
+<h2>Add a semantic to the DSL<a class="headerlink" href="#add-a-semantic-to-the-dsl" title="Permalink to this heading"></a></h2>
+<p>The relevant file is <code class="docutils literal notranslate"><span class="pre">calculator/calculator.py</span></code>.
+It’s great that we can produce grammars and everything with our DSL but we cannot execute our program! It is time to gave them a semantic!
+The semantic object is a dictionnary where keys are unique strings identifying your primitives and values are unary functions or constants.</p>
 <p>Here is the semantic for the primitives we defined earlier:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">synth.semantic</span> <span class="kn">import</span> <span class="n">DSLEvaluator</span>
 
@@ -173,13 +173,21 @@ For detailed information about types and on how this works <a class="reference i
 Then for functions, notice that while <code class="docutils literal notranslate"><span class="pre">+</span></code> is a binary function, here we have a unary function that returns another unary function.
 ProgSynth needs functions in unary form in order to be able to do partial applications.
 Python’s system to automatically transform a n-ary function to a unary function as of now induces a relatively high execution cost, which makes it prohibitive for ProgSynth.</p>
+<p>You can now use your evaluator to eval your program, the syntax is <code class="docutils literal notranslate"><span class="pre">evaluator.eval(program,</span> <span class="pre">inputs_as_a_list)</span></code>.</p>
+<p>As a side note, it might happen that in your evaluation, exceptions occur and you do not want to interrupt the python process, in that case you can use <code class="docutils literal notranslate"><span class="pre">evaluator.skip_exceptions.add(My_Exception)</span></code>. When such an exception occurs, it is caught and instead a <code class="docutils literal notranslate"><span class="pre">None</span></code> is returned.</p>
+<p>The evaluator cached the evaluation of programs, so the value is computed only once on the same input. However, in some cases, you might need to clear the cache since it can take a lot of space which can be done using: <code class="docutils literal notranslate"><span class="pre">evaluator.clear_cache()</span></code>.</p>
+<hr class="docutils" />
+<p><strong>Everything after is PBE specific.</strong></p>
 </section>
-<section id="syntactic-constraints">
-<h3>Syntactic Constraints<a class="headerlink" href="#syntactic-constraints" title="Permalink to this heading"></a></h3>
-<p>You might want to add syntactic constraints on the generated grammar, this is covered in <a class="reference internal" href="sharpening.html"><span class="std std-doc">sharpening</span></a>.</p>
-</section>
-<section id="lexicon-pbe-specific">
-<h3>Lexicon (PBE Specific)<a class="headerlink" href="#lexicon-pbe-specific" title="Permalink to this heading"></a></h3>
+<hr class="docutils" />
+<section id="making-your-dsl-usable-by-scripts">
+<h2>Making your DSL usable by scripts<a class="headerlink" href="#making-your-dsl-usable-by-scripts" title="Permalink to this heading"></a></h2>
+<p>Most if not all scripts in the <code class="docutils literal notranslate"><span class="pre">pbe</span></code> folder should work with little to no changes for most DSLs.
+These scripts use the <code class="docutils literal notranslate"><span class="pre">dsl_loader.py</span></code> file that manages DSLs and provides a streamline approach for all scripts to load and use them.
+You should add your DSL to that script to be able to use all these scripts for free.</p>
+<p>But since this is PBE specific we need to define a lexicon in <code class="docutils literal notranslate"><span class="pre">calculator/calculator.py</span></code>.</p>
+<section id="lexicon">
+<h3>Lexicon<a class="headerlink" href="#lexicon" title="Permalink to this heading"></a></h3>
 <p>In the PBE specification, a lexicon is needed in order to:</p>
 <ul class="simple">
 <li><p>create synthetic tasks and thus synthetic datasets;</p></li>
@@ -189,12 +197,8 @@ Python’s system to automatically transform a n-ary function to a unary functio
 Here, we limit our DSL to float numbers rounded to one decimal, in the range [-256.0, 257[.
 For example, if our DSL were to manipulate lists of int or float, we would not have to add anything to the lexicon since lists are not a base type (<code class="docutils literal notranslate"><span class="pre">PrimitiveType</span></code>).</p>
 </section>
-</section>
-<section id="making-your-dsl-usable-by-scripts">
-<h2>Making your DSL usable by scripts<a class="headerlink" href="#making-your-dsl-usable-by-scripts" title="Permalink to this heading"></a></h2>
-<p>Most if not all scripts in the <code class="docutils literal notranslate"><span class="pre">pbe</span></code> folder should work with little to no changes for most DSLs.
-These scripts use the <code class="docutils literal notranslate"><span class="pre">dsl_loader.py</span></code> file that manages DSLs and provides a streamline approach for all scripts to load and use them.
-You should add your DSL to that script to be able to use all these scripts for free.</p>
+<section id="finally-adding-your-dsl">
+<h3>Finally adding your DSL<a class="headerlink" href="#finally-adding-your-dsl" title="Permalink to this heading"></a></h3>
 <p>Your only point of interest in this file is the <code class="docutils literal notranslate"><span class="pre">__dsl_funcs</span></code> dictionnary that should be surrounded by comments.
 Here is the line that we added to the dictionnary for our calculator DSL:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;calculator&quot;</span><span class="p">:</span> <span class="n">__base_loader</span><span class="p">(</span>
@@ -212,6 +216,7 @@ Here is the line that we added to the dictionnary for our calculator DSL:</p>
 These variables will be made available under the following fields respectively <code class="docutils literal notranslate"><span class="pre">dsl,</span> <span class="pre">evaluator,</span> <span class="pre">lexicon,</span> <span class="pre">reproduce_dataset</span></code>.
 Notice that the tuple notation allows renaming.
 The first three are necessary while the last one is optional, in the sense that you might not need to redefine a <code class="docutils literal notranslate"><span class="pre">reproduce_dataset</span></code> function.</p>
+</section>
 </section>
 <section id="creating-a-dataset">
 <h2>Creating a dataset<a class="headerlink" href="#creating-a-dataset" title="Permalink to this heading"></a></h2>
