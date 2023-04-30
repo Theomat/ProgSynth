@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Grammars &mdash; ProgSynth 0.1 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="author" title="About these documents" href="about.html" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            ProgSynth
+          </a>
+              <div class="version">
+                0.1.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="about.html">About</a></li>
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage.html">Usage of ProgSynth</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="type_system.html">The Type System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Specifications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples_pbe.html">PBE</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sharpening.html">Sharpening</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing to ProgSynth</a></li>
+<li class="toctree-l1"><a class="reference internal" href="license.html">License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">ProgSynth</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Grammars</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/grammars.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="grammars">
+<h1>Grammars<a class="headerlink" href="#grammars" title="Permalink to this heading"></a></h1>
+<p>Grammars are programs generator, all our grammars are finite.
+Typically when you instantiate a grammar you always specify a maximum depth.</p>
+<p>The main object of interest are probabilistic grammars on which most methods to enumerate and sample programs are provided.</p>
+<!-- toc -->
+<p>Table of contents:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#grammar-models"><span class="xref myst">Grammar Models</span></a></p>
+<ul>
+<li><p><a class="reference internal" href="#det-cfg"><span class="xref myst">det-CFG</span></a></p></li>
+<li><p><a class="reference internal" href="#u-cfg"><span class="xref myst">U-CFG</span></a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#probabilistic-grammars"><span class="xref myst">Probabilistic Grammars</span></a></p></li>
+</ul>
+<!-- tocstop -->
+<section id="grammars-models">
+<h2>Grammars Models<a class="headerlink" href="#grammars-models" title="Permalink to this heading"></a></h2>
+<p>Currently the only grammar model supported are <a class="reference external" href="https://en.wikipedia.org/wiki/Context-free_grammar">Context-free grammars</a> (CFG).
+All our rules have the following form:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">S</span> <span class="o">-&gt;</span> <span class="n">f</span> <span class="n">S1</span> <span class="n">S2</span> <span class="o">...</span> <span class="n">Sk</span>
+<span class="n">S</span> <span class="o">-&gt;</span> <span class="n">g</span>
+</pre></div>
+</div>
+<p>where <code class="docutils literal notranslate"><span class="pre">S</span></code>, <code class="docutils literal notranslate"><span class="pre">S1</span></code>, …, <code class="docutils literal notranslate"><span class="pre">Sk</span></code> are non terminal and <code class="docutils literal notranslate"><span class="pre">f</span></code> is a primitive of arity <code class="docutils literal notranslate"><span class="pre">k</span></code> and <code class="docutils literal notranslate"><span class="pre">g</span></code> is a primitive of arity 0, in other words a constant.</p>
+<p>We have two different models: deterministic CFG and unambiguous CFG; while the latter is more expressive it is around 20% slower but used correctly the gains are huge.</p>
+<p>The ways to generate a grammar are mainly through static methods such as <code class="docutils literal notranslate"><span class="pre">MyGrammarModel.depth_constraint(dsl,</span> <span class="pre">type_request)</span></code>.
+Grammars albeit already complex objects are not the final object of interests in ProgSynth.
+The most relevant methods are:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">program</span> <span class="pre">in</span> <span class="pre">grammar</span></code> which returns whether program belongs to the grammar or not;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">grammar.programs()</span></code> which yields the number of programs contained in the grammar, do not convert it to float as this easily yield values over MAX_DOUBLE, hence we return an int to take advantage of the lack of limit for int in python;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">grammar.derive(...)</span></code> which allows you to derive your program step by step;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">grammar.derive_all(...)</span></code> which derives the whole given subtree for you and hands you the result;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">grammar.reduce_derivatons(...)</span></code> which is like a fold over the derivation steps of the given program.</p></li>
+</ul>
+<section id="det-cfg">
+<h3>det-CFG<a class="headerlink" href="#det-cfg" title="Permalink to this heading"></a></h3>
+<p>A CFG which has the following property:</p>
+<blockquote>
+<div><p>For a given non-terminal <code class="docutils literal notranslate"><span class="pre">S</span></code>, for any primitive <code class="docutils literal notranslate"><span class="pre">f</span></code>, there is at most one derivation from <code class="docutils literal notranslate"><span class="pre">S</span></code> using primitive <code class="docutils literal notranslate"><span class="pre">f</span></code></p>
+</div></blockquote>
+<p>In other words, it is deterministic to derive <code class="docutils literal notranslate"><span class="pre">f</span></code> from non-terminal <code class="docutils literal notranslate"><span class="pre">S</span></code>.</p>
+<p>In ProgSynth this is the default model, that is <code class="docutils literal notranslate"><span class="pre">CFG</span></code>.
+If you do not use <a class="reference internal" href="sharpening.html"><span class="std std-doc">sharpening</span></a> for example, then ProgSynth uses this model when producing a grammar.</p>
+</section>
+<section id="u-cfg">
+<h3>U-CFG<a class="headerlink" href="#u-cfg" title="Permalink to this heading"></a></h3>
+<p>A CFG which has the following property:</p>
+<blockquote>
+<div><p>For a tree/program <code class="docutils literal notranslate"><span class="pre">t</span></code>, there exists at most one derivation for tree/program <code class="docutils literal notranslate"><span class="pre">t</span></code> in the grammar</p>
+</div></blockquote>
+<p>In other words, there is no ambiguity to derive a program from the grammar, but locally it may be ambiguous, that is you have to try all derivation rules for the primitive to find out later which is the one that allows deriving the program.</p>
+<p><code class="docutils literal notranslate"><span class="pre">UCFG</span></code> in ProgSynth can express all regular tree languages and is generated when you use <a class="reference internal" href="sharpening.html"><span class="std std-doc">sharpening</span></a>.</p>
+</section>
+</section>
+<section id="probabilistic-grammars">
+<h2>Probabilistic Grammars<a class="headerlink" href="#probabilistic-grammars" title="Permalink to this heading"></a></h2>
+<p>We offer tagged grammars, those are grammars where derivations are tagged with a generic type, replacing ‘probabilistic’ with ‘tagged’ in what is following will work as well.
+The most relevant one is when derivations are tagged with float giving you probabilistic grammars.</p>
+<blockquote>
+<div><p>For a given non-terminal <code class="docutils literal notranslate"><span class="pre">S</span></code>, the set of all derivations from <code class="docutils literal notranslate"><span class="pre">S</span></code> make up a probability distribution, <em>i.e.</em> sum up to 1.</p>
+</div></blockquote>
+<p>There are two models: <code class="docutils literal notranslate"><span class="pre">ProbGrammar</span></code> and <code class="docutils literal notranslate"><span class="pre">ProbUGrammar</span></code> respectively working for <code class="docutils literal notranslate"><span class="pre">CFG</span></code> and <code class="docutils literal notranslate"><span class="pre">UCFG</span></code>.
+Basically adding a U for class and a u_ for methods to the classic method will yield the equivalent methods for the unambiguous model.</p>
+<p>Probabilistic grammars offer a wide range of interesting methods to generate programs:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">pgrammar.sample()</span></code> sample a random program from the grammar, you will need to first call <code class="docutils literal notranslate"><span class="pre">pgrammar.init_sampling(seed)</span></code> for sampling to work, sampling is optimised compared to naive sampling;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">enumerate_prob_(u_)_grammar(pgrammar)</span></code> which gives you an enumerator that will enumerate programs in the grammar by decreasing order of probability;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">split(pgrammar,</span> <span class="pre">n)</span></code> which gives you <code class="docutils literal notranslate"><span class="pre">n</span></code> disjoint probabilistic unambiguous grammars that make up a partition of the original given <code class="docutils literal notranslate"><span class="pre">pgrammar</span></code>, the main intereset is to easily parallelise the enumeration.</p></li>
+</ul>
+<p>Of course, since probabilistic grammars are grammars they also offer the same methods as classic grammars.</p>
+<p><strong>But I want to enumerate programs by size?</strong></p>
+<p>Well, you can just use <code class="docutils literal notranslate"><span class="pre">Prob(U)Grammar.uniform(grammar)</span></code> and enumerate that probabilistic grammar will give you an enumeration by program size.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Nathanaël Fijalkow &amp; Théo Matricon.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
