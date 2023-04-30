@@ -82,7 +82,7 @@ class Task2Tensor(nn.Module, Generic[T]):
         self.embedder = embedder
         pad_symbol = 0
         if hasattr(self.encoder, "pad_symbol"):
-            pad_symbol = self.encoder.pad_symbol  # type: ignore
+            pad_symbol = self.encoder.pad_symbol
         self.packer = AutoPack(pad_symbol)
         self.embed_size = embed_size
 
