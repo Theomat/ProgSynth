@@ -2,8 +2,7 @@ name: Tests
 
 on:
   push:
-    branches:
-      - "!gh-pages"
+    branches-ignore: [ gh-pages ]
   pull_request:
     branches: [ main ]
 jobs:
@@ -11,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.9]
+        python-version: [3.10]
 
     steps:
       - uses: actions/checkout@v3
