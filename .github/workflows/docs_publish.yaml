@@ -36,7 +36,7 @@ jobs:
       # Move documentation
       #----------------------------------------------
       - name: Move documentation
-        run: mv -f docs/build/html/* tmp/docs
+        run: rm -r tmp/docs/* && mv -f docs/build/html/* tmp/docs
       #----------------------------------------------
       # Commit & Push changes
       #----------------------------------------------
