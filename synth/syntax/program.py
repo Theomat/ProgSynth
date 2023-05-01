@@ -2,7 +2,6 @@ from abc import ABC, abstractmethod
 from typing import Generator, List as TList, Any, Optional, Set, Tuple
 
 from synth.syntax.type_system import (
-    Arrow,
     PrimitiveType,
     Type,
     UnknownType,
@@ -26,6 +25,9 @@ class Program(ABC):
         return self.__str__()
 
     def used_variables(self) -> Set[int]:
+        """
+        Returns the set of used variables numbers in this program.
+        """
         s: Set[int] = set()
         self.__add_used_variables__(s)
         return s
@@ -34,21 +36,40 @@ class Program(ABC):
         pass
 
     def is_constant(self) -> bool:
+        """
+        Returns true if this program is an instance of a Constant.
+        """
         return False
 
     def is_invariant(self, constant_types: Set[PrimitiveType]) -> bool:
+        """ """
         return True
 
     def count_constants(self) -> int:
+        """
+        Returns the number of constants that are present in this program.
+        """
         return int(self.is_constant())
 
     def size(self) -> int:
+        """
+        Returns the program's size.
+        """
         return 1
 
     def depth(self) -> int:
+        """
+        Returns the program's depth seen as a tree.
+        """
         return 1
 
     def depth_first_iter(self) -> Generator["Program", None, None]:
+        """
+        Depth first iteration over all objects that this program is built on.
+
+        ``Function(P1, [P2, Function(P3, [P4])]).depth_first_iter()`` will yield
+        P1, P2, P3, P4, Function(P3, [P4]), Function(P1, [P2, Function(P3, [P4])])
+        """
         yield self
 
     @staticmethod
@@ -58,6 +79,15 @@ class Program(ABC):
 
 
 class Variable(Program):
+    """
+    Represents a variable (argument) in a program.
+
+    Parameters:
+    -----------
+    - variable: the argument index
+    - type: the variable's type
+    """
+
     __hash__ = Program.__hash__
 
     def is_invariant(self, constant_types: Set[PrimitiveType]) -> bool:
@@ -82,6 +112,16 @@ class Variable(Program):
 
 
 class Constant(Program):
+    """
+    Represents a constant that may or may be assigned a value.
+
+    Parameters:
+    -----------
+    - type: the constant's type
+    - value: the constant's value
+    - has_value: explicitly indicate that this constant has been assigned a value
+    """
+
     __hash__ = Program.__hash__
 
     def __init__(self, type: Type, value: Any = None, has_value: Optional[bool] = None):
@@ -91,6 +131,9 @@ class Constant(Program):
         self.hash = hash((str(self.value), self._has_value, self.type))
 
     def has_value(self) -> bool:
+        """
+        Returns true if and only if this constant has been assigned a value.
+        """
         return self._has_value
 
     def __str__(self) -> str:
@@ -102,10 +145,16 @@ class Constant(Program):
         return True
 
     def assign(self, value: Any) -> None:
+        """
+        Assign a value to this constant.
+        """
         self._has_value = True
         self.value = value
 
     def reset(self) -> None:
+        """
+        Reset this constant as if no value was assigned to it.
+        """
         self._has_value = False
         self.value = None
 
@@ -121,6 +170,15 @@ class Constant(Program):
 
 
 class Function(Program):
+    """
+    Represents a function call, it supports partial application and the type is guessed automatically.
+
+    Parameters:
+    -----------
+    - function: the called function
+    - arguments: the arguments to the function
+    """
+
     __hash__ = Program.__hash__
 
     def __init__(self, function: Program, arguments: TList[Program]):
@@ -220,6 +278,15 @@ class Lambda(Program):
 
 
 class Primitive(Program):
+    """
+    Represents a DSL primitive.
+
+    Parameters:
+    -----------
+    - primitive: the name of the primitive
+    - type: the type of the primitive
+    """
+
     __hash__ = Program.__hash__
 
     def __init__(self, primitive: str, type: Type = UnknownType()):
