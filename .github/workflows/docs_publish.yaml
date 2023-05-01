@@ -20,7 +20,9 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: 'pip' # caching pip dependencies
       - name: Install Dependencies
-        run: pip install sphinx sphinx-rtd-theme myst-parser
+        run: |
+          pip install --upgrade pip
+          pip install sphinx sphinx-rtd-theme myst-parser
       #----------------------------------------------
       # Build documentation
       #----------------------------------------------
@@ -45,6 +47,7 @@ jobs:
       # Commit & Push changes
       #----------------------------------------------
       - name: Commit and Push
+        continue_on_error: true
         run: |
           cd pages
           git config user.name github-actions
