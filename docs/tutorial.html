@@ -66,6 +66,7 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="type_system.html">The Type System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="grammars.html">Grammars</a></li>
 <li class="toctree-l1"><a class="reference internal" href="examples.html">Specifications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="examples_pbe.html">PBE</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sharpening.html">Sharpening</a></li>
@@ -145,7 +146,7 @@ When you put a string such as <code class="docutils literal notranslate"><span c
 The <code class="docutils literal notranslate"><span class="pre">&quot;'&quot;</span></code> prefix tells us <code class="docutils literal notranslate"><span class="pre">&quot;'a&quot;</span></code> is a polymorphic type; however the <code class="docutils literal notranslate"><span class="pre">[int</span> <span class="pre">|</span> <span class="pre">float]</span></code> right after that indicates this polymorphic type can only take the following values: <code class="docutils literal notranslate"><span class="pre">int</span></code> or <code class="docutils literal notranslate"><span class="pre">float</span></code>.
 So that means we will have a <code class="docutils literal notranslate"><span class="pre">+</span></code> only for <code class="docutils literal notranslate"><span class="pre">int</span></code> and a <code class="docutils literal notranslate"><span class="pre">+</span></code> only for <code class="docutils literal notranslate"><span class="pre">float</span></code>, but both will share the same semantic, since they both are named <code class="docutils literal notranslate"><span class="pre">&quot;+&quot;</span></code>.
 For detailed information about types and on how this works <a class="reference internal" href="type_system.html"><span class="std std-doc">see the page on the type system</span></a>.</p>
-<p>You can now use your DSL to generate grammars!</p>
+<p>You can now use your DSL to generate <a class="reference internal" href="grammars.html"><span class="std std-doc">grammars</span></a>!</p>
 <p>You might want to add <em>syntactic constraints</em> on the generated grammars, this is covered in <a class="reference internal" href="sharpening.html"><span class="std std-doc">sharpening</span></a>.</p>
 </section>
 <section id="add-a-semantic-to-the-dsl">

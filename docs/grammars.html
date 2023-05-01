@@ -17,7 +17,9 @@
     <script src="_static/js/theme.js"></script>
     <link rel="author" title="About these documents" href="about.html" />
     <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" /> 
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Examples" href="examples.html" />
+    <link rel="prev" title="The Type System" href="type_system.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -42,12 +44,21 @@
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <ul>
+              <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="about.html">About</a></li>
 <li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="usage.html">Usage of ProgSynth</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
 <li class="toctree-l1"><a class="reference internal" href="type_system.html">The Type System</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Grammars</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#grammar-models">Grammar Models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#det-cfg">det-CFG</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#u-cfg">U-CFG</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#probabilistic-grammars">Probabilistic Grammars</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="examples.html">Specifications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="examples_pbe.html">PBE</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sharpening.html">Sharpening</a></li>
@@ -96,8 +107,8 @@ Typically when you instantiate a grammar you always specify a maximum depth.</p>
 <li><p><a class="reference internal" href="#probabilistic-grammars"><span class="xref myst">Probabilistic Grammars</span></a></p></li>
 </ul>
 <!-- tocstop -->
-<section id="grammars-models">
-<h2>Grammars Models<a class="headerlink" href="#grammars-models" title="Permalink to this heading"></a></h2>
+<section id="grammar-models">
+<h2>Grammar Models<a class="headerlink" href="#grammar-models" title="Permalink to this heading"></a></h2>
 <p>Currently the only grammar model supported are <a class="reference external" href="https://en.wikipedia.org/wiki/Context-free_grammar">Context-free grammars</a> (CFG).
 All our rules have the following form:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">S</span> <span class="o">-&gt;</span> <span class="n">f</span> <span class="n">S1</span> <span class="n">S2</span> <span class="o">...</span> <span class="n">Sk</span>
@@ -160,7 +171,10 @@ Basically adding a U for class and a u_ for methods to the classic method will y
 
            </div>
           </div>
-          <footer>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="type_system.html" class="btn btn-neutral float-left" title="The Type System" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="examples.html" class="btn btn-neutral float-right" title="Examples" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
 
   <hr/>
 
