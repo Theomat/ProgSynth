@@ -12,6 +12,7 @@ Contents
     usage
     tutorial
     type_system
+    grammars
     Specifications <examples>
     PBE <examples_pbe>
     sharpening

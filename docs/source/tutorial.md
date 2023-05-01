@@ -54,7 +54,7 @@ The ``"'"`` prefix tells us ``"'a"`` is a polymorphic type; however the ``[int |
 So that means we will have a ``+`` only for ``int`` and a ``+`` only for ``float``, but both will share the same semantic, since they both are named ``"+"``.
 For detailed information about types and on how this works [see the page on the type system](type_system.md).
 
-You can now use your DSL to generate grammars!
+You can now use your DSL to generate [grammars](grammars.md)!
 
 You might want to add *syntactic constraints* on the generated grammars, this is covered in [sharpening](sharpening.md).
 
