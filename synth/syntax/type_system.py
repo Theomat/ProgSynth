@@ -33,12 +33,22 @@ class Type(ABC):
         return self.__str__()
 
     def returns(self) -> "Type":
+        """
+        The type returned by this arrow if this is an arrow or self otherwise.
+        """
         return self
 
     def arguments(self) -> TList["Type"]:
+        """
+        The arguments consumed by this arrow if this is an arrow or an empty list otherwise.
+        """
         return []
 
     def is_instance(self, other: Union["Type", TypeFunctor, type]) -> bool:
+        """
+        Returns true if and only if this type is an instance of other.
+        This should be used instead of the default ``isinstance``.
+        """
         if isinstance(other, Type):
             return other.__arg_is_a__(self)
         elif isinstance(other, type):
@@ -58,6 +68,9 @@ class Type(ABC):
         return Sum(self, other)
 
     def is_polymorphic(self) -> bool:
+        """
+        Returns true if and only if this type is polymorphic.
+        """
         return False
 
     def all_versions(self) -> TList["Type"]:
@@ -86,6 +99,8 @@ class Type(ABC):
 
     def unify(self, unifier: Dict[str, "Type"]) -> "Type":
         """
+        Instantiate this type with the specified named polymorphic types given in the dictionnary instantiated as the type values associated to their keys.
+
         pre: `self.is_polymorphic() and all(not t.is_polymorphic() for t in dictionnary.values())`
 
         post: `not out.is_polymorphic() and match(self, out)`
@@ -93,9 +108,15 @@ class Type(ABC):
         return self
 
     def depth(self) -> int:
+        """
+        Returns the type's depth seen as a tree.
+        """
         return 1
 
     def size(self) -> int:
+        """
+        Returns the type's size seen as a tree.
+        """
         return 1
 
     def ends_with(self, other: "Type") -> Optional[TList["Type"]]:
@@ -127,6 +148,15 @@ class Type(ABC):
 
 
 class PolymorphicType(Type):
+    """
+    Represents a polymorphic type, like python's ``TypeVar``.
+    It is uniquely identified by its name.
+
+    Parameters:
+    -----------
+    - name: the name of this type
+    """
+
     __hash__ = Type.__hash__
 
     def __init__(self, name: str):
@@ -167,6 +197,17 @@ class PolymorphicType(Type):
 
 
 class FixedPolymorphicType(PolymorphicType):
+    """
+    Represents a polymorphic type, like python's ``TypeVar``.
+    It is uniquely identified by its name.
+    Although it can only be instantiated as one of the given types.
+
+    Parameters:
+    -----------
+    - name: the name of this type
+    - *types: the types to which this type can be instantiated to
+    """
+
     __hash__ = Type.__hash__
 
     def __init__(self, name: str, *types: Type):
@@ -194,6 +235,15 @@ class FixedPolymorphicType(PolymorphicType):
 
 
 class PrimitiveType(Type):
+    """
+    Represents a ground type like ``int``.
+    It is uniquely identified by its name.
+
+    Parameters:
+    -----------
+    - name: the name of this type
+    """
+
     __hash__ = Type.__hash__
 
     def __init__(self, type_name: str):
@@ -219,7 +269,11 @@ class PrimitiveType(Type):
 
 class Sum(Type):
     """
-    Represents a sum type.
+    Represents a sum type, like python's ``Union``.
+
+    Parameters:
+    -----------
+    - *types: the types union
     """
 
     __hash__ = Type.__hash__
@@ -284,7 +338,12 @@ class Sum(Type):
 
 class Arrow(Type):
     """
-    Represents a function.
+    Represents a unary function.
+
+    Parameters:
+    -----------
+    - type_in: the argument's type
+    - type_out: the returned type
     """
 
     __hash__ = Type.__hash__
@@ -363,8 +422,14 @@ class Arrow(Type):
 
 class Generic(Type):
     """
-    Represents a parametric type.
+    Represents a parametric type such as python's ``list`` or ``dict``.
+    It is uniquely identified by its name.
 
+    Parameters:
+    -----------
+    - name: the name of this type
+    - *types: the types this generic instance depends on
+    - infix: if this is an infix type like * for tuples, only used for __str__
     """
 
     __hash__ = Type.__hash__
@@ -446,6 +511,13 @@ class Generic(Type):
 class GenericFunctor(TypeFunctor):
     """
     Produces an instanciator for the specific generic type.
+
+    Parameters:
+    -----------
+    - name: the name of the generic type
+    - min_args: the minimum number of arguments, -1 for no min
+    - max_args: the maximum number of arguments, -1 for no max
+    - infix: whether the generic instanciated should be infix or not
     """
 
     def __init__(
@@ -479,7 +551,8 @@ List = GenericFunctor("list", min_args=1, max_args=1)
 
 class UnknownType(Type):
     """
-    In case we need to define an unknown type
+    Represents an unknown type.
+    Typically if you stumble upon this type, it is likely that something failed.
     """
 
     __hash__ = Type.__hash__

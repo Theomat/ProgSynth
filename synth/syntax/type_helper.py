@@ -105,11 +105,25 @@ def __next_token__(text: str) -> Tuple[str, int, int]:
 
 @overload
 def auto_type(el: str) -> Type:
+    """
+    Automatically build the type from its string representation.
+
+    Parameters:
+    -----------
+    - el: the type's string representation
+    """
     pass
 
 
 @overload
 def auto_type(el: Dict[str, str]) -> Dict[str, Type]:
+    """
+    Automatically build the type from its string representation for all values of the dictionnary.
+
+    Parameters:
+    -----------
+    - el: a dictionnary containing as values types string representations
+    """
     pass
 
 
