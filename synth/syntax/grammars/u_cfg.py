@@ -47,6 +47,11 @@ def __d2state__(t: Union[Tuple[Type, U], Tuple[Tuple[Type, U], ...]]) -> Tuple[T
 
 
 class UCFG(UGrammar[U, List[Tuple[Type, U]], List[Tuple[Type, U]]], Generic[U]):
+    """
+    Represents an unambigous context-free grammar.
+
+    """
+
     def __init__(
         self,
         starts: Set[Tuple[Type, U]],
@@ -204,12 +209,14 @@ class UCFG(UGrammar[U, List[Tuple[Type, U]], List[Tuple[Type, U]]], Generic[U]):
         Constructs a UCFG from a DSL imposing bounds on size of the types
         and on the maximum program depth.
 
-        max_depth: int - is the maxium depth of programs allowed
-        uppder_bound_size_type: int - is the maximum size type allowed for polymorphic type instanciations
-        min_variable_depth: int - min depth at which variables and constants are allowed
-        n_gram: int - the context, a bigram depends only in the parent node
-        recursive: bool - allows the generated programs to call themselves
-        constant_types: Set[Type] - the set of of types allowed for constant objects
+        Parameters:
+        -----------
+        - max_depth: the maximum depth of programs allowed
+        - upper_bound_size_type: the maximum size type allowed for polymorphic type instanciations
+        - min_variable_depth: min depth at which variables and constants are allowed
+        - n_gram: the context, a bigram depends only in the parent node
+        - recursive: enables the generated programs to call themselves
+        - constant_types: the set of of types allowed for constant objects
         """
         cfg = CFG.depth_constraint(
             dsl,
@@ -264,6 +271,9 @@ class UCFG(UGrammar[U, List[Tuple[Type, U]], List[Tuple[Type, U]]], Generic[U]):
         ],
         clean: bool = True,
     ) -> "Union[UCFG[U], UCFG[Tuple[U, ...]]]":
+        """
+        Convert a DFTA into a UCFG representing the same language.
+        """
 
         starts = {__d2state__(q) for q in dfta.finals}
 
@@ -298,6 +308,10 @@ class UCFG(UGrammar[U, List[Tuple[Type, U]], List[Tuple[Type, U]]], Generic[U]):
         ngram: int,
         clean: bool = True,
     ) -> "Union[UCFG[Tuple[NGram, U]], UCFG[Tuple[NGram, Tuple[U, ...]]]]":
+        """
+        Convert a DFTA into a UCFG representing the same language and adds contextual information with ngrams.
+        """
+
         def local_d2state(
             t: Union[Tuple[Type, U], Tuple[Tuple[Type, U], ...]], v: Optional[NGram]
         ) -> Tuple[Type, Tuple[NGram, U]]:

@@ -22,6 +22,26 @@ T = TypeVar("T")
 
 
 class UGrammar(Grammar, ABC, Generic[U, V, W]):
+    """
+    Represents an unambiguous grammar.
+
+    (S) Non-terminals are Tuple[Type, U].
+    (f) are Derivable programs
+    derivations are:
+    S -> f  | S1  ... Sk
+            | S'1 ... S'k
+    where both cases are valid derivations.
+    S1 ... Sk, S'1 ... S'k are of type V.
+
+    When deriving an information of type W is maintained.
+
+    Parameters:
+    -----------
+    - starts: the starts non terminal of the grammar
+    - rules: the derivation rules
+
+    """
+
     def __init__(
         self,
         starts: Set[Tuple[Type, U]],
@@ -210,10 +230,16 @@ class UGrammar(Grammar, ABC, Generic[U, V, W]):
 
     @abstractmethod
     def arguments_length_for(self, S: Tuple[Type, U], P: DerivableProgram) -> int:
+        """
+        Returns the number of arguments when deriving P from S.
+        """
         pass
 
     @abstractmethod
     def start_information(self) -> W:
+        """
+        The starting information when deriving from a starting non-terminal.
+        """
         pass
 
     def reduce_derivations(

@@ -6,7 +6,7 @@ from synth.syntax.dsl import DSL
 from synth.syntax.grammars.det_grammar import DerivableProgram
 from synth.syntax.grammars.ttcfg import TTCFG, NGram
 from synth.syntax.program import Constant, Primitive, Variable
-from synth.syntax.type_system import Arrow, Type
+from synth.syntax.type_system import Type
 
 
 NoneType = Literal[None]
@@ -20,6 +20,9 @@ class CFG(TTCFG[CFGState, NoneType]):
     """
 
     def max_program_depth(self) -> int:
+        """
+        Returns the maximum depth of a program contained in this grammar.
+        """
         return max(S[1][0][1] for S in self.rules) + 1
 
     def __hash__(self) -> int:
@@ -118,12 +121,14 @@ class CFG(TTCFG[CFGState, NoneType]):
         Constructs a CFG from a DSL imposing bounds on size of the types
         and on the maximum program depth.
 
-        max_depth: int - is the maxium depth of programs allowed
-        uppder_bound_size_type: int - is the maximum size type allowed for polymorphic type instanciations
-        min_variable_depth: int - min depth at which variables and constants are allowed
-        n_gram: int - the context, a bigram depends only in the parent node
-        recursvie: bool - allows the generated programs to call themselves
-        constant_types: Set[Type] - the set of of types allowed for constant objects
+        Parameters:
+        -----------
+        - max_depth: the maximum depth of programs allowed
+        - upper_bound_size_type: the maximum size type allowed for polymorphic type instanciations
+        - min_variable_depth: min depth at which variables and constants are allowed
+        - n_gram: the context, a bigram depends only in the parent node
+        - recursive: enables the generated programs to call themselves
+        - constant_types: the set of of types allowed for constant objects
         """
         dsl.instantiate_polymorphic_types(upper_bound_type_size)
 
