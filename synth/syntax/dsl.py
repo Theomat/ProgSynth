@@ -1,5 +1,5 @@
 import copy
-from typing import Dict, Mapping, Optional, List as TList, Set, Tuple, Union
+from typing import Dict, Mapping, Optional, List as TList, Set, Tuple
 
 from synth.syntax.type_system import Type, Arrow, List
 from synth.syntax.program import Function, Primitive, Program, Variable
@@ -9,11 +9,10 @@ class DSL:
     """
     Object that represents a domain specific language
 
-    list_primitives: a list of primitives.
-
-    Primitives can be considered equivalent with @:
-        + and +@3 are considered to be both '+'
-    This enables us to add specific constraints on some + versions.
+    Parameters:
+    -----------
+    - syntax: maps primitive names to their types
+    - forbidden_patterns: forbidden local derivations
 
     """
 
@@ -35,7 +34,14 @@ class DSL:
         return s
 
     def instantiate_polymorphic_types(self, upper_bound_type_size: int = 10) -> None:
+        """
+        Must be called before compilation into a grammar or parsing.
+        Instantiate all polymorphic types.
 
+        Parameters:
+        -----------
+        - upper_bound_type_size: maximum type size of type instantiated for polymorphic types
+        """
         # Generate all basic types
         set_basic_types: Set[Type] = set()
         for P in self.list_primitives:
@@ -94,6 +100,15 @@ class DSL:
     def parse_program(self, program: str, type_request: Type) -> Program:
         """
         Parse a program from its string representation given the type request.
+
+        Parameters:
+        -----------
+        - program: the string representation of the program, i.e. str(prog)
+        - type_request: the type of the requested program in order to identify variable types
+
+        Returns:
+        -----------
+        A parsed program that matches the given string
         """
         if " " in program:
             parts = list(
@@ -148,6 +163,13 @@ class DSL:
             assert False, f"can't parse: {program}"
 
     def get_primitive(self, name: str) -> Optional[Primitive]:
+        """
+        Returns the Primitive object with the specified name if it exists and None otherwise
+
+        Parameters:
+        -----------
+        - name: the name of the primitive to get
+        """
         for P in self.list_primitives:
             if P.primitive == name:
                 return P
