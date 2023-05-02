@@ -10,12 +10,17 @@ from synth.syntax.type_system import (
     PrimitiveType,
     PolymorphicType,
     FixedPolymorphicType,
+    Generic,
+    TypeFunctor,
+    GenericFunctor,
     List,
     Arrow,
     Sum,
+    UnknownType,
     INT,
     BOOL,
     STRING,
+    UNIT
 )
 from synth.syntax.automata import DFA, DFTA
 from synth.syntax.grammars import (
