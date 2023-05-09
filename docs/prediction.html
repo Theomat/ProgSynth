@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Prediction &mdash; ProgSynth 0.1 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="author" title="About these documents" href="about.html" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Sharpening" href="sharpening.html" />
+    <link rel="prev" title="PBE Examples" href="examples_pbe.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            ProgSynth
+          </a>
+              <div class="version">
+                0.1.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="about.html">About</a></li>
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage.html">Usage of ProgSynth</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="type_system.html">The Type System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="grammars.html">Grammars</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Specifications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples_pbe.html">PBE</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Prediction</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#neural-network">Neural Network</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#prediction-layers">Prediction Layers</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#instanciation">Instanciation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#learning">Learning</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#tensor-to-grammar">Tensor to Grammar</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#task-to-tensor">Task to Tensor</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#example-model-for-pbe">Example Model for PBE</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="sharpening.html">Sharpening</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing to ProgSynth</a></li>
+<li class="toctree-l1"><a class="reference internal" href="license.html">License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">ProgSynth</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Prediction</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/prediction.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="prediction">
+<h1>Prediction<a class="headerlink" href="#prediction" title="Permalink to this heading"></a></h1>
+<p>In order to produce a P(U)CFG from a (U)CFG, we need what we call <em>a prediction</em>.
+That is a function which tags derivation rules with probabilities.</p>
+<!-- toc -->
+<p>Table of contents:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#neural-network"><span class="xref myst">Neural Network</span></a></p>
+<ul>
+<li><p><a class="reference internal" href="#prediction-layers"><span class="xref myst">Prediction Layers</span></a></p>
+<ul>
+<li><p><a class="reference internal" href="#instanciation"><span class="xref myst">Instanciation</span></a></p></li>
+<li><p><a class="reference internal" href="#learning"><span class="xref myst">Learning</span></a></p></li>
+<li><p><a class="reference internal" href="#tensor-to-grammar"><span class="xref myst">Tensor to Grammar</span></a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#task-to-tensor"><span class="xref myst">Task2Tensor</span></a></p></li>
+<li><p><a class="reference internal" href="#example-model-for-pbe"><span class="xref myst">Example Model for PBE</span></a></p></li>
+</ul>
+</li>
+</ul>
+<!-- tocstop -->
+<section id="neural-network">
+<h2>Neural Network<a class="headerlink" href="#neural-network" title="Permalink to this heading"></a></h2>
+<p>ProgSynth offers tools to easily use Neural networks to predict probabilities.</p>
+<section id="prediction-layers">
+<h3>Prediction Layers<a class="headerlink" href="#prediction-layers" title="Permalink to this heading"></a></h3>
+<p>The main tools are: <code class="docutils literal notranslate"><span class="pre">DetGrammarPredictorLayer</span></code> and <code class="docutils literal notranslate"><span class="pre">UGrammarPredictorLayer</span></code> which are respectively the same object for CFGs and UCFGs.
+There are layers which maps tensors from <code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">I)</span></code> to <code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">N)</span></code> where <code class="docutils literal notranslate"><span class="pre">B</span></code> is the batch size, <code class="docutils literal notranslate"><span class="pre">I</span></code> is a parameter of the layer and <code class="docutils literal notranslate"><span class="pre">N</span></code> depends on the grammar.
+A <code class="docutils literal notranslate"><span class="pre">(N,)</span></code> tensor can then be transformed into a tensor log-probability grammars thanks to <code class="docutils literal notranslate"><span class="pre">tensor2log_prob_grammar</span></code>.
+In case one wants to enumerate, a tensor log-probability grammar can always be transformed into a P(U)CFG.</p>
+<p>These layers however give a constant probability to all <code class="docutils literal notranslate"><span class="pre">Variable</span></code> and <code class="docutils literal notranslate"><span class="pre">Constant</span></code> object of the grammar since they can hardly be predicted.
+The given probability can be changed anytime through <code class="docutils literal notranslate"><span class="pre">layer.variable_probability</span></code>.</p>
+<section id="instanciation">
+<h4>Instanciation<a class="headerlink" href="#instanciation" title="Permalink to this heading"></a></h4>
+<p>First, a layer is instanciated for an iterable of grammars.
+That is they can support a finite set of type requests, so that one can train one model for multiple use.
+To make use of this feature, it is better when grammars have common derivations, obviously they should be derived from the same DSL.</p>
+<p>Second, to create such a layer, one needs an abstraction.
+An abstraction is a function which maps non-temrinals to elements of type <code class="docutils literal notranslate"><span class="pre">A</span></code> (hashable).
+The idea is that if two non-terminals are mapped onto the same abstraction then they will use the same part of the output of the NN.</p>
+<p>Using <code class="docutils literal notranslate"><span class="pre">from</span> <span class="pre">synth.nn</span> <span class="pre">import</span> <span class="pre">abstractions</span></code> can provide you with a few defaults abstractions which are the most frequently used.</p>
+</section>
+<section id="learning">
+<h4>Learning<a class="headerlink" href="#learning" title="Permalink to this heading"></a></h4>
+<p>Both layers provide already implemented loss computations:
+<code class="docutils literal notranslate"><span class="pre">loss_cross_entropy</span></code> and <code class="docutils literal notranslate"><span class="pre">loss_negative_log_prob</span></code>.
+Their aguments indicate if one needs to convert the tensors into tensor grammars or not.</p>
+<p>Here is an example learning step:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">optim</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
+<span class="n">loss</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">prediction_layer</span><span class="o">.</span><span class="n">loss_cross_entropy</span><span class="p">(</span>
+    <span class="n">batch_programs</span><span class="p">,</span> <span class="n">batch_type_requests</span><span class="p">,</span> <span class="n">batch_output_tensors</span>
+<span class="p">)</span>
+<span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+<span class="n">optim</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+<section id="tensor-to-grammar">
+<h4>Tensor to Grammar<a class="headerlink" href="#tensor-to-grammar" title="Permalink to this heading"></a></h4>
+<p>Here is the following code to go from a tensor <code class="docutils literal notranslate"><span class="pre">(N,)</span></code> to a P(U)CFG:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">tensor_grammar</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">prediction_layer</span><span class="o">.</span><span class="n">tensor2log_prob_grammar</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="n">task</span><span class="o">.</span><span class="n">type_request</span><span class="p">)</span>
+<span class="n">out_p_grammar</span> <span class="o">=</span> <span class="n">tensor_grammar</span><span class="o">.</span><span class="n">to_prob_u_grammar</span><span class="p">()</span> <span class="k">if</span> <span class="n">unambiguous</span> <span class="k">else</span> <span class="n">tensor_grammar</span><span class="o">.</span><span class="n">to_prob_det_grammar</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="task-to-tensor">
+<h3>Task to Tensor<a class="headerlink" href="#task-to-tensor" title="Permalink to this heading"></a></h3>
+<p>This is a <code class="docutils literal notranslate"><span class="pre">torch.nn.Module</span></code> which is a pipeline to make it easy to map a task to a tensor.
+It takes a <code class="docutils literal notranslate"><span class="pre">SpecificationEncoder[T,</span> <span class="pre">Tensor]</span></code> which encodes a task into a tensor.
+An embedder which will consume the output of the encoder to produce a new tensor.
+And then this tensor is now packed into a <code class="docutils literal notranslate"><span class="pre">PackedSequence</span></code> and padded with <code class="docutils literal notranslate"><span class="pre">encoder.pad_symbol</span></code> to reach size <code class="docutils literal notranslate"><span class="pre">embed_size</span></code> in last dimension.</p>
+<p>This model is espacially helpful when working with variable length specification.
+What occurs for example in PBE is that each of the example is one hot encoded into tensors and these tensors are stacked then fed to a regular <code class="docutils literal notranslate"><span class="pre">Embedding</span></code>, finally they are packed into <code class="docutils literal notranslate"><span class="pre">PackedSequence</span></code> which can be easily fed to transformers, RNN, LSTM…</p>
+</section>
+<section id="example-model-for-pbe">
+<h3>Example Model for PBE<a class="headerlink" href="#example-model-for-pbe" title="Permalink to this heading"></a></h3>
+<p>Here we give an example model which works for PBE:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">Tensor</span>
+<span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
+<span class="kn">from</span> <span class="nn">torch.nn.utils.rnn</span> <span class="kn">import</span> <span class="n">PackedSequence</span>
+
+<span class="kn">from</span> <span class="nn">synth</span> <span class="kn">import</span> <span class="n">PBE</span><span class="p">,</span> <span class="n">Task</span>
+<span class="kn">from</span> <span class="nn">synth.nn</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">DetGrammarPredictorLayer</span><span class="p">,</span>
+    <span class="n">UGrammarPredictorLayer</span><span class="p">,</span>
+    <span class="n">abstractions</span><span class="p">,</span>
+    <span class="n">Task2Tensor</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">synth.pbe</span> <span class="kn">import</span> <span class="n">IOEncoder</span>
+<span class="kn">from</span> <span class="nn">synth.syntax</span> <span class="kn">import</span> <span class="n">UCFG</span><span class="p">,</span> <span class="n">TTCFG</span>
+
+
+<span class="k">class</span> <span class="nc">MyPredictor</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">unambiguous</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+        <span class="n">cfgs</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">TTCFG</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="n">UCFG</span><span class="p">]],</span>
+        <span class="n">variable_probability</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">encoding_dimension</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">device</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">lexicon</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="n">layer</span> <span class="o">=</span> <span class="n">UGrammarPredictorLayer</span> <span class="k">if</span> <span class="n">unambiguous</span> <span class="k">else</span> <span class="n">DetGrammarPredictorLayer</span>
+        <span class="n">abstraction</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">abstractions</span><span class="o">.</span><span class="n">ucfg_bigram</span>
+            <span class="k">if</span> <span class="n">unambiguous</span>
+            <span class="k">else</span> <span class="n">abstractions</span><span class="o">.</span><span class="n">cfg_bigram_without_depth</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prediction_layer</span> <span class="o">=</span> <span class="n">layer</span><span class="p">(</span>
+            <span class="n">size</span><span class="p">,</span>
+            <span class="n">cfgs</span><span class="p">,</span>
+            <span class="n">abstraction</span><span class="p">,</span>
+            <span class="n">variable_probability</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">encoder</span> <span class="o">=</span> <span class="n">IOEncoder</span><span class="p">(</span><span class="n">encoding_dimension</span><span class="p">,</span> <span class="n">lexicon</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">packer</span> <span class="o">=</span> <span class="n">Task2Tensor</span><span class="p">(</span>
+            <span class="n">encoder</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Embedding</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">encoder</span><span class="o">.</span><span class="n">lexicon</span><span class="p">),</span> <span class="n">size</span><span class="p">),</span> <span class="n">size</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rnn</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">LSTM</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">end</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">size</span><span class="p">),</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(),</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">size</span><span class="p">),</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(),</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Task</span><span class="p">[</span><span class="n">PBE</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="n">seq</span><span class="p">:</span> <span class="n">PackedSequence</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">packer</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">_</span><span class="p">,</span> <span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">_</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rnn</span><span class="p">(</span><span class="n">seq</span><span class="p">)</span>
+        <span class="n">y</span><span class="p">:</span> <span class="n">Tensor</span> <span class="o">=</span> <span class="n">y</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">prediction_layer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">end</span><span class="p">(</span><span class="n">y</span><span class="p">))</span>
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="examples_pbe.html" class="btn btn-neutral float-left" title="PBE Examples" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="sharpening.html" class="btn btn-neutral float-right" title="Sharpening" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Nathanaël Fijalkow &amp; Théo Matricon.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

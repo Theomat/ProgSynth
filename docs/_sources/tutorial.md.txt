@@ -192,6 +192,8 @@ python dataset_generator_unique.py --dsl calculator --dataset calculator/calcula
 
 ## Train a model
 
+For more information about model creation see [this page](prediction.md).
+
 You can easily train a model using:
 
 ```bash
@@ -226,8 +228,7 @@ Again there's a plethora of options available, so feel free to play with them.
 ## Simple synthesis
 
 Here is a simple function that takes your task, the PCFG and the evaluator and generates a synthetised program.
-
-**TODO: explain how to produce a PCFG from a model**
+For more information about predictions and how to produce a P(U)CFG from a model, see [this page](prediction.md).
 
 ```python
 from synth import Task, PBE

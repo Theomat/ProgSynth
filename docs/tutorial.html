@@ -69,6 +69,7 @@
 <li class="toctree-l1"><a class="reference internal" href="grammars.html">Grammars</a></li>
 <li class="toctree-l1"><a class="reference internal" href="examples.html">Specifications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="examples_pbe.html">PBE</a></li>
+<li class="toctree-l1"><a class="reference internal" href="prediction.html">Prediction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sharpening.html">Sharpening</a></li>
 <li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing to ProgSynth</a></li>
 <li class="toctree-l1"><a class="reference internal" href="license.html">License</a></li>
@@ -263,6 +264,7 @@ There is already existing script that does all of the job for us.</p>
 </section>
 <section id="train-a-model">
 <h2>Train a model<a class="headerlink" href="#train-a-model" title="Permalink to this heading"></a></h2>
+<p>For more information about model creation see <a class="reference internal" href="prediction.html"><span class="std std-doc">this page</span></a>.</p>
 <p>You can easily train a model using:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>examples/pbe/model_trainer.py<span class="w"> </span>--dsl<span class="w"> </span>calculator<span class="w"> </span>--dataset<span class="w"> </span>my_train_dataset.pickle<span class="w"> </span>--seed<span class="w"> </span><span class="m">42</span><span class="w"> </span>--b<span class="w"> </span><span class="m">32</span><span class="w"> </span>-o<span class="w"> </span>my_model.pt<span class="w"> </span>-e<span class="w"> </span><span class="m">2</span>
 </pre></div>
@@ -289,8 +291,8 @@ This result file can then be plotted using:</p>
 </section>
 <section id="simple-synthesis">
 <h2>Simple synthesis<a class="headerlink" href="#simple-synthesis" title="Permalink to this heading"></a></h2>
-<p>Here is a simple function that takes your task, the PCFG and the evaluator and generates a synthetised program.</p>
-<p><strong>TODO: explain how to produce a PCFG from a model</strong></p>
+<p>Here is a simple function that takes your task, the PCFG and the evaluator and generates a synthetised program.
+For more information about predictions and how to produce a P(U)CFG from a model, see <a class="reference internal" href="prediction.html"><span class="std std-doc">this page</span></a>.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">synth</span> <span class="kn">import</span> <span class="n">Task</span><span class="p">,</span> <span class="n">PBE</span>
 <span class="kn">from</span> <span class="nn">synth.semantic</span> <span class="kn">import</span> <span class="n">DSLEvaluator</span>
 <span class="kn">from</span> <span class="nn">synth.syntax</span> <span class="kn">import</span> <span class="n">ProbDetGrammar</span><span class="p">,</span> <span class="n">enumerate_prob_grammar</span>
