@@ -20,7 +20,7 @@ from synth.syntax.type_system import (
     INT,
     BOOL,
     STRING,
-    UNIT
+    UNIT,
 )
 from synth.syntax.automata import DFA, DFTA
 from synth.syntax.grammars import (
