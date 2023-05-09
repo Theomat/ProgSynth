@@ -15,6 +15,7 @@ Contents
     grammars
     Specifications <examples>
     PBE <examples_pbe>
+    prediction
     sharpening
     contributing
     license
