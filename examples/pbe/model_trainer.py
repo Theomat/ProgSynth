@@ -13,7 +13,10 @@ from torch.utils.tensorboard import SummaryWriter
 import numpy as np
 
 from dsl_loader import add_dsl_choice_arg, load_DSL
-from examples.pbe.model_loader import MyPredictor
+from examples.pbe.model_loader import (
+    add_model_choice_arg,
+    instantiate_predictor,
+)
 
 
 from synth import Dataset, PBE, Task
@@ -40,6 +43,7 @@ parser.add_argument(
     help="dataset (default: {dsl_name}}.pickle)",
 )
 add_dsl_choice_arg(parser)
+add_model_choice_arg(parser)
 parser.add_argument(
     "-o",
     "--output",
@@ -47,12 +51,7 @@ parser.add_argument(
     default="model.pt",
     help="output file (default: model.pt)",
 )
-parser.add_argument(
-    "--cpu",
-    action="store_true",
-    default=False,
-    help="do not try to run things on cuda",
-)
+
 parser.add_argument(
     "--no-clean",
     action="store_true",
@@ -64,34 +63,6 @@ parser.add_argument(
     action="store_true",
     default=False,
     help="do not produce stats increasing speed",
-)
-gg = parser.add_argument_group("model parameters")
-gg.add_argument(
-    "--constrained",
-    action="store_true",
-    default=False,
-    help="use unambigous grammar to include constraints in the grammar if available",
-)
-gg.add_argument(
-    "-v",
-    "--var-prob",
-    type=float,
-    default=0.2,
-    help="variable probability (default: .2)",
-)
-gg.add_argument(
-    "-ed",
-    "--encoding-dimension",
-    type=int,
-    default=512,
-    help="encoding dimension (default: 512)",
-)
-gg.add_argument(
-    "-hd",
-    "--hidden-size",
-    type=int,
-    default=512,
-    help="hidden layer size (default: 512)",
 )
 g = parser.add_argument_group("training parameters")
 g.add_argument(
@@ -134,14 +105,11 @@ parameters = parser.parse_args()
 dsl_name: str = parameters.dsl
 dataset_file: str = parameters.dataset.format(dsl_name=dsl_name)
 output_file: str = parameters.output
-variable_probability: float = parameters.var_prob
 batch_size: int = parameters.batch_size
 epochs: int = parameters.epochs
 lr: float = parameters.learning_rate
 weight_decay: float = parameters.weight_decay
 seed: int = parameters.seed
-encoding_dimension: int = parameters.encoding_dimension
-hidden_size: int = parameters.hidden_size
 cpu_only: bool = parameters.cpu
 no_clean: bool = parameters.no_clean
 no_shuffle: bool = parameters.no_shuffle
@@ -232,15 +200,7 @@ print(f"{len(all_type_requests)} type requests supported.")
 print(f"Lexicon: [{min(lexicon)};{max(lexicon)}]")
 
 
-predictor = MyPredictor(
-    hidden_size,
-    constrained,
-    cfgs,
-    variable_probability,
-    encoding_dimension,
-    device,
-    lexicon,
-).to(device)
+predictor = instantiate_predictor(parameters, cfgs, lexicon)
 print_model_summary(predictor)
 optim = torch.optim.AdamW(predictor.parameters(), lr, weight_decay=weight_decay)
 scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optim, "min")

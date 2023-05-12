@@ -11,7 +11,10 @@ import tqdm
 import torch
 
 from dsl_loader import add_dsl_choice_arg, load_DSL
-from examples.pbe.model_loader import MyPredictor
+from examples.pbe.model_loader import (
+    add_model_choice_arg,
+    instantiate_predictor,
+)
 
 
 from synth import Dataset, PBE, Task
@@ -56,42 +59,15 @@ parser.add_argument(
     help="enumeration algorithm (default: heap_search)",
 )
 add_dsl_choice_arg(parser)
+add_model_choice_arg(parser)
 parser.add_argument(
     "-o", "--output", type=str, default="./", help="output folder (default: './')"
 )
-gg = parser.add_argument_group("model parameters")
-gg.add_argument(
-    "--constrained",
-    action="store_true",
-    default=False,
-    help="use unambigous grammar to include constraints in the grammar if available",
-)
-gg.add_argument(
+parser.add_argument(
     "--support",
     type=str,
     default=None,
     help="train dataset to get the set of supported type requests",
-)
-gg.add_argument(
-    "-v",
-    "--var-prob",
-    type=float,
-    default=0.2,
-    help="variable probability (default: .2)",
-)
-gg.add_argument(
-    "-ed",
-    "--encoding-dimension",
-    type=int,
-    default=512,
-    help="encoding dimension (default: 512)",
-)
-gg.add_argument(
-    "-hd",
-    "--hidden-size",
-    type=int,
-    default=512,
-    help="hidden layer size (default: 512)",
 )
 g = parser.add_argument_group("pcfg prediction parameter")
 g.add_argument(
@@ -112,9 +88,6 @@ dataset_file: str = parameters.dataset.format(dsl_name=dsl_name)
 search_algo: str = parameters.search
 output_folder: str = parameters.output
 model_file: str = parameters.model
-variable_probability: float = parameters.var_prob
-encoding_dimension: int = parameters.encoding_dimension
-hidden_size: int = parameters.hidden_size
 task_timeout: float = parameters.timeout
 batch_size: int = parameters.batch_size
 constrained: bool = parameters.constrained
@@ -260,15 +233,7 @@ def produce_pcfgs(
         for cfg in cfgs
     ]
 
-    predictor = MyPredictor(
-        hidden_size,
-        constrained,
-        cfgs,
-        variable_probability,
-        encoding_dimension,
-        device,
-        lexicon,
-    )
+    predictor = instantiate_predictor(parameters, cfgs, lexicon)
     predictor.load_state_dict(torch.load(model_file))
     predictor = predictor.to(device)
     predictor.eval()
