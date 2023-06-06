@@ -1,10 +1,13 @@
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Dict, Generator, List, Optional, Set, Tuple, Union
+from typing import Callable, Dict, Generator, List, Optional, Set, Tuple, Union
 
 import tqdm
 
 from synth.syntax.program import Function, Primitive, Program, Variable
+from synth.syntax.type_system import Type
+
+import numpy as np
 
 
 _Graph = Tuple[
@@ -16,26 +19,19 @@ _Graph = Tuple[
 ]
 
 
-def __prim__(p: Program) -> Program:
+def __prim__(p: Program) -> Primitive:
     if isinstance(p, Function):
-        return p.function
+        return p.function  # type: ignore
     else:
-        return p
+        return p  # type: ignore
 
 
 @dataclass
 class _PartialTree:
     occurences: List[int]
     occurences_vertices: List[Set[int]]
-    max_size: int
     structure: Dict[int, List[int]]
     parents: Dict[int, Tuple[int, int]]
-
-    def score(self) -> int:
-        return self.size() * self.num_occurences()
-
-    def max_score(self) -> int:
-        return self.max_size * self.num_occurences()
 
     def num_occurences(self) -> int:
         return len(self.occurences)
@@ -47,7 +43,6 @@ class _PartialTree:
         return _PartialTree(
             self.occurences[:],
             [],
-            self.max_size,
             {k: v[:] for k, v in self.structure.items()},
             {k: (v[0], v[1]) for k, v in self.parents.items()},
         )
@@ -88,8 +83,13 @@ class _PartialTree:
         """
         Compute vertex index in occurence in graph following the path from the start
         """
+        return self.follow_path(graph, self.occurences[occurence_index], path)
+
+    def follow_path(self, graph: _Graph, start: int, path: List[int]) -> int:
+        """
+        Compute global end vertex from start following path
+        """
         edges = graph[1]
-        start = self.occurences[occurence_index]
         i = 0
         while i < len(path):
             index = path[-i - 1]
@@ -99,6 +99,24 @@ class _PartialTree:
             start = edges[start][index]
             i += 1
         return start
+
+    def all_vertices_for_occurence(
+        self, graph: _Graph, occurence_index: int
+    ) -> Set[int]:
+        edges = graph[1]
+        out: Set[int] = set()
+        stack: List[Tuple[int, int]] = [(self.occurences[occurence_index], 0)]
+        while stack:
+            glbl, lcl = stack.pop()
+            out.add(glbl)
+            outgoing = self.structure.get(lcl, [])
+            for i, el in enumerate(outgoing):
+                local_edges = edges[glbl]
+                if len(local_edges) <= i:
+                    break
+                stack.append((local_edges[i], el))
+
+        return out
 
     def add_link(
         self,
@@ -167,7 +185,7 @@ class _PartialTree:
     def __disambiguity__(
         self, graph: _Graph, to_add: List[int], start: int = 0
     ) -> Generator["_PartialTree", None, None]:
-        vertex2tree = graph[-1]
+        vertex2tree = graph[-2]
         # Check for intersection between intersections
         inside = [True for _ in self.occurences]
         for i in range(start, len(self.occurences)):
@@ -247,39 +265,34 @@ class _PartialTree:
 
 
 def __initial_tree__(graph: _Graph, vertex: int) -> _PartialTree:
-    vertices, edges, primitive2indices, vertex2size, _ = graph
+    vertices, edges, primitive2indices, _, __ = graph
     P: Function = vertices[vertex]  # type: ignore
     occurences = primitive2indices[P.function]  # type: ignore
-    occurences_vertices: List[Set[int]] = []
-    max_size: int = 0
-    for v in occurences:
-        s = vertex2size[v]
-        if s > max_size:
-            max_size = s
-        occurences_vertices.append({v})
+    occurences_vertices: List[Set[int]] = [{v} for v in occurences]
     return _PartialTree(
         occurences,
         occurences_vertices,
-        max_size,
         {0: [-1 for _ in edges[vertex]]},
         {},
     )
 
 
 def __find_best__(
-    graph: _Graph, best_score: int, done: Set[Tuple], tree: _PartialTree
+    graph: _Graph,
+    best_score: float,
+    done: Set[Tuple],
+    tree: _PartialTree,
+    score_function: Callable[[_Graph, _PartialTree], float],
 ) -> _PartialTree:
-    if tree.max_score() <= best_score:
-        return tree
     best = tree
-    previous = tree.score() if tree.size() > 1 else -1
+    previous = score_function(graph, tree) if tree.size() > 1 else -float("inf")
     local_best_score = previous
     for expansion in tree.expansions(graph, done):
         # Use fact that score only increases then only decreases
-        if expansion.score() <= previous:
+        if score_function(graph, expansion) <= previous:
             continue
-        tree = __find_best__(graph, best_score, done, expansion)
-        if tree.score() > local_best_score:
+        tree = __find_best__(graph, best_score, done, expansion, score_function)
+        if score_function(graph, tree) > local_best_score:
             best = tree
     return best
 
@@ -288,15 +301,16 @@ def __programs_to_graph__(programs: List[Program]) -> _Graph:
     vertices: Dict[int, Program] = {}
     edges: Dict[int, List[int]] = {}
     primitive2indices: Dict[Union[Primitive, Variable], List[int]] = defaultdict(list)
-    vertex2size: Dict[int, int] = {}
     vertex2tree: Dict[int, int] = {}
+    tree2start: Dict[int, int] = {}
+
     for tree_no, program in enumerate(programs):
+        tree2start[tree_no] = len(vertices)
         args_indices: List[int] = []
         for el in program.depth_first_iter():
             vertex = len(vertices)
             vertices[vertex] = el
             vertex2tree[vertex] = tree_no
-            vertex2size[vertex] = el.size()
             if isinstance(el, Function):
                 primitive2indices[el.function].append(vertex)  # type: ignore
                 args_len = len(el.function.type.arguments()) - len(el.type.arguments())
@@ -307,16 +321,132 @@ def __programs_to_graph__(programs: List[Program]) -> _Graph:
                 edges[vertex] = []
             args_indices.append(vertex)
         assert len(args_indices) == 1, f"args_indices:{args_indices}"
-    return vertices, edges, primitive2indices, vertex2size, vertex2tree
+    return vertices, edges, primitive2indices, vertex2tree, tree2start
 
 
-def learn(programs: List[Program], progress: bool = False) -> Tuple[int, int, str]:
+def score_description(graph: _Graph, tree: _PartialTree) -> float:
+    return tree.num_occurences() * tree.size()
+
+
+def make_score_probabilistic(
+    programs: List[Program], predict_vars: bool = True, var_prob: float = 0.2
+) -> Callable[[_Graph, _PartialTree], float]:
+    type2dict: Dict[Type, Dict[Tuple[str, str, int], int]] = defaultdict(
+        lambda: defaultdict(int)
+    )
+    tree2program = {}
+    for tree_no, program in enumerate(programs):
+        tree2program[tree_no] = program
+        type2count = type2dict[program.type]
+        for P in program.depth_first_iter():
+            if isinstance(P, Function):
+                primitive = __prim__(P).primitive
+                for arg_no, arg in enumerate(P.arguments):
+                    type2count[(primitive, str(__prim__(arg)), arg_no)] += 1
+
+    lvar_prob = np.log(var_prob)
+
+    def probability(
+        cur_type2dict: Dict[Type, Dict[Tuple[str, str, int], int]]
+    ) -> float:
+        total: Dict[Type, Dict[Tuple[str, int], int]] = {}
+        vars = defaultdict(set)
+        for t in cur_type2dict:
+            total[t] = defaultdict(int)
+            for (a, b, c), count in cur_type2dict[t].items():
+                if not predict_vars and b.startswith("var"):
+                    vars[t].add((a, c))
+                    continue
+                total[t][(a, c)] += count
+
+        normed = {
+            t: {
+                (a, b, c): np.log(count / total[t][(a, c)])
+                for (a, b, c), count in cur_type2dict[t].items()
+                if count > 0 and total[t][(a, c)] > 0
+            }
+            for t in cur_type2dict
+        }
+        prob = 0
+        for t in cur_type2dict:
+            for (a, b, c), p in normed[t].items():
+                if not predict_vars and b.startswith("var"):
+                    p = lvar_prob if total[t][(a, c)] > 0 else 0
+                count = cur_type2dict[t][(a, b, c)]
+                prob += p * count
+                # print("key:", (a, b, c), "prob:", p, "*", count)
+
+        return prob
+
+    # print("ORIGINAL:", probability(type2dict))
+    SPECIAL_STRING = "zefjpozjqfpokqzùofkepqozkfùpokqzefjùqzifjeùpoqzefùpoqkfeokqzofkùezùqofkeùozqkfoe"
+
+    def score(graph: _Graph, tree: _PartialTree) -> float:
+        cur_type2dict = {
+            k: {kk: vv for kk, vv in v.items()} for k, v in type2dict.items()
+        }
+        vertices, edges, primitive2indices, vertex2tree, tree2start = graph
+        # print("TREE:", tree.string(graph))
+        for k in range(len(tree.occurences)):
+            start_of_occ = tree.occurences[k]
+            tree_no = vertex2tree[start_of_occ]
+            program: Program = tree2program[tree_no]
+            type2count = cur_type2dict[program.type]
+            vertex = tree2start[tree_no]
+            args_indices: List[Tuple[int, bool]] = []
+            belonging = tree.all_vertices_for_occurence(graph, k)
+            for el in program.depth_first_iter():
+                belongs = vertex in belonging
+                if isinstance(el, Function):
+                    args_len = len(el.arguments)
+                    primitive = __prim__(el).primitive
+                    my_args = args_indices[-args_len:]
+                    # print("\t", el.arguments, my_args)
+                    # print("\tcurrent:", el)
+                    if belongs:
+                        for arg_no in range(args_len):
+                            arg = el.arguments[arg_no]
+                            arg_s = str(__prim__(arg))
+                            if my_args[arg_no][1]:
+                                key = (primitive, arg_s, arg_no)
+                                # if key in type2count:
+                                type2count[(primitive, arg_s, arg_no)] -= 1
+                            else:
+                                key = (SPECIAL_STRING, arg_s, arg_no)
+                                if key not in type2count:
+                                    type2count[key] = 0
+                                type2count[key] += 1
+                    elif not belongs and any(b for _, b in my_args):
+                        for i, (_, b) in enumerate(my_args):
+                            if b:
+                                key = (primitive, SPECIAL_STRING, i)
+                                if key not in type2count:
+                                    type2count[key] = 0
+                                type2count[key] += 1
+                    # Pop all consumed + the one for P.function which we did not consume
+                    args_indices = args_indices[: -(args_len + 1)]
+                args_indices.append((vertex, belongs))
+                vertex += 1
+
+        return probability(cur_type2dict)
+
+    return score
+
+
+def learn(
+    programs: List[Program],
+    score_function: Callable[[_Graph, _PartialTree], float] = score_description,
+    progress: bool = False,
+) -> Tuple[float, str]:
     """
-    Learn a new primitive from the specified benchmark
+    Learn a new primitive from the specified benchmark.
+    The default scoring function maximise the gain in description size of the dataset.
+    Suppose:
+        for all x, score_function(x) > -inf
+        score_function is computed in the worst case in polynomial time
 
     Return:
-        - new primitive size
-        - number of occurences of the new primitive in the programs
+        - cost of new primitive
         - str description of new primitive
     """
 
@@ -324,7 +454,7 @@ def learn(programs: List[Program], progress: bool = False) -> Tuple[int, int, st
     done_primitives: Set[Program] = set()
     graph = __programs_to_graph__(programs)
     vertices = graph[0]
-    best_score = 0
+    best_score = -float("inf")
     best = None
     pbar = None
     if progress:
@@ -340,13 +470,14 @@ def learn(programs: List[Program], progress: bool = False) -> Tuple[int, int, st
         done_primitives.add(__prim__(p))
         base_tree = __initial_tree__(graph, vertex)
         r = base_tree.unique_repr(graph, 0)
-        tree = __find_best__(graph, best_score, done, base_tree)
+        tree = __find_best__(graph, best_score, done, base_tree, score_function)
         done.add(r)
-        if tree.score() > best_score:
-            best_score = tree.score()
+        ts = score_function(graph, tree)
+        if ts > best_score:
+            best_score = ts
             best = tree
             if pbar:
                 pbar.set_postfix_str(f"{best.string(graph)} ({best_score})")
     if best is not None:
-        return best.size(), best.num_occurences(), best.string(graph)
-    return 0, 0, ""
+        return best_score, best.string(graph)
+    return 0.0, ""
