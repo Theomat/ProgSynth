@@ -41,9 +41,7 @@ programs = [t.solution for t in full_dataset if t.solution is not None]
 score_fn = make_score_probabilistic(programs, False) if proba else score_description
 score, prog = learn(programs, score_fn, progress=True)
 if proba:
-    print(
-        f"Best program is {prog} which bumps the programs set's log prob to:{score}."
-    )
+    print(f"Best program is {prog} which bumps the programs set's log prob to:{score}.")
 else:
     print(f"Best program is {prog} which reduces description size by:{score}.")
 # print(f"This would reduce the size by {(size - 1) * occs}.")
