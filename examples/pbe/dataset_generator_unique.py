@@ -199,7 +199,7 @@ def generate_programs_and_samples_for(
             tries += 1
             if tries > 1000:
                 break
-
+    pbar.close()
     programs = [
         min([(p.size(), p) for p in v], key=lambda x: x[0])[1] for v in equiv.values()
     ]
