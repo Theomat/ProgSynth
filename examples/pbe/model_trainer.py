@@ -48,8 +48,8 @@ parser.add_argument(
     "-o",
     "--output",
     type=str,
-    default="model.pt",
-    help="output file (default: model.pt)",
+    default="seed_{seed}_model.pt",
+    help="model file name, should respect format 'seed_X_Y' where X is the seed and Y is the name of the model (default: seed_{seed}_model.pt)",
 )
 
 parser.add_argument(
@@ -104,12 +104,12 @@ g.add_argument("-s", "--seed", type=int, default=0, help="seed (default: 0)")
 parameters = parser.parse_args()
 dsl_name: str = parameters.dsl
 dataset_file: str = parameters.dataset.format(dsl_name=dsl_name)
-output_file: str = parameters.output
+seed: int = parameters.seed
+output_file: str = parameters.output.format(seed=seed)
 batch_size: int = parameters.batch_size
 epochs: int = parameters.epochs
 lr: float = parameters.learning_rate
 weight_decay: float = parameters.weight_decay
-seed: int = parameters.seed
 cpu_only: bool = parameters.cpu
 no_clean: bool = parameters.no_clean
 no_shuffle: bool = parameters.no_shuffle
