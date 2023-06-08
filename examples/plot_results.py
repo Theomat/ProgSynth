@@ -113,7 +113,7 @@ for file in glob(os.path.join(output_folder, "*.csv")):
     name = filename[len(dataset_name) : -4]
     if not name.startswith("_seed_"):
         if verbose:
-            print(f"\tskipped: does not start with {dataset_name}_{seed}_")
+            print(f"\tskipped: does not start with {dataset_name}_seed_")
         continue
     name = name[6:]
     seed = int(name[: name.index("_")])
@@ -161,7 +161,7 @@ def plot_with_incertitude(
 ) -> None:
     x_min = np.min(np.array(x))
     x_max = np.max(np.array(x))
-    target_x = np.arange(x_min, x_max + 1, step=int((x_max - x_min) / 50))
+    target_x = np.arange(x_min, x_max + 1, step=(x_max - x_min) / 50)
     # Interpolate data
     data = []
     for xi, yi in zip(x, y):
