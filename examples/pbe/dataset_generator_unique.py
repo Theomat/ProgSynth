@@ -297,71 +297,20 @@ tasks = []
 print("Generating tasks by type...", flush=True)
 for tr, count in programs_by_tr.items():
     print("\t", tr)
-    samples, programs = generate_programs_and_samples_for(
+    list_samples, programs = generate_programs_and_samples_for(
         tr, count, nb_inputs, task_generator
     )
-    for program in programs:
-        tasks.append(
-            task_generator.make_task(
-                tr,
-                program,
-                samples,
-                [task_generator.eval_input(program, x) for x in samples],
-                test_examples=test_examples,
+    for samples in list_samples:
+        for program in programs:
+            tasks.append(
+                task_generator.make_task(
+                    tr,
+                    program,
+                    samples,
+                    [task_generator.eval_input(program, x) for x in samples],
+                    test_examples=test_examples,
+                )
             )
-        )
-
-
-# type_requests = set()
-# with chrono.clock("dataset.generate.programs") as c:
-#     programs_by_tr = defaultdict(list)
-#     assert isinstance(task_generator, TaskGenerator)
-#     for i in tqdm.trange(nb_gen_programs, desc="programs generated"):
-#         tr = task_generator.generate_type_request()
-#         prog, unique = task_generator.generate_program(tr)
-#         while not no_unique and not unique:
-#             tr = task_generator.generate_type_request()
-#             prog, unique = task_generator.generate_program(tr)
-#         type_requests.add(tr)
-#         programs_by_tr[tr].append(prog)
-#     print("done in", c.elapsed_time(), "s")
-# print("Generating inputs...", nb_inputs, end="", flush=True)
-
-# filtered_programs = []
-# with chrono.clock("dataset.generate.inputs") as c:
-#     inputs = {}
-#     for tr in type_requests:
-#         inputs[tr] = []
-#         args = tr.arguments()
-#         assert isinstance(task_generator, TaskGenerator)
-#         for i in tqdm.trange(nb_inputs, desc=f"inputs generated for {tr}"):
-#             sample, to_keep = generate_samples_for(
-#                 programs_by_tr[tr],
-#                 lambda: task_generator.sample_input(args),
-#                 lambda p, x: task_generator.eval_input(p, x),
-#                 task_generator.evaluator.clear_cache,
-#             )
-#             inputs[tr].append(sample)
-#             for p in to_keep:
-#                 filtered_programs.append((tr, p))
-#     print("done in", c.elapsed_time(), "s")
-#     print("Kept", len(filtered_programs), "/", nb_gen_programs, "programs")
-
-# print("Evaluating inputs...", end="", flush=True)
-# with chrono.clock("dataset.evaluation.inputs") as c:
-#     tasks = []
-#     for tr, program in tqdm.tqdm(filtered_programs, desc="programs evaluated"):
-#         for sample in inputs[tr]:
-#             tasks.append(
-#                 task_generator.make_task(
-#                     tr,
-#                     program,
-#                     sample,
-#                     [task_generator.eval_input(program, x) for x in sample],
-#                 )
-#             )
-
-#     print("done in", c.elapsed_time(), "s")
 gen_dataset = Dataset(tasks)
 print("Saving dataset...", end="", flush=True)
 with chrono.clock("dataset.save") as c:
