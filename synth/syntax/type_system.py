@@ -461,14 +461,12 @@ class Generic(Type):
             and all(any(tt.is_instance(t) for t in self.types) for tt in other.types)
         )
 
-    def __get_state__(self) -> Dict:
-        # print("CALLED")
-        d = super().__get_state__()  # type: ignore
-        del d["hash"]
-        return d  # type: ignore
+    def __getstate__(self) -> Dict:
+        return {k: v for k, v in self.__dict__.items() if k != "hash"}
 
-    # def __pickle__(o: Type) -> Tuple:  # type: ignore[override]
-    #     return Generic, (o.name, *tuple(x for x in o.types), o.infix)  # type: ignore
+    def __setstate__(self, state: Dict) -> None:
+        self.__dict__ = state
+        self.hash = hash((self.name, self.types))
 
     def __str__(self) -> str:
         base = " " if not self.infix else f" {self.name} "
