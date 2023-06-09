@@ -39,7 +39,7 @@ class DSLEvaluator(Evaluator):
 
     def eval(self, program: Program, input: List) -> Any:
         key = __tuplify__(input)
-        if key not in self._cache and self.use_cache:
+        if self.use_cache and key not in self._cache:
             self._cache[key] = {}
         evaluations: Dict[Program, Any] = self._cache[key] if self.use_cache else {}
         if program in evaluations:
