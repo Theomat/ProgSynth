@@ -1,24 +1,31 @@
-from typing import Any, Dict
+from typing import (
+    Any,
+    Dict,
+    Set,
+    Tuple,
+    TypeVar,
+)
+from itertools import product
+
 import numpy as np
 
 from synth.syntax import (
-    PolymorphicType,
-    Arrow,
-    INT,
-    BOOL,
     List,
     DSL,
     auto_type,
     Program,
     CFG,
-    ProbDetGrammar,
-    enumerate_prob_grammar,
+    UCFG,
+    Type,
+    ProbUGrammar,
+    enumerate_prob_u_grammar,
+    DFTA,
 )
 from synth.semantic import DSLEvaluator
+from synth.syntax.grammars.det_grammar import DerivableProgram
 from synth import Task, PBE, Dataset
 
-
-from quantum import QuantumCircuitEvaluator
+from quantum import QiskitTester
 
 import qiskit as qk
 from qiskit.transpiler.passes import SolovayKitaev
@@ -43,9 +50,6 @@ __syntax = auto_type(
         "CH": "circuit -> int -> int -> circuit",
         "SWAP": "circuit -> int -> int -> circuit",
         "iSWAP": "circuit -> int -> int -> circuit",
-        "0": "int",
-        "1": "int",
-        "2": "int",
     }
 )
 
@@ -71,6 +75,21 @@ __semantics = {
     "SWAP": lambda QT: lambda q1: lambda q2: QT.circuit.swap(QT.q(q1), QT.q(q2)),
     "iSWAP": lambda QT: lambda q1: lambda q2: QT.circuit.iswap(QT.q(q1), QT.q(q2)),
 }
+
+# Is this important?
+with QiskitTester(1) as QT:
+    QT.circuit.t(0)
+    QT.circuit.t(0)
+qk.circuit.equivalence_library.StandardEquivalenceLibrary.add_equivalence(
+    qk.circuit.library.SGate(), QT.circuit
+)
+
+with QiskitTester(1) as QT:
+    QT.circuit.tdg(0)
+    QT.circuit.tdg(0)
+qk.circuit.equivalence_library.StandardEquivalenceLibrary.add_equivalence(
+    qk.circuit.library.SdgGate(), QT.circuit
+)
 
 
 class ParametricSubstitution(qk.transpiler.TransformationPass):
@@ -144,24 +163,129 @@ def decompose(
     return qk.transpile(discretized, backend, ["h", "cx", "t", "tdg"])
 
 
-def circuit_to_program(circuit: qk.QuantumCircuit) -> Program:
-    pass
+def circuit_to_program(circuit: qk.QuantumCircuit, dsl: DSL, tr: Type) -> Program:
+
+    program = "var0"
+    for inst in circuit.data:
+        name: str = inst.operation.name
+        program = f"({name.capitalize()} {program}"
+        for qbit in inst.qubits:
+            index, registers = circuit.find_bit(qbit)
+            register, idx_in_reg = registers[0]
+            program += f" {register.size-index - 1}"
+        program += ")"
+    print(circuit)
+    print("parsed:", program)
+    return dsl.parse_program(program, tr)
+
+
+class PartialQuantumCircuitEvaluator(DSLEvaluator):
+    def __init__(self, semantics: Dict[str, Any], nqbits: int = 3) -> None:
+        super().__init__(semantics, False)
+        self.nqbits = nqbits
+        self.backend = qk.Aer.get_backend("unitary_simulator")
+
+    def eval(self, program: Program, input: List) -> Any:
+        with QiskitTester(self.nqbits) as QT:
+            super().eval(program, [QT] + input)
+
+            return QT.circuit
+
+
+U = TypeVar("U")
+V = TypeVar("V")
+
+
+def __cfg2dfta__(
+    grammar: CFG,
+) -> DFTA[Tuple[Type, int], DerivableProgram]:
+    StateT = Tuple[Type, int]
+    dfta_rules: Dict[Tuple[DerivableProgram, Tuple[StateT, ...]], StateT] = {}
+    max_depth = grammar.max_program_depth()
+    all_cases: Dict[
+        Tuple[int, Tuple[Type, ...]], Set[Tuple[Tuple[Type, int], ...]]
+    ] = {}
+    for S in grammar.rules:
+        for P in grammar.rules[S]:
+            args = grammar.rules[S][P][0]
+            if len(args) == 0:
+                dfta_rules[(P, ())] = (P.type, 0)
+            else:
+                key = (len(args), tuple([arg[0] for arg in args]))
+                if key not in all_cases:
+                    all_cases[key] = set(
+                        [
+                            tuple(x)
+                            for x in product(
+                                *[
+                                    [(arg[0], j) for j in range(max_depth)]
+                                    for arg in args
+                                ]
+                            )
+                        ]
+                    )
+                for nargs in all_cases[key]:
+                    new_depth = max(i for _, i in nargs) + 1
+                    if new_depth >= max_depth:
+                        continue
+                    dfta_rules[(P, nargs)] = (
+                        S[0],
+                        new_depth,
+                    )
+    r = grammar.type_request.returns()
+    dfta = DFTA(dfta_rules, {(r, x) for x in range(max_depth)})
+    return dfta
 
 
 def generate_tasks(
     nqbits: int = 3, n_tasks: int = 1000, max_operations: int = 5
 ) -> Dataset[PBE]:
     tr = auto_type("circuit -> circuit")
+    type_int = auto_type("int")
+    # Make copies to have no side-effects
+    syntax = {x: y for x, y in __syntax.items()}
+    semantics = {x: y for x, y in __semantics.items()}
     # Add constants for qbits
     for n in range(nqbits):
-        __syntax[str(n)] = auto_type("int")
-        __semantics[str(n)] = n
+        syntax[str(n)] = type_int
+        semantics[str(n)] = n
     # DSL + Evaluator
-    dsl = DSL(__syntax)
-    evaluator = QuantumCircuitEvaluator(__semantics, nqbits)
+    dsl = DSL(syntax)
+    evaluator = PartialQuantumCircuitEvaluator(semantics, nqbits)
     # PCFG
     cfg = CFG.depth_constraint(dsl, tr, max_operations)
-    pcfg = ProbDetGrammar.uniform(cfg)
+    cfg.clean()
+    print(cfg)
+
+    dfta = __cfg2dfta__(cfg)
+    depths = {y for x, y in dfta.states if x == type_int}
+    for depth in depths:
+        for n in range(nqbits):
+            s = (auto_type("int" + str(n)), depth)
+            dfta.states.add(s)
+            dfta.rules[(dsl.get_primitive(str(n)), ())] = s
+    for (P, args), dst in list(dfta.rules.items()):
+        if len(args) == 3:
+            del dfta.rules[(P, args)]
+            for n1 in range(nqbits):
+                for n2 in range(nqbits):
+                    n_args = (
+                        args[0],
+                        (auto_type("int" + str(n1)), args[1][1]),
+                        (auto_type("int" + str(n2)), args[2][1]),
+                    )
+                    dfta.rules[(P, n_args)] = dst
+        elif len(args) == 2:
+            del dfta.rules[(P, args)]
+            for n1 in range(nqbits):
+                n_args = (
+                    args[0],
+                    (auto_type("int" + str(n1)), args[1][1]),
+                )
+                dfta.rules[(P, n_args)] = dst
+
+    print(dfta)
+    pcfg = ProbUGrammar.uniform(UCFG.from_DFTA_with_ngrams(dfta, 2))
 
     backend = qk.Aer.get_backend("unitary_simulator")
     skd = SolovayKitaev()
@@ -169,12 +293,12 @@ def generate_tasks(
     pm.append(ParametricSubstitution())
 
     tasks = []
-    for program in enumerate_prob_grammar(pcfg):
+    for program in enumerate_prob_u_grammar(pcfg):
         name = str(program)
         print("Evaluating:", name)
         complex_circuit = evaluator.eval(program, [])
         base_circuit = decompose(complex_circuit, backend, pm, skd)
-        task = Task[PBE](tr, PBE(), circuit_to_program(base_circuit))
+        task = Task[PBE](tr, PBE([]), circuit_to_program(base_circuit, dsl, tr))
         tasks.append(task)
         if len(tasks) >= n_tasks:
             break
@@ -182,5 +306,5 @@ def generate_tasks(
 
 
 if __name__ == "__main__":
-    for task in generate_tasks(100, 5):
-        print(task)
+    for task in generate_tasks(2, 100, 5):
+        print("Task:", task)
