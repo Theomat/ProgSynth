@@ -27,29 +27,47 @@ __syntax = auto_type(
 
 
 __semantics = {
-    "H": lambda QT, q1: QT.circuit.h(QT.q(q1)),
-    "T": lambda QT, q1: QT.circuit.t(QT.q(q1)),
-    "Tdg": lambda QT, q1: QT.circuit.tdg(QT.q(q1)),
-    "CNOT": lambda QT, q1, q2: QT.circuit.cnot(QT.q(q1), QT.q(q2)),
+    "H": lambda QT: lambda q1: QT.circuit.h(QT.q(q1)),
+    "T": lambda QT: lambda q1: QT.circuit.t(QT.q(q1)),
+    "Tdg": lambda QT: lambda q1: QT.circuit.tdg(QT.q(q1)),
+    "CNOT": lambda QT: lambda q1: lambda q2: QT.circuit.cnot(QT.q(q1), QT.q(q2)),
 }
 
 
+class QiskitTester:
+    def __init__(self, n_qubits: int):
+        self.n_qubits = n_qubits
+        self.unitary_matrix = None
+        self.qreg_q = qk.QuantumRegister(self.n_qubits, "q")
+        self.circuit = qk.QuantumCircuit(self.qreg_q)
+
+    def q(self, q_num: int) -> int:
+        return self.n_qubits - 1 - q_num
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args: Any, **kwargs: Any) -> None:
+        pass
+
+    def __str__(self) -> str:
+        return self.circuit.__str__()
+
+    def execute(self, backend: qk.AerWrapper) -> np.ndarray:
+        return np.array(qk.execute(self.circuit, backend).result().get_unitary()).T
+
+
 class QuantumCircuitEvaluator(DSLEvaluator):
-    def __init__(
-        self, semantics: Dict[str, Any], nqbits: int = 3, use_cache: bool = True
-    ) -> None:
-        super().__init__(semantics, use_cache)
+    def __init__(self, semantics: Dict[str, Any], nqbits: int = 3) -> None:
+        super().__init__(semantics, False)
         self.nqbits = nqbits
         self.backend = qk.Aer.get_backend("unitary_simulator")
 
     def eval(self, program: Program, input: List) -> Any:
-        reg_q = qk.QuantumRegister(self.nqbits, "q")
-        circuit = qk.QuantumCircuit(reg_q)
-        new_circuit = super().eval(program, [circuit] + input)
-        job = self.backend.run(new_circuit)
-        result = job.result()
-        outputstate = result.get_unitary(new_circuit, decimals=3)
-        print(outputstate)
+        with QiskitTester(self.nqbits) as QT:
+            super().eval(program, [QT] + input)
+
+            return QT.execute(self.backend)
 
 
 dsl = DSL(__syntax)
