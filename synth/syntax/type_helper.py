@@ -93,7 +93,7 @@ def __next_token__(text: str) -> Tuple[str, int, int]:
             i += 1
         return text[:i], _TOK_INFIX, i
     i = 1
-    while i < len(text) and text[i].isalpha():
+    while i < len(text) and (text[i].isalpha() or text[i].isdigit()):
         i += 1
     is_poly = len(text) > 0 and text[0] == "'"
     return (
