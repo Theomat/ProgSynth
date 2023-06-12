@@ -112,7 +112,7 @@ class ParametricSubstitution(qk.transpiler.TransformationPass):
     def run(self, dag):
         # iterate over all operations
         for node in dag.op_nodes():
-            print(node.op.name, node.op.params)
+            # print(node.op.name, node.op.params)
             # if we hit a RYY or RZZ gate replace it
 
             if node.op.name in ["cp"]:
@@ -252,9 +252,9 @@ def __cfg2dfta__(
     return dfta
 
 
-def generate_tasks(
-    nqbits: int = 3, n_tasks: int = 1000, max_operations: int = 5, verbose: bool = False
-) -> Dataset[PBE]:
+def __generate_syntax__(
+    nqbits: int, max_operations: int, verbose: bool
+) -> Tuple[PartialQuantumCircuitEvaluator, DSL, ProbUGrammar]:
     tr = auto_type("circuit -> circuit")
     type_int = auto_type("int")
     if verbose:
@@ -308,7 +308,17 @@ def generate_tasks(
         print("done!\nConverting to probabilistic grammar...", end="")
     pcfg = ProbUGrammar.uniform(UCFG.from_DFTA_with_ngrams(dfta, 2))
     if verbose:
-        print("done!\nLoading quantum backend...", end="")
+        print("done!")
+    return evaluator, dsl, pcfg
+
+
+def generate_tasks(
+    nqbits: int = 3, n_tasks: int = 1000, max_operations: int = 5, verbose: bool = False
+) -> Dataset[PBE]:
+    evaluator, dsl, pcfg = __generate_syntax__(nqbits, max_operations, verbose)
+    tr = pcfg.type_request
+    if verbose:
+        print("Loading quantum backend...", end="")
 
     backend = qk.Aer.get_backend("unitary_simulator")
     skd = SolovayKitaev()
@@ -322,8 +332,7 @@ def generate_tasks(
     if verbose:
         pbar = tqdm.tqdm(total=n_tasks, desc="Task Generation")
     for program in enumerate_prob_u_grammar(pcfg):
-        name = str(program)
-        # print("Evaluating:", name)
+        # print("Evaluating:", str(program))
         complex_circuit = evaluator.eval(program, [])
         base_circuit = decompose(complex_circuit, backend, pm, skd)
         task = Task[PBE](tr, PBE([]), circuit_to_program(base_circuit, dsl, tr))
