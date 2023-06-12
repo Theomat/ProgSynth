@@ -25,6 +25,8 @@ from synth.semantic import DSLEvaluator
 from synth.syntax.grammars.det_grammar import DerivableProgram
 from synth import Task, PBE, Dataset
 
+import tqdm
+
 from quantum import QiskitTester
 
 import qiskit as qk
@@ -188,9 +190,7 @@ def circuit_to_program(circuit: qk.QuantumCircuit, dsl: DSL, tr: Type) -> Progra
             register, idx_in_reg = registers[0]
             program += f" {register.size-index - 1}"
         program += ")"
-    print(circuit)
-    print("parsed:", program)
-    return dsl.parse_program(program, tr)
+    return dsl.parse_program(program.replace("Cx", "CNOT"), tr)
 
 
 class PartialQuantumCircuitEvaluator(DSLEvaluator):
