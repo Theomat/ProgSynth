@@ -53,27 +53,41 @@ __syntax = auto_type(
     }
 )
 
-
+# Trick to always return QT while running statement X:
+# QT if X is not None else QT
 __semantics = {
-    "H": lambda QT: lambda q1: QT.circuit.h(QT.q(q1)),
-    "T": lambda QT: lambda q1: QT.circuit.t(QT.q(q1)),
-    "Tdg": lambda QT: lambda q1: QT.circuit.tdg(QT.q(q1)),
-    "CNOT": lambda QT: lambda q1: lambda q2: QT.circuit.cnot(QT.q(q1), QT.q(q2)),
-    "I": lambda QT: lambda q1: QT.circuit.id(QT.q(q1)),
-    "S": lambda QT: lambda q1: QT.circuit.s(QT.q(q1)),
-    "X": lambda QT: lambda q1: QT.circuit.x(QT.q(q1)),
-    "Y": lambda QT: lambda q1: QT.circuit.y(QT.q(q1)),
-    "Z": lambda QT: lambda q1: QT.circuit.z(QT.q(q1)),
-    "SX": lambda QT: lambda q1: QT.circuit.sx(QT.q(q1)),
-    "SXdg": lambda QT: lambda q1: QT.circuit.sxdg(QT.q(q1)),
-    "CY": lambda QT: lambda q1: lambda q2: QT.circuit.cy(QT.q(q1), QT.q(q2)),
-    "CZ": lambda QT: lambda q1: lambda q2: QT.circuit.cz(QT.q(q1), QT.q(q2)),
-    "CS": lambda QT: lambda q1: lambda q2: QT.circuit.append(
-        qk.circuit.library.SGate().control(1), (QT.q(q1), QT.q(q2))
-    ),
-    "CH": lambda QT: lambda q1: lambda q2: QT.circuit.ch(QT.q(q1), QT.q(q2)),
-    "SWAP": lambda QT: lambda q1: lambda q2: QT.circuit.swap(QT.q(q1), QT.q(q2)),
-    "iSWAP": lambda QT: lambda q1: lambda q2: QT.circuit.iswap(QT.q(q1), QT.q(q2)),
+    "H": lambda QT: lambda q1: QT if QT.circuit.h(QT.q(q1)) is not None else QT,
+    "T": lambda QT: lambda q1: QT if QT.circuit.t(QT.q(q1)) is not None else QT,
+    "Tdg": lambda QT: lambda q1: QT if QT.circuit.tdg(QT.q(q1)) is not None else QT,
+    "CNOT": lambda QT: lambda q1: lambda q2: QT
+    if QT.circuit.cnot(QT.q(q1), QT.q(q2)) is not None
+    else QT,
+    "I": lambda QT: lambda q1: QT if QT.circuit.id(QT.q(q1)) is not None else QT,
+    "S": lambda QT: lambda q1: QT if QT.circuit.s(QT.q(q1)) is not None else QT,
+    "X": lambda QT: lambda q1: QT if QT.circuit.x(QT.q(q1)) is not None else QT,
+    "Y": lambda QT: lambda q1: QT if QT.circuit.y(QT.q(q1)) is not None else QT,
+    "Z": lambda QT: lambda q1: QT if QT.circuit.z(QT.q(q1)) is not None else QT,
+    "SX": lambda QT: lambda q1: QT if QT.circuit.sx(QT.q(q1)) is not None else QT,
+    "SXdg": lambda QT: lambda q1: QT if QT.circuit.sxdg(QT.q(q1)) is not None else QT,
+    "CY": lambda QT: lambda q1: lambda q2: QT
+    if QT.circuit.cy(QT.q(q1), QT.q(q2)) is not None
+    else QT,
+    "CZ": lambda QT: lambda q1: lambda q2: QT
+    if QT.circuit.cz(QT.q(q1), QT.q(q2)) is not None
+    else QT,
+    "CS": lambda QT: lambda q1: lambda q2: QT
+    if QT.circuit.append(qk.circuit.library.SGate().control(1), (QT.q(q1), QT.q(q2)))
+    is not None
+    else QT,
+    "CH": lambda QT: lambda q1: lambda q2: QT
+    if QT.circuit.ch(QT.q(q1), QT.q(q2)) is not None
+    else QT,
+    "SWAP": lambda QT: lambda q1: lambda q2: QT
+    if QT.circuit.swap(QT.q(q1), QT.q(q2)) is not None
+    else QT,
+    "iSWAP": lambda QT: lambda q1: lambda q2: QT
+    if QT.circuit.iswap(QT.q(q1), QT.q(q2)) is not None
+    else QT,
 }
 
 # Is this important?

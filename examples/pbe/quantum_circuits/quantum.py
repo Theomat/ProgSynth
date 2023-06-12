@@ -27,10 +27,12 @@ __syntax = auto_type(
 
 
 __semantics = {
-    "H": lambda QT: lambda q1: QT.circuit.h(QT.q(q1)),
-    "T": lambda QT: lambda q1: QT.circuit.t(QT.q(q1)),
-    "Tdg": lambda QT: lambda q1: QT.circuit.tdg(QT.q(q1)),
-    "CNOT": lambda QT: lambda q1: lambda q2: QT.circuit.cnot(QT.q(q1), QT.q(q2)),
+    "H": lambda QT: lambda q1: QT if QT.circuit.h(QT.q(q1)) is not None else QT,
+    "T": lambda QT: lambda q1: QT if QT.circuit.t(QT.q(q1)) is not None else QT,
+    "Tdg": lambda QT: lambda q1: QT if QT.circuit.tdg(QT.q(q1)) is not None else QT,
+    "CNOT": lambda QT: lambda q1: lambda q2: QT
+    if QT.circuit.cnot(QT.q(q1), QT.q(q2)) is not None
+    else QT,
 }
 
 
