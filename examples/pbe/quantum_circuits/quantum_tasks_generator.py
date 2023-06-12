@@ -334,7 +334,10 @@ def generate_tasks(
     for program in enumerate_prob_u_grammar(pcfg):
         # print("Evaluating:", str(program))
         complex_circuit = evaluator.eval(program, [])
-        base_circuit = decompose(complex_circuit, backend, pm, skd)
+        try:
+            base_circuit = decompose(complex_circuit, backend, pm, skd)
+        except qk.transpiler.exceptions.TranspilerError:
+            continue
         task = Task[PBE](tr, PBE([]), circuit_to_program(base_circuit, dsl, tr))
         tasks.append(task)
         if pbar:
