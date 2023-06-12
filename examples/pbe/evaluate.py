@@ -672,11 +672,6 @@ if __name__ == "__main__":
                 int(len(trace) * 100 / len(full_dataset)),
                 "%)",
             )
-    try:
-        enumerative_search(
-            full_dataset, evaluator, pcfgs, trace, method, custom_enumerate
-        )
-    except Exception as e:
-        print(e)
+    enumerative_search(full_dataset, evaluator, pcfgs, trace, method, custom_enumerate)
     save(trace)
     print("csv file was saved as:", file)
