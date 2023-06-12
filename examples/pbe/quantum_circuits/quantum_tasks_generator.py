@@ -252,10 +252,12 @@ def __cfg2dfta__(
 
 
 def generate_tasks(
-    nqbits: int = 3, n_tasks: int = 1000, max_operations: int = 5
+    nqbits: int = 3, n_tasks: int = 1000, max_operations: int = 5, verbose: bool = False
 ) -> Dataset[PBE]:
     tr = auto_type("circuit -> circuit")
     type_int = auto_type("int")
+    if verbose:
+        print("Augmenting DSL...", end="")
     # Make copies to have no side-effects
     syntax = {x: y for x, y in __syntax.items()}
     semantics = {x: y for x, y in __semantics.items()}
@@ -266,12 +268,14 @@ def generate_tasks(
     # DSL + Evaluator
     dsl = DSL(syntax)
     evaluator = PartialQuantumCircuitEvaluator(semantics, nqbits)
+    if verbose:
+        print("done!\nGenerating grammar...", end="")
     # PCFG
     cfg = CFG.depth_constraint(dsl, tr, max_operations)
-    cfg.clean()
-    print(cfg)
 
     dfta = __cfg2dfta__(cfg)
+    if verbose:
+        print("done!\nFixing grammar...", end="")
     depths = {y for x, y in dfta.states if x == type_int}
     for depth in depths:
         for n in range(nqbits):
@@ -283,6 +287,8 @@ def generate_tasks(
             del dfta.rules[(P, args)]
             for n1 in range(nqbits):
                 for n2 in range(nqbits):
+                    if n1 == n2:
+                        continue
                     n_args = (
                         args[0],
                         (auto_type("int" + str(n1)), args[1][1]),
@@ -297,28 +303,39 @@ def generate_tasks(
                     (auto_type("int" + str(n1)), args[1][1]),
                 )
                 dfta.rules[(P, n_args)] = dst
-
-    print(dfta)
+    if verbose:
+        print("done!\nConverting to probabilistic grammar...", end="")
     pcfg = ProbUGrammar.uniform(UCFG.from_DFTA_with_ngrams(dfta, 2))
+    if verbose:
+        print("done!\nLoading quantum backend...", end="")
 
     backend = qk.Aer.get_backend("unitary_simulator")
     skd = SolovayKitaev()
     pm = qk.transpiler.PassManager()
     pm.append(ParametricSubstitution())
+    if verbose:
+        print("done!")
 
     tasks = []
+    pbar = None
+    if verbose:
+        pbar = tqdm.tqdm(total=n_tasks, desc="Task Generation")
     for program in enumerate_prob_u_grammar(pcfg):
         name = str(program)
-        print("Evaluating:", name)
+        # print("Evaluating:", name)
         complex_circuit = evaluator.eval(program, [])
         base_circuit = decompose(complex_circuit, backend, pm, skd)
         task = Task[PBE](tr, PBE([]), circuit_to_program(base_circuit, dsl, tr))
         tasks.append(task)
+        if pbar:
+            pbar.update(1)
         if len(tasks) >= n_tasks:
             break
+    if pbar:
+        pbar.close()
     return Dataset(tasks, {"generated:": True})
 
 
 if __name__ == "__main__":
-    for task in generate_tasks(2, 100, 5):
+    for task in generate_tasks(2, 100, 5, verbose=True):
         print("Task:", task)
