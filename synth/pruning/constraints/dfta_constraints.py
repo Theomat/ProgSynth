@@ -71,6 +71,7 @@ def __cfg2dfta__(
                     )
     r = grammar.type_request.returns()
     dfta = DFTA(dfta_rules, {(r, x) for x in range(max_depth)})
+    dfta.reduce()
     return dfta
 
 
