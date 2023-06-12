@@ -384,7 +384,7 @@ def check_equivalent() -> None:
         inputs = sampled_inputs[ftype]
         all_sol = all_solutions[ftype.returns()]
 
-        cfg_size = cfg.size()
+        cfg_size = cfg.programs()
         ftypes.set_postfix_str(f"{0 / cfg_size:.0%}")
 
         # ========================
