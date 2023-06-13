@@ -1,15 +1,13 @@
 import argparse
 from collections import defaultdict
-from typing import Any, Callable, Dict, Tuple, List
+from typing import Any, Callable, Dict, Set, Tuple, List, Union
 from dsl_loader import add_dsl_choice_arg, load_DSL
 import tqdm
 
 from synth import Dataset, PBE
 from synth.pbe.task_generator import TaskGenerator
-from synth.syntax.program import Program
-from synth.syntax.type_system import Type
 from synth.utils import chrono
-from synth.syntax import CFG
+from synth.syntax import CFG, Type, Program
 
 DREAMCODER = "dreamcoder"
 REGEXP = "regexp"
@@ -154,12 +152,12 @@ def generate_programs_and_samples_for(
     # Phase 2 generate k examples to differentiate as much as possible programs in n
     # Phase 3 try to generate new programs to get n as close as possible to m
     # Phase 1
-    programs = []
+    programs = set()
     for _ in tqdm.trange(nb_programs * 2, desc="1: generation"):
         prog, unique = task_generator.generate_program(tr)
         while not unique:
             prog, unique = task_generator.generate_program(tr)
-        programs.append(prog)
+        programs.add(prog)
     # Phase 2
     samples, equiv = generate_samples_for(
         programs,
@@ -193,14 +191,14 @@ def generate_programs_and_samples_for(
             if tries > 1000:
                 break
     pbar.close()
-    programs = [
+    rel_programs = [
         min([(p.size(), p) for p in v], key=lambda x: x[0])[1] for v in equiv.values()
     ]
     out = [samples]
     if nb_inputs > 1:
         for _ in tqdm.trange(nb_inputs - 1, desc="4: additional examples"):
             samples, equiv = generate_samples_for(
-                programs,
+                rel_programs,
                 lambda: task_generator.sample_input(tr.arguments()),
                 task_generator.eval_input,
                 task_generator.evaluator.clear_cache,
@@ -217,12 +215,12 @@ def generate_programs_and_samples_for(
             ]
             for x in out
         ]
-    return out, programs
+    return out, rel_programs
 
 
 #
 def generate_samples_for(
-    programs: List[Program],
+    programs: Union[List[Program], Set[Program]],
     input_sampler: Callable[[], Any],
     eval_prog: Callable[[Program, Any], Any],
     clear_cache: Callable,
