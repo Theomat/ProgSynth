@@ -10,6 +10,7 @@ def random_world(
     world = KarelWorld(width, height)
     gen = rng or np.random.default_rng()
     world.grid[gen.random((width, height)) > 0.8] = 1
+    world.grid[world.karel] = 0
     world.markers = (gen.random((width, height)) > 0.7).astype(int)
-    world.markers[world.grid] = 0
+    world.markers[world.grid > 0] = 0
     return world
