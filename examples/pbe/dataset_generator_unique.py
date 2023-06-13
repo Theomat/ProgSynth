@@ -61,12 +61,6 @@ parser.add_argument(
     "--uniform", action="store_true", default=False, help="use uniform PCFGs"
 )
 parser.add_argument(
-    "--no-unique",
-    action="store_true",
-    default=False,
-    help="does not try to generate unique tasks",
-)
-parser.add_argument(
     "--constrained",
     action="store_true",
     default=False,
@@ -90,7 +84,6 @@ test_examples: int = parameters.test_examples
 nb_programs: int = parameters.programs
 nb_inputs: int = parameters.inputs
 uniform: bool = parameters.uniform
-no_unique: bool = parameters.no_unique
 constrained: bool = parameters.constrained
 verbose: bool = parameters.verbose
 
@@ -144,7 +137,7 @@ with chrono.clock("dataset.reproduce") as c:
     print("done in", c.elapsed_time(), "s")
 # Add some exceptions that are ignored during task generation
 task_generator.skip_exceptions.add(TypeError)
-task_generator.uniques = not no_unique
+task_generator.uniques = True
 task_generator.verbose = True
 
 
@@ -164,7 +157,7 @@ def generate_programs_and_samples_for(
     programs = []
     for _ in tqdm.trange(nb_programs * 2, desc="1: generation"):
         prog, unique = task_generator.generate_program(tr)
-        while not no_unique and not unique:
+        while not unique:
             prog, unique = task_generator.generate_program(tr)
         programs.append(prog)
     # Phase 2
@@ -181,7 +174,7 @@ def generate_programs_and_samples_for(
     tries = 0
     while len(equiv) < nb_programs:
         prog, unique = task_generator.generate_program(tr)
-        while not no_unique and not unique:
+        while not unique:
             prog, unique = task_generator.generate_program(tr)
         # Compute semantic hash
         cl = None
