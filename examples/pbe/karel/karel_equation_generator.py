@@ -262,8 +262,10 @@ def init_base_primitives() -> None:
     for arg_type in all_types:
         try:
             input_sampler.sample(type=arg_type)
-        except:
+        except Exception as e:
             forbidden_types.add(arg_type)
+            # raise e
+    print("Some types could not be sampled:", forbidden_types)
     # Pre Sample Inputs + Pre Execute base primitives
     for primitive in primitives:
         arguments = primitive.type.arguments()
