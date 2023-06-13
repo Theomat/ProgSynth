@@ -36,13 +36,13 @@ from karel_runtime import KarelWorld
 parser = argparse.ArgumentParser(description="Generate equations for Karel")
 parser.add_argument("-s", "--seed", type=int, default=0, help="seed (default: 0)")
 parser.add_argument(
-    "--n", type=int, default=10, help="number of examples to be sampled (default: 10)"
+    "--n", type=int, default=50, help="number of examples to be sampled (default: 50)"
 )
 parser.add_argument(
     "--max-depth",
     type=int,
-    default=2,
-    help="max depth of programs to check for (default: 2)",
+    default=5,
+    help="max depth of programs to check for (default: 5)",
 )
 
 
