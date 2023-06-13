@@ -1,7 +1,9 @@
 from typing import Optional
+from dataclasses import dataclass, field
+
 import numpy as np
 
-from dataclasses import dataclass, field
+import matplotlib.pyplot as plt
 
 
 @dataclass(frozen=True)
@@ -157,3 +159,35 @@ class KarelWorld:
         out = self.markers * 2 + self.grid
         out[self.karel] += 4
         return tuple(out)
+
+    def show(self) -> None:
+        plt.figure()
+
+        # Draw Karel
+        x, y = self.karel
+        xs = [x, x + 1 / 2, x + 1]
+        ys = [y, y + 1, y]
+        if self.direction == self.DIRECTION_RIGHT:
+            xs = [x, x + 1, x]
+            ys = [y, y + 1 / 2, y + 1]
+        elif self.direction == self.DIRECTION_LEFT:
+            xs = [x + 1, x, x + 1]
+            ys = [y, y + 1 / 2, y + 1]
+        elif self.direction == self.DIRECTION_TOP:
+            xs = [x, x + 1 / 2, x + 1]
+            ys = [y + 1, y, y + 1]
+        plt.fill(xs, ys, "blue")
+        # Draw Grid
+        for x in range(self.grid.shape[0]):
+            for y in range(self.grid.shape[1]):
+
+                if self.grid[x, y] > 0:
+                    plt.fill([x, x, x + 1, x + 1], [y + 1, y, y, y + 1], "g")
+                elif self.current_markers[x, y] > 0:
+                    plt.scatter([x + 1 / 2], [y + 1 / 2], color="r", marker="D", s=12)
+        plt.xlim(0, self.grid.shape[0])
+        plt.ylim(0, self.grid.shape[1])
+        plt.xticks(list(range(self.grid.shape[0] + 1)))
+        plt.yticks(list(range(self.grid.shape[1] + 1)))
+        plt.grid()
+        plt.show()
