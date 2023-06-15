@@ -146,8 +146,11 @@ class KarelWorld:
             for _ in range(prog.n):
                 self.exec(prog.subroutine)
         elif isinstance(prog, KarelWhile):
-            while self.exec(prog.cond):
+            n = 0
+            max_it = self.grid.shape[0] * self.grid.shape[1]
+            while self.exec(prog.cond) and n < max_it:
                 self.exec(prog.subroutine)
+                n += 1
         elif isinstance(prog, KarelITE):
             if self.exec(prog.cond):
                 self.exec(prog.yes)
