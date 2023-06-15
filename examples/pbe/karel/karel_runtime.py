@@ -161,7 +161,7 @@ class KarelWorld:
     def state(self) -> tuple:
         out = self.markers * 2 + self.grid
         out[self.karel] += 4
-        return tuple(out)
+        return tuple(tuple(x) for x in out)
 
     def show(self) -> None:
         plt.figure()
