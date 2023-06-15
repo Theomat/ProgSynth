@@ -67,42 +67,42 @@ class GridSampler(RequestSampler[KarelWorld]):
 
 
 basic_samplers: Dict[Type, Sampler] = {auto_type("world"): GridSampler(seed)}
-for this_type in [auto_type("cond"), auto_type("int")]:
+for this_type in [auto_type("stmt"), auto_type("cond"), auto_type("int")]:
     elements = []
     for el in dsl.list_primitives:
         if el.type == this_type:
             elements.append(evaluator.semantics[el.primitive])
     basic_samplers[this_type] = LexiconSampler(elements, seed=seed)
 
-t = auto_type("stmt")
-stmt_lex = []
-comp: List[Primitive] = []
-for el in dsl.list_primitives:
-    if el.type == t:
-        stmt_lex.append(evaluator.semantics[el.primitive])
-    elif el.type.returns() == t:
-        comp.append(el)
+# t = auto_type("stmt")
+# stmt_lex = []
+# comp: List[Primitive] = []
+# for el in dsl.list_primitives:
+#     if el.type == t:
+#         stmt_lex.append(evaluator.semantics[el.primitive])
+#     elif el.type.returns() == t:
+#         comp.append(el)
 
-for _ in range(1):
-    print("level:", _, "statements:", len(stmt_lex))
-    current_gen = []
-    for f in comp:
-        candidates = []
-        for arg_t in f.type.arguments():
-            if arg_t == t:
-                candidates.append(stmt_lex)
-            else:
-                candidates.append(basic_samplers[arg_t].lexicon)
-        for poss in product(*candidates):
-            fun = evaluator.semantics[f.primitive]
-            args = list(poss)
-            value = fun
-            while args:
-                value = value(args.pop(0))
-            current_gen.append(value)
+# for _ in range(1):
+#     print("level:", _, "statements:", len(stmt_lex))
+#     current_gen = []
+#     for f in comp:
+#         candidates = []
+#         for arg_t in f.type.arguments():
+#             if arg_t == t:
+#                 candidates.append(stmt_lex)
+#             else:
+#                 candidates.append(basic_samplers[arg_t].lexicon)
+#         for poss in product(*candidates):
+#             fun = evaluator.semantics[f.primitive]
+#             args = list(poss)
+#             value = fun
+#             while args:
+#                 value = value(args.pop(0))
+#             current_gen.append(value)
 
-    stmt_lex += current_gen
-basic_samplers[t] = LexiconSampler(stmt_lex, seed=seed)
+#     stmt_lex += current_gen
+# basic_samplers[t] = LexiconSampler(stmt_lex, seed=seed)
 input_sampler = UnionSampler(basic_samplers)
 
 # ================================
@@ -346,6 +346,7 @@ def check_equivalent() -> None:
         all_sol = all_solutions[ftype.returns()]
 
         cfg_size = cfg.programs()
+        print("programs:", cfg_size)
         ftypes.set_postfix_str(f"{0 / cfg_size:.0%}")
 
         # ========================
@@ -354,6 +355,7 @@ def check_equivalent() -> None:
         for done, program in enumerate(enumerate_prob_grammar(pcfg)):
             if program in programs_done or not simpler_pruner.accept((ftype, program)):
                 continue
+            ftypes.set_postfix_str(f"{done}/{cfg_size} | {done / cfg_size:.0%}")
             is_constant = True
             my_outputs = []
             candidates = set(all_sol.keys())
@@ -377,8 +379,8 @@ def check_equivalent() -> None:
             else:
                 new_equivalence_class(program)
                 all_sol[program] = my_outputs
-            if done & 256 == 0:
-                ftypes.set_postfix_str(f"{done / cfg_size:.0%}")
+            # if done & 256 == 0:
+            #     ftypes.set_postfix_str(f"{done / cfg_size:.0%}")
 
 
 def check_constants() -> None:
@@ -415,10 +417,15 @@ def exploit_symmetries() -> None:
                 syntaxic_restrictions[(P.primitive, i)] |= sym_types[arg]
 
 
+print("Primitives:")
 init_base_primitives()
+print("Symmetries:")
 check_symmetries()
+print("Equivalents:")
 check_equivalent()
+print("Constants:")
 check_constants()
+print("Exploiting symmetries:")
 exploit_symmetries()
 
 print(f"Cache hit rate: {evaluator.cache_hit_rate:.1%}")
