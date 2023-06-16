@@ -1,5 +1,4 @@
 from collections import defaultdict
-from itertools import product
 import json
 from typing import Any, Dict, Generator, List, Optional, Set, Tuple, TypeVar
 import copy
@@ -28,9 +27,8 @@ from synth.syntax import (
     auto_type,
 )
 
-from karel import dsl, evaluator
+from karel import dsl, evaluator, KarelWorld
 from karel_task_generator import random_world
-from karel_runtime import KarelWorld
 
 
 parser = argparse.ArgumentParser(description="Generate equations for Karel")

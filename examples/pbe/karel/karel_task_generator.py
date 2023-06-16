@@ -1,5 +1,5 @@
 from typing import Optional
-from karel_runtime import KarelWorld
+from karel import KarelWorld
 
 import numpy as np
 
@@ -39,7 +39,7 @@ if __name__ == "__main__":
         "-w", "--width", type=int, default=10, help="grid width (default: 10)"
     )
     parser.add_argument(
-        "-h", "--height", type=int, default=10, help="grid height (default: 10)"
+        "--height", type=int, default=10, help="grid height (default: 10)"
     )
     parser.add_argument(
         "-g",
