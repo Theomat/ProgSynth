@@ -101,6 +101,15 @@ __dsl_funcs: Dict[str, Callable[[bool], Optional[SimpleNamespace]]] = {
             ("reproduce_calculator_dataset", "reproduce_dataset"),
         ],
     ),
+    "karel": __base_loader(
+        "karel.karel",
+        [
+            "dsl",
+            "evaluator",
+            "lexicon",
+            "pretty_print_inputs",
+        ],
+    ),
 }
 # =======================================================================================
 # Nothing to change after this
