@@ -165,8 +165,8 @@ class KarelWorld:
         return False
 
     def state(self) -> tuple:
-        out = self.markers * 2 + self.grid
-        out[self.karel] += 4
+        out = self.markers * 2 + self.grid + self.current_markers * 4
+        out[self.karel] += 8
         return tuple(tuple(x) for x in out)
 
     def show(self) -> None:
