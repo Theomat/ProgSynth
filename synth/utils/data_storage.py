@@ -13,8 +13,10 @@ def load_object(
     Load an arbitrary object from the specified file.
     """
     with bz2.BZ2File(path, "rb") as fd:
-        unp = cPickle if unpickler is None else unpickler(fd)
-        return unp.load()
+        if unpickler is None:
+            return cPickle.load(fd)
+        else:
+            return unpickler(fd).load()
 
 
 def save_object(path: str, obj: Any, optimize: bool = True) -> None:
