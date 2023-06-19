@@ -11,8 +11,9 @@ from torch.utils.tensorboard import SummaryWriter
 
 import numpy as np
 
+from dataset_loader import add_dataset_choice_arg, load_dataset
 from dsl_loader import add_dsl_choice_arg, load_DSL
-from examples.pbe.model_loader import (
+from model_loader import (
     add_model_choice_arg,
     instantiate_predictor,
 )
@@ -34,13 +35,7 @@ TRANSDUCTION = "transduction"
 import argparse
 
 parser = argparse.ArgumentParser(description="Evaluate model prediction")
-parser.add_argument(
-    "-d",
-    "--dataset",
-    type=str,
-    default="{dsl_name}.pickle",
-    help="dataset (default: {dsl_name}}.pickle)",
-)
+add_dataset_choice_arg(parser)
 add_dsl_choice_arg(parser)
 add_model_choice_arg(parser)
 parser.add_argument(
@@ -102,7 +97,7 @@ g.add_argument("-s", "--seed", type=int, default=0, help="seed (default: 0)")
 
 parameters = parser.parse_args()
 dsl_name: str = parameters.dsl
-dataset_file: str = parameters.dataset.format(dsl_name=dsl_name)
+dataset_file: str = parameters.dataset
 seed: int = parameters.seed
 output_file: str = parameters.output.format(seed=seed)
 batch_size: int = parameters.batch_size
@@ -151,10 +146,7 @@ if not os.path.exists(dataset_file) or not os.path.isfile(dataset_file):
     sys.exit(1)
 # Load dataset
 
-print(f"Loading {dataset_file}...", end="")
-with chrono.clock("dataset.load") as c:
-    full_dataset: Dataset[PBE] = Dataset.load(dataset_file)
-    print("done in", c.elapsed_time(), "s")
+full_dataset: Dataset[PBE] = load_dataset(dsl_name, dataset_file)
 
 
 # ================================

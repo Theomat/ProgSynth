@@ -10,8 +10,9 @@ import tqdm
 
 import torch
 
+from dataset_loader import add_dataset_choice_arg, load_dataset
 from dsl_loader import add_dsl_choice_arg, load_DSL
-from examples.pbe.model_loader import (
+from model_loader import (
     add_model_choice_arg,
     instantiate_predictor,
 )
@@ -44,13 +45,7 @@ import argparse
 
 parser = argparse.ArgumentParser(description="Evaluate model prediction")
 parser.add_argument("-m", "--model", default="", type=str, help="model file")
-parser.add_argument(
-    "-d",
-    "--dataset",
-    type=str,
-    default="{dsl_name}.pickle",
-    help="dataset (default: {dsl_name}}.pickle)",
-)
+add_dataset_choice_arg(parser)
 parser.add_argument(
     "-s",
     "--search",
@@ -84,7 +79,7 @@ parser.add_argument(
 
 parameters = parser.parse_args()
 dsl_name: str = parameters.dsl
-dataset_file: str = parameters.dataset.format(dsl_name=dsl_name)
+dataset_file: str = parameters.dataset
 search_algo: str = parameters.search
 output_folder: str = parameters.output
 model_file: str = parameters.model
@@ -150,11 +145,7 @@ def load_dataset() -> Tuple[
     # ================================
     # Load dataset
     # ================================
-    # Load dataset
-    print(f"Loading {dataset_file}...", end="")
-    with chrono.clock("dataset.load") as c:
-        full_dataset = Dataset.load(dataset_file)
-        print("done in", c.elapsed_time(), "s")
+    full_dataset = load_dataset(dsl_name, dataset_file)
 
     start_index = (
         0

@@ -3,17 +3,13 @@ from synth.utils import chrono
 from synth.library import learn, make_score_probabilistic, score_description
 
 from dsl_loader import add_dsl_choice_arg, load_DSL
+from dataset_loader import add_dataset_choice_arg, load_dataset
 
 import argparse
 
 parser = argparse.ArgumentParser(description="Learn a new primitive based on a dataset")
 add_dsl_choice_arg(parser)
-parser.add_argument(
-    "--dataset",
-    type=str,
-    default="{dsl_name}.pickle",
-    help="dataset file (default: {dsl_name}.pickle)",
-)
+add_dataset_choice_arg(parser)
 parser.add_argument(
     "--probabilistic",
     action="store_true",
@@ -22,7 +18,7 @@ parser.add_argument(
 parameters = parser.parse_args()
 dsl_name: str = parameters.dsl
 proba: bool = parameters.probabilistic
-dataset_file: str = parameters.dataset.format(dsl_name=dsl_name)
+dataset_file: str = parameters.dataset
 # ================================
 # Load constants specific to DSL
 # ================================

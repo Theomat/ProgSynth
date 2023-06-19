@@ -1,6 +1,9 @@
 import argparse
-from dsl_loader import add_dsl_choice_arg, load_DSL
+
 import tqdm
+
+from dataset_loader import add_dataset_choice_arg, load_dataset
+from dsl_loader import add_dsl_choice_arg, load_DSL
 
 from synth import Dataset, PBE
 from synth.utils import chrono
@@ -16,13 +19,7 @@ parser = argparse.ArgumentParser(
     description="Generate a dataset copying the original distribution of another dataset"
 )
 add_dsl_choice_arg(parser)
-
-parser.add_argument(
-    "--dataset",
-    type=str,
-    default="{dsl_name}.pickle",
-    help="dataset file (default: {dsl_name}.pickle)",
-)
+add_dataset_choice_arg(parser)
 parser.add_argument(
     "-o",
     "--output",
@@ -61,7 +58,7 @@ parser.add_argument(
 )
 parameters = parser.parse_args()
 dsl_name: str = parameters.dsl
-dataset_file: str = parameters.dataset.format(dsl_name=dsl_name)
+dataset_file: str = parameters.dataset
 output_file: str = parameters.output
 seed: int = parameters.seed
 max_depth: int = parameters.max_depth
@@ -92,10 +89,8 @@ if dsl_name == DREAMCODER:
 # Load dataset & Task Generator
 # ================================
 # Load dataset
-print(f"Loading {dataset_file}...", end="")
-with chrono.clock("dataset.load") as c:
-    full_dataset: Dataset[PBE] = Dataset.load(dataset_file)
-    print("done in", c.elapsed_time(), "s")
+full_dataset: Dataset[PBE] = load_dataset(dsl_name, dataset_file)
+
 # Reproduce dataset distribution
 print("Reproducing dataset...", end="", flush=True)
 with chrono.clock("dataset.reproduce") as c:

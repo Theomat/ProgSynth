@@ -7,6 +7,7 @@ import argparse
 import tqdm
 import numpy as np
 
+from dataset_loader import add_dataset_choice_arg, load_dataset
 from dsl_loader import add_dsl_choice_arg, load_DSL
 
 from synth import Dataset, PBE
@@ -34,13 +35,7 @@ parser = argparse.ArgumentParser(
     description="Generate a dataset copying the original distribution of another dataset"
 )
 add_dsl_choice_arg(parser)
-
-parser.add_argument(
-    "--dataset",
-    type=str,
-    default="{dsl_name}.pickle",
-    help="dataset file (default: {dsl_name}.pickle)",
-)
+add_dataset_choice_arg(parser)
 parser.add_argument(
     "--no-reproduce",
     action="store_true",
@@ -61,7 +56,7 @@ parser.add_argument(
 
 parameters = parser.parse_args()
 dsl_name: str = parameters.dsl
-dataset_file: str = parameters.dataset.format(dsl_name=dsl_name)
+dataset_file: str = parameters.dataset
 input_checks: int = parameters.n
 max_depth: int = parameters.max_depth
 no_reproduce: bool = parameters.no_reproduce
@@ -80,10 +75,7 @@ dsl_module = load_DSL(dsl_name)
 dsl, evaluator = dsl_module.dsl, dsl_module.evaluator
 
 # Load dataset
-print(f"Loading {dataset_file}...", end="")
-with chrono.clock("dataset.load") as c:
-    full_dataset: Dataset[PBE] = Dataset.load(dataset_file)
-    print("done in", c.elapsed_time(), "s")
+full_dataset: Dataset[PBE] = load_dataset(dsl_name, dataset_file)
 
 our_eval = lambda *args: evaluator.eval(*args)
 
