@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from typing import (
     Any,
+    Callable,
     Dict,
     Generic,
     Iterator,
@@ -12,6 +13,7 @@ from typing import (
     Set,
 )
 import _pickle as cPickle  # type: ignore
+import pickle
 import bz2
 
 from synth.specification import TaskSpecification
@@ -76,10 +78,15 @@ class Dataset(Generic[T]):
             cPickle.dump(self, fd)
 
     @classmethod
-    def load(cls, path: str) -> "Dataset[T]":
+    def load(
+        cls,
+        path: str,
+        unpickler: Optional[Callable[[bz2.BZ2File], pickle.Unpickler]] = None,
+    ) -> "Dataset[T]":
         """
         Load the dataset object stored in this file.
         """
         with bz2.BZ2File(path, "rb") as fd:
-            dataset: Dataset = cPickle.load(fd)
+            unp = cPickle if unpickler is None else unpickler(fd)
+            dataset: Dataset = unp.load()
             return dataset
