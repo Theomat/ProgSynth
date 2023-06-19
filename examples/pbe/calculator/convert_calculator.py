@@ -14,12 +14,11 @@ from synth.syntax import (
     Primitive,
     Program,
     Variable,
-    PrimitiveType,
-    PolymorphicType,
+    UnknownType,
+    guess_type,
 )
 
 from calculator import dsl, evaluator, FLOAT
-from synth.syntax.type_system import UnknownType, guess_type
 
 # this dictionary contains the primitives as defined in the dsl
 name2type: Dict[str, Type] = {p.primitive: p.type for p in dsl.list_primitives}
