@@ -5,24 +5,20 @@ from colorama import Fore as F
 from synth import Dataset, PBE
 from synth.syntax import CFG
 from synth.task import Task
-from synth.utils import chrono
 
 from dsl_loader import add_dsl_choice_arg, load_DSL
+from dataset_loader import add_dataset_choice_arg, load_dataset
 
 import argparse
 
 parser = argparse.ArgumentParser(description="Explore a dataset")
 add_dsl_choice_arg(parser)
-parser.add_argument(
-    "--dataset",
-    type=str,
-    default="{dsl_name}.pickle",
-    help="dataset file (default: {dsl_name}.pickle)",
-)
+add_dataset_choice_arg(parser)
+
 
 parameters = parser.parse_args()
 dsl_name: str = parameters.dsl
-dataset_file: str = parameters.dataset.format(dsl_name=dsl_name)
+dataset_file: str = parameters.dataset
 # ================================
 # Load constants specific to DSL
 # ================================
@@ -44,10 +40,7 @@ if hasattr(dsl_module, "pretty_print_inputs"):
 # Load dataset & Task Generator
 # ================================
 # Load dataset
-print(f"Loading {F.LIGHTCYAN_EX}{dataset_file}{F.RESET}...", end="")
-with chrono.clock("dataset.load") as c:
-    full_dataset: Dataset[PBE] = Dataset.load(dataset_file)
-    print(f"done in{F.LIGHTYELLOW_EX}", c.elapsed_time(), f"s{F.RESET}")
+full_dataset: Dataset = load_dataset(dsl_name, dataset_file)
 
 
 def print_value(name: str, value: str) -> None:
