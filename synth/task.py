@@ -12,13 +12,13 @@ from typing import (
     overload,
     Set,
 )
-import _pickle as cPickle  # type: ignore
 import pickle
 import bz2
 
 from synth.specification import TaskSpecification
 from synth.syntax.program import Program
 from synth.syntax.type_system import Type
+from synth.utils.data_storage import load_object, save_object
 
 
 T = TypeVar("T", bound=TaskSpecification)
@@ -74,8 +74,7 @@ class Dataset(Generic[T]):
         Save this dataset in the specified file.
         The dataset file is compressed.
         """
-        with bz2.BZ2File(path, "w") as fd:
-            cPickle.dump(self, fd)
+        save_object(path, self)
 
     @classmethod
     def load(
@@ -86,7 +85,5 @@ class Dataset(Generic[T]):
         """
         Load the dataset object stored in this file.
         """
-        with bz2.BZ2File(path, "rb") as fd:
-            unp = cPickle if unpickler is None else unpickler(fd)
-            dataset: Dataset = unp.load()
-            return dataset
+        d: Dataset = load_object(path, unpickler)
+        return d

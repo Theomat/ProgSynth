@@ -39,7 +39,8 @@ from synth.syntax import (
 from synth.syntax.grammars.enumeration.heap_search import HSEnumerator
 from synth.syntax.program import Function, Primitive, Variable
 from synth.syntax.type_system import STRING, Arrow
-from synth.utils import chrono
+from synth.utils import chrono, load_object, save_object
+
 
 import argparse
 
@@ -174,8 +175,7 @@ def produce_pcfgs(
     file = os.path.join(dir, f"pcfgs_{dataset_name}_{model_name}.pickle")
     pcfgs: Union[List[ProbDetGrammar], List[ProbUGrammar]] = []
     if os.path.exists(file):
-        with open(file, "rb") as fd:
-            pcfgs = pickle.load(fd)
+        pcfgs = load_object(file)
     tasks = full_dataset.tasks
     tasks = [
         t
@@ -232,8 +232,7 @@ def produce_pcfgs(
     # Predict PCFG
     # ================================
     def save_pcfgs() -> None:
-        with open(file, "wb") as fd:
-            pickle.dump(pcfgs, fd)
+        save_object(file, pcfgs)
 
     atexit.register(save_pcfgs)
 
