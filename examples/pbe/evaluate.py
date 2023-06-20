@@ -135,7 +135,7 @@ supported_type_requests = Dataset.load(support).type_requests() if support else 
 # ================================
 
 
-def load_dataset() -> Tuple[
+def load_dsl_and_dataset() -> Tuple[
     Dataset[PBE], DSL, DSLEvaluatorWithConstant, List[int], str, List[str]
 ]:
     dsl_module = load_DSL(dsl_name)
@@ -636,7 +636,14 @@ def sketched_base(
 # Main ====================================================================
 
 if __name__ == "__main__":
-    full_dataset, dsl, evaluator, lexicon, model_name, constraints = load_dataset()
+    (
+        full_dataset,
+        dsl,
+        evaluator,
+        lexicon,
+        model_name,
+        constraints,
+    ) = load_dsl_and_dataset()
     method = base
     name = "base"
     # if isinstance(evaluator, DSLEvaluatorWithConstant):
