@@ -10,7 +10,7 @@ repository = "https://github.com/nathanael-fijalkow/AutoSynth"
 [tool.poetry.dependencies]
 python = ">=3.8"
 torch = ">=1.13.1"
-tensorboard = ">=1.6.0"
+tensorboard = ">=0"
 cython = ">=0.29"
 numpy = ">=1.22"
 vose = { git = "https://github.com/Theomat/vose.git"}
