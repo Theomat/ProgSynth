@@ -3,8 +3,6 @@ import pickle
 from typing import Any, Callable, Optional
 import pickletools
 
-import _pickle as cPickle  # type: ignore
-
 
 def load_object(
     path: str, unpickler: Optional[Callable[[bz2.BZ2File], pickle.Unpickler]] = None
@@ -14,7 +12,7 @@ def load_object(
     """
     with bz2.BZ2File(path, "rb") as fd:
         if unpickler is None:
-            return cPickle.load(fd)
+            return pickle.load(fd)
         else:
             return unpickler(fd).load()
 
