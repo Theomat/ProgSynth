@@ -252,8 +252,7 @@ def produce_pcfgs(
                 obj.to_prob_u_grammar() if constrained else obj.to_prob_det_grammar()
             )
     pbar.close()
-    with open(file, "wb") as fd:
-        pickle.dump(pcfgs, fd)
+    save_pcfgs()
     atexit.unregister(save_pcfgs)
     del predictor
     free_pytorch_memory()
