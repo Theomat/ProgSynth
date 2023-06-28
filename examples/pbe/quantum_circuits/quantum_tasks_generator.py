@@ -350,5 +350,52 @@ def generate_tasks(
 
 
 if __name__ == "__main__":
-    for task in generate_tasks(2, 100, 5, verbose=True):
-        print("Task:", task)
+
+    import argparse
+
+    from synth.utils import chrono
+
+    parser = argparse.ArgumentParser(description="Generate a quantum dataset")
+    parser.add_argument(
+        "-o",
+        "--output",
+        type=str,
+        default="quantum.pickle",
+        help="output file (default: quantum.pickle)",
+    )
+    parser.add_argument("-q", "--qbits", type=int, default=3, help="qbits (default: 3)")
+    parser.add_argument(
+        "--size", type=int, default=100, help="generated dataset size (default: 100)"
+    )
+    parser.add_argument(
+        "--max-operations",
+        type=int,
+        default=5,
+        help="solutions max operations (default: 5)",
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        default=False,
+        help="verbose generation",
+    )
+    parameters = parser.parse_args()
+    output_file: str = parameters.output
+    qbits: int = parameters.qbits
+    max_depth: int = parameters.max_operations
+    gen_dataset_size: int = parameters.size
+    verbose: bool = parameters.verbose
+    # ================================
+    # Task Generator
+    # ================================
+    print("Generating dataset...", gen_dataset_size, end="", flush=True)
+    with chrono.clock("dataset.generate") as c:
+        gen_dataset = generate_tasks(
+            qbits, gen_dataset_size, max_depth, verbose=verbose
+        )
+        print("done in", c.elapsed_time(), "s")
+    print("Saving dataset...", end="", flush=True)
+    with chrono.clock("dataset.save") as c:
+        gen_dataset.save(output_file)
+        print("done in", c.elapsed_time(), "s")
