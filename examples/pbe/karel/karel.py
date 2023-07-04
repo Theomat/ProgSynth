@@ -257,8 +257,11 @@ for i in range(20):
     __syntax[str(i)] = auto_type("int")
     __semantics[str(i)] = i
 
+__forbidden_patterns = {
+    ("not", 0): {"not", "markersPresent"},
+}
 
-dsl = DSL(__syntax)
+dsl = DSL(__syntax, __forbidden_patterns)
 evaluator = DSLEvaluator(__semantics)
 lexicon = []
 
