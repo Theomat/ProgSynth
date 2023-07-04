@@ -218,7 +218,6 @@ __syntax = auto_type(
         "noMarkersPresent": "cond",
         "not": "cond -> cond",
         "if": "cond -> stmt -> stmt",
-        "ifelse": "cond -> stmt -> stmt -> stmt",
         "repeat": "int -> stmt -> stmt",
         "while": "cond -> stmt -> stmt",
     }
@@ -248,12 +247,11 @@ __semantics = {
     "noMarkersPresent": KarelCond("noMarkersPresent"),
     "not": lambda c: c.neg(),
     "if": lambda c: lambda s: KarelITE(c, s, None),
-    "ifelse": lambda c: lambda s1: lambda s2: KarelITE(c, s1, s2),
     "repeat": lambda n: lambda s: KarelRepeat(s, n),
     "while": lambda c: lambda s: KarelWhile(s, c),
 }
 # Add constants
-for i in range(20):
+for i in range(3, 10):
     __syntax[str(i)] = auto_type("int")
     __semantics[str(i)] = i
 
@@ -264,6 +262,13 @@ __forbidden_patterns = {
 dsl = DSL(__syntax, __forbidden_patterns)
 evaluator = DSLEvaluator(__semantics)
 lexicon = []
+
+
+constraints = [
+    "then ^then _",
+    "while _ ^while,repeat",
+    "repeat _ ^while,repeat",
+]
 
 
 def pretty_print_inputs(inputs: List[KarelWorld]) -> str:
