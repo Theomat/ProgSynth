@@ -116,6 +116,7 @@ if __name__ == "__main__":
                         for i in range(grids)
                     ]
                 ),
+                program,
             )
             pbar.update(1)
             tasks.append(task)
