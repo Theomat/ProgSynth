@@ -252,6 +252,8 @@ class UGrammar(Grammar, ABC, Generic[U, V, W]):
         """
         Reduce the given program using the given reduce operator.
 
+        reduce: 'a, S, P, V -> 'a
+
         reduce is called after derivation.
         """
 
