@@ -348,22 +348,22 @@ __primitive_types__ = {
 
 constraints = [
     "(+ ^+,0 ^*,0)",
-    "(- _ ^0)",
+    "(length ^range,cdr,map,cons)",
     "(* ^*,1,0 ^+,2,1,0)",
-    "(max ^max _)",
-    "(min ^min _)",
+    "(cdr ^cons,map,filter)",
+    "(empty? ^range,map)",
+    "(- _ ^0)",
     "(is-mod ^0,1 _)",
     "(mod ^0,1 _)",
-    "(length ^range,cdr,map,cons)",
+    "(max ^max _)",
+    "(min ^min _)",
     "(not ^not)",
     "(index ^0 _)",
     "(if ^not _ _)",
-    "(empty? ^range,map)",
     "(range ^0)",
     "(car ^range)",
     "(le? ^- _)",
     "(gt? ^- _)",
-    "(cdr ^cons,map,filter)",
 ]
 
 
