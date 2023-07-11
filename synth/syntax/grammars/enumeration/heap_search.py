@@ -41,6 +41,8 @@ class HSEnumerator(ABC, Generic[U, V, W]):
         self.current: Optional[Program] = None
         self.threshold = threshold
 
+        self.deleted: Set[Program] = set()
+
         self.G = G
         self.start = G.start
         self.rules = G.rules
@@ -162,12 +164,39 @@ class HSEnumerator(ABC, Generic[U, V, W]):
         """
         our_hash = hash(other)
         self.hash_table_global[our_hash] = representative
+        self.deleted.add(other)
         for S in self.G.rules:
-            if our_hash in self.pred[S]:
+            if our_hash in self.pred[S] and our_hash in self.succ[S]:
                 pred_hash = self.pred[S][our_hash]
                 nxt = self.succ[S][our_hash]
                 self.succ[S][pred_hash] = nxt
                 self.pred[S][hash(nxt)] = pred_hash
+
+    def __add_successors__(self, succ: Program, S: Tuple[Type, U]) -> None:
+        if isinstance(succ, Function):
+            F = succ.function
+            information, lst = self.G.derive_all(self.G.start_information(), S, F)
+            S2 = lst[-1]
+            for i in range(self.G.arguments_length_for(S, F)):  # type: ignore
+                # S2 is non-terminal symbol used to derive the i-th argument
+                succ_sub_program = self.query(S2, succ.arguments[i])
+                if succ_sub_program:
+                    new_arguments = succ.arguments[:]
+                    new_arguments[i] = succ_sub_program
+                    new_program = self.__return_unique__(Function(F, new_arguments))
+                    hash_new_program = hash(new_program)
+                    if hash_new_program not in self.hash_table_program[S]:
+                        self.hash_table_program[S].add(hash_new_program)
+                        try:
+                            priority: Ordered = self.compute_priority(S, new_program)
+                            if not self.threshold or priority < self.threshold:
+                                heappush(
+                                    self.heaps[S], HeapElement(priority, new_program)
+                                )
+                        except KeyError:
+                            pass
+                information, lst = self.G.derive_all(information, S2, succ.arguments[i])
+                S2 = lst[-1]
 
     def query(self, S: Tuple[Type, U], program: Optional[Program]) -> Optional[Program]:
         """
@@ -188,6 +217,10 @@ class HSEnumerator(ABC, Generic[U, V, W]):
         try:
             element = heappop(self.heaps[S])
             succ = element.program
+            while succ in self.deleted:
+                self.__add_successors__(succ, S)
+                element = heappop(self.heaps[S])
+                succ = element.program
         except:
             return None  # the heap is empty: there are no successors from S
 
@@ -195,36 +228,7 @@ class HSEnumerator(ABC, Generic[U, V, W]):
         self.pred[S][hash(succ)] = hash_program  # we store the predecessor
 
         # now we need to add all potential successors of succ in heaps[S]
-        if isinstance(succ, Function):
-            F = succ.function
-            information, lst = self.G.derive_all(self.G.start_information(), S, F)
-            S2 = lst[-1]
-            for i in range(self.G.arguments_length_for(S, F)):  # type: ignore
-                # S2 is non-terminal symbol used to derive the i-th argument
-                succ_sub_program = self.query(S2, succ.arguments[i])
-                if succ_sub_program:
-                    new_arguments = succ.arguments[:]
-                    new_arguments[i] = succ_sub_program
-
-                    new_program = self.__return_unique__(Function(F, new_arguments))
-                    hash_new_program = hash(new_program)
-
-                    if hash_new_program not in self.hash_table_program[S]:
-                        self.hash_table_program[S].add(hash_new_program)
-                        try:
-                            priority: Ordered = self.compute_priority(S, new_program)
-                            if not self.threshold or priority < self.threshold:
-                                heappush(
-                                    self.heaps[S], HeapElement(priority, new_program)
-                                )
-                        except KeyError:
-                            pass
-                information, lst = self.G.derive_all(information, S2, succ.arguments[i])
-                S2 = lst[-1]
-
-        if isinstance(succ, Variable):
-            return succ  # if succ is a variable, there is no successor so we stop here
-
+        self.__add_successors__(succ, S)
         return succ
 
     @abstractmethod

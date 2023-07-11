@@ -48,6 +48,7 @@ class UHSEnumerator(ABC, Generic[U, V, W]):
         self.G = G
         symbols = [S for S in self.G.rules]
         self.threshold = threshold
+        self.deleted: Set[Program] = set()
 
         # self.heaps[S] is a heap containing programs generated from the non-terminal S
         self.heaps: Dict[Tuple[Type, U], List[HeapElement]] = {S: [] for S in symbols}
@@ -247,6 +248,15 @@ class UHSEnumerator(ABC, Generic[U, V, W]):
                 return True
         return False
 
+    def __add_successors__(self, succ: Program, S: Tuple[Type, U]) -> None:
+        if isinstance(succ, Function):
+            F = succ.function
+            tgt_v = self._keys[S][succ]
+            out = self.G.derive_specific(self.G.start_information(), S, F, tgt_v)  # type: ignore
+            assert out is not None
+            info, Si = out
+            assert self.__add_successors_to_heap__(succ, S, Si, info, 0, tgt_v)
+
     def query(self, S: Tuple[Type, U], program: Optional[Program]) -> Optional[Program]:
         """
         computing the successor of program from S
@@ -266,6 +276,10 @@ class UHSEnumerator(ABC, Generic[U, V, W]):
         try:
             element = heappop(self.heaps[S])
             succ = element.program
+            while succ in self.deleted:
+                self.__add_successors__(succ, S)
+                element = heappop(self.heaps[S])
+                succ = element.program
         except:
             return None  # the heap is empty: there are no successors from S
 
@@ -273,13 +287,7 @@ class UHSEnumerator(ABC, Generic[U, V, W]):
         self.pred[S][hash(succ)] = hash_program  # we store the predecessor
 
         # now we need to add all potential successors of succ in heaps[S]
-        if isinstance(succ, Function):
-            F = succ.function
-            tgt_v = self._keys[S][succ]
-            out = self.G.derive_specific(self.G.start_information(), S, F, tgt_v)  # type: ignore
-            assert out is not None
-            info, Si = out
-            assert self.__add_successors_to_heap__(succ, S, Si, info, 0, tgt_v)
+        self.__add_successors__(succ, S)
         return succ
 
     def merge_program(self, representative: Program, other: Program) -> None:
@@ -289,8 +297,9 @@ class UHSEnumerator(ABC, Generic[U, V, W]):
         """
         our_hash = hash(other)
         self.hash_table_global[our_hash] = representative
+        self.deleted.add(other)
         for S in self.G.rules:
-            if our_hash in self.pred[S]:
+            if our_hash in self.pred[S] and our_hash in self.succ[S]:
                 pred_hash = self.pred[S][our_hash]
                 nxt = self.succ[S][our_hash]
                 self.succ[S][pred_hash] = nxt
