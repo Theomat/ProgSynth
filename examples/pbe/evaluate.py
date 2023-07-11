@@ -371,9 +371,10 @@ def semantic_equivalence(
                 out = evaluator.eval(program, ex.inputs)
                 if out != ex.output:
                     failed = True
-                    if program.depth() > 2:
-                        break
-                    outputs.append(tuple(out))
+                    if isinstance(out, list):
+                        outputs.append(tuple(out))
+                    else:
+                        outputs.append(out)
             if not failed:
                 return (
                     True,
@@ -643,8 +644,8 @@ if __name__ == "__main__":
         model_name,
         constraints,
     ) = load_dsl_and_dataset()
-    method = base
-    name = "base"
+    method = semantic_equivalence
+    name = "sem"
     # if isinstance(evaluator, DSLEvaluatorWithConstant):
     #     method = constants_injector
     #     name = "constants_injector"
