@@ -356,12 +356,42 @@ def base(
     return (False, time, programs, None, None)
 
 
+def semantic_base(
+    evaluator: DSLEvaluator,
+    task: Task[PBE],
+    pcfg: Union[ProbDetGrammar, ProbUGrammar],
+    custom_enumerate: Callable[[Union[ProbDetGrammar, ProbUGrammar]], HSEnumerator],
+) -> Tuple[bool, float, int, Optional[Program], Optional[float]]:
+    time = 0.0
+    programs = 0
+    with chrono.clock("search.semantic_base") as c:
+        enumerator = custom_enumerate(pcfg)
+        for program in enumerator:
+            time = c.elapsed_time()
+            if time >= task_timeout:
+                return (False, time, programs, None, None)
+            programs += 1
+            failed = False
+            for ex in task.specification.examples:
+                out = evaluator.eval(program, ex.inputs)
+                failed = failed or out != ex.output
+            if not failed:
+                return (
+                    True,
+                    c.elapsed_time(),
+                    programs,
+                    program,
+                    pcfg.probability(program),
+                )
+    return (False, time, programs, None, None)
+
+
 def semantic_equivalence(
     evaluator: DSLEvaluator,
     task: Task[PBE],
     pcfg: Union[ProbDetGrammar, ProbUGrammar],
     custom_enumerate: Callable[[Union[ProbDetGrammar, ProbUGrammar]], HSEnumerator],
-) -> Tuple[bool, float, int, Optional[Program]]:
+) -> Tuple[bool, float, int, Optional[Program], Optional[float]]:
     time = 0.0
     programs = 0
     with chrono.clock("search.semantic_equivalence") as c:
@@ -654,7 +684,8 @@ if __name__ == "__main__":
 
     METHODS = {
         "base": base,
-        "sem": semantic_equivalence,
+        "sem.equiv": semantic_equivalence,
+        "sem.base": semantic_base,
         "wikicoder": sketched_base,
         "constant": constants_injector,
     }
