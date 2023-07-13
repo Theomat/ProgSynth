@@ -54,6 +54,12 @@ parser.add_argument(
     default="heap_search",
     help="enumeration algorithm (default: heap_search)",
 )
+parser.add_argument(
+    "--method",
+    type=str,
+    default="base",
+    help="used method (default: base)",
+)
 add_dsl_choice_arg(parser)
 add_model_choice_arg(parser)
 parser.add_argument(
@@ -82,6 +88,7 @@ parameters = parser.parse_args()
 dsl_name: str = parameters.dsl
 dataset_file: str = parameters.dataset
 search_algo: str = parameters.search
+method: str = parameters.method
 output_folder: str = parameters.output
 model_file: str = parameters.model
 task_timeout: float = parameters.timeout
@@ -644,15 +651,18 @@ if __name__ == "__main__":
         model_name,
         constraints,
     ) = load_dsl_and_dataset()
-    method = semantic_equivalence
-    name = "sem"
-    # if isinstance(evaluator, DSLEvaluatorWithConstant):
-    #     method = constants_injector
-    #     name = "constants_injector"
+
+    METHODS = {
+        "base": base,
+        "sem": semantic_equivalence,
+        "wikicoder": sketched_base,
+        "constant": constants_injector,
+    }
+    method_fn = METHODS[method]
 
     pcfgs = produce_pcfgs(full_dataset, dsl, lexicon, constraints)
     file = os.path.join(
-        output_folder, f"{dataset_name}_{model_name}_{search_algo}_{name}.csv"
+        output_folder, f"{dataset_name}_{model_name}_{search_algo}_{method}.csv"
     )
     trace = []
     if os.path.exists(file):
@@ -669,6 +679,8 @@ if __name__ == "__main__":
                 int(len(trace) * 100 / len(full_dataset)),
                 "%)",
             )
-    enumerative_search(full_dataset, evaluator, pcfgs, trace, method, custom_enumerate)
+    enumerative_search(
+        full_dataset, evaluator, pcfgs, trace, method_fn, custom_enumerate
+    )
     save(trace)
     print("csv file was saved as:", file)
