@@ -306,10 +306,11 @@ class UCFG(UGrammar[U, List[Tuple[Type, U]], List[Tuple[Type, U]]], Generic[U]):
             DFTA[Tuple[Type, U], DerivableProgram],
         ],
         ngram: int,
-        clean: bool = True,
+        clean: bool = False,
     ) -> "Union[UCFG[Tuple[NGram, U]], UCFG[Tuple[NGram, Tuple[U, ...]]]]":
         """
         Convert a DFTA into a UCFG representing the same language and adds contextual information with ngrams.
+        If the DFTA is reduced then the UCFG is, therefore in that case clean should be set to False since cleaning can be expensive.
         """
 
         def local_d2state(
