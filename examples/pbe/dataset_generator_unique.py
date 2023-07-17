@@ -171,13 +171,17 @@ def generate_programs_and_samples_for(
             prog, unique = task_generator.generate_program(tr)
         # Compute semantic hash
         cl = None
+        has_none = False
         for x in samples:
             o = task_generator.eval_input(prog, x)
+            if o is None:
+                has_none = True
+                break
             if isinstance(o, List):
                 o = tuple(o)
             cl = (o, cl)
         # Check
-        if cl not in equiv:
+        if cl not in equiv and not has_none:
             equiv[cl].append(prog)
             tries = 0
             pbar.update(1)
@@ -210,6 +214,7 @@ def generate_programs_and_samples_for(
             ]
             for x in out
         ]
+    del task_generator.type2pgrammar[tr]
     return out, rel_programs
 
 
@@ -234,14 +239,17 @@ def generate_samples_for(
         clear_cache()
         thres_reached = nb_tested * nb_tested > threshold * threshold
         ui = best if thres_reached else input_sampler()
+        none_ratio = 0
         for cl, prog in equiv_classes.items():
             for p in prog:
                 o = eval_prog(p, ui)
+                if o is None:
+                    none_ratio += 1
                 if isinstance(o, List):
                     o = tuple(o)
                 next_equiv_classes[(o, cl)].append(p)
-        ratio = len(next_equiv_classes) / len(equiv_classes)
-        if len(next_equiv_classes) > best_score:
+        ratio = len(programs) / len(equiv_classes)
+        if len(next_equiv_classes) > best_score and none_ratio / len(programs) < 0.2:
             best = ui
             best_score = len(next_equiv_classes)
         # Early stopping if no new examples is interesting
