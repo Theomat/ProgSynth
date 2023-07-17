@@ -41,7 +41,7 @@ class HSEnumerator(ABC, Generic[U, V, W]):
         self.current: Optional[Program] = None
         self.threshold = threshold
 
-        self.deleted: Set[Program] = set()
+        self.deleted: Set[int] = set()
 
         self.G = G
         self.start = G.start
@@ -164,7 +164,7 @@ class HSEnumerator(ABC, Generic[U, V, W]):
         """
         our_hash = hash(other)
         self.hash_table_global[our_hash] = representative
-        self.deleted.add(other)
+        self.deleted.add(our_hash)
         for S in self.G.rules:
             if our_hash in self.pred[S] and our_hash in self.succ[S]:
                 pred_hash = self.pred[S][our_hash]
@@ -217,7 +217,7 @@ class HSEnumerator(ABC, Generic[U, V, W]):
         try:
             element = heappop(self.heaps[S])
             succ = element.program
-            while succ in self.deleted:
+            while hash(succ) in self.deleted:
                 self.__add_successors__(succ, S)
                 element = heappop(self.heaps[S])
                 succ = element.program

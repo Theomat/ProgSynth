@@ -48,7 +48,7 @@ class UHSEnumerator(ABC, Generic[U, V, W]):
         self.G = G
         symbols = [S for S in self.G.rules]
         self.threshold = threshold
-        self.deleted: Set[Program] = set()
+        self.deleted: Set[int] = set()
 
         # self.heaps[S] is a heap containing programs generated from the non-terminal S
         self.heaps: Dict[Tuple[Type, U], List[HeapElement]] = {S: [] for S in symbols}
@@ -199,7 +199,7 @@ class UHSEnumerator(ABC, Generic[U, V, W]):
             return None
         elem = heappop(self._start_heap)
         self.query(elem.start, elem.program)
-        while elem.program in self.deleted:
+        while hash(elem.program) in self.deleted:
             elem = heappop(self._start_heap)
             self.query(elem.start, elem.program)
         return elem.program
@@ -279,7 +279,7 @@ class UHSEnumerator(ABC, Generic[U, V, W]):
         try:
             element = heappop(self.heaps[S])
             succ = element.program
-            while succ in self.deleted:
+            while hash(succ) in self.deleted:
                 self.__add_successors__(succ, S)
                 element = heappop(self.heaps[S])
                 succ = element.program
@@ -300,7 +300,7 @@ class UHSEnumerator(ABC, Generic[U, V, W]):
         """
         our_hash = hash(other)
         self.hash_table_global[our_hash] = representative
-        self.deleted.add(other)
+        self.deleted.add(our_hash)
         for S in self.G.rules:
             if our_hash in self.pred[S] and our_hash in self.succ[S]:
                 pred_hash = self.pred[S][our_hash]
