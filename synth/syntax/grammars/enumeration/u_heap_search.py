@@ -199,6 +199,9 @@ class UHSEnumerator(ABC, Generic[U, V, W]):
             return None
         elem = heappop(self._start_heap)
         self.query(elem.start, elem.program)
+        while elem.program in self.deleted:
+            elem = heappop(self._start_heap)
+            self.query(elem.start, elem.program)
         return elem.program
 
     def __add_successors_to_heap__(
