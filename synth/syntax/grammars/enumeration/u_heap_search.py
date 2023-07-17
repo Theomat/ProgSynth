@@ -70,28 +70,12 @@ class UHSEnumerator(ABC, Generic[U, V, W]):
         }
 
         self._keys: Dict[Tuple[Type, U], Dict[Program, V]] = defaultdict(dict)
-        # self.hash_table_global[hash] = P maps
-        # hashes to programs for all programs ever added to some heap
-        self.hash_table_global: Dict[int, Program] = {}
 
         self._init: Set[Tuple[Type, U]] = set()
 
         self.max_priority: Dict[
             Union[Tuple[Type, U], Tuple[Tuple[Type, U], Program, V]], Program
         ] = {}
-
-    def __return_unique__(self, P: Program) -> Program:
-        """
-        ensures that if a program appears in several heaps,
-        it is represented by the same object,
-        so we do not evaluate it several times
-        """
-        hash_P = hash(P)
-        if hash_P in self.hash_table_global:
-            return self.hash_table_global[hash_P]
-        else:
-            self.hash_table_global[hash_P] = P
-            return P
 
     def generator(self) -> Generator[Program, None, None]:
         """
@@ -172,7 +156,6 @@ class UHSEnumerator(ABC, Generic[U, V, W]):
                 self.hash_table_program[S].add(hash_program)
                 # we assume that the programs from max_probability
                 # are represented by the same object
-                self.hash_table_global[hash_program] = program
                 priority = self.compute_priority(S, program)
                 assert program in self._keys[S]
                 if not self.threshold or priority < self.threshold:
@@ -228,9 +211,7 @@ class UHSEnumerator(ABC, Generic[U, V, W]):
                 if succ_sub_program:
                     new_arguments = succ.arguments[:]
                     new_arguments[i] = succ_sub_program
-                    new_program = self.__return_unique__(
-                        Function(succ.function, new_arguments)
-                    )
+                    new_program = Function(succ.function, new_arguments)
                     hash_new_program = hash(new_program)
                     if hash_new_program not in self.hash_table_program[S]:
                         self.hash_table_program[S].add(hash_new_program)
@@ -299,7 +280,6 @@ class UHSEnumerator(ABC, Generic[U, V, W]):
         In other words, other will no longer be generated through heap search
         """
         our_hash = hash(other)
-        self.hash_table_global[our_hash] = representative
         self.deleted.add(our_hash)
         for S in self.G.rules:
             if our_hash in self.pred[S] and our_hash in self.succ[S]:
