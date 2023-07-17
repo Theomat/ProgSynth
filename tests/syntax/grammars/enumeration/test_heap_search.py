@@ -14,7 +14,7 @@ from synth.syntax.type_system import (
     PolymorphicType,
     PrimitiveType,
 )
-from synth.syntax.type_helper import FunctionType
+from synth.syntax.type_helper import FunctionType, auto_type
 
 import pytest
 
@@ -24,6 +24,7 @@ syntax = {
     "head": FunctionType(List(PolymorphicType("a")), PolymorphicType("a")),
     "non_reachable": PrimitiveType("non_reachable"),
     "1": INT,
+    "2": INT,
     "non_productive": FunctionType(INT, STRING),
 }
 dsl = DSL(syntax)
@@ -98,3 +99,22 @@ def test_order_bucketSearch(cfg: TTCFG) -> None:
             assert p.size == bucketSize
             assert p >= last or last == Bucket(bucketSize)
             last = p
+
+
+@pytest.mark.parametrize("cfg", testdata)
+def test_merge(cfg: TTCFG) -> None:
+    pcfg = ProbDetGrammar.uniform(cfg)
+    seen = set()
+    for program in enumerate_prob_grammar(pcfg):
+        assert program not in seen
+        seen.add(program)
+    en = enumerate_prob_grammar(pcfg)
+    removed = dsl.parse_program("(+ 1 1)", auto_type("int"))
+    en.merge_program(dsl.parse_program("2", auto_type("int")), removed)
+    new_seen = set()
+    for program in en:
+        assert removed not in program
+        new_seen.add(program)
+    diff = seen.difference(new_seen)
+    for x in diff:
+        assert removed in x
