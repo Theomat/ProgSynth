@@ -107,6 +107,7 @@ __dsl_funcs: Dict[str, Callable[[bool], Optional[SimpleNamespace]]] = {
             "dsl",
             "evaluator",
             "lexicon",
+            "constraints",
             "pretty_print_inputs",
         ],
     ),
