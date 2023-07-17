@@ -72,6 +72,9 @@ class Program(ABC):
         """
         yield self
 
+    def __contains__(self, other: "Program") -> bool:
+        return self == other
+
     @staticmethod
     @abstractmethod
     def __pickle__(o: "Program") -> Tuple:
@@ -247,6 +250,11 @@ class Function(Program):
                 yield sub
         yield self
 
+    def __contains__(self, other: "Program") -> bool:
+        return self == other or any(
+            other in x for x in [self.function] + self.arguments
+        )
+
 
 class Lambda(Program):
     __hash__ = Program.__hash__
@@ -275,6 +283,9 @@ class Lambda(Program):
         for sub in self.body.depth_first_iter():
             yield sub
         yield self
+
+    def __contains__(self, other: "Program") -> bool:
+        return self == other or other in self.body
 
 
 class Primitive(Program):
