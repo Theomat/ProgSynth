@@ -158,7 +158,8 @@ class HSEnumerator(ABC, Generic[U, V, W]):
             F = succ.function
             information, lst = self.G.derive_all(self.G.start_information(), S, F)
             S2 = lst[-1]
-            for i in range(self.G.arguments_length_for(S, F)):  # type: ignore
+            args_len = self.G.arguments_length_for(S, F)  # type: ignore
+            for i in range(args_len):
                 # S2 is non-terminal symbol used to derive the i-th argument
                 succ_sub_program = self.query(S2, succ.arguments[i])
                 if succ_sub_program:
@@ -176,8 +177,11 @@ class HSEnumerator(ABC, Generic[U, V, W]):
                                 )
                         except KeyError:
                             pass
-                information, lst = self.G.derive_all(information, S2, succ.arguments[i])
-                S2 = lst[-1]
+                if i + 1 < args_len:
+                    information, lst = self.G.derive_all(
+                        information, S2, succ.arguments[i]
+                    )
+                    S2 = lst[-1]
 
     def query(self, S: Tuple[Type, U], program: Optional[Program]) -> Optional[Program]:
         """
@@ -234,11 +238,13 @@ class HeapSearch(HSEnumerator[U, V, W]):
             probability = self.G.probabilities[S][F]  # type: ignore
             information, lst = self.G.derive_all(self.G.start_information(), S, F)
             S2 = lst[-1]
-            for i in range(self.G.arguments_length_for(S, F)):  # type: ignore
+            args_len = self.G.arguments_length_for(S, F)  # type: ignore
+            for i in range(args_len):
                 arg = new_arguments[i]
                 probability *= self.probabilities[arg][S2]
-                information, lst = self.G.derive_all(information, S2, arg)
-                S2 = lst[-1]
+                if i + 1 < args_len:
+                    information, lst = self.G.derive_all(information, S2, arg)
+                    S2 = lst[-1]
         else:
             probability = self.G.probabilities[S][new_program]  # type: ignore
         self.probabilities[new_program][S] = probability
