@@ -20,8 +20,8 @@ from examples.pbe.regexp.type_regex import (
     regex_search,
 )
 
-cst_in = PrimitiveType("CST_STR_INPUT")
-cst_out = PrimitiveType("CST_STR_OUTPUT")
+CST_IN = PrimitiveType("CST_STR_INPUT")
+CST_OUT = PrimitiveType("CST_STR_OUTPUT")
 
 
 def __concat__(x, y):
@@ -127,9 +127,7 @@ __primitive_types = {
 __forbidden_patterns = {}
 
 dsl = DSL(__primitive_types, __forbidden_patterns)
-constant_types: Set[PrimitiveType] = set()
-constant_types.add(cst_in)
-constant_types.add(cst_out)
+constant_types = {CST_IN, CST_OUT}
 evaluator = DSLEvaluatorWithConstant(__semantics, constant_types)
 evaluator.skip_exceptions.add(re.error)
 lexicon = list([chr(i) for i in range(32, 126)])
