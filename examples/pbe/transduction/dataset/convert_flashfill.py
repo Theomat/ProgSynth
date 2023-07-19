@@ -17,6 +17,8 @@ from synth.syntax import (
     Arrow,
 )
 from examples.pbe.regexp.type_regex import REGEXP
+from examples.pbe.transduction.transduction import dsl, evaluator
+
 import argparse
 
 
@@ -34,25 +36,17 @@ argument_parser.add_argument(
     help="Source JSON transduction file to be converted",
 )
 
-argument_parser.add_argument(
-    "--dsl",
-    type=str,
-    default=TRANSDUCTION,
-    choices=[TRANSDUCTION, TRANSDUCTION_OLD],
-    help="dsl (default: transduction)",
-)
 
 parsed_parameters = argument_parser.parse_args()
-dsl = parsed_parameters.dsl
-if dsl == TRANSDUCTION:
-    from examples.pbe.transduction.transduction import dsl, evaluator
-elif dsl == TRANSDUCTION_OLD:
-    from examples.pbe.transduction.transduction_old import dsl, evaluator
-else:
-    print("DSL not recognized.")
-    exit()
+
 
 name2type = {p.primitive: p.type for p in dsl.list_primitives}
+
+name_converter = {
+    "tail_cst": "split_snd_cst",
+    "head_cst": "split_first_cst",
+    "head": "split_first",
+}
 
 
 def lcs(u, v):
@@ -493,8 +487,10 @@ def __flashfill_str2prog__(s: str) -> Tuple[Program, Type]:
             var += 1
             type_stack.append(STRING)
             continue
+        if name in name_converter:
+            name = name_converter[name]
         # primitives that serve as constants
-        if name in ["cste_in", "cste_out", "W", "$", ".", "epsilon"]:
+        if name in ["cst_in", "cst_out", "W", "$", ".", "epsilon"]:
             primitive = Primitive(name, name2type[name])
             stack.append(primitive)
         else:  # other primitives are functions, we want to add their type
