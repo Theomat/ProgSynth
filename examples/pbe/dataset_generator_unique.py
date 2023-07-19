@@ -238,7 +238,7 @@ def generate_samples_for(
         next_equiv_classes = defaultdict(list)
         clear_cache()
         thres_reached = nb_tested * nb_tested > threshold * threshold
-        ui = best if thres_reached else input_sampler()
+        ui = best if thres_reached and best is not None else input_sampler()
         none_ratio = 0
         for cl, prog in equiv_classes.items():
             for p in prog:
