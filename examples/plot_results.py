@@ -159,6 +159,10 @@ if verbose:
 def plot_with_incertitude(
     ax: plt.Axes, x: List[np.ndarray], y: List[np.ndarray], label: str
 ) -> None:
+    max_len = max(len(xi) for xi in x)
+    x = [xi for xi in x if len(xi) == max_len]
+    y = [yi for yi in y if len(yi) == max_len]
+
     x_min = np.min(np.array(x))
     x_max = np.max(np.array(x))
     target_x = np.arange(x_min, x_max + 1, step=(x_max - x_min) / 50)
@@ -170,7 +174,7 @@ def plot_with_incertitude(
     # Compute distribution
     Y = np.array(data)
     mean = np.mean(Y, axis=0)
-    std = 2 * np.std(Y, axis=0)
+    std = 1.96 * np.std(Y, axis=0)
 
     p = ax.plot(target_x, mean, label=label)
     color = p[0].get_color()
