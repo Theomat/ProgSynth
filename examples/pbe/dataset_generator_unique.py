@@ -231,7 +231,7 @@ def generate_samples_for(
     equiv_classes = {None: programs}
     nb_examples = 0
     nb_tested = 0
-    pbar = tqdm.tqdm(total=examples * threshold, desc="2: sem. unicity")
+    pbar = tqdm.tqdm(total=examples * abs(threshold), desc="2: sem. unicity")
     best = None
     best_score = 0
     while nb_examples < examples:
@@ -267,7 +267,8 @@ def generate_samples_for(
             equiv_classes = next_equiv_classes
             samples.append(ui)
             best_score = len(next_equiv_classes)
-            pbar.n = nb_examples * threshold
+            pbar.n = nb_examples * abs(threshold)
+            pbar.refresh()
         pbar.set_postfix_str(
             f"{len(equiv_classes)}->{best_score} | {best_score/len(programs):.0%}"
         )
