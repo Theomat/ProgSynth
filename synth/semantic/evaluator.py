@@ -135,9 +135,9 @@ class DSLEvaluatorWithConstant(Evaluator):
                     else:
                         self._invariant_cache[sub_prog] = None
                 if isinstance(sub_prog, Primitive):
-                    if sub_prog.primitive == "cste_in":
+                    if sub_prog.primitive == "cst_in":
                         evaluations[sub_prog] = constant_in
-                    elif sub_prog.primitive == "cste_out":
+                    elif sub_prog.primitive == "cst_out":
                         evaluations[sub_prog] = constant_out
                     else:
                         evaluations[sub_prog] = self.semantics[sub_prog.primitive]
