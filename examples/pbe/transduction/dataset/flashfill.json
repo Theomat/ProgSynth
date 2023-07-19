@@ -1,6 +1,6 @@
 [
     {
-        "program": "STRING|cste_in|tail_cste,0,1",
+        "program": "STRING|cst_in|tail_cst,0,1",
         "metadata": {
             "name": "drop first word delimited by '.'"
         },
@@ -37,7 +37,7 @@
         "constants_out": []
     },
     {
-        "program": "STRING|cste_in|head_cste,0,1",
+        "program": "STRING|cst_in|head_cst,0,1",
         "metadata": {
             "name": "nth (n=0) word delimited by '.'"
         },
@@ -73,7 +73,7 @@
         "constants_out": []
     },
     {
-        "program": "STRING|cste_in|match_cste,0,1|concat,0,2|tail_cste,3,1|head_cste,4,1",
+        "program": "STRING|cst_in|match_cst,0,1|concat,0,2|tail_cst,3,1|head_cst,4,1",
         "metadata": {
             "name": "nth (n=1) word delimited by '.'"
         },
@@ -109,7 +109,7 @@
         "constants_out": []
     },
     {
-        "program": "STRING|cste_in|except_end,1|match,0,2",
+        "program": "STRING|cst_in|except_end,1|match,0,2",
         "metadata": {
             "name": "nth (n=-1) word delimited by '.'"
         },
@@ -145,7 +145,7 @@
         "constants_out": []
     },
     {
-        "program": "STRING|cste_in|tail_cste,0,1",
+        "program": "STRING|cst_in|tail_cst,0,1",
         "metadata": {
             "name": "drop first word delimited by ','"
         },
@@ -181,7 +181,7 @@
         "constants_out": []
     },
     {
-        "program": "STRING|cste_in|head_cste,0,1",
+        "program": "STRING|cst_in|head_cst,0,1",
         "metadata": {
             "name": "nth (n=0) word delimited by ','"
         },
@@ -217,7 +217,7 @@
         "constants_out": []
     },
     {
-        "program": "STRING|cste_in|match_cste,0,1|concat,0,2|tail_cste,3,1|head_cste,4,1",
+        "program": "STRING|cst_in|match_cst,0,1|concat,0,2|tail_cst,3,1|head_cst,4,1",
         "metadata": {
             "name": "nth (n=1) word delimited by ','"
         },
@@ -253,7 +253,7 @@
         "constants_out": []
     },
     {
-        "program": "STRING|cste_in|except_end,1|match,0,2",
+        "program": "STRING|cst_in|except_end,1|match,0,2",
         "metadata": {
             "name": "nth (n=-1) word delimited by ','"
         },
@@ -289,7 +289,7 @@
         "constants_out": []
     },
     {
-        "program": "STRING|cste_in|tail_cste,0,1",
+        "program": "STRING|cst_in|tail_cst,0,1",
         "metadata": {
             "name": "drop first word delimited by ' '"
         },
@@ -325,7 +325,7 @@
         "constants_out": []
     },
     {
-        "program": "STRING|cste_in|head_cste,0,1",
+        "program": "STRING|cst_in|head_cst,0,1",
         "metadata": {
             "name": "nth (n=0) word delimited by ' '"
         },
@@ -361,7 +361,7 @@
         "constants_out": []
     },
     {
-        "program": "STRING|cste_in|match_cste,0,1|concat,0,2|tail_cste,3,1|head_cste,4,1",
+        "program": "STRING|cst_in|match_cst,0,1|concat,0,2|tail_cst,3,1|head_cst,4,1",
         "metadata": {
             "name": "nth (n=1) word delimited by ' '"
         },
@@ -397,7 +397,7 @@
         "constants_out": []
     },
     {
-        "program": "STRING|cste_in|except_end,1|match,0,2",
+        "program": "STRING|cst_in|except_end,1|match,0,2",
         "metadata": {
             "name": "nth (n=-1) word delimited by ' '"
         },
@@ -433,7 +433,7 @@
         "constants_out": []
     },
     {
-        "program": "STRING|cste_in|tail_cste,0,1",
+        "program": "STRING|cst_in|tail_cst,0,1",
         "metadata": {
             "name": "drop first word delimited by '('"
         },
@@ -469,7 +469,7 @@
         "constants_out": []
     },
     {
-        "program": "STRING|cste_in|head_cste,0,1",
+        "program": "STRING|cst_in|head_cst,0,1",
         "metadata": {
             "name": "nth (n=0) word delimited by '('"
         },
@@ -505,7 +505,7 @@
         "constants_out": []
     },
     {
-        "program": "STRING|cste_in|match_cste,0,1|concat,0,2|tail_cste,3,1|head_cste,4,1",
+        "program": "STRING|cst_in|match_cst,0,1|concat,0,2|tail_cst,3,1|head_cst,4,1",
         "metadata": {
             "name": "nth (n=1) word delimited by '('"
         },
@@ -541,7 +541,7 @@
         "constants_out": []
     },
     {
-        "program": "STRING|cste_in|except_end,1|match,0,2",
+        "program": "STRING|cst_in|except_end,1|match,0,2",
         "metadata": {
             "name": "nth (n=-1) word delimited by '('"
         },
@@ -577,7 +577,7 @@
         "constants_out": []
     },
     {
-        "program": "STRING|cste_in|tail_cste,0,1",
+        "program": "STRING|cst_in|tail_cst,0,1",
         "metadata": {
             "name": "drop first word delimited by ')'"
         },
@@ -613,7 +613,7 @@
         "constants_out": []
     },
     {
-        "program": "STRING|cste_in|head_cste,0,1",
+        "program": "STRING|cst_in|head_cst,0,1",
         "metadata": {
             "name": "nth (n=0) word delimited by ')'"
         },
@@ -649,7 +649,7 @@
         "constants_out": []
     },
     {
-        "program": "STRING|cste_in|match_cste,0,1|concat,0,2|tail_cste,3,1|head_cste,4,1",
+        "program": "STRING|cst_in|match_cst,0,1|concat,0,2|tail_cst,3,1|head_cst,4,1",
         "metadata": {
             "name": "nth (n=1) word delimited by ')'"
         },
@@ -685,7 +685,7 @@
         "constants_out": []
     },
     {
-        "program": "STRING|cste_in|except_end,1|match,0,2",
+        "program": "STRING|cst_in|except_end,1|match,0,2",
         "metadata": {
             "name": "nth (n=-1) word delimited by ')'"
         },
@@ -721,7 +721,7 @@
         "constants_out": []
     },
     {
-        "program": "STRING|cste_in|tail_cste,0,1",
+        "program": "STRING|cst_in|tail_cst,0,1",
         "metadata": {
             "name": "drop first word delimited by '-'"
         },
@@ -757,7 +757,7 @@
         "constants_out": []
     },
     {
-        "program": "STRING|cste_in|head_cste,0,1",
+        "program": "STRING|cst_in|head_cst,0,1",
         "metadata": {
             "name": "nth (n=0) word delimited by '-'"
         },
@@ -793,7 +793,7 @@
         "constants_out": []
     },
     {
-        "program": "STRING|cste_in|match_cste,0,1|concat,0,2|tail_cste,3,1|head_cste,4,1",
+        "program": "STRING|cst_in|match_cst,0,1|concat,0,2|tail_cst,3,1|head_cst,4,1",
         "metadata": {
             "name": "nth (n=1) word delimited by '-'"
         },
@@ -829,7 +829,7 @@
         "constants_out": []
     },
     {
-        "program": "STRING|cste_in|except_end,1|match,0,2",
+        "program": "STRING|cst_in|except_end,1|match,0,2",
         "metadata": {
             "name": "nth (n=-1) word delimited by '-'"
         },
@@ -865,7 +865,7 @@
         "constants_out": []
     },
     {
-        "program": "STRING|STRING|cste_out|concat_cste,0,2|concat,3,1",
+        "program": "STRING|STRING|cst_out|concat_cst,0,2|concat,3,1",
         "metadata": {
             "name": "Append two words delimited by '.'"
         },
@@ -905,7 +905,7 @@
         ]
     },
     {
-        "program": "STRING|STRING|cste_out|concat_cste,0,2|concat,3,1",
+        "program": "STRING|STRING|cst_out|concat_cst,0,2|concat,3,1",
         "metadata": {
             "name": "Append two words delimited by ','"
         },
@@ -945,7 +945,7 @@
         ]
     },
     {
-        "program": "STRING|STRING|cste_out|concat_cste,0,2|concat,3,1",
+        "program": "STRING|STRING|cst_out|concat_cst,0,2|concat,3,1",
         "metadata": {
             "name": "Append two words delimited by ' '"
         },
@@ -985,7 +985,7 @@
         ]
     },
     {
-        "program": "STRING|STRING|cste_out|concat_cste,0,2|concat,3,1",
+        "program": "STRING|STRING|cst_out|concat_cst,0,2|concat,3,1",
         "metadata": {
             "name": "Append two words delimited by '('"
         },
@@ -1025,7 +1025,7 @@
         ]
     },
     {
-        "program": "STRING|STRING|cste_out|concat_cste,0,2|concat,3,1",
+        "program": "STRING|STRING|cst_out|concat_cst,0,2|concat,3,1",
         "metadata": {
             "name": "Append two words delimited by ')'"
         },
@@ -1065,7 +1065,7 @@
         ]
     },
     {
-        "program": "STRING|STRING|cste_out|concat_cste,0,2|concat,3,1",
+        "program": "STRING|STRING|cst_out|concat_cst,0,2|concat,3,1",
         "metadata": {
             "name": "Append two words delimited by '-'"
         },
@@ -1627,7 +1627,7 @@
         "constants_out": []
     },
     {
-        "program": "STRING|.|cste_out|match,0,1|concat_cste,3,2",
+        "program": "STRING|.|cst_out|match,0,1|concat_cst,3,2",
         "metadata": {
             "name": "Take first character and append '.'"
         },
@@ -1663,7 +1663,7 @@
         ]
     },
     {
-        "program": "STRING|.|cste_out|match,0,1|concat_cste,3,2",
+        "program": "STRING|.|cst_out|match,0,1|concat_cst,3,2",
         "metadata": {
             "name": "Take first character and append ','"
         },
@@ -1699,7 +1699,7 @@
         ]
     },
     {
-        "program": "STRING|.|cste_out|match,0,1|concat_cste,3,2",
+        "program": "STRING|.|cst_out|match,0,1|concat_cst,3,2",
         "metadata": {
             "name": "Take first character and append ' '"
         },
@@ -1735,7 +1735,7 @@
         ]
     },
     {
-        "program": "STRING|.|cste_out|match,0,1|concat_cste,3,2",
+        "program": "STRING|.|cst_out|match,0,1|concat_cst,3,2",
         "metadata": {
             "name": "Take first character and append '('"
         },
@@ -1771,7 +1771,7 @@
         ]
     },
     {
-        "program": "STRING|.|cste_out|match,0,1|concat_cste,3,2",
+        "program": "STRING|.|cst_out|match,0,1|concat_cst,3,2",
         "metadata": {
             "name": "Take first character and append ')'"
         },
@@ -1807,7 +1807,7 @@
         ]
     },
     {
-        "program": "STRING|.|cste_out|match,0,1|concat_cste,3,2",
+        "program": "STRING|.|cst_out|match,0,1|concat_cst,3,2",
         "metadata": {
             "name": "Take first character and append '-'"
         },
@@ -1843,7 +1843,7 @@
         ]
     },
     {
-        "program": "STRING|STRING|.|cste_out|match,0,2|concat_cste,4,3|match,1,2|concat,5,6|concat_cste,7,3",
+        "program": "STRING|STRING|.|cst_out|match,0,2|concat_cst,4,3|match,1,2|concat,5,6|concat_cst,7,3",
         "metadata": {
             "name": "Abbreviate separate words (I)"
         },
@@ -1883,7 +1883,7 @@
         ]
     },
     {
-        "program": "STRING|.|cste_in|cste_out|match,0,1|tail_cste,0,2|match,5,1|concat_cste,4,3|concat,7,6|concat_cste,8,3",
+        "program": "STRING|.|cst_in|cst_out|match,0,1|tail_cst,0,2|match,5,1|concat_cst,4,3|concat,7,6|concat_cst,8,3",
         "metadata": {
             "name": "Abbreviate words separated by '.'"
         },
@@ -1921,7 +1921,7 @@
         ]
     },
     {
-        "program": "STRING|STRING|.|cste_out|match,0,2|concat_cste,4,3|match,1,2|concat,5,6|concat_cste,7,3",
+        "program": "STRING|STRING|.|cst_out|match,0,2|concat_cst,4,3|match,1,2|concat,5,6|concat_cst,7,3",
         "metadata": {
             "name": "Abbreviate separate words (II)"
         },
@@ -1961,7 +1961,7 @@
         ]
     },
     {
-        "program": "STRING|.|cste_in|cste_out|match,0,1|tail_cste,0,2|match,5,1|concat_cste,4,3|concat,7,6|concat_cste,8,3",
+        "program": "STRING|.|cst_in|cst_out|match,0,1|tail_cst,0,2|match,5,1|concat_cst,4,3|concat,7,6|concat_cst,8,3",
         "metadata": {
             "name": "Abbreviate words separated by ','"
         },
@@ -1999,7 +1999,7 @@
         ]
     },
     {
-        "program": "STRING|STRING|.|cste_out|match,0,2|concat_cste,4,3|match,1,2|concat,5,6|concat_cste,7,3",
+        "program": "STRING|STRING|.|cst_out|match,0,2|concat_cst,4,3|match,1,2|concat,5,6|concat_cst,7,3",
         "metadata": {
             "name": "Abbreviate separate words (III)"
         },
@@ -2039,7 +2039,7 @@
         ]
     },
     {
-        "program": "STRING|.|cste_in|cste_out|match,0,1|tail_cste,0,2|match,5,1|concat_cste,4,3|concat,7,6|concat_cste,8,3",
+        "program": "STRING|.|cst_in|cst_out|match,0,1|tail_cst,0,2|match,5,1|concat_cst,4,3|concat,7,6|concat_cst,8,3",
         "metadata": {
             "name": "Abbreviate words separated by ' '"
         },
@@ -2077,7 +2077,7 @@
         ]
     },
     {
-        "program": "STRING|STRING|.|cste_out|match,0,2|concat_cste,4,3|match,1,2|concat,5,6|concat_cste,7,3",
+        "program": "STRING|STRING|.|cst_out|match,0,2|concat_cst,4,3|match,1,2|concat,5,6|concat_cst,7,3",
         "metadata": {
             "name": "Abbreviate separate words (IIII)"
         },
@@ -2117,7 +2117,7 @@
         ]
     },
     {
-        "program": "STRING|.|cste_in|cste_out|match,0,1|tail_cste,0,2|match,5,1|concat_cste,4,3|concat,7,6|concat_cste,8,3",
+        "program": "STRING|.|cst_in|cst_out|match,0,1|tail_cst,0,2|match,5,1|concat_cst,4,3|concat,7,6|concat_cst,8,3",
         "metadata": {
             "name": "Abbreviate words separated by '('"
         },
@@ -2155,7 +2155,7 @@
         ]
     },
     {
-        "program": "STRING|STRING|.|cste_out|match,0,2|concat_cste,4,3|match,1,2|concat,5,6|concat_cste,7,3",
+        "program": "STRING|STRING|.|cst_out|match,0,2|concat_cst,4,3|match,1,2|concat,5,6|concat_cst,7,3",
         "metadata": {
             "name": "Abbreviate separate words (IIIII)"
         },
@@ -2195,7 +2195,7 @@
         ]
     },
     {
-        "program": "STRING|.|cste_in|cste_out|match,0,1|tail_cste,0,2|match,5,1|concat_cste,4,3|concat,7,6|concat_cste,8,3",
+        "program": "STRING|.|cst_in|cst_out|match,0,1|tail_cst,0,2|match,5,1|concat_cst,4,3|concat,7,6|concat_cst,8,3",
         "metadata": {
             "name": "Abbreviate words separated by ')'"
         },
@@ -2233,7 +2233,7 @@
         ]
     },
     {
-        "program": "STRING|STRING|.|cste_out|match,0,2|concat_cste,4,3|match,1,2|concat,5,6|concat_cste,7,3",
+        "program": "STRING|STRING|.|cst_out|match,0,2|concat_cst,4,3|match,1,2|concat,5,6|concat_cst,7,3",
         "metadata": {
             "name": "Abbreviate separate words (IIIIII)"
         },
@@ -2273,7 +2273,7 @@
         ]
     },
     {
-        "program": "STRING|.|cste_in|cste_out|match,0,1|tail_cste,0,2|match,5,1|concat_cste,4,3|concat,7,6|concat_cste,8,3",
+        "program": "STRING|.|cst_in|cst_out|match,0,1|tail_cst,0,2|match,5,1|concat_cst,4,3|concat,7,6|concat_cst,8,3",
         "metadata": {
             "name": "Abbreviate words separated by '-'"
         },
@@ -2539,7 +2539,7 @@
         "constants_out": []
     },
     {
-        "program": "STRING|.|cste_out|head,0,1|concat_cste,3,2|concat,4,0",
+        "program": "STRING|.|cst_out|head,0,1|concat_cst,3,2|concat,4,0",
         "metadata": {
             "name": "Prepend 'UCLA'"
         },
@@ -2575,7 +2575,7 @@
         ]
     },
     {
-        "program": "STRING|cste_out|concat_cste,0,1",
+        "program": "STRING|cst_out|concat_cst,0,1",
         "metadata": {
             "name": "Append '984'"
         },
@@ -2611,7 +2611,7 @@
         ]
     },
     {
-        "program": "STRING|.|cste_in|cste_out|head,0,1|except,2|match,0,5|concat_cste,4,3|concat,7,6",
+        "program": "STRING|.|cst_in|cst_out|head,0,1|except,2|match,0,5|concat_cst,4,3|concat,7,6",
         "metadata": {
             "name": "Prepend 'Elias' to first word"
         },
@@ -2649,7 +2649,7 @@
         ]
     },
     {
-        "program": "STRING|.|cste_out|head,0,1|concat_cste,3,2|concat,4,0",
+        "program": "STRING|.|cst_out|head,0,1|concat_cst,3,2|concat,4,0",
         "metadata": {
             "name": "Prepend 'Santa'"
         },
@@ -2685,7 +2685,7 @@
         ]
     },
     {
-        "program": "STRING|cste_out|concat_cste,0,1",
+        "program": "STRING|cst_out|concat_cst,0,1",
         "metadata": {
             "name": "Append 'Kimberley'"
         },
@@ -2721,7 +2721,7 @@
         ]
     },
     {
-        "program": "STRING|.|cste_in|cste_out|head,0,1|except,2|match,0,5|concat_cste,4,3|concat,7,6",
+        "program": "STRING|.|cst_in|cst_out|head,0,1|except,2|match,0,5|concat_cst,4,3|concat,7,6",
         "metadata": {
             "name": "Prepend '196' to first word"
         },
@@ -2759,7 +2759,7 @@
         ]
     },
     {
-        "program": "STRING|.|cste_out|head,0,1|concat_cste,3,2|concat,4,0",
+        "program": "STRING|.|cst_out|head,0,1|concat_cst,3,2|concat,4,0",
         "metadata": {
             "name": "Prepend '+65'"
         },
@@ -2795,7 +2795,7 @@
         ]
     },
     {
-        "program": "STRING|cste_out|concat_cste,0,1",
+        "program": "STRING|cst_out|concat_cst,0,1",
         "metadata": {
             "name": "Append 'Jani'"
         },
@@ -2831,7 +2831,7 @@
         ]
     },
     {
-        "program": "STRING|.|cste_in|cste_out|head,0,1|except,2|match,0,5|concat_cste,4,3|concat,7,6",
+        "program": "STRING|.|cst_in|cst_out|head,0,1|except,2|match,0,5|concat_cst,4,3|concat,7,6",
         "metadata": {
             "name": "Prepend 'Edison' to first word"
         },
@@ -2869,7 +2869,7 @@
         ]
     },
     {
-        "program": "STRING|.|cste_out|head,0,1|concat_cste,3,2|concat,4,0",
+        "program": "STRING|.|cst_out|head,0,1|concat_cst,3,2|concat,4,0",
         "metadata": {
             "name": "Prepend '+115'"
         },
@@ -2905,7 +2905,7 @@
         ]
     },
     {
-        "program": "STRING|cste_out|concat_cste,0,1",
+        "program": "STRING|cst_out|concat_cst,0,1",
         "metadata": {
             "name": "Append 'Reily'"
         },
@@ -2941,7 +2941,7 @@
         ]
     },
     {
-        "program": "STRING|.|cste_in|cste_out|head,0,1|except,2|match,0,5|concat_cste,4,3|concat,7,6",
+        "program": "STRING|.|cst_in|cst_out|head,0,1|except,2|match,0,5|concat_cst,4,3|concat,7,6",
         "metadata": {
             "name": "Prepend 'Bradford' to first word"
         },
@@ -2979,7 +2979,7 @@
         ]
     },
     {
-        "program": "STRING|.|cste_out|head,0,1|concat_cste,3,2|concat,4,0",
+        "program": "STRING|.|cst_out|head,0,1|concat_cst,3,2|concat,4,0",
         "metadata": {
             "name": "Prepend '+132'"
         },
@@ -3015,7 +3015,7 @@
         ]
     },
     {
-        "program": "STRING|cste_out|concat_cste,0,1",
+        "program": "STRING|cst_out|concat_cst,0,1",
         "metadata": {
             "name": "Append '843'"
         },
@@ -3051,7 +3051,7 @@
         ]
     },
     {
-        "program": "STRING|.|cste_in|cste_out|head,0,1|except,2|match,0,5|concat_cste,4,3|concat,7,6",
+        "program": "STRING|.|cst_in|cst_out|head,0,1|except,2|match,0,5|concat_cst,4,3|concat,7,6",
         "metadata": {
             "name": "Prepend 'Cornell' to first word"
         },
@@ -3089,7 +3089,7 @@
         ]
     },
     {
-        "program": "STRING|.|cste_out|head,0,1|concat_cste,3,2|concat,4,0",
+        "program": "STRING|.|cst_out|head,0,1|concat_cst,3,2|concat,4,0",
         "metadata": {
             "name": "Prepend 'Park'"
         },
@@ -3125,7 +3125,7 @@
         ]
     },
     {
-        "program": "STRING|cste_out|concat_cste,0,1",
+        "program": "STRING|cst_out|concat_cst,0,1",
         "metadata": {
             "name": "Append 'Haven'"
         },
@@ -3161,7 +3161,7 @@
         ]
     },
     {
-        "program": "STRING|.|cste_in|cste_out|head,0,1|except,2|match,0,5|concat_cste,4,3|concat,7,6",
+        "program": "STRING|.|cst_in|cst_out|head,0,1|except,2|match,0,5|concat_cst,4,3|concat,7,6",
         "metadata": {
             "name": "Prepend '487' to first word"
         },
@@ -3462,7 +3462,7 @@
         ]
     },
     {
-        "program": "STRING|cste_out|concat_if,0,1",
+        "program": "STRING|cst_out|concat_if,0,1",
         "metadata": {
             "name": "ensure suffix `Montiel`"
             },
@@ -3501,7 +3501,7 @@
         ]
     },
     {
-        "program": "STRING|cste_out|concat_if,0,1",
+        "program": "STRING|cst_out|concat_if,0,1",
         "metadata": {
             "name": "ensure suffix `421`"
             },
@@ -3540,7 +3540,7 @@
         ]
     },
     {
-        "program": "STRING|cste_out|concat_if,0,1",
+        "program": "STRING|cst_out|concat_if,0,1",
         "metadata": {
             "name": "ensure suffix `Phillip`"
             },
@@ -3579,7 +3579,7 @@
         ]
     },
     {
-        "program": "STRING|cste_out|concat_if,0,1",
+        "program": "STRING|cst_out|concat_if,0,1",
         "metadata": {
             "name": "ensure suffix `Salley`"
         },
@@ -3618,7 +3618,7 @@
         ]
     },
     {
-        "program": "STRING|cste_out|concat_if,0,1",
+        "program": "STRING|cst_out|concat_if,0,1",
         "metadata": {
             "name": "ensure suffix `Santa`"
         },
@@ -3657,7 +3657,7 @@
         ]
     },
     {
-        "program": "STRING|cste_out|concat_if,0,1",
+        "program": "STRING|cst_out|concat_if,0,1",
         "metadata": {
             "name": "ensure suffix `Acura125`"
         },
@@ -3696,7 +3696,7 @@
         ]
     },
     {
-        "program": "STRING|cste_out|concat_if,0,1",
+        "program": "STRING|cst_out|concat_if,0,1",
         "metadata": {
             "name": "ensure suffix `Madelaine`"
         },
