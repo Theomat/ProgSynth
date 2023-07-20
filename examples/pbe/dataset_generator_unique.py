@@ -82,6 +82,11 @@ uniform: bool = parameters.uniform
 constrained: bool = parameters.constrained
 verbose: bool = parameters.verbose
 
+if constrained and not uniform:
+    raise NotImplementedError(
+        "Constrained grammars when uniform=False is currently not implemented!"
+    )
+
 # ================================
 # Load constants specific to DSL
 # ================================
