@@ -4,7 +4,6 @@ import os
 import sys
 from typing import Callable, Iterable, List, Optional, Tuple, Union
 import csv
-import pickle
 
 import tqdm
 
@@ -60,6 +59,11 @@ parser.add_argument(
     default="base",
     help="used method (default: base)",
 )
+parser.add_argument(
+    "--predict",
+    action="store_true",
+    help="only do the PCFG prediction part",
+)
 add_dsl_choice_arg(parser)
 add_model_choice_arg(parser)
 parser.add_argument(
@@ -94,6 +98,7 @@ model_file: str = parameters.model
 task_timeout: float = parameters.timeout
 batch_size: int = parameters.batch_size
 constrained: bool = parameters.constrained
+predict_only: bool = parameters.predict
 support: Optional[str] = (
     None if not parameters.support else parameters.support.format(dsl_name=dsl_name)
 )
@@ -694,26 +699,27 @@ if __name__ == "__main__":
     method_fn = METHODS[method]
 
     pcfgs = produce_pcfgs(full_dataset, dsl, lexicon, constraints)
-    file = os.path.join(
-        output_folder, f"{dataset_name}_{model_name}_{search_algo}_{method}.csv"
-    )
-    trace = []
-    if os.path.exists(file):
-        with open(file, "r") as fd:
-            reader = csv.reader(fd)
-            trace = [tuple(row) for row in reader]
-            trace.pop(0)
-            print(
-                "\tLoaded",
-                len(trace),
-                "/",
-                len(full_dataset),
-                "(",
-                int(len(trace) * 100 / len(full_dataset)),
-                "%)",
-            )
-    enumerative_search(
-        full_dataset, evaluator, pcfgs, trace, method_fn, custom_enumerate
-    )
-    save(trace)
-    print("csv file was saved as:", file)
+    if not predict_only:
+        file = os.path.join(
+            output_folder, f"{dataset_name}_{model_name}_{search_algo}_{method}.csv"
+        )
+        trace = []
+        if os.path.exists(file):
+            with open(file, "r") as fd:
+                reader = csv.reader(fd)
+                trace = [tuple(row) for row in reader]
+                trace.pop(0)
+                print(
+                    "\tLoaded",
+                    len(trace),
+                    "/",
+                    len(full_dataset),
+                    "(",
+                    int(len(trace) * 100 / len(full_dataset)),
+                    "%)",
+                )
+        enumerative_search(
+            full_dataset, evaluator, pcfgs, trace, method_fn, custom_enumerate
+        )
+        save(trace)
+        print("csv file was saved as:", file)
