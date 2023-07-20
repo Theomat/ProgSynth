@@ -132,6 +132,10 @@ for file in glob(os.path.join(output_folder, "*.csv")):
         trace.pop(0)
         # Type conversion (success, time, num_of_programs)
         trace = [(row[0] == "True", float(row[1]), int(row[2])) for row in trace]
+    if len(trace) == 0:
+        if verbose:
+            print(f"\tskipped: no data")
+        continue
     # Compute data for first plot
     trace_time = trace if no_sort else sorted(trace, key=lambda x: x[1])
     cum_sol1, cum_time = np.cumsum([row[0] for row in trace_time]), np.cumsum(
