@@ -239,7 +239,9 @@ def produce_pcfgs(
     # Predict PCFG
     # ================================
     def save_pcfgs() -> None:
+        print("Saving PCFGs...", end="")
         save_object(file, pcfgs)
+        print("done!")
 
     atexit.register(save_pcfgs)
 
