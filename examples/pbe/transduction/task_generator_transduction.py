@@ -137,6 +137,7 @@ def reproduce_transduction_dataset(
             }
         )
 
+    str_bank = str_lexicon + regexp_symbols
     task_generator, str_lexicon = reproduce_dataset(
         dataset,
         dsl,
@@ -144,9 +145,8 @@ def reproduce_transduction_dataset(
         None,
         lambda _, __: None,
         get_sampler,
-        lambda _, max_list_length: basic_output_validator(
-            {str: str_lexicon + regexp_symbols}, max_list_length
-        ),
+        lambda _, max_list_length: lambda x: x is not None
+        and all(xi in str_bank for xi in x),
         lambda _: str_lexicon + regexp_symbols,
         seed,
         *args,
