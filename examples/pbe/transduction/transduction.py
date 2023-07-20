@@ -131,3 +131,7 @@ constant_types = {CST_IN, CST_OUT}
 evaluator = DSLEvaluatorWithConstant(__semantics, constant_types)
 evaluator.skip_exceptions.add(re.error)
 lexicon = list([chr(i) for i in range(32, 126)])
+constraints = [
+    "concat ^concat _",
+    "compose ^compose _",
+]

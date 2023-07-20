@@ -89,6 +89,7 @@ __dsl_funcs: Dict[str, Callable[[bool], Optional[SimpleNamespace]]] = {
             "evaluator",
             "lexicon",
             "constant_types",
+            "constraints",
             ("reproduce_transduction_dataset", "reproduce_dataset"),
         ],
     ),
