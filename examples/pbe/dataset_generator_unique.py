@@ -239,17 +239,17 @@ def generate_samples_for(
         clear_cache()
         thres_reached = nb_tested * nb_tested > threshold * threshold
         ui = best if thres_reached and best is not None else input_sampler()
-        none_ratio = 0
+        failed_ratio = 0
         for cl, prog in equiv_classes.items():
             for p in prog:
                 o = eval_prog(p, ui)
-                if o is None:
-                    none_ratio += 1
+                if not task_generator.output_validator(o):
+                    failed_ratio += 1
                 if isinstance(o, List):
                     o = tuple(o)
                 next_equiv_classes[(o, cl)].append(p)
         ratio = len(programs) / len(equiv_classes)
-        if len(next_equiv_classes) > best_score and none_ratio / len(programs) < 0.2:
+        if len(next_equiv_classes) > best_score and failed_ratio / len(programs) < 0.2:
             best = ui
             best_score = len(next_equiv_classes)
         # Early stopping if no new examples is interesting
