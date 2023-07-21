@@ -1,6 +1,6 @@
 from glob import glob
 import os
-from typing import Dict, List
+from typing import Dict, List, Tuple
 import numpy as np
 import matplotlib.pyplot as plt
 import pltpublish as pub
@@ -9,9 +9,10 @@ import csv
 
 def load_data(
     dataset_name: str, output_folder: str, verbose: bool = False
-) -> Dict[str, Dict[int, List]]:
+) -> Tuple[Dict[str, Dict[int, List]], float]:
     # Dict[name, Dict[seed, data]]
     methods = {}
+    timeout = 1e99
 
     for file in glob(os.path.join(output_folder, "*.csv")):
         filename = os.path.relpath(file, output_folder)
@@ -46,6 +47,9 @@ def load_data(
             trace = [
                 (int(row[0] == "True"), float(row[1]), int(row[2])) for row in trace
             ]
+            for x in trace:
+                if x[0] == 0:
+                    timeout = min(x[1], timeout)
         if len(trace) == 0:
             if verbose:
                 print(f"\tskipped: no data")
@@ -59,7 +63,85 @@ def load_data(
                 "/",
                 len(trace),
             )
-    return methods
+    return methods, timeout
+
+
+def make_filter_wrapper(func, *args) -> None:
+    def f(task_index: int, methods: Dict[str, Dict[int, List]], timeout: float) -> bool:
+        return func(task_index, methods, timeout, *args)
+
+    return f
+
+
+def timeout_filter(
+    task_index: int,
+    methods: Dict[str, Dict[int, List]],
+    timeout: float,
+    nbr_timeouts: int,
+) -> bool:
+    timeouts = 0
+    for method, seeds_dico in methods.items():
+        if nbr_timeouts == -1:
+            nbr_timeouts = len(methods) * len(seeds_dico)
+        for seed, data in seeds_dico.items():
+            timeouts += 1 - data[task_index][0]
+            if timeouts > nbr_timeouts:
+                return False
+
+    return True
+
+
+def time_filter(
+    task_index: int,
+    methods: Dict[str, Dict[int, List]],
+    timeout: float,
+    ratio: float,
+    aggregator,
+) -> bool:
+    all_times = []
+    for method, seeds_dico in methods.items():
+        for seed, data in seeds_dico.items():
+            all_times.append(data[task_index][1])
+    return aggregator(all_times) >= ratio * timeout
+
+
+def reverse_filter(func):
+    def f(
+        task_index: int, methods: Dict[str, Dict[int, List]], timeout: float, *args
+    ) -> bool:
+        return not func(task_index, methods, timeout, *args)
+
+    return f
+
+
+__FILTERS__ = {
+    "timeouts.none": make_filter_wrapper(timeout_filter, 1),
+    "solve>=1": make_filter_wrapper(timeout_filter, -1),
+}
+
+for ratio in [0.25, 0.5, 0.75]:
+    for name, aggr in [("fastest", np.min), ("mean", np.mean), ("slowest", np.max)]:
+        __FILTERS__[f"time.{name}>={ratio:.0%}"] = make_filter_wrapper(
+            time_filter, ratio, aggr
+        )
+
+for key in list(__FILTERS__.keys()):
+    __FILTERS__[f"not.{key}"] = reverse_filter(__FILTERS__[key])
+
+
+def filter(
+    methods: Dict[str, Dict[int, List]], filter_name: str, timeout: float
+) -> Dict[str, Dict[int, List]]:
+    fun = __FILTERS__[filter_name]
+    task_len = len(list(list(methods.values())[0].values())[0])
+    should_keep = [fun(i, methods, timeout) for i in range(task_len)]
+    return {
+        m: {
+            s: [x for i, x in enumerate(data) if should_keep[i]]
+            for s, data in val.items()
+        }
+        for m, val in methods.items()
+    }
 
 
 def plot_with_incertitude(
@@ -92,9 +174,9 @@ def plot_with_incertitude(
 
 
 __DATA__ = {
-    "tasks": (0, "Tasks completed", 10, True),
-    "time": (1, "Time (in s)", 5, False),
-    "programs": (2, "Programs Enumerated", 0, False),
+    "tasks": (0, "Tasks completed", 10, True, True),
+    "time": (1, "Time (in s)", 5, False, False),
+    "programs": (2, "Programs Enumerated", 0, False, False),
 }
 
 
@@ -106,8 +188,8 @@ def plot_y_wrt_x(
     y_name: str,
 ) -> None:
     # Plot data with incertitude
-    a_index, a_name, a_margin, show_len_a = __DATA__[y_name]
-    b_index, b_name, b_margin, show_len_b = __DATA__[x_name]
+    a_index, a_name, a_margin, show_len_a, _ = __DATA__[y_name]
+    b_index, b_name, b_margin, show_len_b, _ = __DATA__[x_name]
     max_a = 0
     max_b = 0
     data_length = 0
@@ -148,19 +230,109 @@ def plot_y_wrt_x(
     ax.legend()
 
 
-def make_plot_builder_for(x_name: str, y_name: str) -> None:
+def make_plot_wrapper(func, *args) -> None:
     def f(ax: plt.Axes, methods: Dict[str, Dict[int, List]], should_sort: bool) -> None:
-        return plot_y_wrt_x(ax, methods, should_sort, x_name, y_name)
+        return func(ax, methods, should_sort, *args)
 
     return f
 
 
+def get_rank_matrix(
+    methods: Dict[str, Dict[int, List]], yindex: int, maximize: bool
+) -> Tuple[List[str], np.ndarray]:
+    seeds = list(methods.values())[0].keys()
+    task_len = len(list(list(methods.values())[0].values())[0])
+    rank_matrix = np.ndarray((len(methods), task_len, len(methods)), dtype=float)
+    method_names = list(methods.keys())
+    data = np.ndarray((len(methods), len(seeds)), dtype=float)
+    np.random.seed(1)
+    for task_no in range(task_len):
+        for i, method in enumerate(method_names):
+            for j, seed in enumerate(seeds):
+                data[i, j] = methods[method][seed][task_no][yindex]
+        # data_for_seed = []
+        # for method in method_names:
+        #     data = methods[method][seed]
+        #     data_for_seed.append([d[yindex] for d in data])
+        # data_for_seed = np.array(data_for_seed)
+        if maximize:
+            data = -data
+        rand_x = np.random.random(size=data.shape)
+        # This is done to randomly break ties.
+        # Last key is the primary key,
+        indices = np.lexsort((rand_x, data), axis=0)
+        for i, method in enumerate(method_names):
+            rank_matrix[i, task_no] = [
+                np.sum(indices[i] == rank) / len(seeds) for rank in range(len(methods))
+            ]
+    return rank_matrix
+
+
+def plot_rank_by(
+    ax: plt.Axes, methods: Dict[str, Dict[int, List]], should_sort: bool, y_name: str
+) -> None:
+    width = 1.0
+    a_index, a_name, a_margin, show_len_a, should_max = __DATA__[y_name]
+    rank_matrix = get_rank_matrix(methods, a_index, should_max)
+    labels = list(range(1, len(methods) + 1))
+    mean_ranks = np.mean(rank_matrix, axis=-2)
+    bottom = np.zeros_like(mean_ranks[0])
+    for i, key in enumerate(methods.keys()):
+        label = key
+        bars = ax.bar(
+            labels,
+            mean_ranks[i],
+            width,
+            label=label,
+            bottom=bottom,
+            alpha=0.9,
+            linewidth=1,
+            edgecolor="white",
+        )
+        ax.bar_label(bars, labels=[f"{x:.1%}" for x in mean_ranks[i]])
+        bottom += mean_ranks[i]
+
+    ax.set_ylabel("Fraction (in %)", size="large")
+    yticks = np.array(range(0, 101, 20))
+    ax.set_yticklabels(yticks)
+    ax.set_yticks(yticks * 0.01)
+    ax.set_xlabel("Ranking", size="large")
+    ax.set_xticks(labels)
+    ax.set_xticklabels(labels)
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.spines["bottom"].set_visible(False)
+    ax.spines["left"].set_visible(False)
+    ax.tick_params(
+        axis="both",
+        which="both",
+        bottom=False,
+        top=False,
+        left=True,
+        right=False,
+        labeltop=False,
+        labelbottom=True,
+        labelleft=True,
+        labelright=False,
+    )
+
+    ax.legend(fancybox=True, fontsize="large")
+    word = "Most" if should_max else "Least"
+    ax.set_title(f"{word} {a_name}")
+
+
+# Generate all possible combinations
 __PLOTS__ = {}
 for ydata in list(__DATA__.keys()):
     for xdata in list(__DATA__.keys()):
         if xdata == ydata:
             continue
-        __PLOTS__[f"{ydata}_wrt_{xdata}"] = make_plot_builder_for(xdata, ydata)
+        __PLOTS__[f"{ydata}_wrt_{xdata}"] = make_plot_wrapper(
+            plot_y_wrt_x, xdata, ydata
+        )
+    if ydata != "tasks":
+        __PLOTS__[f"rank_by_{ydata}"] = make_plot_wrapper(plot_rank_by, ydata)
+
 
 if __name__ == "__main__":
     import argparse
@@ -189,6 +361,13 @@ if __name__ == "__main__":
         default=False,
         help="verbose mode",
     )
+    parser.add_argument(
+        "--filter",
+        type=str,
+        nargs="*",
+        choices=list(__FILTERS__.keys()),
+        help="filter tasks (keep data based on the filter)",
+    )
     parser.add_argument("plots", nargs="+", choices=list(__PLOTS__.keys()))
     parameters = parser.parse_args()
     dataset_file: str = parameters.dataset
@@ -196,6 +375,7 @@ if __name__ == "__main__":
     verbose: bool = parameters.verbose
     no_sort: bool = not parameters.sorted
     plots: List[str] = parameters.plots
+    filters: List[str] = parameters.filter or []
 
     # Initial Setup
     start_index = (
@@ -206,7 +386,9 @@ if __name__ == "__main__":
     dataset_name = dataset_file[start_index : dataset_file.index(".", start_index)]
     # Load data
     pub.setup()
-    methods = load_data(dataset_name, output_folder, verbose)
+    methods, timeout = load_data(dataset_name, output_folder, verbose)
+    for filter_name in filters:
+        methods = filter(methods, filter_name, timeout)
 
     # Check we have at least one file
     if len(methods) == 0:
@@ -219,5 +401,4 @@ if __name__ == "__main__":
     for count, to_plot in enumerate(plots):
         ax = plt.subplot(1, len(plots), count + 1)
         __PLOTS__[to_plot](ax, methods, not no_sort)
-
     plt.show()
