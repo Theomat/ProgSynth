@@ -406,36 +406,37 @@ def semantic_equivalence(
     with chrono.clock("search.semantic_equivalence") as c:
         results = {}
         enumerator = custom_enumerate(pcfg)
+        merged = 0
         for program in enumerator:
             time = c.elapsed_time()
             if time >= task_timeout:
                 return (False, time, programs, None, None)
             programs += 1
             failed = False
-            outputs = []
+            outputs = None
             for ex in task.specification.examples:
                 out = evaluator.eval(program, ex.inputs)
-                if out != ex.output:
-                    failed = True
-                    if isinstance(out, list):
-                        outputs.append(tuple(out))
-                    else:
-                        outputs.append(out)
+                failed |= out != ex.output
+                if isinstance(out, list):
+                    outputs = (outputs, tuple(out))
+                else:
+                    outputs = (outputs, out)
             if not failed:
                 return (
                     True,
                     c.elapsed_time(),
                     programs,
                     program,
-                    pcfg.probability(program),
+                    merged,
                 )
-            elif len(outputs) > 0:
-                original = results.get(tuple(outputs))
+            else:
+                original = results.get(outputs)
                 if original is not None:
                     enumerator.merge_program(original, program)
+                    merged += 1
                 else:
-                    results[tuple(outputs)] = program
-    return (False, time, programs, None, None)
+                    results[outputs] = program
+    return (False, time, programs, None, merged)
 
 
 def constants_injector(
