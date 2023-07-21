@@ -268,6 +268,8 @@ def produce_pcfgs(
     pbar.close()
     save_pcfgs()
     atexit.unregister(save_pcfgs)
+    if predict_only:
+        return pcfgs
     del predictor
     free_pytorch_memory()
     return pcfgs
