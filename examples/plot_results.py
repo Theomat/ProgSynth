@@ -120,7 +120,7 @@ __FILTERS__ = {
 }
 
 for ratio in [0.25, 0.5, 0.75]:
-    for name, aggr in [("fastest", np.min), ("mean", np.mean), ("slowest", np.max)]:
+    for name, aggr in [("fastest", np.min), ("mean", np.mean), ("median", np.median), ("slowest", np.max)]:
         __FILTERS__[f"time.{name}>={ratio:.0%}"] = make_filter_wrapper(
             time_filter, ratio, aggr
         )
