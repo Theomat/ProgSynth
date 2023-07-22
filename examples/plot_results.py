@@ -336,6 +336,7 @@ for ydata in list(__DATA__.keys()):
 
 if __name__ == "__main__":
     import argparse
+    import sys
 
     parser = argparse.ArgumentParser(description="Plot results")
     parser.add_argument(
@@ -387,15 +388,18 @@ if __name__ == "__main__":
     # Load data
     pub.setup()
     methods, timeout = load_data(dataset_name, output_folder, verbose)
-    for filter_name in filters:
-        methods = filter(methods, filter_name, timeout)
-
     # Check we have at least one file
     if len(methods) == 0:
-        import sys
-
         print("Error: no performance file was found!", file=sys.stderr)
         sys.exit(1)
+    for filter_name in filters:
+        methods = filter(methods, filter_name, timeout)
+        # Check we did not remove everything
+        task_len = len(list(list(methods.values())[0].values())[0])
+        if task_len == 0:
+
+            print("Error: filters left no tasks!", file=sys.stderr)
+            sys.exit(1)
 
     # Plotting
     for count, to_plot in enumerate(plots):
