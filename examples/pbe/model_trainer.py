@@ -26,7 +26,6 @@ from synth.utils import chrono
 from synth.pruning.constraints import add_dfta_constraints
 
 DREAMCODER = "dreamcoder"
-DEEPCODER = "deepcoder"
 REGEXP = "regexp"
 CALCULATOR = "calculator"
 TRANSDUCTION = "transduction"
