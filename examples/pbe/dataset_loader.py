@@ -1,5 +1,5 @@
 from argparse import ArgumentParser
-import _pickle as cPickle  # type: ignore
+import pickle
 
 from colorama import Fore as F
 
@@ -7,7 +7,7 @@ from synth import Dataset
 from synth.utils import chrono
 
 
-class DatasetUnpickler(cPickle.Unpickler):
+class DatasetUnpickler(pickle.Unpickler):
     def find_class(self, module, name):
         try:
             return super().find_class(module, name)
