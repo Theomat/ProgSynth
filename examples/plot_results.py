@@ -1,6 +1,6 @@
 from glob import glob
 import os
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Optional
 import numpy as np
 import matplotlib.pyplot as plt
 import pltpublish as pub
@@ -155,6 +155,8 @@ def plot_with_incertitude(
     y: List[np.ndarray],
     label: str,
     std_factor: float = 1.96,
+    miny: Optional[float] = None,
+    maxy: Optional[float] = None,
 ) -> None:
     max_len = max(len(xi) for xi in x)
     x = [xi for xi in x if len(xi) == max_len]
@@ -175,7 +177,13 @@ def plot_with_incertitude(
 
     p = ax.plot(target_x, mean, label=label)
     color = p[0].get_color()
-    ax.fill_between(target_x, mean - std, mean + std, color=color, alpha=0.5)
+    upper = mean + std
+    if maxy is not None:
+        upper = np.minimum(upper, maxy)
+    lower = mean - std
+    if miny is not None:
+        lower = np.maximum(lower, miny)
+    ax.fill_between(target_x, lower, upper, color=color, alpha=0.5)
 
 
 __DATA__ = {
@@ -209,13 +217,14 @@ def plot_y_wrt_x(
             data = [sorted(seed_data) for seed_data in data]
         xdata = [np.cumsum([x[0] for x in seed_data]) for seed_data in data]
         ydata = [np.cumsum([x[1] for x in seed_data]) for seed_data in data]
-        max_a = max(np.max(ydata), max_a)
-        max_b = max(np.max(xdata), max_b)
+        max_a = max(max(np.max(yi) for yi in ydata), max_a)
+        max_b = max(max(np.max(xi) for xi in xdata), max_b)
         plot_with_incertitude(
             ax,
             xdata,
             ydata,
             method.capitalize(),
+            maxy=data_length if show_len_a else None,
         )
     ax.set_xlabel(b_name)
     ax.set_ylabel(a_name)
