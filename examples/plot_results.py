@@ -282,6 +282,27 @@ def get_rank_matrix(
     return rank_matrix
 
 
+def __ready_for_stacked_dist_plot__(ax: plt.Axes) -> None:
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.spines["bottom"].set_visible(False)
+    ax.spines["left"].set_visible(False)
+    ax.tick_params(
+        axis="both",
+        which="both",
+        bottom=False,
+        top=False,
+        left=True,
+        right=False,
+        labeltop=False,
+        labelbottom=True,
+        labelleft=True,
+        labelright=False,
+    )
+
+    ax.legend(fancybox=True, fontsize="large")
+
+
 def plot_rank_by(
     ax: plt.Axes, methods: Dict[str, Dict[int, List]], should_sort: bool, y_name: str
 ) -> None:
@@ -313,26 +334,60 @@ def plot_rank_by(
     ax.set_xlabel("Ranking", size="large")
     ax.set_xticks(labels)
     ax.set_xticklabels(labels)
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
-    ax.spines["bottom"].set_visible(False)
-    ax.spines["left"].set_visible(False)
-    ax.tick_params(
-        axis="both",
-        which="both",
-        bottom=False,
-        top=False,
-        left=True,
-        right=False,
-        labeltop=False,
-        labelbottom=True,
-        labelleft=True,
-        labelright=False,
-    )
-
-    ax.legend(fancybox=True, fontsize="large")
+    __ready_for_stacked_dist_plot__(ax)
     word = "Most" if should_max else "Least"
     ax.set_title(f"{word} {a_name}")
+
+
+def plot_dist(
+    ax: plt.Axes, methods: Dict[str, Dict[int, List]], should_sort: bool, y_name: str
+) -> None:
+    width = 1.0
+    data_length = 0
+    a_index, a_name, a_margin, show_len_a, should_max = __DATA__[y_name]
+    max_a = max(
+        max(max([y[a_index] for y in x]) for x in seed_dico.values())
+        for seed_dico in methods.values()
+    )
+    bottom = None
+    nbins = 5
+    bins = [max_a]
+    while len(bins) <= nbins:
+        bins.insert(0, np.sqrt(bins[0] + 1))
+    for i in range(nbins):
+        if bins[i + 1] < 2 * bins[i]:
+            bins[i + 1] = 2 * bins[i]
+    x_bar = list(range(1, nbins + 1))
+    for method, seeds_dico in methods.items():
+        hists = []
+        for seed, raw_data in seeds_dico.items():
+            data = [x[a_index] for x in raw_data]
+            data_length = max(data_length, len(data))
+            hist, edges = np.histogram(
+                data, bins=bins, range=(1e-3, max_a), density=False
+            )
+            hists.append(hist)
+        true_hist = np.mean(hists, axis=0) / data_length
+        if bottom is None:
+            bottom = np.zeros_like(true_hist)
+        label = method
+        bars = ax.bar(
+            x_bar,
+            true_hist,
+            width,
+            label=label,
+            bottom=bottom,
+            alpha=0.9,
+            linewidth=1,
+            edgecolor="white",
+        )
+        ax.bar_label(bars, labels=[f"{x:.1%}" for x in true_hist])
+        bottom += true_hist
+    __ready_for_stacked_dist_plot__(ax)
+    ax.set_yticklabels([])
+    ax.set_xlabel(a_name, size="large")
+    ax.set_xticklabels(map(lambda x: f"<{x:.0f}", edges))
+    ax.set_title(f"Distribution of {a_name} per task")
 
 
 # Generate all possible combinations
@@ -346,6 +401,7 @@ for ydata in list(__DATA__.keys()):
         )
     if ydata != "tasks":
         __PLOTS__[f"rank_by_{ydata}"] = make_plot_wrapper(plot_rank_by, ydata)
+        __PLOTS__[f"dist_{ydata}_by_task"] = make_plot_wrapper(plot_dist, ydata)
 
 
 if __name__ == "__main__":
