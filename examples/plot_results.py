@@ -1,5 +1,6 @@
 from glob import glob
 import os
+from collections import OrderedDict
 from typing import Dict, List, Tuple, Optional
 import numpy as np
 import matplotlib.pyplot as plt
@@ -470,9 +471,12 @@ if __name__ == "__main__":
 
             print("Error: filters left no tasks!", file=sys.stderr)
             sys.exit(1)
-
+    # Order by name so that it is always the same color for the same methods if diff. DSL
+    ordered_methods = OrderedDict()
+    for met in sorted(methods.keys()):
+        ordered_methods[met] = methods[met]
     # Plotting
     for count, to_plot in enumerate(plots):
         ax = plt.subplot(1, len(plots), count + 1)
-        __PLOTS__[to_plot](ax, methods, not no_sort)
+        __PLOTS__[to_plot](ax, ordered_methods, not no_sort)
     plt.show()
