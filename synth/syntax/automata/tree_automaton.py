@@ -81,6 +81,16 @@ class DFTA(Generic[U, V]):
                         break
         return reachable
 
+    @property
+    def alphabet(self) -> Set[V]:
+        """
+        The set of letters.
+        """
+        alphabet = set()
+        for (letter, _), __ in self.rules.items():
+            alphabet.add(letter)
+        return alphabet
+
     def __remove_unreachable__(self) -> None:
         new_states = self.states
         new_rules = {
