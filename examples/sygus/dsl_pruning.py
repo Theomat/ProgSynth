@@ -1,11 +1,8 @@
 import argparse
 from typing import Dict, Tuple
 
-import tqdm
-
-from synth import Dataset, PBE
-from synth.utils import chrono
-from synth.syntax import CFG, DFTA
+from synth.syntax.grammars.grammar import DerivableProgram
+from synth.syntax import DFTA, PrimitiveType, Type, FunctionType, Primitive
 
 from parsing.ast import (
     GroupedRuleList,
@@ -59,28 +56,35 @@ program = parser.parse(parameters.input_file.read())
 symbol_table = SymbolTableBuilder.run(program)
 
 
-def term2str(term: Term) -> str:
+def type_of_symbol(symbol_table: SymbolTable, symbol: str) -> Type:
+    descriptor = symbol_table.lookup_symbol(symbol)
+    return PrimitiveType(descriptor.symbol_sort.identifier.symbol)
+
+
+def term2str(term: Term, symbol_table: SymbolTable) -> Tuple[Type, str]:
     if isinstance(term, IdentifierTerm):
-        return term.identifier.symbol
+        return (
+            type_of_symbol(symbol_table, term.identifier.symbol),
+            term.identifier.symbol,
+        )
     elif isinstance(term, LiteralTerm):
-        return term.literal.literal_value
+        return (
+            PrimitiveType(term.literal.literal_kind.name),
+            term.literal.literal_value,
+        )
     raise NotImplementedError()
 
 
-def to_dfta(symbol_table: SymbolTable):
+def to_dfta(symbol_table: SymbolTable) -> DFTA[Tuple[Type, str], DerivableProgram]:
     key, val = list(symbol_table.synth_functions.items())[0]
     grammar: Grammar = val.synthesis_grammar
     rules: Dict[
         Tuple[
-            str,
-            Tuple[str, ...],
+            DerivableProgram,
+            Tuple[Tuple[Type, str], ...],
         ],
-        str,
+        Tuple[Type, str],
     ] = {}
-    # Copy non terminals
-    non_terminals = {}
-    for nt in grammar.nonterminals:
-        non_terminals[nt] = nt[0]
     # Now create rules
     for S, rule in grammar.grouped_rule_lists.items():
         r: GroupedRuleList = rule
@@ -97,15 +101,37 @@ def to_dfta(symbol_table: SymbolTable):
             if out.grammar_term_kind == GrammarTermKind.BINDER_FREE:
                 if isinstance(out.binder_free_term, FunctionApplicationTerm):
                     f = out.binder_free_term.function_identifier.symbol
-                    args = tuple(map(term2str, out.binder_free_term.arguments))
-                    rules[(f, args)] = S
+                    args = tuple(
+                        map(
+                            lambda x: term2str(x, symbol_table),
+                            out.binder_free_term.arguments,
+                        )
+                    )
+                    fun = Primitive(
+                        f,
+                        FunctionType(
+                            *[x[0] for x in args], type_of_symbol(symbol_table, S)
+                        ),
+                    )
+                    rules[(fun, args)] = (type_of_symbol(symbol_table, S), S)
                 else:
-                    rules[(term2str(out.binder_free_term), ())] = S
+                    t, name = term2str(out.binder_free_term, symbol_table)
+                    rules[(Primitive(str(name), t), ())] = (
+                        type_of_symbol(symbol_table, S),
+                        S,
+                    )
             # else:
             #     print("\t\t [", out.grammar_term_kind, "] =>", out.sort_expression)
     finals = set()
     dfta = DFTA(rules, finals)
     print(dfta)
+    return dfta
 
 
-to_dfta(symbol_table)
+dfta = to_dfta(symbol_table)
+from synth.pruning.constraints.dfta_constraints import add_dfta_constraints, __process__
+from synth.pruning.constraints.parsing import parse_specification
+
+token = parse_specification("+ ^+ _", dfta)
+print("=" * 60)
+print(__process__(dfta, token, True))
