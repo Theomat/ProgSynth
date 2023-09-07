@@ -30,3 +30,6 @@ docs/build
 
 # VS Code Counter
 .VSCodeCounter
+
+# Parsing Sygus files
+examples/sygus/parsing/**/*.py
