@@ -11,11 +11,11 @@
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="_static/jquery.js"></script>
-        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
-        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-        <script src="_static/doctools.js"></script>
-        <script src="_static/sphinx_highlight.js"></script>
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=2709fde1"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="author" title="About these documents" href="about.html" />
     <link rel="index" title="Index" href="genindex.html" />
@@ -97,7 +97,7 @@
            <div itemprop="articleBody">
              
   <section id="the-type-system">
-<h1>The Type System<a class="headerlink" href="#the-type-system" title="Permalink to this heading"></a></h1>
+<h1>The Type System<a class="headerlink" href="#the-type-system" title="Link to this heading"></a></h1>
 <p>The type system in ProgSynth has the vocation of adding constraints for compilation from a DSL into a grammar.</p>
 <p>ProgSynth does not check at any time that the data you manipulate has the correct type, types are only used at compilation time.</p>
 <!-- toc -->
@@ -116,14 +116,14 @@
 </ul>
 <!-- tocstop -->
 <section id="basic-type">
-<h2>Basic Type<a class="headerlink" href="#basic-type" title="Permalink to this heading"></a></h2>
+<h2>Basic Type<a class="headerlink" href="#basic-type" title="Link to this heading"></a></h2>
 <p>Ground types are <code class="docutils literal notranslate"><span class="pre">PrimitiveType</span></code>.
 An <code class="docutils literal notranslate"><span class="pre">int</span></code> is represented as <code class="docutils literal notranslate"><span class="pre">PrimitiveType(&quot;int&quot;)</span></code>.
 Notice that it is uniquely identified by its name therefore two instances with the same name represent the same type.</p>
 <p>ProgSynth already defines the following types: <code class="docutils literal notranslate"><span class="pre">INT</span></code>, <code class="docutils literal notranslate"><span class="pre">BOOL</span></code>, <code class="docutils literal notranslate"><span class="pre">STRING</span></code>, <code class="docutils literal notranslate"><span class="pre">UNIT</span></code>.</p>
 </section>
 <section id="advanced-types">
-<h2>Advanced Types<a class="headerlink" href="#advanced-types" title="Permalink to this heading"></a></h2>
+<h2>Advanced Types<a class="headerlink" href="#advanced-types" title="Link to this heading"></a></h2>
 <p>Advanced types are built from other types.
 There are three:</p>
 <ul class="simple">
@@ -132,19 +132,19 @@ There are three:</p>
 <li><p>Generic.</p></li>
 </ul>
 <section id="sum-type">
-<h3>Sum Type<a class="headerlink" href="#sum-type" title="Permalink to this heading"></a></h3>
+<h3>Sum Type<a class="headerlink" href="#sum-type" title="Link to this heading"></a></h3>
 <p>Sum types are union in python.
 They can be built two ways, first with <code class="docutils literal notranslate"><span class="pre">Sum(t1,</span> <span class="pre">t2)</span></code> or <code class="docutils literal notranslate"><span class="pre">t1</span> <span class="pre">|</span> <span class="pre">t2</span></code>.</p>
 </section>
 <section id="arrow">
-<h3>Arrow<a class="headerlink" href="#arrow" title="Permalink to this heading"></a></h3>
+<h3>Arrow<a class="headerlink" href="#arrow" title="Link to this heading"></a></h3>
 <p>Arrow represent functions.
 They can be built with <code class="docutils literal notranslate"><span class="pre">Arrow(t1,</span> <span class="pre">t2)</span></code>.
 A function <code class="docutils literal notranslate"><span class="pre">int-&gt;int-&gt;int</span></code> would have type <code class="docutils literal notranslate"><span class="pre">Arrow(int,</span> <span class="pre">Arrow(int,</span> <span class="pre">int))</span></code>.
 An easier way to construct these arrows is to use <code class="docutils literal notranslate"><span class="pre">FunctionType(int,</span> <span class="pre">int,</span> <span class="pre">int)</span></code> in this case. While <code class="docutils literal notranslate"><span class="pre">Arrow</span></code> is a binary constructor, <code class="docutils literal notranslate"><span class="pre">FunctionType</span></code> allows any number of arguments and ensure that the <code class="docutils literal notranslate"><span class="pre">Arrow</span></code>are built correctly especially if you are using higher order functions.</p>
 </section>
 <section id="generic">
-<h3>Generic<a class="headerlink" href="#generic" title="Permalink to this heading"></a></h3>
+<h3>Generic<a class="headerlink" href="#generic" title="Link to this heading"></a></h3>
 <p>Generic are parametric types. For example, the previous type <code class="docutils literal notranslate"><span class="pre">Arrow</span></code>is <em>almost</em> a generic, the <code class="docutils literal notranslate"><span class="pre">List</span></code>type is one. You can make a list type out of any type using <code class="docutils literal notranslate"><span class="pre">List(t)</span></code>.
 To instanciate a Generic builder you can use the <code class="docutils literal notranslate"><span class="pre">GenericFunctor</span></code>:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">List</span> <span class="o">=</span> <span class="n">GenericFunctor</span><span class="p">(</span><span class="s2">&quot;list&quot;</span><span class="p">,</span> <span class="n">min_args</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_args</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
@@ -161,14 +161,14 @@ To instanciate a Generic builder you can use the <code class="docutils literal n
 </section>
 </section>
 <section id="polymorphic-types">
-<h2>Polymorphic Types<a class="headerlink" href="#polymorphic-types" title="Permalink to this heading"></a></h2>
+<h2>Polymorphic Types<a class="headerlink" href="#polymorphic-types" title="Link to this heading"></a></h2>
 <p>One can instantiate polymorphic types with <code class="docutils literal notranslate"><span class="pre">PolymorphicType(&quot;a&quot;)</span></code> as with <code class="docutils literal notranslate"><span class="pre">PrimitiveType</span></code> they are uniquely identified by their name.
 At compilation, a polymorphic type will take as possible values any ground type that is present in the DSL and advanced types built on top of them recursively up to some type size.</p>
 <p>You can limit the set of types a polymorphic type can take with <code class="docutils literal notranslate"><span class="pre">FixedPolymorphicType(&quot;f&quot;,</span> <span class="pre">t1,</span> <span class="pre">t2,</span> <span class="pre">t3)</span></code> which will only take types that are <code class="docutils literal notranslate"><span class="pre">t1</span></code>, <code class="docutils literal notranslate"><span class="pre">t2</span></code> or <code class="docutils literal notranslate"><span class="pre">t3</span></code>.</p>
 <p>You can check if a polymorphic type <code class="docutils literal notranslate"><span class="pre">poly_t</span></code> can be assigned some type <code class="docutils literal notranslate"><span class="pre">t</span></code> with <code class="docutils literal notranslate"><span class="pre">poly_t.can_be(t)</span></code>.</p>
 </section>
 <section id="methods-of-interest">
-<h2>Methods of interest<a class="headerlink" href="#methods-of-interest" title="Permalink to this heading"></a></h2>
+<h2>Methods of interest<a class="headerlink" href="#methods-of-interest" title="Link to this heading"></a></h2>
 <p>Creating a type can be done by instanciating the objects individually or you can use the <code class="docutils literal notranslate"><span class="pre">auto_type</span></code> method which takes either your string type or your syntax dictionnary and transform it into a real type. Here are a few examples:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">synth.syntax</span> <span class="kn">import</span> <span class="n">auto_type</span>
 

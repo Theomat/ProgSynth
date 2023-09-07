@@ -11,11 +11,11 @@
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="_static/jquery.js"></script>
-        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
-        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-        <script src="_static/doctools.js"></script>
-        <script src="_static/sphinx_highlight.js"></script>
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=2709fde1"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="author" title="About these documents" href="about.html" />
     <link rel="index" title="Index" href="genindex.html" />
@@ -99,7 +99,7 @@
            <div itemprop="articleBody">
              
   <section id="prediction">
-<h1>Prediction<a class="headerlink" href="#prediction" title="Permalink to this heading"></a></h1>
+<h1>Prediction<a class="headerlink" href="#prediction" title="Link to this heading"></a></h1>
 <p>In order to produce a P(U)CFG from a (U)CFG, we need what we call <em>a prediction</em>.
 That is a function which tags derivation rules with probabilities.</p>
 <!-- toc -->
@@ -121,10 +121,10 @@ That is a function which tags derivation rules with probabilities.</p>
 </ul>
 <!-- tocstop -->
 <section id="neural-network">
-<h2>Neural Network<a class="headerlink" href="#neural-network" title="Permalink to this heading"></a></h2>
+<h2>Neural Network<a class="headerlink" href="#neural-network" title="Link to this heading"></a></h2>
 <p>ProgSynth offers tools to easily use Neural networks to predict probabilities.</p>
 <section id="prediction-layers">
-<h3>Prediction Layers<a class="headerlink" href="#prediction-layers" title="Permalink to this heading"></a></h3>
+<h3>Prediction Layers<a class="headerlink" href="#prediction-layers" title="Link to this heading"></a></h3>
 <p>The main tools are: <code class="docutils literal notranslate"><span class="pre">DetGrammarPredictorLayer</span></code> and <code class="docutils literal notranslate"><span class="pre">UGrammarPredictorLayer</span></code> which are respectively the same object for CFGs and UCFGs.
 There are layers which maps tensors from <code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">I)</span></code> to <code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">N)</span></code> where <code class="docutils literal notranslate"><span class="pre">B</span></code> is the batch size, <code class="docutils literal notranslate"><span class="pre">I</span></code> is a parameter of the layer and <code class="docutils literal notranslate"><span class="pre">N</span></code> depends on the grammar.
 A <code class="docutils literal notranslate"><span class="pre">(N,)</span></code> tensor can then be transformed into a tensor log-probability grammars thanks to <code class="docutils literal notranslate"><span class="pre">tensor2log_prob_grammar</span></code>.
@@ -132,7 +132,7 @@ In case one wants to enumerate, a tensor log-probability grammar can always be t
 <p>These layers however give a constant probability to all <code class="docutils literal notranslate"><span class="pre">Variable</span></code> and <code class="docutils literal notranslate"><span class="pre">Constant</span></code> object of the grammar since they can hardly be predicted.
 The given probability can be changed anytime through <code class="docutils literal notranslate"><span class="pre">layer.variable_probability</span></code>.</p>
 <section id="instanciation">
-<h4>Instanciation<a class="headerlink" href="#instanciation" title="Permalink to this heading"></a></h4>
+<h4>Instanciation<a class="headerlink" href="#instanciation" title="Link to this heading"></a></h4>
 <p>First, a layer is instanciated for an iterable of grammars.
 That is they can support a finite set of type requests, so that one can train one model for multiple use.
 To make use of this feature, it is better when grammars have common derivations, obviously they should be derived from the same DSL.</p>
@@ -142,7 +142,7 @@ The idea is that if two non-terminals are mapped onto the same abstraction then 
 <p>Using <code class="docutils literal notranslate"><span class="pre">from</span> <span class="pre">synth.nn</span> <span class="pre">import</span> <span class="pre">abstractions</span></code> can provide you with a few defaults abstractions which are the most frequently used.</p>
 </section>
 <section id="learning">
-<h4>Learning<a class="headerlink" href="#learning" title="Permalink to this heading"></a></h4>
+<h4>Learning<a class="headerlink" href="#learning" title="Link to this heading"></a></h4>
 <p>Both layers provide already implemented loss computations:
 <code class="docutils literal notranslate"><span class="pre">loss_cross_entropy</span></code> and <code class="docutils literal notranslate"><span class="pre">loss_negative_log_prob</span></code>.
 Their aguments indicate if one needs to convert the tensors into tensor grammars or not.</p>
@@ -157,7 +157,7 @@ Their aguments indicate if one needs to convert the tensors into tensor grammars
 </div>
 </section>
 <section id="tensor-to-grammar">
-<h4>Tensor to Grammar<a class="headerlink" href="#tensor-to-grammar" title="Permalink to this heading"></a></h4>
+<h4>Tensor to Grammar<a class="headerlink" href="#tensor-to-grammar" title="Link to this heading"></a></h4>
 <p>Here is the following code to go from a tensor <code class="docutils literal notranslate"><span class="pre">(N,)</span></code> to a P(U)CFG:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">tensor_grammar</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">prediction_layer</span><span class="o">.</span><span class="n">tensor2log_prob_grammar</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="n">task</span><span class="o">.</span><span class="n">type_request</span><span class="p">)</span>
 <span class="n">out_p_grammar</span> <span class="o">=</span> <span class="n">tensor_grammar</span><span class="o">.</span><span class="n">to_prob_u_grammar</span><span class="p">()</span> <span class="k">if</span> <span class="n">unambiguous</span> <span class="k">else</span> <span class="n">tensor_grammar</span><span class="o">.</span><span class="n">to_prob_det_grammar</span><span class="p">()</span>
@@ -166,7 +166,7 @@ Their aguments indicate if one needs to convert the tensors into tensor grammars
 </section>
 </section>
 <section id="task-to-tensor">
-<h3>Task to Tensor<a class="headerlink" href="#task-to-tensor" title="Permalink to this heading"></a></h3>
+<h3>Task to Tensor<a class="headerlink" href="#task-to-tensor" title="Link to this heading"></a></h3>
 <p>This is a <code class="docutils literal notranslate"><span class="pre">torch.nn.Module</span></code> which is a pipeline to make it easy to map a task to a tensor.
 It takes a <code class="docutils literal notranslate"><span class="pre">SpecificationEncoder[T,</span> <span class="pre">Tensor]</span></code> which encodes a task into a tensor.
 An embedder which will consume the output of the encoder to produce a new tensor.
@@ -175,7 +175,7 @@ And then this tensor is now packed into a <code class="docutils literal notransl
 What occurs for example in PBE is that each of the example is one hot encoded into tensors and these tensors are stacked then fed to a regular <code class="docutils literal notranslate"><span class="pre">Embedding</span></code>, finally they are packed into <code class="docutils literal notranslate"><span class="pre">PackedSequence</span></code> which can be easily fed to transformers, RNN, LSTM…</p>
 </section>
 <section id="example-model-for-pbe">
-<h3>Example Model for PBE<a class="headerlink" href="#example-model-for-pbe" title="Permalink to this heading"></a></h3>
+<h3>Example Model for PBE<a class="headerlink" href="#example-model-for-pbe" title="Link to this heading"></a></h3>
 <p>Here we give an example model which works for PBE:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Union</span>
 

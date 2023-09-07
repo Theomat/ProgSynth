@@ -11,11 +11,11 @@
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="_static/jquery.js"></script>
-        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
-        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-        <script src="_static/doctools.js"></script>
-        <script src="_static/sphinx_highlight.js"></script>
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=2709fde1"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="author" title="About these documents" href="about.html" />
     <link rel="index" title="Index" href="genindex.html" />
@@ -112,7 +112,7 @@
            <div itemprop="articleBody">
              
   <section id="pbe-examples">
-<h1>PBE Examples<a class="headerlink" href="#pbe-examples" title="Permalink to this heading"></a></h1>
+<h1>PBE Examples<a class="headerlink" href="#pbe-examples" title="Link to this heading"></a></h1>
 <p>This folder contains ready to use scripts and files that you can leverage to reproduce results from papers for example or to test your new ideas.</p>
 <!-- toc -->
 <ul class="simple">
@@ -136,7 +136,7 @@
 <li><p><a class="reference internal" href="#downloading-dreamcoder"><span class="xref myst">Downloading Dreamcoder</span></a></p></li>
 </ul>
 </li>
-<li><p><a class="reference external" href="https://www.sphinx-doc.org/en/master/usage/restructuredtext/roles.html#role-regexp" title="Sphinx 7.1.0"><span class="xref myst">Regexp</span></a></p></li>
+<li><p><a class="reference external" href="https://www.sphinx-doc.org/en/master/usage/restructuredtext/roles.html#role-regexp" title="Sphinx 7.2.5"><span class="xref myst">Regexp</span></a></p></li>
 <li><p><a class="reference internal" href="#transductions"><span class="xref myst">Transductions</span></a></p>
 <ul>
 <li><p><a class="reference internal" href="#downloading-sygus"><span class="xref myst">Downloading SyGus</span></a></p></li>
@@ -148,9 +148,9 @@
 </ul>
 <!-- tocstop -->
 <section id="scripts">
-<h2>Scripts<a class="headerlink" href="#scripts" title="Permalink to this heading"></a></h2>
+<h2>Scripts<a class="headerlink" href="#scripts" title="Link to this heading"></a></h2>
 <section id="dataset-manipulation">
-<h3>Dataset Manipulation<a class="headerlink" href="#dataset-manipulation" title="Permalink to this heading"></a></h3>
+<h3>Dataset Manipulation<a class="headerlink" href="#dataset-manipulation" title="Link to this heading"></a></h3>
 <p>You can <strong>explore</strong> a dataset with <code class="docutils literal notranslate"><span class="pre">dataset_explorer.py</span></code>. It will provide you with an interactive prompt to explore the dataset. Use <code class="docutils literal notranslate"><span class="pre">help</span></code> to see the list of commands in the interactive prompt.</p>
 <p>You can <strong>generate synthetic datasets</strong> based on a existing dataset, reproducing their distribution with:</p>
 <ul class="simple">
@@ -160,26 +160,26 @@
 <p>You can <strong>improve solutions of a dataset</strong> with <code class="docutils literal notranslate"><span class="pre">dataset_improve.py</span></code>. It takes a dataset and a solution file (obtained with <code class="docutils literal notranslate"><span class="pre">evaluate.py</span></code>) and replace the solutions of the dataset by the ones found if they are shorter.</p>
 </section>
 <section id="model-training-and-evaluation">
-<h3>Model Training and Evaluation<a class="headerlink" href="#model-training-and-evaluation" title="Permalink to this heading"></a></h3>
+<h3>Model Training and Evaluation<a class="headerlink" href="#model-training-and-evaluation" title="Link to this heading"></a></h3>
 <p>You can <strong>train a model</strong> with <code class="docutils literal notranslate"><span class="pre">model_trainer.py</span></code>. It loads a dataset then train a neural net to predict the probabilities of the grammar. Metrics are logged with [TensorBoard](https://www.tensorflow.org/tensorboard/.</p>
 <p>You can <strong>evaluate a model</strong> with <code class="docutils literal notranslate"><span class="pre">evaluate.py</span></code>. It loads a dataset, a model, and runs our synthesis algorithm on every task trying to find a correct solution to the task.</p>
 <p>You can <strong>plot the results</strong> of <code class="docutils literal notranslate"><span class="pre">evaluate.py</span></code> with <code class="docutils literal notranslate"><span class="pre">plot_results.py</span></code> which is located in the parent folder.</p>
 </section>
 <section id="dsl-manipulation">
-<h3>DSL Manipulation<a class="headerlink" href="#dsl-manipulation" title="Permalink to this heading"></a></h3>
+<h3>DSL Manipulation<a class="headerlink" href="#dsl-manipulation" title="Link to this heading"></a></h3>
 <p>You can <strong>find equations automatically for a given DSL</strong> with <code class="docutils literal notranslate"><span class="pre">dsl_equation_generator.py</span></code>. loads a dataset and tries to find all redundant derivations at depth 2 such as <code class="docutils literal notranslate"><span class="pre">(MAP[/4]</span> <span class="pre">(MAP[*4]</span> <span class="pre">var0))</span></code> or <code class="docutils literal notranslate"><span class="pre">(LENGTH</span> <span class="pre">(SORT</span> <span class="pre">var0))</span></code> and produces constraints to forbid them.</p>
 <p>You can <strong>learn new primitives</strong> with <code class="docutils literal notranslate"><span class="pre">dataset_learner.py</span></code>. It loads a dataset and try to learn a new primitive that would most help with expressing the dataset.</p>
 </section>
 </section>
 <section id="dsls">
-<h2>DSLs<a class="headerlink" href="#dsls" title="Permalink to this heading"></a></h2>
+<h2>DSLs<a class="headerlink" href="#dsls" title="Link to this heading"></a></h2>
 <p>Here is an exhaustive list of available DSLs with this specification.</p>
 <section id="calculator">
-<h3>Calculator<a class="headerlink" href="#calculator" title="Permalink to this heading"></a></h3>
+<h3>Calculator<a class="headerlink" href="#calculator" title="Link to this heading"></a></h3>
 <p>This is a toy DSL made for the tutorial, it contains addition and substraction, the constants allowed are 1, 2 and 3.</p>
 </section>
 <section id="deepcoder">
-<h3>DeepCoder<a class="headerlink" href="#deepcoder" title="Permalink to this heading"></a></h3>
+<h3>DeepCoder<a class="headerlink" href="#deepcoder" title="Link to this heading"></a></h3>
 <p>This is a dataset of:</p>
 <blockquote>
 <div><p><em>M. Balog, A. L. Gaunt, M. Brockschmidt, S. Nowozin, and D. Tarlow.</em> Deep-coder: Learning to write programs. In International Conference on Learning Representations, ICLR, 2017. URL <a class="reference external" href="https://openreview.net/forum?id=ByldLrqlx">https://openreview.net/forum?id=ByldLrqlx</a>.</p>
@@ -188,7 +188,7 @@
 The <code class="docutils literal notranslate"><span class="pre">deepcoder.py</span></code> file contains an implementation of the DSL along with a default evaluator.
 The <code class="docutils literal notranslate"><span class="pre">convert_deepcoder.py</span></code> is a runnable python script which enables you to convert the original deepcoder dataset files to the ProgSynth format.</p>
 <section id="downloading-deepcoder">
-<h4>Downloading Deepcoder<a class="headerlink" href="#downloading-deepcoder" title="Permalink to this heading"></a></h4>
+<h4>Downloading Deepcoder<a class="headerlink" href="#downloading-deepcoder" title="Link to this heading"></a></h4>
 <p>This is an integer list manipulation dataset, it is easy to work with, it does not contain constants nor need lambdas.
 You can download the archive from here: <a class="reference external" href="https://storage.googleapis.com/deepcoder/dataset.tar.gz">https://storage.googleapis.com/deepcoder/dataset.tar.gz</a>. Then you simply need to:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>gunzip<span class="w"> </span>dataset.tar.gz
@@ -199,7 +199,7 @@ tar<span class="w"> </span>-xf<span class="w"> </span>dataset.tar
 </section>
 </section>
 <section id="dreamcoder">
-<h3>Dreamcoder<a class="headerlink" href="#dreamcoder" title="Permalink to this heading"></a></h3>
+<h3>Dreamcoder<a class="headerlink" href="#dreamcoder" title="Link to this heading"></a></h3>
 <p>This is an integer list manipulation dataset, it contains constants, polymorphic types and lambdas.
 This is the list dataset of:</p>
 <blockquote>
@@ -209,31 +209,31 @@ This is the list dataset of:</p>
 The <code class="docutils literal notranslate"><span class="pre">dreamcoder.py</span></code> file contains an implementation of the DSL along with a default evaluator.
 The <code class="docutils literal notranslate"><span class="pre">convert_dreamcoder.py</span></code> is a runnable python script which enables you to convert the original dreamcoder dataset files to the ProgSynth format.</p>
 <section id="downloading-dreamcoder">
-<h4>Downloading Dreamcoder<a class="headerlink" href="#downloading-dreamcoder" title="Permalink to this heading"></a></h4>
+<h4>Downloading Dreamcoder<a class="headerlink" href="#downloading-dreamcoder" title="Link to this heading"></a></h4>
 <p>The dataset can be downloaded at <a class="reference external" href="https://raw.githubusercontent.com/ellisk42/ec/master/data/list_tasks.json">https://raw.githubusercontent.com/ellisk42/ec/master/data/list_tasks.json</a>.
 This JSON file is now convertible with the <code class="docutils literal notranslate"><span class="pre">convert_dreamcoder.py</span></code> script.</p>
 </section>
 </section>
 <section id="regexp">
-<h3>Regexp<a class="headerlink" href="#regexp" title="Permalink to this heading"></a></h3>
+<h3>Regexp<a class="headerlink" href="#regexp" title="Link to this heading"></a></h3>
 <p>This is a dataset where there are positive and negative examples the goal is to find a program representing a regular expression matching the positive examples and not the negative examples.</p>
 </section>
 <section id="transductions">
-<h3>Transductions<a class="headerlink" href="#transductions" title="Permalink to this heading"></a></h3>
+<h3>Transductions<a class="headerlink" href="#transductions" title="Link to this heading"></a></h3>
 <p>This is a dataset of string manipulation, it contains per-task constants, no polymrphic types nor need lambdas.
 This is a dataset in the idea of the string manipulation dataset of FlashFill:</p>
 <blockquote>
 <div><p><em>S. Gulwani</em> Automating String Processing in Spreadsheets using Input-Output Examples. PoPL’11, January 26-28, 2011, Austin, Texas, USA. URL <a class="reference external" href="https://www.microsoft.com/en-us/research/publication/automating-string-processing-spreadsheets-using-input-output-examples/">https://www.microsoft.com/en-us/research/publication/automating-string-processing-spreadsheets-using-input-output-examples/</a></p>
 </div></blockquote>
 <section id="downloading-sygus">
-<h4>Downloading SyGus<a class="headerlink" href="#downloading-sygus" title="Permalink to this heading"></a></h4>
+<h4>Downloading SyGus<a class="headerlink" href="#downloading-sygus" title="Link to this heading"></a></h4>
 <p>The SyGus dataset can be found at <a class="reference external" href="https://github.com/ellisk42/ec/tree/master/data/sygus">https://github.com/ellisk42/ec/tree/master/data/sygus</a>.
 The SL files were converted and compressed in some JSON file that is provided in the folder.</p>
 </section>
 </section>
 </section>
 <section id="example-pipeline">
-<h2>Example Pipeline<a class="headerlink" href="#example-pipeline" title="Permalink to this heading"></a></h2>
+<h2>Example Pipeline<a class="headerlink" href="#example-pipeline" title="Link to this heading"></a></h2>
 <p>Here is an example pipeline for a DSL.
 This would first produce a train and test dataset, then train a model, evaluate it then plot the results.</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="ch">#!/bin/env bash</span>

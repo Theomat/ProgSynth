@@ -11,11 +11,11 @@
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="_static/jquery.js"></script>
-        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
-        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-        <script src="_static/doctools.js"></script>
-        <script src="_static/sphinx_highlight.js"></script>
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=2709fde1"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="author" title="About these documents" href="about.html" />
     <link rel="index" title="Index" href="genindex.html" />
@@ -98,7 +98,7 @@
            <div itemprop="articleBody">
              
   <section id="introduction">
-<h1>Introduction<a class="headerlink" href="#introduction" title="Permalink to this heading"></a></h1>
+<h1>Introduction<a class="headerlink" href="#introduction" title="Link to this heading"></a></h1>
 <p>This page seeks to answer the following question:</p>
 <blockquote>
 <div><p>How does ProgSynth works at a high level?</p>
@@ -120,7 +120,7 @@
 </ul>
 <!-- tocstop -->
 <section id="what-do-you-give-in">
-<h2>What do you give in?<a class="headerlink" href="#what-do-you-give-in" title="Permalink to this heading"></a></h2>
+<h2>What do you give in?<a class="headerlink" href="#what-do-you-give-in" title="Link to this heading"></a></h2>
 <p>ProgSynth only needs two things: a language to work on and a check function.</p>
 <p>The provided language is called a domain specific language (DSL).
 The different kind of functions that can manipulate your data are provided and the framework will automatically generate the associated grammar.
@@ -128,22 +128,22 @@ Specifyign a language with its types is quite fast, it can be done in matters of
 <p>The check function is a python function, it can contain whatever code you might need to check that a given program satisfy your constraints. An example of such a function is to check whether your program matches the given examples of input-output pairs.</p>
 </section>
 <section id="what-do-you-get-out">
-<h2>What do you get out?<a class="headerlink" href="#what-do-you-get-out" title="Permalink to this heading"></a></h2>
+<h2>What do you get out?<a class="headerlink" href="#what-do-you-get-out" title="Link to this heading"></a></h2>
 <p>At the end you get a program tthat satisfies your condition, or if all programs have been enumerated, you get that there is no program in the given grammar that matches your specification. In practice the negative answer is never given since the number of programs grow exponentially, it would be infeasible to enumerate them all, so we recommend to use a timeout after which the search is stopped.</p>
 </section>
 <section id="how-does-that-work">
-<h2>How does that work?<a class="headerlink" href="#how-does-that-work" title="Permalink to this heading"></a></h2>
+<h2>How does that work?<a class="headerlink" href="#how-does-that-work" title="Link to this heading"></a></h2>
 <p>This section attemps to give you a high-level overview of how it works.
 Here is a figure that gives you a rough overview of how it works:
 <img alt="pipeline" src="_images/pipeline.png" /></p>
 <section id="sharpening-optional">
-<h3>Sharpening (Optional)<a class="headerlink" href="#sharpening-optional" title="Permalink to this heading"></a></h3>
+<h3>Sharpening (Optional)<a class="headerlink" href="#sharpening-optional" title="Link to this heading"></a></h3>
 <p>Sharepning enables you to add syntactic constraints on the search space of programs, this enables to have large speed-ups in the enumeration step.
 See <a class="reference internal" href="sharpening.html"><span class="std std-doc">the page on sharpening</span></a> for more details.
 If you want to add syntactic constraints to your grammar then you need to write them and give them to ProgSynth in the compilation step.</p>
 </section>
 <section id="compilation">
-<h3>Compilation<a class="headerlink" href="#compilation" title="Permalink to this heading"></a></h3>
+<h3>Compilation<a class="headerlink" href="#compilation" title="Link to this heading"></a></h3>
 <p>The language that you give is typed and you also give at least a depth constraint, to guarantee that programs have a maximum depth.
 Of course, you also specify the type of the program that you want to generate.
 This language is built into a context-free grammar (CFG).</p>
@@ -151,13 +151,13 @@ This language is built into a context-free grammar (CFG).</p>
 The intersection is then computed and transformed back into a CFG.</p>
 </section>
 <section id="prediction-optional-in-the-future">
-<h3>Prediction (Optional in the future)<a class="headerlink" href="#prediction-optional-in-the-future" title="Permalink to this heading"></a></h3>
+<h3>Prediction (Optional in the future)<a class="headerlink" href="#prediction-optional-in-the-future" title="Link to this heading"></a></h3>
 <p>If you have trained a model to produce program distributions over grammars, then you can use this step otherwise fear not because this will not be mandatory in the future.</p>
 <p>A model (often a neural network) takes as an input your specification and other information that you trained it on and then produce a vector which we translate into probabilities for our CFG.
 That means that we have a probabilistic CFG (PCFG).</p>
 </section>
 <section id="splitting-optional">
-<h3>Splitting (Optional)<a class="headerlink" href="#splitting-optional" title="Permalink to this heading"></a></h3>
+<h3>Splitting (Optional)<a class="headerlink" href="#splitting-optional" title="Link to this heading"></a></h3>
 <p>You have multiple CPUs and you want to parallelize the search?
 Well, we have a <code class="docutils literal notranslate"><span class="pre">split</span></code> function that takes a PCFG and split it into as many fragments as you want.
 This means that each fragment of the original PCFG is independent that is no other fragment contains its programs.
@@ -165,7 +165,7 @@ In other words, with splitting you can have linear speed-up in your enumeration 
 <p>Do note that while splitting is provided in ProgSynth we do not provide the parallelization framework, you will have to do it yourself.</p>
 </section>
 <section id="enumeration">
-<h3>Enumeration<a class="headerlink" href="#enumeration" title="Permalink to this heading"></a></h3>
+<h3>Enumeration<a class="headerlink" href="#enumeration" title="Link to this heading"></a></h3>
 <p>This PCFG actually gives us an order over programs. Programs can be ordered by their probability.
 Therefore ProgSynth will enumerate programs in order of decreasing probability. That means that the most likely program will be enumerated first.
 All of the time for synthesis is spent here and in most cases the cost to call your check function is what bounds the runtime.</p>

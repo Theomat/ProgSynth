@@ -11,11 +11,11 @@
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="_static/jquery.js"></script>
-        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
-        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-        <script src="_static/doctools.js"></script>
-        <script src="_static/sphinx_highlight.js"></script>
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=2709fde1"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="author" title="About these documents" href="about.html" />
     <link rel="index" title="Index" href="genindex.html" />
@@ -94,7 +94,7 @@
            <div itemprop="articleBody">
              
   <section id="grammars">
-<h1>Grammars<a class="headerlink" href="#grammars" title="Permalink to this heading"></a></h1>
+<h1>Grammars<a class="headerlink" href="#grammars" title="Link to this heading"></a></h1>
 <p>Grammars are programs generator, all our grammars are finite.
 Typically when you instantiate a grammar you always specify a maximum depth.</p>
 <p>The main object of interest are probabilistic grammars on which most methods to enumerate and sample programs are provided.</p>
@@ -111,7 +111,7 @@ Typically when you instantiate a grammar you always specify a maximum depth.</p>
 </ul>
 <!-- tocstop -->
 <section id="grammar-models">
-<h2>Grammar Models<a class="headerlink" href="#grammar-models" title="Permalink to this heading"></a></h2>
+<h2>Grammar Models<a class="headerlink" href="#grammar-models" title="Link to this heading"></a></h2>
 <p>Currently the only grammar model supported are <a class="reference external" href="https://en.wikipedia.org/wiki/Context-free_grammar">Context-free grammars</a> (CFG).
 All our rules have the following form:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">S</span> <span class="o">-&gt;</span> <span class="n">f</span> <span class="n">S1</span> <span class="n">S2</span> <span class="o">...</span> <span class="n">Sk</span>
@@ -131,7 +131,7 @@ The most relevant methods are:</p>
 <li><p><code class="docutils literal notranslate"><span class="pre">grammar.reduce_derivatons(...)</span></code> which is like a fold over the derivation steps of the given program.</p></li>
 </ul>
 <section id="det-cfg">
-<h3>det-CFG<a class="headerlink" href="#det-cfg" title="Permalink to this heading"></a></h3>
+<h3>det-CFG<a class="headerlink" href="#det-cfg" title="Link to this heading"></a></h3>
 <p>A CFG which has the following property:</p>
 <blockquote>
 <div><p>For a given non-terminal <code class="docutils literal notranslate"><span class="pre">S</span></code>, for any primitive <code class="docutils literal notranslate"><span class="pre">f</span></code>, there is at most one derivation from <code class="docutils literal notranslate"><span class="pre">S</span></code> using primitive <code class="docutils literal notranslate"><span class="pre">f</span></code></p>
@@ -141,7 +141,7 @@ The most relevant methods are:</p>
 If you do not use <a class="reference internal" href="sharpening.html"><span class="std std-doc">sharpening</span></a> for example, then ProgSynth uses this model when producing a grammar.</p>
 </section>
 <section id="u-cfg">
-<h3>U-CFG<a class="headerlink" href="#u-cfg" title="Permalink to this heading"></a></h3>
+<h3>U-CFG<a class="headerlink" href="#u-cfg" title="Link to this heading"></a></h3>
 <p>A CFG which has the following property:</p>
 <blockquote>
 <div><p>For a tree/program <code class="docutils literal notranslate"><span class="pre">t</span></code>, there exists at most one derivation for tree/program <code class="docutils literal notranslate"><span class="pre">t</span></code> in the grammar</p>
@@ -151,7 +151,7 @@ If you do not use <a class="reference internal" href="sharpening.html"><span cla
 </section>
 </section>
 <section id="probabilistic-grammars">
-<h2>Probabilistic Grammars<a class="headerlink" href="#probabilistic-grammars" title="Permalink to this heading"></a></h2>
+<h2>Probabilistic Grammars<a class="headerlink" href="#probabilistic-grammars" title="Link to this heading"></a></h2>
 <p>We offer tagged grammars, those are grammars where derivations are tagged with a generic type, replacing ‘probabilistic’ with ‘tagged’ in what is following will work as well.
 The most relevant one is when derivations are tagged with float giving you probabilistic grammars.</p>
 <blockquote>
