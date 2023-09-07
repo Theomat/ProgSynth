@@ -1,15 +1,17 @@
 from dataclasses import dataclass
 from typing import (
+    Set,
     Tuple,
     List as TList,
     Type,
+    TypeVar,
     Union,
 )
+
+from synth.syntax.automata.tree_automaton import DFTA
 from synth.syntax.grammars.det_grammar import DerivableProgram
-
-
 from synth.syntax.grammars.ttcfg import TTCFG
-from synth.syntax.program import Variable
+from synth.syntax.program import Primitive, Variable
 
 # ========================================================================================
 # SYMBOLS
@@ -160,13 +162,13 @@ def __parse_next_word__(program: str) -> Tuple[str, int]:
     return program[: end + 1], end + 2
 
 
-def __str_to_derivable_program__(word: str, grammar: TTCFG) -> TList[DerivableProgram]:
-    all_primitives = sorted(
-        grammar.primitives_used(), key=lambda p: p.primitive, reverse=True
-    )
+def __str_to_derivable_program__(
+    word: str, primitives_used: Set[Primitive], variables: TList[Variable]
+) -> TList[DerivableProgram]:
+    all_primitives = sorted(primitives_used, key=lambda p: p.primitive, reverse=True)
     if word == SYMBOL_ANYTHING:
         out: TList[DerivableProgram] = all_primitives  # type: ignore
-        out += grammar.variables()
+        out += variables
         return out
     word = word.strip("(){}")
     allowed = set(
@@ -175,22 +177,24 @@ def __str_to_derivable_program__(word: str, grammar: TTCFG) -> TList[DerivablePr
     primitives: TList[DerivableProgram] = [
         P for P in all_primitives if P.primitive in allowed
     ]
-    arg_types = grammar.type_request.arguments()
+    svar = sorted(variables, key=lambda x: x.variable)
     for el in allowed:
         if el.startswith("var"):
             varno = int(el[3:])
-            primitives.append(Variable(varno, arg_types[varno]))
+            primitives.append(svar[varno])
     return primitives
 
 
-def __interpret_word__(word: str, grammar: TTCFG) -> Token:
+def __interpret_word__(
+    word: str, primitives_used: Set[Primitive], variables: TList[Variable]
+) -> Token:
     word = word.strip()
     if word.startswith(SYMBOL_FORBIDDEN):
         forbidden = set(word[1:].split(SYMBOL_SEPARATOR))
         out: TList[DerivableProgram] = [
-            P for P in grammar.primitives_used() if P.primitive not in forbidden
+            P for P in primitives_used if P.primitive not in forbidden
         ]
-        out += [V for V in grammar.variables() if str(V) not in forbidden]
+        out += [V for V in variables if str(V) not in forbidden]
         return TokenAllow(out)
     elif word.startswith(SYMBOL_SUBTREE):
         cst: Union[
@@ -200,7 +204,9 @@ def __interpret_word__(word: str, grammar: TTCFG) -> Token:
         if str_content.startswith(SYMBOL_FORBIDDEN):
             str_content = str_content[1:]
             cst = TokenForbidSubtree
-        return cst(__str_to_derivable_program__(str_content, grammar))
+        return cst(
+            __str_to_derivable_program__(str_content, primitives_used, variables)
+        )
     elif word == SYMBOL_ANYTHING:
         return TokenAnything()
     elif word.startswith(SYMBOL_AGGREGATOR):
@@ -208,16 +214,29 @@ def __interpret_word__(word: str, grammar: TTCFG) -> Token:
         end_index = max(word.find("<="), word.find(">="))
         most = word[end_index] == "<"
         considered = word[:end_index]
-        content = __str_to_derivable_program__(considered, grammar)
+        content = __str_to_derivable_program__(considered, primitives_used, variables)
         count = int(word[len(considered) + 2 :])
         if most:
             return TokenAtMost(content, count)
         else:
             return TokenAtLeast(content, count)
-    return TokenAllow(__str_to_derivable_program__(word, grammar))
+    return TokenAllow(__str_to_derivable_program__(word, primitives_used, variables))
 
 
-def parse_specification(spec: str, grammar: TTCFG) -> Token:
+U = TypeVar("U")
+
+
+def parse_specification(
+    spec: str, grammar: Union[TTCFG, DFTA[Tuple[Type, U], DerivableProgram]]
+) -> Token:
+    primitives_used = set()
+    variables = []
+    if isinstance(grammar, TTCFG):
+        primitives_used = grammar.primitives_used()
+        variables = grammar.variables()
+    else:
+        primitives_used = {x for x in grammar.alphabet if isinstance(x, Primitive)}
+        variables = list(x for x in grammar.alphabet if isinstance(x, Variable))
     spec = spec.replace("\n", "").strip(")(")
     index = 0
     elements = []
@@ -227,7 +246,7 @@ def parse_specification(spec: str, grammar: TTCFG) -> Token:
         if word.startswith("("):
             token = parse_specification(word, grammar)
         else:
-            token = __interpret_word__(word, grammar)
+            token = __interpret_word__(word, primitives_used, variables)
         elements.append(token)
     assert len(elements) > 0
     if isinstance(elements[0], TokenAllow):
