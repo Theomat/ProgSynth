@@ -14,7 +14,7 @@ from parsing.ast import (
     Term,
 )
 from parsing.symbol_table_builder import SymbolTableBuilder
-from parsing.resolution import SymbolTable
+from parsing.resolution import SortDescriptor, SymbolTable
 
 
 parser = argparse.ArgumentParser(description="Sharpens a SyGuS grammar")
@@ -123,6 +123,12 @@ def to_dfta(symbol_table: SymbolTable) -> DFTA[Tuple[Type, str], DerivableProgra
             # else:
             #     print("\t\t [", out.grammar_term_kind, "] =>", out.sort_expression)
     finals = set()
+    s: SortDescriptor = val.range_sort
+    out_type = PrimitiveType(s.identifier.symbol)
+
+    for _, state in rules.items():
+        if state[0] == out_type:
+            finals.add(state)
     dfta = DFTA(rules, finals)
     print(dfta)
     return dfta
@@ -134,4 +140,7 @@ from synth.pruning.constraints.parsing import parse_specification
 
 token = parse_specification("+ ^+ _", dfta)
 print("=" * 60)
-print(__process__(dfta, token, True))
+out = __process__(dfta, token, True)
+out.reduce()
+out = out.minimise()
+print(out)
