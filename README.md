@@ -101,8 +101,10 @@ It is based on the [DeepSynth](https://github.com/nathanael-fijalkow/DeepSynth) 
 
 Former:
 
-- [Gaëtan Margueritte](https://github.com/gaetanmargueritte) did a four-month internship. He created the regexp and transduction DSLs, the first tutorial and first drafts of code related to the use of user defined constants.
-- Utkarsh Rajan did a two-month internship. He contributed to the implementation of bucket search and worked on the tower DSL.
+- (2023) [Félix Yvonnet](https://github.com/Felix-Yvonnet) did a 2 months internship to work on restarts, a future feature of ProgSynth.
+- (2023) [Priscilla Tissot](https://fr.linkedin.com/in/priscilla-tissot-9493851b8) did a 7 weeks long internship working on the Carel neural network and trying to improve the performance of our prediction models.
+- (2022) [Gaëtan Margueritte](https://github.com/gaetanmargueritte) did a four-month internship. He created the regexp and transduction DSLs, the first tutorial and first drafts of code related to the use of user defined constants.
+- (2022) Utkarsh Rajan did a two-month internship. He contributed to the implementation of bucket search and worked on the tower DSL.
 
 ## License
 
