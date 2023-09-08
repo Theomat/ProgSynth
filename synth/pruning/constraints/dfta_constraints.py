@@ -9,6 +9,7 @@ from typing import (
     Set,
     Tuple,
     TypeVar,
+    Union,
 )
 
 import tqdm
@@ -268,7 +269,7 @@ def __process__(
 
 
 def add_dfta_constraints(
-    current_grammar: CFG,
+    current_grammar: Union[CFG, DFTA[Tuple[Type, Any], DerivableProgram]],
     constraints: Iterable[str],
     sketch: Optional[str] = None,
     progress: bool = True,
@@ -294,8 +295,13 @@ def add_dfta_constraints(
             desc="constraints",
             smoothing=1,
         )
+    base = (
+        __cfg2dfta__(current_grammar)
+        if isinstance(current_grammar, CFG)
+        else current_grammar
+    )
     for constraint in parsed_constraints:
-        a = __process__(__cfg2dfta__(current_grammar), constraint, True)
+        a = __process__(base, constraint, True)
         if dfta is None:
             dfta = a
         else:
@@ -307,7 +313,7 @@ def add_dfta_constraints(
             pbar.update(1)
     if sketch is not None:
         a = __process__(
-            __cfg2dfta__(current_grammar),
+            base,
             parse_specification(sketch, current_grammar),
             False,
         )
@@ -322,4 +328,4 @@ def add_dfta_constraints(
         dfta = dfta.minimise()  # type: ignore
     if pbar:
         pbar.close()
-    return dfta or __cfg2dfta__(current_grammar)  # type: ignore
+    return dfta or base  # type: ignore
