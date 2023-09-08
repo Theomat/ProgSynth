@@ -7,6 +7,7 @@ This folder contains ready to use scripts and files that you can leverage to rep
 - [Generics](#generics)
 - [Programming By Example](#programming-by-example)
 - [Programming from Natural Language](#programming-from-natural-language)
+- [SyGuS](#sygus)
 
 ## Generics
 
@@ -27,3 +28,7 @@ The available domains are:
 ## Programming from Natural Language
 
 This is the NLP folder. The specification of the task is given as a natural language string that explains the task.
+
+## SyGuS
+
+This is the SyGuS folder. It provides scripts to directly work with the SyGus format. The goal is to mainly edit the specification thanks to the tools offered by ProgSynth such as sharpening.
