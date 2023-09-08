@@ -284,7 +284,7 @@ def add_dfta_constraints(
     constraint_plus = [(int("var" in c), c) for c in constraints]
     constraint_plus.sort(reverse=True)
     parsed_constraints = [
-        parse_specification(constraint, current_grammar) #type: ignore
+        parse_specification(constraint, current_grammar)  # type: ignore
         for _, constraint in constraint_plus
     ]
     dfta = None
@@ -314,7 +314,7 @@ def add_dfta_constraints(
     if sketch is not None:
         a = __process__(
             base,
-            parse_specification(sketch, current_grammar), #type: ignore
+            parse_specification(sketch, current_grammar),  # type: ignore
             False,
         )
         if dfta is None:
