@@ -1,12 +1,11 @@
 import argparse
 from typing import Any, Dict, List, Optional, Tuple
 
-import tqdm
+import json
 
 from synth.syntax.grammars.grammar import DerivableProgram
 from synth.syntax import DFTA, PrimitiveType, Type, FunctionType, Primitive
-from synth.pruning.constraints.dfta_constraints import __process__
-from synth.pruning.constraints.parsing import parse_specification
+from synth.pruning.constraints import add_dfta_constraints
 
 from parsing.ast import (
     GroupedRuleList,
@@ -38,7 +37,7 @@ parser.add_argument(
 parser.add_argument(
     "sharpening_file",
     type=argparse.FileType("r"),
-    help="Path to a sharpening input file",
+    help="Path to a sharpening JSON input file",
 )
 parser.add_argument("--v1", action="store_true", help="Use SyGuS V1 specification")
 
@@ -48,17 +47,18 @@ use_v1: bool = parameters.v1
 
 if use_v1:
     from parsing.v1.parser import SygusV1Parser
-    from parsing.v1.printer import SygusV1ASTPrinter as printer
 
     parser = SygusV1Parser()
 else:
     from parsing.v2.parser import SygusV2Parser
-    from parsing.v2.printer import SygusV2ASTPrinter as printer
 
     parser = SygusV2Parser()
 content: str = parameters.input_file.read()
 program = parser.parse(content)
 symbol_table = SymbolTableBuilder.run(program)
+sharpening_rules = json.load(parameters.sharpening_file)
+
+print(f"Found {len(sharpening_rules)} sharpening rules!")
 
 
 def type_of_symbol(symbol_table: SymbolTable, symbol: str) -> Type:
@@ -140,10 +140,22 @@ def to_dfta(
     return dfta
 
 
-def get_original_tag(x: Any) -> str:
+def get_root_tag(x: Any) -> Any:
     if isinstance(x, Tuple):
-        return get_original_tag(x[0])
+        return get_root_tag(x[0])
     return x
+
+
+def get_state_name(x: Any) -> str:
+    if isinstance(x, str):
+        return x
+    elif isinstance(x, Tuple):
+        for el in x:
+            out = get_state_name(el)
+            if out:
+                return out
+    else:
+        return ""
 
 
 def next_tag(tag: str, count: List[int]) -> str:
@@ -172,17 +184,18 @@ def from_dfta(dfta: DFTA[Tuple[Tuple[Type, Any], ...], DerivableProgram]) -> str
     state2name = {}
     for state in dfta.states:
         if state not in state2name:
-            tag = get_original_tag(state[0][1])
+            base_tag = get_state_name(state)
+            tag = base_tag
             count = []
             while tag in used:
-                tag = next_tag(tag, count)
+                tag = next_tag(base_tag, count)
             used.add(tag)
             state2name[state] = tag
             rules[state] = []
     # Declare non terminals
     out += "\t("
     for state, name in sorted(state2name.items(), key=lambda x: x[1]):
-        t = get_original_tag(state)
+        t = get_root_tag(state)
         out += f"({name} {t}) "
     out += ")\n\n"
     # Make derivation rule
@@ -195,7 +208,7 @@ def from_dfta(dfta: DFTA[Tuple[Tuple[Type, Any], ...], DerivableProgram]) -> str
         rules[dst].append(derivation)
 
     for state, derivations in rules.items():
-        t = get_original_tag(state)
+        t = get_root_tag(state)
         der = " ".join(derivations)
         out += f"\t(({state2name[state]} {t} ({der})))\n"
     return out
@@ -218,13 +231,8 @@ def before(a: Optional[Location], b: Location) -> bool:
 exchanges = []
 for key, val in symbol_table.synth_functions.items():
     dfta = to_dfta(symbol_table, val)
-    tokens = [parse_specification("+ ^+ _", dfta)]
-    for token in tqdm.tqdm(tokens):
-        dfta = __process__(dfta, token, True)
-        dfta.reduce()
-        dfta = dfta.minimise()
 
-    to_replace_with = from_dfta(dfta)
+    to_replace_with = from_dfta(add_dfta_constraints(dfta, sharpening_rules))
     grammar: Grammar = val.synthesis_grammar
     start = grammar.start_location
     for (name, t) in grammar.nonterminals:
@@ -242,12 +250,11 @@ for key, val in symbol_table.synth_functions.items():
     exchanges.append((to_be_replaced, prefix + to_replace_with))
 
 
-with open("tmp.sl", "w") as fd:
-    fd.write(content)
 # Replace text now
 for repl, new in exchanges:
     content = content.replace(repl, "\n" + new, 1)
-    # print("Replacing:\n", "=" * 60, "\n", repl, "\n", "=" * 60, new)
-# Save
+
+
 with open(output_file, "w") as fd:
     fd.write(content)
+print("Saved new specification file to", output_file)
