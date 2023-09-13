@@ -68,7 +68,7 @@ __logic_map = {"LIA": LIA, "NIA": NIA, "LRA": LRA, "NRA": NRA, "BV": BV}
 def type_of_symbol(symbol_table: SymbolTable, symbol: str) -> Type:
     descriptor = symbol_table.lookup_symbol(symbol)
     if descriptor:
-        return PrimitiveType(descriptor.symbol_sort.identifier.symbol)
+        return PrimitiveType(str(descriptor.symbol_sort.identifier))
     else:
         return UnknownType()
 
@@ -77,7 +77,7 @@ def term2str(term: Term) -> Tuple[Type, str]:
     if isinstance(term, IdentifierTerm):
         s: SortDescriptor = term.sort_descriptor
         return (
-            PrimitiveType(s.identifier),
+            PrimitiveType(str(s.identifier)),
             term.identifier.symbol,
         )
     elif isinstance(term, LiteralTerm):
@@ -258,10 +258,6 @@ def before(a: Optional[Location], b: Optional[Location]) -> bool:
     return a.line < b.line or a.col < b.col
 
 
-if symbol_table.logic_name == "BV":
-    print("Bit Vector is not yet fully supported!")
-
-
 exchanges = []
 for key, val in symbol_table.synth_functions.items():
     dfta = to_dfta(symbol_table, val)
@@ -281,6 +277,7 @@ for key, val in symbol_table.synth_functions.items():
         # Special case for Bit Vectors
         if symbol_table.logic_name == "BV":
             to_replace_with = to_replace_with.replace("BitVector32", "(_ BitVec 32)")
+            print("Bit Vector is not yet fully supported in this mode!")
     else:
         start = grammar.start_location
         for (name, t) in grammar.nonterminals:
@@ -295,7 +292,6 @@ for key, val in symbol_table.synth_functions.items():
 # Replace text now
 for repl, new in exchanges:
     content = content.replace(repl, "\n" + new, 1)
-
 
 with open(output_file, "w") as fd:
     fd.write(content)
