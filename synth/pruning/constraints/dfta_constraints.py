@@ -306,6 +306,8 @@ def add_dfta_constraints(
             isinstance(constraint, TokenFunction)
             and len(constraint.function.allowed) == 0
         ):
+            if pbar:
+                pbar.update(1)
             continue
         a = __process__(base, constraint, True)
         if dfta is None:
