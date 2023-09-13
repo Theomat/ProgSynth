@@ -73,10 +73,11 @@ def type_of_symbol(symbol_table: SymbolTable, symbol: str) -> Type:
         return UnknownType()
 
 
-def term2str(term: Term, symbol_table: SymbolTable) -> Tuple[Type, str]:
+def term2str(term: Term) -> Tuple[Type, str]:
     if isinstance(term, IdentifierTerm):
+        s: SortDescriptor = term.sort_descriptor
         return (
-            type_of_symbol(symbol_table, term.identifier.symbol),
+            PrimitiveType(s.identifier),
             term.identifier.symbol,
         )
     elif isinstance(term, LiteralTerm):
@@ -135,7 +136,7 @@ def to_dfta(
                         f = out.binder_free_term.function_identifier.symbol
                         args = tuple(
                             map(
-                                lambda x: term2str(x, symbol_table),
+                                lambda x: term2str(x),
                                 out.binder_free_term.arguments,
                             )
                         )
@@ -147,10 +148,7 @@ def to_dfta(
                         )
                         rules[(fun, args)] = (type_of_symbol(symbol_table, S), S)
                     else:
-                        t, name = term2str(out.binder_free_term, symbol_table)
-                        # Fix when define-var is not used
-                        if isinstance(t, UnknownType):
-                            t = type_of_symbol(symbol_table, S)
+                        t, name = term2str(out.binder_free_term)
                         rules[(Primitive(str(name), t), ())] = (
                             type_of_symbol(symbol_table, S),
                             S,
