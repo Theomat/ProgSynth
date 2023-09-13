@@ -302,7 +302,7 @@ def add_dfta_constraints(
     )
     for constraint in parsed_constraints:
         # Skip empty allow since it means the primitive was not recognized
-        if (
+        if isinstance(constraint, TokenAnything) or (
             isinstance(constraint, TokenFunction)
             and len(constraint.function.allowed) == 0
         ):

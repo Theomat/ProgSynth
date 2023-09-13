@@ -195,6 +195,8 @@ def __interpret_word__(
             P for P in primitives_used if P.primitive not in forbidden
         ]
         out += [V for V in variables if str(V) not in forbidden]
+        if len(out) == len(primitives_used) + len(variables):
+            return TokenAnything()
         return TokenAllow(out)
     elif word.startswith(SYMBOL_SUBTREE):
         cst: Union[
@@ -251,6 +253,8 @@ def parse_specification(
     assert len(elements) > 0
     if isinstance(elements[0], TokenAllow):
         first = elements.pop(0)
+        if all(isinstance(el, TokenAnything) for el in elements):
+            return TokenAnything()
         return TokenFunction(first, elements)  # type: ignore
     assert len(elements) == 1
     return elements[0]
