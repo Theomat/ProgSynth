@@ -242,12 +242,13 @@ def from_dfta(dfta: DFTA[Tuple[Tuple[Type, Any], ...], DerivableProgram]) -> str
     return out
 
 
-def capture_text(src: str, start: Location, end: Location) -> str:
+def capture_text(src: str, prefix: str, end: Location) -> str:
     lines = src.splitlines()
-    relevant = lines[start.line : end.line]
-    relevant[0] = relevant[0][start.col - 1 :]
+    relevant = lines[: end.line]
     relevant[-1] = relevant[-1][: end.col]
-    return "\n".join(relevant)
+    src = "\n".join(relevant)
+    start_index = src.rfind(prefix)
+    return src[start_index:]
 
 
 def before(a: Optional[Location], b: Optional[Location]) -> bool:
@@ -279,12 +280,7 @@ for key, val in symbol_table.synth_functions.items():
             to_replace_with = to_replace_with.replace("BitVector32", "(_ BitVec 32)")
             print("Bit Vector is not yet fully supported in this mode!")
     else:
-        start = grammar.start_location
-        for (name, t) in grammar.nonterminals:
-            loc = t.start_location
-            if not before(start, loc):
-                start = loc
-        to_be_replaced = capture_text(content, start, grammar.end_location)
+        to_be_replaced = capture_text(content, prefix, grammar.end_location)
 
     exchanges.append((to_be_replaced, prefix + "\n" + to_replace_with))
 

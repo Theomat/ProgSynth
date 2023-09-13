@@ -6,7 +6,7 @@ The aim here is to provide ready to use scripts that can work with SyGuS files.
 
 ### Installing the parser
 
-The ``parsing`` folder need to be filled with the ``sygus/src`` folder from <https://github.com/Theomat/tools> which is a fork with parsing location fixed.
+The ``parsing`` folder need to be filled with the ``sygus/src`` folder from <https://github.com/SyGuS-Org/tools>.
 
 The files are not included so you can get the latest version yourself otherwise you can just run the following commands assuming your current folder is ``ProgSynth/``:
 
