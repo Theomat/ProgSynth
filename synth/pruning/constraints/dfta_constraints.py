@@ -301,6 +301,12 @@ def add_dfta_constraints(
         else current_grammar
     )
     for constraint in parsed_constraints:
+        # Skip empty allow since it means the primitive was not recognized
+        if (
+            isinstance(constraint, TokenFunction)
+            and len(constraint.function.allowed) == 0
+        ):
+            continue
         a = __process__(base, constraint, True)
         if dfta is None:
             dfta = a
