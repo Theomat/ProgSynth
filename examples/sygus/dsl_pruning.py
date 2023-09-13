@@ -7,6 +7,8 @@ from synth.syntax.grammars.grammar import DerivableProgram
 from synth.syntax import DFTA, PrimitiveType, Type, FunctionType, Primitive
 from synth.pruning.constraints import add_dfta_constraints
 
+from logics import LIA, NIA, LRA, NRA, BV
+
 from parsing.ast import (
     GroupedRuleList,
     Grammar,
@@ -60,6 +62,8 @@ sharpening_rules = json.load(parameters.sharpening_file)
 
 print(f"Found {len(sharpening_rules)} sharpening rules!")
 
+__logic_map = {"LIA": LIA, "NIA": NIA, "LRA": LRA, "NRA": NRA, "BV": BV}
+
 
 def type_of_symbol(symbol_table: SymbolTable, symbol: str) -> Type:
     descriptor = symbol_table.lookup_symbol(symbol)
@@ -91,43 +95,60 @@ def to_dfta(
         ],
         Tuple[Type, str],
     ] = {}
-    # Now create rules
-    for S, rule in grammar.grouped_rule_lists.items():
-        r: GroupedRuleList = rule
-        # print(
-        #     "\tS:",
-        #     S,
-        #     "=",
-        #     r.head_symbol_sort_descriptor,
-        #     "(",
-        #     r.head_symbol_sort_expression,
-        #     ") =>",
-        # )
-        for out in r.expansion_rules:
-            if out.grammar_term_kind == GrammarTermKind.BINDER_FREE:
-                if isinstance(out.binder_free_term, FunctionApplicationTerm):
-                    f = out.binder_free_term.function_identifier.symbol
-                    args = tuple(
-                        map(
-                            lambda x: term2str(x, symbol_table),
-                            out.binder_free_term.arguments,
+    if grammar is None:
+        assert (
+            symbol_table.logic_name in __logic_map
+        ), f"Set logic {symbol_table.logic_name} not supported!"
+        dsl = __logic_map[symbol_table.logic_name]
+
+        def type2state(t: Type) -> Tuple[Type, str]:
+            return (t, "Start" + str(t))
+
+        for primitive in dsl.list_primitives:
+            rules[
+                (primitive, tuple(map(type2state, primitive.type.arguments())))
+            ] = type2state(primitive.type.returns())
+
+        # Add variables
+        for x, y in zip(val.argument_names, val.argument_sorts):
+            var_type = PrimitiveType(y.identifier.symbol)
+            rules[(Primitive(x, var_type), ())] = type2state(var_type)
+
+        # Add fictional constant
+        all_const_types = set()
+        for primitive in dsl.list_primitives:
+            for base in primitive.type.decompose_type()[0]:
+                if "Const" in base.type_name and base.type_name not in all_const_types:
+                    all_const_types.add(base.type_name)
+                    rules[(Primitive(f"keep@{base}", base), ())] = type2state(base)
+
+    else:
+        # Now create rules
+        for S, rule in grammar.grouped_rule_lists.items():
+            r: GroupedRuleList = rule
+            for out in r.expansion_rules:
+                if out.grammar_term_kind == GrammarTermKind.BINDER_FREE:
+                    if isinstance(out.binder_free_term, FunctionApplicationTerm):
+                        f = out.binder_free_term.function_identifier.symbol
+                        args = tuple(
+                            map(
+                                lambda x: term2str(x, symbol_table),
+                                out.binder_free_term.arguments,
+                            )
                         )
-                    )
-                    fun = Primitive(
-                        f,
-                        FunctionType(
-                            *[x[0] for x in args], type_of_symbol(symbol_table, S)
-                        ),
-                    )
-                    rules[(fun, args)] = (type_of_symbol(symbol_table, S), S)
-                else:
-                    t, name = term2str(out.binder_free_term, symbol_table)
-                    rules[(Primitive(str(name), t), ())] = (
-                        type_of_symbol(symbol_table, S),
-                        S,
-                    )
-            # else:
-            #     print("\t\t [", out.grammar_term_kind, "] =>", out.sort_expression)
+                        fun = Primitive(
+                            f,
+                            FunctionType(
+                                *[x[0] for x in args], type_of_symbol(symbol_table, S)
+                            ),
+                        )
+                        rules[(fun, args)] = (type_of_symbol(symbol_table, S), S)
+                    else:
+                        t, name = term2str(out.binder_free_term, symbol_table)
+                        rules[(Primitive(str(name), t), ())] = (
+                            type_of_symbol(symbol_table, S),
+                            S,
+                        )
     finals = set()
     s: SortDescriptor = val.range_sort
     out_type = PrimitiveType(s.identifier.symbol)
@@ -136,7 +157,6 @@ def to_dfta(
         if state[0] == out_type:
             finals.add(state)
     dfta = DFTA(rules, finals)
-    # print(dfta)
     return dfta
 
 
@@ -195,7 +215,7 @@ def from_dfta(dfta: DFTA[Tuple[Tuple[Type, Any], ...], DerivableProgram]) -> str
     # Declare non terminals
     out += "\t("
     for state, name in sorted(state2name.items(), key=lambda x: x[1]):
-        t = get_root_tag(state)
+        t = get_root_tag(state).type_name.replace("Const", "")
         out += f"({name} {t}) "
     out += ")\n\n"
     # Make derivation rule
@@ -205,10 +225,14 @@ def from_dfta(dfta: DFTA[Tuple[Tuple[Type, Any], ...], DerivableProgram]) -> str
         if args:
             derivation += " " + " ".join(map(lambda x: state2name[x], args))
             derivation = f"({derivation})"
+        elif isinstance(letter, Primitive) and letter.primitive.startswith("keep@"):
+            real_type = letter.primitive.replace("Const", "")[len("keep@") :]
+            rules[dst].append(f"(Constant {real_type})")
+            continue
         rules[dst].append(derivation)
 
     for state, derivations in rules.items():
-        t = get_root_tag(state)
+        t = get_root_tag(state).type_name.replace("Const", "")
         der = " ".join(derivations)
         out += f"\t(({state2name[state]} {t} ({der})))\n"
     return out
@@ -222,10 +246,16 @@ def capture_text(src: str, start: Location, end: Location) -> str:
     return "\n".join(relevant)
 
 
-def before(a: Optional[Location], b: Location) -> bool:
+def before(a: Optional[Location], b: Optional[Location]) -> bool:
     if a is None:
         return False
+    elif b is None:
+        return False
     return a.line < b.line or a.col < b.col
+
+
+if symbol_table.logic_name == "BV":
+    print("Bit Vector is not yet fully supported!")
 
 
 exchanges = []
@@ -233,21 +263,29 @@ for key, val in symbol_table.synth_functions.items():
     dfta = to_dfta(symbol_table, val)
 
     to_replace_with = from_dfta(add_dfta_constraints(dfta, sharpening_rules))
-    grammar: Grammar = val.synthesis_grammar
-    start = grammar.start_location
-    for (name, t) in grammar.nonterminals:
-        loc = t.start_location
-        if not before(start, loc):
-            start = loc
-    assert start is not None
-    to_be_replaced = capture_text(content, start, grammar.end_location)
+
     s: SortDescriptor = val.range_sort
     args = []
     for x, y in zip(val.argument_names, val.argument_sorts):
         args.append(f"({x} {y.identifier})")
     sargs = " ".join(args)
-    prefix = f"(synth-fun {key.symbol} ({sargs}) {s.identifier.symbol}\n"
-    exchanges.append((to_be_replaced, prefix + to_replace_with))
+    prefix = f"(synth-fun {key.symbol} ({sargs}) {s.identifier.symbol}"
+
+    grammar: Grammar = val.synthesis_grammar
+    if grammar is None:
+        to_be_replaced = prefix
+        # Special case for Bit Vectors
+        if symbol_table.logic_name == "BV":
+            to_replace_with = to_replace_with.replace("BitVector32", "(_ BitVec 32)")
+    else:
+        start = grammar.start_location
+        for (name, t) in grammar.nonterminals:
+            loc = t.start_location
+            if not before(start, loc):
+                start = loc
+        to_be_replaced = capture_text(content, start, grammar.end_location)
+
+    exchanges.append((to_be_replaced, prefix + "\n" + to_replace_with))
 
 
 # Replace text now
