@@ -80,7 +80,8 @@ class DSL:
                     set_instantiated_types = new_set_instantiated_types
                 for type_ in set_instantiated_types:
                     instantiated_P = Primitive(P.primitive, type=type_)
-                    self.list_primitives.append(instantiated_P)
+                    if instantiated_P not in self.list_primitives:
+                        self.list_primitives.append(instantiated_P)
                 self.list_primitives.remove(P)
 
         # Duplicate things for Sum types
