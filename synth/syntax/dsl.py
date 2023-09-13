@@ -174,3 +174,16 @@ class DSL:
             if P.primitive == name:
                 return P
         return None
+
+    def __or__(self, other: "DSL") -> "DSL":
+        out = DSL({})
+        out.list_primitives += self.list_primitives
+        for prim in other.list_primitives:
+            if prim not in self.list_primitives:
+                out.list_primitives.append(prim)
+        out.forbidden_patterns = {k: v for k, v in self.forbidden_patterns.items()}
+        for k, v in other.forbidden_patterns.items():
+            if k not in out.forbidden_patterns:
+                out.forbidden_patterns[k] = v
+
+        return out
