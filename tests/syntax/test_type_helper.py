@@ -46,6 +46,7 @@ def test_auto_type_base() -> None:
     assert PrimitiveType("bb") == auto_type("bb")
     assert PolymorphicType("bb") == auto_type("'bb")
     assert PolymorphicType("aa") == auto_type("'aa")
+    assert PrimitiveType("a_a") == auto_type("a_a")
 
 
 def test_auto_type_advanced() -> None:
