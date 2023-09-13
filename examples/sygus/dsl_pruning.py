@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import json
 
 from synth.syntax.grammars.grammar import DerivableProgram
-from synth.syntax import DFTA, PrimitiveType, Type, FunctionType, Primitive
+from synth.syntax import DFTA, PrimitiveType, Type, FunctionType, Primitive, UnknownType
 from synth.pruning.constraints import add_dfta_constraints
 
 from logics import LIA, NIA, LRA, NRA, BV
@@ -67,7 +67,10 @@ __logic_map = {"LIA": LIA, "NIA": NIA, "LRA": LRA, "NRA": NRA, "BV": BV}
 
 def type_of_symbol(symbol_table: SymbolTable, symbol: str) -> Type:
     descriptor = symbol_table.lookup_symbol(symbol)
-    return PrimitiveType(descriptor.symbol_sort.identifier.symbol)
+    if descriptor:
+        return PrimitiveType(descriptor.symbol_sort.identifier.symbol)
+    else:
+        return UnknownType()
 
 
 def term2str(term: Term, symbol_table: SymbolTable) -> Tuple[Type, str]:
@@ -145,6 +148,9 @@ def to_dfta(
                         rules[(fun, args)] = (type_of_symbol(symbol_table, S), S)
                     else:
                         t, name = term2str(out.binder_free_term, symbol_table)
+                        # Fix when define-var is not used
+                        if isinstance(t, UnknownType):
+                            t = type_of_symbol(symbol_table, S)
                         rules[(Primitive(str(name), t), ())] = (
                             type_of_symbol(symbol_table, S),
                             S,
