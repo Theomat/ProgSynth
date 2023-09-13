@@ -269,7 +269,7 @@ for key, val in symbol_table.synth_functions.items():
     for x, y in zip(val.argument_names, val.argument_sorts):
         args.append(f"({x} {y.identifier})")
     sargs = " ".join(args)
-    prefix = f"(synth-fun {key.symbol} ({sargs}) {s.identifier.symbol}"
+    prefix = f"(synth-fun {key.symbol} ({sargs}) {s.identifier}"
 
     grammar: Grammar = val.synthesis_grammar
     if grammar is None:
