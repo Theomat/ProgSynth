@@ -7,7 +7,7 @@ from synth.syntax.grammars.grammar import DerivableProgram
 from synth.syntax import DFTA, PrimitiveType, Type, FunctionType, Primitive, UnknownType
 from synth.pruning.constraints import add_dfta_constraints
 
-from logics import LIA, NIA, LRA, NRA, BV
+from logics import LIA, NIA, LRA, NRA, BV, STRING, SLIA
 
 from parsing.ast import (
     GroupedRuleList,
@@ -62,7 +62,15 @@ sharpening_rules = json.load(parameters.sharpening_file)
 
 print(f"Found {len(sharpening_rules)} sharpening rules!")
 
-__logic_map = {"LIA": LIA, "NIA": NIA, "LRA": LRA, "NRA": NRA, "BV": BV}
+__logic_map = {
+    "LIA": LIA,
+    "NIA": NIA,
+    "LRA": LRA,
+    "NRA": NRA,
+    "BV": BV,
+    "SLIA": SLIA,
+    "STRING": STRING,
+}
 
 
 def type_of_symbol(symbol_table: SymbolTable, symbol: str) -> Type:

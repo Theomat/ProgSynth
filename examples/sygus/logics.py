@@ -100,3 +100,42 @@ __bv_syntax = auto_type(
 )
 
 BV = DSL(__bv_syntax)
+
+
+__string_syntax = auto_type(
+    {
+        "str.++": "String -> String -> String",
+        "str.at": "String -> String -> String",
+        "str.substr": "String -> Int -> Int -> String",
+        "str.indexof": "String -> String -> Int -> String",
+        "str.replace": "String -> String -> String -> String",
+        "str.from_int": "Int -> String",
+        "str.from_code": "Int -> String",
+        "ite": "Bool -> 'a[String|Int] -> 'a[String|Int] -> 'a[String|Int]",
+        "re.none": "RegLan",
+        "re.all": "RegLan",
+        "re.allchar": "RegLan",
+        "re.++": "RegLan -> RegLan -> RegLan",
+        "re.union": "RegLan -> RegLan -> RegLan",
+        "re.inter": "RegLan -> RegLan -> RegLan",
+        "re.*": "RegLan -> RegLan",
+        "re.+": "RegLan -> RegLan",
+        "re.opt": "RegLan -> RegLan",
+        "re.range": "String -> String -> RegLan",
+        "str.len": "String -> Int",
+        "str.to_int": "String -> Int",
+        "str.to_code": "String -> Int",
+        "str.in_re": "String -> RegLan -> Bool",
+        "str.contains": "String -> String -> Bool",
+        "str.prefixof": "String -> String -> Bool",
+        "str.suffixof": "String -> String -> Bool",
+        "str.<": "String -> String -> Bool",
+        "str.<=": "String -> String -> Bool",
+        "str.is_digit": "String -> Bool",
+    }
+)
+
+STRING = DSL(__string_syntax)
+
+SLIA = STRING | LIA
+SLIA.instantiate_polymorphic_types()
