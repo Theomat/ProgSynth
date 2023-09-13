@@ -200,7 +200,11 @@ def next_tag(tag: str, count: List[int]) -> str:
         return tag
 
 
-def from_dfta(dfta: DFTA[Tuple[Tuple[Type, Any], ...], DerivableProgram]) -> str:
+def from_dfta(
+    dfta: DFTA[Tuple[Tuple[Type, Any], ...], DerivableProgram],
+    symbol_table: SymbolTable,
+    val: FunctionDescriptor,
+) -> str:
     out = ""
     rules: Dict[Tuple[Tuple[Type, Any], ...], List[str]] = {}
     # Convert states to non terminals
@@ -235,6 +239,10 @@ def from_dfta(dfta: DFTA[Tuple[Tuple[Type, Any], ...], DerivableProgram]) -> str
             continue
         rules[dst].append(derivation)
 
+    # Special case for Bit Vectors with default grammar
+    if symbol_table.logic_name == "BV" and val.synthesis_grammar is None:
+        rules["BitVector32"].append(f"(Constant BitVector32)")
+
     for state, derivations in rules.items():
         t = get_root_tag(state).type_name.replace("Const", "")
         der = " ".join(derivations)
@@ -263,7 +271,9 @@ exchanges = []
 for key, val in symbol_table.synth_functions.items():
     dfta = to_dfta(symbol_table, val)
 
-    to_replace_with = from_dfta(add_dfta_constraints(dfta, sharpening_rules))
+    to_replace_with = from_dfta(
+        add_dfta_constraints(dfta, sharpening_rules), symbol_table, val
+    )
 
     s: SortDescriptor = val.range_sort
     args = []
@@ -278,7 +288,6 @@ for key, val in symbol_table.synth_functions.items():
         # Special case for Bit Vectors
         if symbol_table.logic_name == "BV":
             to_replace_with = to_replace_with.replace("BitVector32", "(_ BitVec 32)")
-            print("Bit Vector is not yet fully supported in this mode!")
     else:
         to_be_replaced = capture_text(content, prefix, grammar.end_location)
 
