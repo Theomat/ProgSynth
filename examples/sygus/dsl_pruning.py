@@ -4,7 +4,15 @@ from typing import Any, Dict, List, Optional, Tuple
 import json
 
 from synth.syntax.grammars.grammar import DerivableProgram
-from synth.syntax import DFTA, PrimitiveType, Type, FunctionType, Primitive, UnknownType
+from synth.syntax import (
+    DFTA,
+    PrimitiveType,
+    Type,
+    FunctionType,
+    Primitive,
+    UnknownType,
+    UNIT,
+)
 from synth.pruning.constraints import add_dfta_constraints
 
 from logics import LIA, NIA, LRA, NRA, BV, STRING, SLIA
@@ -16,6 +24,7 @@ from parsing.ast import (
     IdentifierTerm,
     LiteralTerm,
     FunctionApplicationTerm,
+    SortExpression,
     Term,
 )
 from parsing.resolution import FunctionDescriptor, SortDescriptor, SymbolTable
@@ -138,6 +147,7 @@ def to_dfta(
         # Now create rules
         for S, rule in grammar.grouped_rule_lists.items():
             r: GroupedRuleList = rule
+            dst = (type_of_symbol(symbol_table, S), S)
             for out in r.expansion_rules:
                 if out.grammar_term_kind == GrammarTermKind.BINDER_FREE:
                     if isinstance(out.binder_free_term, FunctionApplicationTerm):
@@ -148,19 +158,36 @@ def to_dfta(
                                 out.binder_free_term.arguments,
                             )
                         )
+                        for arg in out.binder_free_term.arguments:
+                            if isinstance(arg, IdentifierTerm):
+                                t, name = term2str(arg)
+                                rules[(Primitive(str(name), t), ())] = (t, name)
                         fun = Primitive(
                             f,
                             FunctionType(
                                 *[x[0] for x in args], type_of_symbol(symbol_table, S)
                             ),
                         )
-                        rules[(fun, args)] = (type_of_symbol(symbol_table, S), S)
+                        rules[(fun, args)] = dst
                     else:
                         t, name = term2str(out.binder_free_term)
-                        rules[(Primitive(str(name), t), ())] = (
-                            type_of_symbol(symbol_table, S),
-                            S,
-                        )
+                        rules[(Primitive(str(name), t), ())] = dst
+                elif out.grammar_term_kind == GrammarTermKind.CONSTANT:
+                    s: SortExpression = out.sort_expression
+                    base = PrimitiveType(str(s.identifier))
+                    rules[(Primitive(f"keep@{base}", base), ())] = dst
+                elif out.grammar_term_kind == GrammarTermKind.VARIABLE:
+                    s: SortExpression = out.sort_expression
+                    base = PrimitiveType(str(s.identifier))
+                    # Add variables
+                    for x, y in zip(val.argument_names, val.argument_sorts):
+                        var_type = PrimitiveType(str(y.identifier))
+                        if var_type == base:
+                            rules[(Primitive(x, var_type), ())] = (var_type, x)
+                    rules[
+                        (Primitive(f"var@{base}#{S}", base), ((UNIT, "fictive")))
+                    ] = dst
+                    rules[(Primitive(f"fictive", UNIT), ())] = (UNIT, "fictive")
     finals = set()
     s: SortDescriptor = val.range_sort
     out_type = PrimitiveType(str(s.identifier))
@@ -221,6 +248,9 @@ def from_dfta(
     for state in dfta.states:
         if state not in state2name:
             base_tag = get_state_name(state)
+            # Fictive state is just to keep variable instruction
+            if base_tag == "fictive":
+                continue
             tag = base_tag
             count = []
             while tag in used:
@@ -231,11 +261,20 @@ def from_dfta(
     # Declare non terminals
     out += "\t("
     for state, name in sorted(state2name.items(), key=lambda x: x[1]):
+        if name in val.argument_names:
+            continue
         t = get_root_tag(state).type_name.replace("Const", "")
         out += f"({name} {t}) "
     out += ")\n\n"
     # Make derivation rule
     for (letter, args), dst in dfta.rules.items():
+        # Manage fictive
+        if str(letter) == "fictive":
+            continue
+        if isinstance(letter, Primitive) and letter.primitive.startswith("var@"):
+            rules[dst].append(f"(Variable {letter.type})")
+            continue
+
         name = state2name[dst]
         derivation = str(letter)
         if args:
@@ -245,6 +284,8 @@ def from_dfta(
             real_type = letter.primitive.replace("Const", "")[len("keep@") :]
             rules[dst].append(f"(Constant {real_type})")
             continue
+        elif derivation == name:
+            continue
         rules[dst].append(derivation)
 
     # Special case for Bit Vectors with default grammar
@@ -252,9 +293,13 @@ def from_dfta(
         rules["BitVector32"].append(f"(Constant BitVector32)")
 
     for state, derivations in rules.items():
+        name = state2name[state]
+        # Remove (var_t, var) -> var
+        if len(derivations) == 0:
+            continue
         t = get_root_tag(state).type_name.replace("Const", "")
         der = " ".join(derivations)
-        out += f"\t(({state2name[state]} {t} ({der})))\n"
+        out += f"\t(({name} {t} ({der})))\n"
     return out
 
 
