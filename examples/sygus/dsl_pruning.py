@@ -86,14 +86,14 @@ def term2str(term: Term) -> Tuple[Type, str]:
         s: SortDescriptor = term.sort_descriptor
         return (
             PrimitiveType(str(s.identifier)),
-            term.identifier.symbol,
+            str(term.identifier),
         )
     elif isinstance(term, LiteralTerm):
         return (
             PrimitiveType(term.literal.literal_kind.name),
             term.literal.literal_value,
         )
-    raise NotImplementedError()
+    raise NotImplementedError(f"{term}")
 
 
 def to_dfta(
@@ -123,7 +123,7 @@ def to_dfta(
 
         # Add variables
         for x, y in zip(val.argument_names, val.argument_sorts):
-            var_type = PrimitiveType(y.identifier.symbol)
+            var_type = PrimitiveType(str(y.identifier))
             rules[(Primitive(x, var_type), ())] = type2state(var_type)
 
         # Add fictional constant
@@ -141,7 +141,7 @@ def to_dfta(
             for out in r.expansion_rules:
                 if out.grammar_term_kind == GrammarTermKind.BINDER_FREE:
                     if isinstance(out.binder_free_term, FunctionApplicationTerm):
-                        f = out.binder_free_term.function_identifier.symbol
+                        f = str(out.binder_free_term.function_identifier)
                         args = tuple(
                             map(
                                 lambda x: term2str(x),
@@ -163,7 +163,7 @@ def to_dfta(
                         )
     finals = set()
     s: SortDescriptor = val.range_sort
-    out_type = PrimitiveType(s.identifier.symbol)
+    out_type = PrimitiveType(str(s.identifier))
 
     for _, state in rules.items():
         if state[0] == out_type:
