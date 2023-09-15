@@ -116,6 +116,7 @@ def to_dfta(
         ],
         Tuple[Type, str],
     ] = {}
+    base_terminal = set()
     if grammar is None:
         assert (
             symbol_table.logic_name in __logic_map
@@ -126,9 +127,9 @@ def to_dfta(
             return (t, "Start" + str(t))
 
         for primitive in dsl.list_primitives:
-            rules[
-                (primitive, tuple(map(type2state, primitive.type.arguments())))
-            ] = type2state(primitive.type.returns())
+            dst = type2state(primitive.type.returns())
+            rules[(primitive, tuple(map(type2state, primitive.type.arguments())))] = dst
+            base_terminal.add(dst)
 
         # Add variables
         for x, y in zip(val.argument_names, val.argument_sorts):
@@ -148,6 +149,7 @@ def to_dfta(
         for S, rule in grammar.grouped_rule_lists.items():
             r: GroupedRuleList = rule
             dst = (type_of_symbol(symbol_table, S), S)
+            base_terminal.add(dst)
             for out in r.expansion_rules:
                 if out.grammar_term_kind == GrammarTermKind.BINDER_FREE:
                     if isinstance(out.binder_free_term, FunctionApplicationTerm):
@@ -192,7 +194,7 @@ def to_dfta(
     s: SortDescriptor = val.range_sort
     out_type = PrimitiveType(str(s.identifier))
 
-    for _, state in rules.items():
+    for state in base_terminal:
         if state[0] == out_type:
             finals.add(state)
     dfta = DFTA(rules, finals)
