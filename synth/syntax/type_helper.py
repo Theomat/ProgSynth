@@ -2,7 +2,7 @@
 An helper file that contains useful methods to make type creation and manipulation very easy.
 
 """
-from synth.syntax.type_system import FixedPolymorphicType, Generic, PrimitiveType
+from synth.syntax.type_system import FixedPolymorphicType, Generic, PrimitiveType, Sum
 from synth.syntax.type_system import (
     Type,
     UnknownType,
@@ -156,6 +156,10 @@ def auto_type(el: Union[Dict[str, str], str]) -> Union[Dict[str, Type], Type]:
         elif token == _TOK_NONE:
             if len(w) > 0:
                 if last_infix < len(stack) and or_flag < 0:
+                    if w == "optional":
+                        stack.append(Sum(UNIT, stack.pop()))
+                    else:
+                        stack.append(Generic(w, stack.pop()))
                     stack.append(Generic(w, stack.pop()))
                 else:
                     stack.append(PrimitiveType(w))

@@ -44,6 +44,9 @@ class Type(ABC):
         """
         return []
 
+    def without_unit_arguments(self) -> "Type":
+        return self
+
     def is_instance(self, other: Union["Type", TypeFunctor, type]) -> bool:
         """
         Returns true if and only if this type is an instance of other.
@@ -406,6 +409,13 @@ class Arrow(Type):
         if isinstance(self.type_out, Arrow):
             return [self.type_in] + self.type_out.arguments()
         return [self.type_in]
+
+    def without_unit_arguments(self) -> "Type":
+        if self.type_in == UNIT:
+            return self.type_out
+        elif isinstance(self.type_in, Arrow) and self.type_in.type_out == UNIT:
+            return Arrow(self.type_in.type_in, self.type_out)
+        return self
 
     def is_polymorphic(self) -> bool:
         return self.type_in.is_polymorphic() or self.type_out.is_polymorphic()

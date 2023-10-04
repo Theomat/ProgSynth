@@ -1,7 +1,7 @@
 import copy
 from typing import Dict, Mapping, Optional, List as TList, Set, Tuple
 
-from synth.syntax.type_system import Type, Arrow, List
+from synth.syntax.type_system import UNIT, Type, Arrow, List
 from synth.syntax.program import Function, Primitive, Program, Variable
 
 
@@ -92,6 +92,11 @@ class DSL:
                     instantiated_P = Primitive(P.primitive, type=type_)
                     self.list_primitives.append(instantiated_P)
                 self.list_primitives.remove(P)
+
+        # Now remove all UNIT as parameters from signatures
+        for P in self.list_primitives[:]:
+            if any(arg == UNIT for arg in P.type.arguments()):
+                P.type = P.type.without_unit_arguments()
 
     def __eq__(self, o: object) -> bool:
         return isinstance(o, DSL) and set(self.list_primitives) == set(
