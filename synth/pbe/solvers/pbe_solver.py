@@ -120,3 +120,62 @@ class CutoffPBESolver(PBESolver):
                             program
                         )
                         return
+
+
+class ObsEqPBESolver(PBESolver):
+    """
+    A solver that use observational equivalence.
+    """
+
+    @classmethod
+    def name(cls) -> str:
+        return "obs-eq"
+
+    def _init_stats_(self) -> None:
+        self._stats["programs"] = 0
+        self._stats["time"] = 0
+        self._stats["program_probability"] = 0
+        self._stats["merged"] = 0
+
+    def solve(
+        self, task: Task[PBE], enumerator: HSEnumerator, timeout: float = 60
+    ) -> Generator[Program, bool, None]:
+        with chrono.clock("search.obs-eq") as c:  # type: ignore
+            results: Dict[Any, Any] = {}
+            merged = 0
+            for program in enumerator:
+                time = c.elapsed_time()
+                if time >= timeout:
+                    self._stats["merged"] += merged
+                    self._stats["time"] += time
+                    self._stats["program_probability"] = enumerator.G.probability(
+                        program
+                    )
+
+                    return
+                self._stats["programs"] += 1
+                failed = False
+                outputs = None
+                for ex in task.specification.examples:
+                    out = self.evaluator.eval(program, ex.inputs)
+                    failed |= out != ex.output
+                    if isinstance(out, list):
+                        outputs = (outputs, tuple(out))
+                    else:
+                        outputs = (outputs, out)  # type: ignore
+                if not failed:
+                    should_stop = yield program
+                    if should_stop:
+                        self._stats["time"] += time
+                        self._stats["program_probability"] = enumerator.G.probability(
+                            program
+                        )
+                        self._stats["merged"] += merged
+                        return
+                else:
+                    original = results.get(outputs)
+                    if original is not None:
+                        enumerator.merge_program(original, program)
+                        merged += 1
+                    else:
+                        results[outputs] = program
