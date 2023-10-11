@@ -22,13 +22,16 @@ from synth.syntax import (
 )
 from synth.syntax.grammars.enumeration.heap_search import HSEnumerator
 from synth.utils import load_object
-from synth.pbe.solvers import NaivePBESolver, PBESolver, CutoffPBESolver
+from synth.pbe.solvers import NaivePBESolver, PBESolver, CutoffPBESolver, ObsEqPBESolver
 
 
 import argparse
 
 
-SOLVERS = {solver.name(): solver for solver in [NaivePBESolver, CutoffPBESolver]}
+SOLVERS = {
+    solver.name(): solver
+    for solver in [NaivePBESolver, CutoffPBESolver, ObsEqPBESolver]
+}
 
 parser = argparse.ArgumentParser(description="Evaluate model prediction")
 add_dataset_choice_arg(parser)
