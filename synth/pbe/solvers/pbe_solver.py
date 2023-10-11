@@ -54,7 +54,8 @@ class NaivePBESolver(PBESolver):
     def solve(
         self, task: Task[PBE], enumerator: HSEnumerator, timeout: float = 60
     ) -> Generator[Program, bool, None]:
-        with chrono.clock("search.base") as c: #type: ignore
+        with chrono.clock("search.naive") as c:  # type: ignore
+            programs = 0
             for program in enumerator:
                 time = c.elapsed_time()
                 if time >= timeout:
@@ -62,9 +63,9 @@ class NaivePBESolver(PBESolver):
                     self._stats["program_probability"] = enumerator.G.probability(
                         program
                     )
-
+                    self._stats["program"] += programs
                     return
-                self._stats["programs"] += 1
+                programs += 1
                 failed = False
                 for ex in task.specification.examples:
                     if self.evaluator.eval(program, ex.inputs) != ex.output:
@@ -76,6 +77,7 @@ class NaivePBESolver(PBESolver):
                         self._stats["program_probability"] = enumerator.G.probability(
                             program
                         )
+                        self._stats["program"] += programs
                         return
 
 
@@ -96,7 +98,8 @@ class CutoffPBESolver(PBESolver):
     def solve(
         self, task: Task[PBE], enumerator: HSEnumerator, timeout: float = 60
     ) -> Generator[Program, bool, None]:
-        with chrono.clock("search.base") as c: #type: ignore
+        with chrono.clock("search.cutoff") as c:  # type: ignore
+            programs = 0
             for program in enumerator:
                 time = c.elapsed_time()
                 if time >= timeout:
@@ -104,9 +107,9 @@ class CutoffPBESolver(PBESolver):
                     self._stats["program_probability"] = enumerator.G.probability(
                         program
                     )
-
+                    self._stats["program"] += programs
                     return
-                self._stats["programs"] += 1
+                programs += 1
                 failed = False
                 for ex in task.specification.examples:
                     if self.evaluator.eval(program, ex.inputs) != ex.output:
@@ -119,6 +122,7 @@ class CutoffPBESolver(PBESolver):
                         self._stats["program_probability"] = enumerator.G.probability(
                             program
                         )
+                        self._stats["program"] += programs
                         return
 
 
@@ -143,6 +147,7 @@ class ObsEqPBESolver(PBESolver):
         with chrono.clock("search.obs-eq") as c:  # type: ignore
             results: Dict[Any, Any] = {}
             merged = 0
+            programs = 0
             for program in enumerator:
                 time = c.elapsed_time()
                 if time >= timeout:
@@ -151,9 +156,9 @@ class ObsEqPBESolver(PBESolver):
                     self._stats["program_probability"] = enumerator.G.probability(
                         program
                     )
-
+                    self._stats["program"] += programs
                     return
-                self._stats["programs"] += 1
+                programs += 1
                 failed = False
                 outputs = None
                 for ex in task.specification.examples:
@@ -171,6 +176,7 @@ class ObsEqPBESolver(PBESolver):
                             program
                         )
                         self._stats["merged"] += merged
+                        self._stats["program"] += programs
                         return
                 else:
                     original = results.get(outputs)
