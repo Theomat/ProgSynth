@@ -68,6 +68,14 @@ ProgSynth can be installed from source with `pip`, `conda` or `poetry`.
 pip install .
 ```
 
+When using `poetry` in an CUDA environment, then you need to follow every `poetry install` or `poetry update` with:
+
+```bash
+pip install torch
+```
+
+See this [open issue of poetry](https://github.com/python-poetry/poetry/issues/6409) for more information.
+
 ## Documentation
 
 [Online Documentation](https://nathanael-fijalkow.github.io/ProgSynth/)
