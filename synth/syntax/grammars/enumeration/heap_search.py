@@ -79,12 +79,12 @@ class HSEnumerator(ABC, Generic[U, V, W]):
         while True:
             program = self.query(self.start, self.current)
             if program is None:
-                break
+                return
             h = hash(program)
             while h in self.seen:
                 program = self.query(self.start, self.current)
                 if program is None:
-                    break
+                    return
                 h = hash(program)
             self.seen.add(h)
             self.current = program

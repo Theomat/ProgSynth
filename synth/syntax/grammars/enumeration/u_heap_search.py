@@ -49,6 +49,7 @@ class UHSEnumerator(ABC, Generic[U, V, W]):
         symbols = [S for S in self.G.rules]
         self.threshold = threshold
         self.deleted: Set[int] = set()
+        self.seen: Set[int] = set()
 
         # self.heaps[S] is a heap containing programs generated from the non-terminal S
         self.heaps: Dict[Tuple[Type, U], List[HeapElement]] = {S: [] for S in symbols}
@@ -85,6 +86,14 @@ class UHSEnumerator(ABC, Generic[U, V, W]):
             program = self.start_query()
             if program is None:
                 break
+            h = hash(program)
+            while h in self.seen:
+                program = self.start_query()
+                if program is None:
+                    return
+                h = hash(program)
+            self.seen.add(h)
+            self.current = program
             yield program
 
     def __iter__(self) -> Generator[Program, None, None]:
