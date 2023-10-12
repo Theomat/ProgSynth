@@ -42,6 +42,7 @@ class HSEnumerator(ABC, Generic[U, V, W]):
         self.threshold = threshold
 
         self.deleted: Set[int] = set()
+        self.seen: Set[int] = set()
 
         self.G = G
         self.start = G.start
@@ -79,6 +80,13 @@ class HSEnumerator(ABC, Generic[U, V, W]):
             program = self.query(self.start, self.current)
             if program is None:
                 break
+            h = hash(program)
+            while h in self.seen:
+                program = self.query(self.start, self.current)
+                if program is None:
+                    break
+                h = hash(program)
+            self.seen.add(h)
             self.current = program
             yield program
 
