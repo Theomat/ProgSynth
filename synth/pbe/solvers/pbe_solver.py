@@ -70,10 +70,21 @@ class PBESolver(ABC):
                         return
 
     def _test_(self, task: Task[PBE], program: Program) -> bool:
+        """
+        Return true iff program satisfies the specification given by the task.
+        Fills self._score with a score representing how close the program was to solve the task.
+
+        POSTCOND:
+            0 <= self._score <= 1
+        """
         failed = False
+        success = 0
         for ex in task.specification.examples:
             if self.evaluator.eval(program, ex.inputs) != ex.output:
                 failed = True
+            else:
+                success += 1
+        self._score = success / len(task.specification.examples)
         return not failed
 
 
@@ -147,9 +158,13 @@ class CutoffPBESolver(PBESolver):
         return "cutoff"
 
     def _test_(self, task: Task[PBE], program: Program) -> bool:
+        n = 0
         for ex in task.specification.examples:
             if self.evaluator.eval(program, ex.inputs) != ex.output:
+                self._score = n / len(task.specification.examples)
                 return False
+            n += 1
+        self._score = 1
         return True
 
 
@@ -190,9 +205,12 @@ class ObsEqPBESolver(PBESolver):
     def _test_(self, task: Task[PBE], program: Program) -> bool:
         failed = False
         outputs = None
+        success = 0
         for ex in task.specification.examples:
             out = self.evaluator.eval(program, ex.inputs)
-            failed |= out != ex.output
+            local_success = out == ex.output
+            failed |= not local_success
+            success += local_success
             if isinstance(out, list):
                 outputs = (outputs, tuple(out))
             else:
@@ -205,4 +223,6 @@ class ObsEqPBESolver(PBESolver):
                 self._merged += 1
             else:
                 self._results[outputs] = program
+
+        self._score = success / len(task.specification.examples)
         return not failed
