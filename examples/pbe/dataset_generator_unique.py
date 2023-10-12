@@ -209,7 +209,20 @@ def generate_programs_and_samples_for(
                 examples=max_examples,
                 threshold=-threshold,
             )
-            out.append(samples)
+            if len(samples) == 0:
+                samples, equiv = generate_samples_for(
+                    rel_programs,
+                    lambda: task_generator.sample_input(tr.arguments()),
+                    task_generator.eval_input,
+                    task_generator.evaluator.clear_cache,
+                    examples=max_examples,
+                    threshold=-threshold,
+                )
+                if len(samples) > 0:
+                    out.append(samples)
+            else:
+                out.append(samples)
+
     if test_examples > 0:
         out = [
             x
