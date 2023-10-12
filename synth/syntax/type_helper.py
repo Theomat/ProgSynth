@@ -19,6 +19,13 @@ from synth.syntax.type_system import (
 from typing import Any, Dict, Tuple, Union, overload, List as TList
 
 
+def Optional(t: Type) -> Sum:
+    """
+    Short-hand to create optional types.
+    """
+    return Sum(None, t)
+
+
 def FunctionType(*args: Type) -> Type:
     """
     Short-hand to create n-ary functions.
@@ -157,7 +164,7 @@ def auto_type(el: Union[Dict[str, str], str]) -> Union[Dict[str, Type], Type]:
             if len(w) > 0:
                 if last_infix < len(stack) and or_flag < 0:
                     if w == "optional":
-                        stack.append(Sum(UNIT, stack.pop()))
+                        stack.append(Optional(stack.pop()))
                     else:
                         stack.append(Generic(w, stack.pop()))
                 else:

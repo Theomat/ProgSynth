@@ -12,7 +12,7 @@ from synth.syntax.type_system import (
     UnknownType,
     match,
 )
-from synth.syntax.type_helper import auto_type, FunctionType, guess_type
+from synth.syntax.type_helper import auto_type, FunctionType, guess_type, Optional
 import random
 
 
@@ -54,11 +54,10 @@ def test_auto_type_advanced() -> None:
     assert List(PolymorphicType("a")) == auto_type("'a list")
 
     some = GenericFunctor("some", min_args=1, max_args=1)
-    opt = GenericFunctor("optional", min_args=1, max_args=1)
 
     assert some(PolymorphicType("a")) == auto_type("'a some")
-    assert opt(PolymorphicType("a")) == auto_type("'a optional")
-    assert opt(some(PolymorphicType("a"))) == auto_type("'a some optional")
+    assert Optional(PolymorphicType("a")) == auto_type("'a optional")
+    assert Optional(some(PolymorphicType("a"))) == auto_type("'a some optional")
 
     x = PrimitiveType("bb") | PolymorphicType("aa")
     assert x == auto_type("bb | 'aa")
