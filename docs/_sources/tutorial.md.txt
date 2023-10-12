@@ -202,6 +202,16 @@ python examples/pbe/model_trainer.py --dsl calculator --dataset my_train_dataset
 
 There are various options to configure your model and everything which we do not dwelve into.
 
+## Infer with a model
+
+A model can be used to produce PCFGs, this will produce a `pickle` file in the same folder as your model, you will need to pass this file to the solver.
+
+```bash
+python examples/pbe/model_prediction.py --dsl calculator --dataset my_test_dataset.pickle --model my_model.pt --b 32 -support my_train_dataset.pickle
+```
+
+The ``--support my_train_dataset.pickle`` is only used to filter the test set on type requests that were also present in the train set.
+
 ## Evaluate a model
 
 You might want to evaluate a model to see if it learned anything relevant, this can be easily done but is time consuming.
@@ -210,11 +220,11 @@ If you are directly interested in synthesizing your first program then jump over
 You can easily evaluate a model using:
 
 ```bash
-python examples/pbe/evaluate.py --dsl calculator --dataset my_test_dataset.pickle --b 16 --model my_model.pt -o . -t 60 --support my_train_dataset.pickle
+python examples/pbe/solve.py --dsl calculator --dataset my_test_dataset.pickle --pcfg pcfgs_my_test_dattaset_my_model.pt -o . -t 60 --support my_train_dataset.pickle --solver cutoff
 ```
 
 The most important parameter is perhaps ``-t 60`` which gives a timeout of 60 seconds per task.
-The ``--support my_train_dataset.pickle`` is only used to filter the test set on type requests that were also present in the train set.
+You can also play with different solver, by default ``cutoff`` works pretty well on almost anything.
 
 This will produce a CSV file in the output folder (``.`` above).
 This result file can then be plotted using:
@@ -229,6 +239,7 @@ Again there's a plethora of options available, so feel free to play with them.
 
 Here is a simple function that takes your task, the PCFG and the evaluator and generates a synthetised program.
 For more information about predictions and how to produce a P(U)CFG from a model, see [this page](prediction.md).
+If you are perhaps more interested in solving then you should probably look at the files in ``synth.pbe.solvers`` which offer different ways of solving our synthesis problem.
 
 ```python
 from synth import Task, PBE

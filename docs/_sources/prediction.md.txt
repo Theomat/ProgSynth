@@ -45,14 +45,14 @@ Using ```from synth.nn import abstractions``` can provide you with a few default
 #### Learning
 
 Both layers provide already implemented loss computations:
-``loss_cross_entropy`` and ``loss_negative_log_prob``.
+``loss_mse`` and ``loss_negative_log_prob``.
 Their aguments indicate if one needs to convert the tensors into tensor grammars or not.
 
 Here is an example learning step:
 
 ```python
 optim.zero_grad()
-loss = model.prediction_layer.loss_cross_entropy(
+loss = model.prediction_layer.loss_mse(
     batch_programs, batch_type_requests, batch_output_tensors
 )
 loss.backward()

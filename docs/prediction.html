@@ -144,11 +144,11 @@ The idea is that if two non-terminals are mapped onto the same abstraction then 
 <section id="learning">
 <h4>Learning<a class="headerlink" href="#learning" title="Link to this heading"></a></h4>
 <p>Both layers provide already implemented loss computations:
-<code class="docutils literal notranslate"><span class="pre">loss_cross_entropy</span></code> and <code class="docutils literal notranslate"><span class="pre">loss_negative_log_prob</span></code>.
+<code class="docutils literal notranslate"><span class="pre">loss_mse</span></code> and <code class="docutils literal notranslate"><span class="pre">loss_negative_log_prob</span></code>.
 Their aguments indicate if one needs to convert the tensors into tensor grammars or not.</p>
 <p>Here is an example learning step:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">optim</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
-<span class="n">loss</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">prediction_layer</span><span class="o">.</span><span class="n">loss_cross_entropy</span><span class="p">(</span>
+<span class="n">loss</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">prediction_layer</span><span class="o">.</span><span class="n">loss_mse</span><span class="p">(</span>
     <span class="n">batch_programs</span><span class="p">,</span> <span class="n">batch_type_requests</span><span class="p">,</span> <span class="n">batch_output_tensors</span>
 <span class="p">)</span>
 <span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>

@@ -63,6 +63,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#creating-a-task-generator">Creating a Task Generator</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#generating-a-synthetic-dataset">Generating a synthetic dataset</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#train-a-model">Train a model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#infer-with-a-model">Infer with a model</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#evaluate-a-model">Evaluate a model</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#simple-synthesis">Simple synthesis</a></li>
 </ul>
@@ -273,17 +274,25 @@ There is already existing script that does all of the job for us.</p>
 </div>
 <p>There are various options to configure your model and everything which we do not dwelve into.</p>
 </section>
+<section id="infer-with-a-model">
+<h2>Infer with a model<a class="headerlink" href="#infer-with-a-model" title="Link to this heading"></a></h2>
+<p>A model can be used to produce PCFGs, this will produce a <code class="docutils literal notranslate"><span class="pre">pickle</span></code> file in the same folder as your model, you will need to pass this file to the solver.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>examples/pbe/model_prediction.py<span class="w"> </span>--dsl<span class="w"> </span>calculator<span class="w"> </span>--dataset<span class="w"> </span>my_test_dataset.pickle<span class="w"> </span>--model<span class="w"> </span>my_model.pt<span class="w"> </span>--b<span class="w"> </span><span class="m">32</span><span class="w"> </span>-support<span class="w"> </span>my_train_dataset.pickle
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">--support</span> <span class="pre">my_train_dataset.pickle</span></code> is only used to filter the test set on type requests that were also present in the train set.</p>
+</section>
 <section id="evaluate-a-model">
 <h2>Evaluate a model<a class="headerlink" href="#evaluate-a-model" title="Link to this heading"></a></h2>
 <p>You might want to evaluate a model to see if it learned anything relevant, this can be easily done but is time consuming.
 To evaluate a model, we actually try to solve program synthesis tasks for a DSL so this is not simply an inference task.
 If you are directly interested in synthesizing your first program then jump over to <a class="reference internal" href="#simple-synthesis"><span class="xref myst">the next section</span></a> which tells you exactly how to do that.
 You can easily evaluate a model using:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>examples/pbe/evaluate.py<span class="w"> </span>--dsl<span class="w"> </span>calculator<span class="w"> </span>--dataset<span class="w"> </span>my_test_dataset.pickle<span class="w"> </span>--b<span class="w"> </span><span class="m">16</span><span class="w"> </span>--model<span class="w"> </span>my_model.pt<span class="w"> </span>-o<span class="w"> </span>.<span class="w"> </span>-t<span class="w"> </span><span class="m">60</span><span class="w"> </span>--support<span class="w"> </span>my_train_dataset.pickle
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>examples/pbe/solve.py<span class="w"> </span>--dsl<span class="w"> </span>calculator<span class="w"> </span>--dataset<span class="w"> </span>my_test_dataset.pickle<span class="w"> </span>--pcfg<span class="w"> </span>pcfgs_my_test_dattaset_my_model.pt<span class="w"> </span>-o<span class="w"> </span>.<span class="w"> </span>-t<span class="w"> </span><span class="m">60</span><span class="w"> </span>--support<span class="w"> </span>my_train_dataset.pickle<span class="w"> </span>--solver<span class="w"> </span>cutoff
 </pre></div>
 </div>
 <p>The most important parameter is perhaps <code class="docutils literal notranslate"><span class="pre">-t</span> <span class="pre">60</span></code> which gives a timeout of 60 seconds per task.
-The <code class="docutils literal notranslate"><span class="pre">--support</span> <span class="pre">my_train_dataset.pickle</span></code> is only used to filter the test set on type requests that were also present in the train set.</p>
+You can also play with different solver, by default <code class="docutils literal notranslate"><span class="pre">cutoff</span></code> works pretty well on almost anything.</p>
 <p>This will produce a CSV file in the output folder (<code class="docutils literal notranslate"><span class="pre">.</span></code> above).
 This result file can then be plotted using:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>experiments/plot_results.py<span class="w"> </span>--dataset<span class="w"> </span>my_test_dataset.pickle<span class="w"> </span>--folder<span class="w"> </span>.<span class="w"> </span>--support<span class="w"> </span>my_train_dataset.pickle
@@ -294,7 +303,8 @@ This result file can then be plotted using:</p>
 <section id="simple-synthesis">
 <h2>Simple synthesis<a class="headerlink" href="#simple-synthesis" title="Link to this heading"></a></h2>
 <p>Here is a simple function that takes your task, the PCFG and the evaluator and generates a synthetised program.
-For more information about predictions and how to produce a P(U)CFG from a model, see <a class="reference internal" href="prediction.html"><span class="std std-doc">this page</span></a>.</p>
+For more information about predictions and how to produce a P(U)CFG from a model, see <a class="reference internal" href="prediction.html"><span class="std std-doc">this page</span></a>.
+If you are perhaps more interested in solving then you should probably look at the files in <code class="docutils literal notranslate"><span class="pre">synth.pbe.solvers</span></code> which offer different ways of solving our synthesis problem.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">synth</span> <span class="kn">import</span> <span class="n">Task</span><span class="p">,</span> <span class="n">PBE</span>
 <span class="kn">from</span> <span class="nn">synth.semantic</span> <span class="kn">import</span> <span class="n">DSLEvaluator</span>
 <span class="kn">from</span> <span class="nn">synth.syntax</span> <span class="kn">import</span> <span class="n">ProbDetGrammar</span><span class="p">,</span> <span class="n">enumerate_prob_grammar</span>

@@ -200,6 +200,11 @@ This was taken into account and this is why for most algorithms we provide, we a
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>.
 </pre></div>
 </div>
+<p>When using <code class="docutils literal notranslate"><span class="pre">poetry</span></code> in an CUDA environment, then you need to follow every <code class="docutils literal notranslate"><span class="pre">poetry</span> <span class="pre">install</span></code> or <code class="docutils literal notranslate"><span class="pre">poetry</span> <span class="pre">update</span></code> with:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>torch
+</pre></div>
+</div>
+<p>See this <a class="reference external" href="https://github.com/python-poetry/poetry/issues/6409">open issue of poetry</a> for more information.</p>
 </section>
 </section>
 </section>
