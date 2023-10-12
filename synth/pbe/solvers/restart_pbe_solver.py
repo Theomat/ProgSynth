@@ -1,4 +1,4 @@
-from typing import Any, Generator, Tuple
+from typing import Any, Generator, List, Tuple
 
 
 from synth.specification import PBE
@@ -25,7 +25,7 @@ class RestartPBESolver(MetaPBESolver):
     ) -> None:
         super()._init_task_solving_(task, enumerator, timeout)
         self._restarts = 0
-        self._data = []
+        self._data: List[Tuple[Program, float]] = []
         self._last_size = 0
 
     def _close_task_solving_(
@@ -45,19 +45,25 @@ class RestartPBESolver(MetaPBESolver):
         self, task: Task[PBE], enumerator: HSEnumerator, timeout: float = 60
     ) -> Generator[Program, bool, None]:
         with chrono.clock(f"solve.{self.name()}.{self.subsolver.name()}") as c:  # type: ignore
-            self._init_task_solving_(task, enumerator, timeout)
-            program = next(enumerator)
+            self._enumerator = enumerator
+            self._init_task_solving_(task, self._enumerator, timeout)
+            gen = self._enumerator.generator()
+            program = next(gen)
             while program is not None:
 
                 time = c.elapsed_time()
                 if time >= timeout:
-                    self._close_task_solving_(task, enumerator, time, False, program)
+                    self._close_task_solving_(
+                        task, self._enumerator, time, False, program
+                    )
                     return
                 self._programs += 1
                 if self._test_(task, program):
                     should_stop = yield program
                     if should_stop:
-                        self._close_task_solving_(task, enumerator, time, True, program)
+                        self._close_task_solving_(
+                            task, self._enumerator, time, True, program
+                        )
                         return
                 # Saves data
                 if self._score > 0:
@@ -65,9 +71,9 @@ class RestartPBESolver(MetaPBESolver):
                 # If should restart
                 if self._should_restart_():
                     self._restarts += 1
-                    enumerator = self._restart_(enumerator)
-
-                program = next(enumerator)
+                    self._enumerator = self._restart_(self._enumerator)
+                    gen = self._enumerator.generator()
+                program = next(gen)
 
     def _should_restart_(self) -> bool:
         return len(self._data) - self._last_size > 10000
