@@ -43,10 +43,10 @@ parser.add_argument(
     help="enumeration algorithm (default: heap_search)",
 )
 parser.add_argument(
-    "--method",
+    "--solver",
     choices=list(SOLVERS.keys()),
     default="naive",
-    help=f"used method (default: naive) in {list(SOLVERS.keys())}",
+    help=f"used solver (default: naive) in {list(SOLVERS.keys())}",
 )
 add_dsl_choice_arg(parser)
 parser.add_argument("--pcfg", type=str, help="files containing the predicted PCFGs")
@@ -69,7 +69,7 @@ dsl_name: str = parameters.dsl
 dataset_file: str = parameters.dataset
 pcfg_file: str = parameters.pcfg
 search_algo: str = parameters.search
-method: Callable[[Any], PBESolver] = SOLVERS[parameters.method]
+method: Callable[[Any], PBESolver] = SOLVERS[parameters.solver]
 output_folder: str = parameters.output
 task_timeout: float = parameters.timeout
 constrained: bool = parameters.constrained
