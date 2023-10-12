@@ -3,4 +3,6 @@ from synth.pbe.solvers.pbe_solver import (
     NaivePBESolver,
     CutoffPBESolver,
     ObsEqPBESolver,
+    MetaPBESolver,
 )
+from synth.pbe.solvers.restart_pbe_solver import RestartPBESolver
