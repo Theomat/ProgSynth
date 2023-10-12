@@ -227,7 +227,7 @@ def do_batch(iter_number: int) -> None:
     with chrono.clock("train.do_batch.loss"):
         optim.zero_grad()
         with chrono.clock("train.do_batch.loss.compute"):
-            loss = predictor.bigram_layer.loss_cross_entropy(
+            loss = predictor.bigram_layer.loss_mse(
                 batch_programs, batch_tr, batch_outputs
             )
         with chrono.clock("train.do_batch.loss.backprop"):

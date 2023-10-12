@@ -275,21 +275,25 @@ class UGrammarPredictorLayer(nn.Module, Generic[A, U, V, W]):
                     src[:, start : start + length], dim=-1
                 )
 
-    def loss_cross_entropy(
+    def loss_mse(
         self,
         programs: Iterable[Program],
         type_requests: Iterable[Type],
         batch_outputs: Tensor,
         reduce: Optional[Callable[[Tensor], Tensor]] = torch.mean,
     ) -> Tensor:
-        target = torch.stack(
-            [
-                self.encode(prog, tr, device=batch_outputs.device)
-                for prog, tr in zip(programs, type_requests)
-            ]
+        target = torch.log(
+            1e-5
+            + torch.stack(
+                [
+                    self.encode(prog, tr, device=batch_outputs.device)
+                    for prog, tr in zip(programs, type_requests)
+                ]
+            )
         ).to(device=batch_outputs.device)
-        # Since we already do LogSoftmax we only have to do NNL to get cross entropy
-        out = F.cross_entropy(batch_outputs, target)
+        dst = torch.zeros_like(batch_outputs)
+        self.__normalize__(batch_outputs, dst)
+        out = F.mse_loss(dst, target)
         if reduce:
             out = reduce(out)
         return out
