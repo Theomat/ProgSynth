@@ -160,7 +160,6 @@ def auto_type(el: Union[Dict[str, str], str]) -> Union[Dict[str, Type], Type]:
                         stack.append(Sum(UNIT, stack.pop()))
                     else:
                         stack.append(Generic(w, stack.pop()))
-                    stack.append(Generic(w, stack.pop()))
                 else:
                     stack.append(PrimitiveType(w))
         elif token == _TOK_INFIX:
