@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Dict, Generator, List, Optional, Any
+from typing import Callable, Dict, Generator, List, Optional, Any
 
 from synth.semantic.evaluator import DSLEvaluator
 from synth.specification import PBE
@@ -81,6 +81,60 @@ class NaivePBESolver(PBESolver):
     @classmethod
     def name(cls) -> str:
         return "naive"
+
+
+class MetaPBESolver(PBESolver, ABC):
+    def __init__(
+        self,
+        evaluator: DSLEvaluator,
+        solver_builder: Callable[..., PBESolver] = NaivePBESolver,
+        **kwargs: Any,
+    ) -> None:
+        self.subsolver = solver_builder(evaluator, **kwargs)
+        self.evaluator = evaluator
+        self._stats: Dict[str, Any] = {}
+        self._init_stats_()
+
+    def _init_stats_(self) -> None:
+        super()._init_stats_()
+        self.subsolver._init_stats_()
+        for name, val in self.subsolver._stats.items():
+            if name not in self._stats:
+                self._stats[name] = val
+
+    @classmethod
+    @abstractmethod
+    def name(cls) -> str:
+        pass
+
+    def reset_stats(self) -> None:
+        super().reset_stats()
+        self.subsolver.reset_stats()
+
+    def _init_task_solving_(
+        self, task: Task[PBE], enumerator: HSEnumerator, timeout: float = 60
+    ) -> None:
+        self.subsolver._init_task_solving_(task, enumerator, timeout)
+
+    def _close_task_solving_(
+        self,
+        task: Task[PBE],
+        enumerator: HSEnumerator,
+        time_used: float,
+        solution: bool,
+        last_program: Program,
+    ) -> None:
+        self.subsolver._close_task_solving_(
+            task, enumerator, time_used, solution, last_program
+        )
+        for name, val in self.subsolver._stats.items():
+            self._stats[name] = val
+        super()._close_task_solving_(
+            task, enumerator, time_used, solution, last_program
+        )
+
+    def _test_(self, task: Task[PBE], program: Program) -> bool:
+        return self.subsolver._test_(task, program)
 
 
 class CutoffPBESolver(PBESolver):
