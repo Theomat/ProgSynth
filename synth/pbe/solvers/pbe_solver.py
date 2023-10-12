@@ -15,9 +15,10 @@ class PBESolver(ABC):
         self._stats: Dict[str, Any] = {}
         self._init_stats_()
 
-    @abstractmethod
     def _init_stats_(self) -> None:
-        pass
+        self._stats["programs"] = 0
+        self._stats["time"] = 0
+        self._stats["program_probability"] = 0
 
     @classmethod
     @abstractmethod
@@ -34,51 +35,52 @@ class PBESolver(ABC):
     def available_stats(self) -> List[str]:
         return list(self._stats.keys())
 
-    @abstractmethod
+    def _init_task_solving_(
+        self, task: Task[PBE], enumerator: HSEnumerator, timeout: float = 60
+    ) -> None:
+        self._programs = 0
+
+    def _close_task_solving_(
+        self,
+        task: Task[PBE],
+        enumerator: HSEnumerator,
+        time_used: float,
+        solution: bool,
+        last_program: Program,
+    ) -> None:
+        self._stats["time"] += time_used
+        self._stats["program_probability"] = enumerator.G.probability(last_program)
+        self._stats["program"] += self._programs
+
     def solve(
         self, task: Task[PBE], enumerator: HSEnumerator, timeout: float = 60
     ) -> Generator[Program, bool, None]:
-        pass
+        with chrono.clock(f"solve.{self.name()}") as c:  # type: ignore
+            self._init_task_solving_(task, enumerator, timeout)
+            for program in enumerator:
+                time = c.elapsed_time()
+                if time >= timeout:
+                    self._close_task_solving_(task, enumerator, time, False, program)
+                    return
+                self._programs += 1
+                if self._test_(task, program):
+                    should_stop = yield program
+                    if should_stop:
+                        self._close_task_solving_(task, enumerator, time, True, program)
+                        return
+
+    def _test_(self, task: Task[PBE], program: Program) -> bool:
+        failed = False
+        for ex in task.specification.examples:
+            if self.evaluator.eval(program, ex.inputs) != ex.output:
+                failed = True
+        return not failed
 
 
 class NaivePBESolver(PBESolver):
     @classmethod
     def name(cls) -> str:
         return "naive"
-
-    def _init_stats_(self) -> None:
-        self._stats["programs"] = 0
-        self._stats["time"] = 0
-        self._stats["program_probability"] = 0
-
-    def solve(
-        self, task: Task[PBE], enumerator: HSEnumerator, timeout: float = 60
-    ) -> Generator[Program, bool, None]:
-        with chrono.clock("search.naive") as c:  # type: ignore
-            programs = 0
-            for program in enumerator:
-                time = c.elapsed_time()
-                if time >= timeout:
-                    self._stats["time"] += time
-                    self._stats["program_probability"] = enumerator.G.probability(
-                        program
-                    )
-                    self._stats["program"] += programs
-                    return
-                programs += 1
-                failed = False
-                for ex in task.specification.examples:
-                    if self.evaluator.eval(program, ex.inputs) != ex.output:
-                        failed = True
-                if not failed:
-                    should_stop = yield program
-                    if should_stop:
-                        self._stats["time"] += time
-                        self._stats["program_probability"] = enumerator.G.probability(
-                            program
-                        )
-                        self._stats["program"] += programs
-                        return
 
 
 class CutoffPBESolver(PBESolver):
@@ -90,40 +92,11 @@ class CutoffPBESolver(PBESolver):
     def name(cls) -> str:
         return "cutoff"
 
-    def _init_stats_(self) -> None:
-        self._stats["programs"] = 0
-        self._stats["time"] = 0
-        self._stats["program_probability"] = 0
-
-    def solve(
-        self, task: Task[PBE], enumerator: HSEnumerator, timeout: float = 60
-    ) -> Generator[Program, bool, None]:
-        with chrono.clock("search.cutoff") as c:  # type: ignore
-            programs = 0
-            for program in enumerator:
-                time = c.elapsed_time()
-                if time >= timeout:
-                    self._stats["time"] += time
-                    self._stats["program_probability"] = enumerator.G.probability(
-                        program
-                    )
-                    self._stats["program"] += programs
-                    return
-                programs += 1
-                failed = False
-                for ex in task.specification.examples:
-                    if self.evaluator.eval(program, ex.inputs) != ex.output:
-                        failed = True
-                        break
-                if not failed:
-                    should_stop = yield program
-                    if should_stop:
-                        self._stats["time"] += time
-                        self._stats["program_probability"] = enumerator.G.probability(
-                            program
-                        )
-                        self._stats["program"] += programs
-                        return
+    def _test_(self, task: Task[PBE], program: Program) -> bool:
+        for ex in task.specification.examples:
+            if self.evaluator.eval(program, ex.inputs) != ex.output:
+                return False
+        return True
 
 
 class ObsEqPBESolver(PBESolver):
@@ -136,52 +109,46 @@ class ObsEqPBESolver(PBESolver):
         return "obs-eq"
 
     def _init_stats_(self) -> None:
-        self._stats["programs"] = 0
-        self._stats["time"] = 0
-        self._stats["program_probability"] = 0
+        super()._init_stats_()
         self._stats["merged"] = 0
 
-    def solve(
+    def _init_task_solving_(
         self, task: Task[PBE], enumerator: HSEnumerator, timeout: float = 60
-    ) -> Generator[Program, bool, None]:
-        with chrono.clock("search.obs-eq") as c:  # type: ignore
-            results: Dict[Any, Any] = {}
-            merged = 0
-            programs = 0
-            for program in enumerator:
-                time = c.elapsed_time()
-                if time >= timeout:
-                    self._stats["merged"] += merged
-                    self._stats["time"] += time
-                    self._stats["program_probability"] = enumerator.G.probability(
-                        program
-                    )
-                    self._stats["program"] += programs
-                    return
-                programs += 1
-                failed = False
-                outputs = None
-                for ex in task.specification.examples:
-                    out = self.evaluator.eval(program, ex.inputs)
-                    failed |= out != ex.output
-                    if isinstance(out, list):
-                        outputs = (outputs, tuple(out))
-                    else:
-                        outputs = (outputs, out)  # type: ignore
-                if not failed:
-                    should_stop = yield program
-                    if should_stop:
-                        self._stats["time"] += time
-                        self._stats["program_probability"] = enumerator.G.probability(
-                            program
-                        )
-                        self._stats["merged"] += merged
-                        self._stats["program"] += programs
-                        return
-                else:
-                    original = results.get(outputs)
-                    if original is not None:
-                        enumerator.merge_program(original, program)
-                        merged += 1
-                    else:
-                        results[outputs] = program
+    ) -> None:
+        super()._init_task_solving_(task, enumerator, timeout)
+        self._merged = 0
+        self._results: Dict[Any, Any] = {}
+        self._enumerator = enumerator
+
+    def _close_task_solving_(
+        self,
+        task: Task[PBE],
+        enumerator: HSEnumerator,
+        time_used: float,
+        solution: bool,
+        last_program: Program,
+    ) -> None:
+        super()._close_task_solving_(
+            task, enumerator, time_used, solution, last_program
+        )
+        self._stats["merged"] += self._merged
+
+    def _test_(self, task: Task[PBE], program: Program) -> bool:
+        failed = False
+        outputs = None
+        for ex in task.specification.examples:
+            out = self.evaluator.eval(program, ex.inputs)
+            failed |= out != ex.output
+            if isinstance(out, list):
+                outputs = (outputs, tuple(out))
+            else:
+                outputs = (outputs, out)  # type: ignore
+
+        if failed:
+            original = self._results.get(outputs)
+            if original is not None:
+                self._enumerator.merge_program(original, program)
+                self._merged += 1
+            else:
+                self._results[outputs] = program
+        return not failed
