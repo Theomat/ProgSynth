@@ -23,7 +23,7 @@ def Optional(t: Type) -> Sum:
     """
     Short-hand to create optional types.
     """
-    return Sum(None, t)
+    return Sum(UNIT, t)
 
 
 def FunctionType(*args: Type) -> Type:
