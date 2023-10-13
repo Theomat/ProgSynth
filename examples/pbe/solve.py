@@ -22,7 +22,13 @@ from synth.syntax import (
 )
 from synth.syntax.grammars.enumeration.heap_search import HSEnumerator
 from synth.utils import load_object
-from synth.pbe.solvers import NaivePBESolver, PBESolver, CutoffPBESolver, ObsEqPBESolver
+from synth.pbe.solvers import (
+    NaivePBESolver,
+    PBESolver,
+    CutoffPBESolver,
+    ObsEqPBESolver,
+    RestartPBESolver,
+)
 
 
 import argparse
@@ -32,6 +38,12 @@ SOLVERS = {
     solver.name(): solver
     for solver in [NaivePBESolver, CutoffPBESolver, ObsEqPBESolver]
 }
+base_solvers = {x: y for x, y in SOLVERS.items()}
+for meta_solver in [RestartPBESolver]:
+    for name, solver in base_solvers.items():
+        SOLVERS[f"{meta_solver.name()}.{name}"] = lambda *args, **kwargs: meta_solver(
+            *args, solver_builder=solver, **kwargs
+        )
 
 parser = argparse.ArgumentParser(description="Evaluate model prediction")
 add_dataset_choice_arg(parser)
