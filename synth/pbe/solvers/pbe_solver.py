@@ -68,7 +68,7 @@ class PBESolver(ABC):
     ) -> None:
         self._stats["time"] += time_used
         self._stats["program_probability"] = enumerator.G.probability(last_program)
-        self._stats["program"] += self._programs
+        self._stats["programs"] += self._programs
 
     def solve(
         self, task: Task[PBE], enumerator: HSEnumerator, timeout: float = 60
