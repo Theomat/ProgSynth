@@ -156,6 +156,7 @@ class MetaPBESolver(PBESolver, ABC):
     def _init_task_solving_(
         self, task: Task[PBE], enumerator: HSEnumerator, timeout: float = 60
     ) -> None:
+        super()._init_task_solving_(task, enumerator, timeout)
         self.subsolver._init_task_solving_(task, enumerator, timeout)
 
     def _close_task_solving_(
