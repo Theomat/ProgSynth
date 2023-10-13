@@ -45,12 +45,16 @@ for meta_solver in [RestartPBESolver]:
             *args, solver_builder=solver, **kwargs
         )
 
-parser = argparse.ArgumentParser(description="Evaluate model prediction")
+parser = argparse.ArgumentParser(
+    description="Solve program synthesis tasks", fromfile_prefix_chars="@"
+)
+add_dsl_choice_arg(parser)
 add_dataset_choice_arg(parser)
+parser.add_argument("--pcfg", type=str, help="files containing the predicted PCFGs")
 parser.add_argument(
     "-s",
     "--search",
-    type=str,
+    choices=["heap_search", "bucket_search"],
     default="heap_search",
     help="enumeration algorithm (default: heap_search)",
 )
@@ -58,10 +62,8 @@ parser.add_argument(
     "--solver",
     choices=list(SOLVERS.keys()),
     default="naive",
-    help=f"used solver (default: naive) in {list(SOLVERS.keys())}",
+    help=f"used solver (default: naive)",
 )
-add_dsl_choice_arg(parser)
-parser.add_argument("--pcfg", type=str, help="files containing the predicted PCFGs")
 parser.add_argument(
     "-o", "--output", type=str, default="./", help="output folder (default: './')"
 )
