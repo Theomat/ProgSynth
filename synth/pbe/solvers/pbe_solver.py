@@ -23,7 +23,16 @@ class PBESolver(ABC):
     @classmethod
     @abstractmethod
     def name(cls) -> str:
+        """
+        Returns the name of the class of this solver.
+        """
         pass
+
+    def full_name(self) -> str:
+        """
+        Returns the name of this particular instance of the solver, it may contain additional information.
+        """
+        return self.name()
 
     def reset_stats(self) -> None:
         self._stats = {}
@@ -117,6 +126,12 @@ class MetaPBESolver(PBESolver, ABC):
     @abstractmethod
     def name(cls) -> str:
         pass
+
+    def full_name(self) -> str:
+        """
+        Returns the name of this particular instance of the solver, for meta solver it has the format <solver_full_name>.<sub_solver_full_name>.
+        """
+        return super().full_name() + "." + self.subsolver.full_name()
 
     def reset_stats(self) -> None:
         super().reset_stats()

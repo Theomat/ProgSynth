@@ -203,7 +203,8 @@ if __name__ == "__main__":
 
     pcfgs = load_object(pcfg_file)
     file = os.path.join(
-        output_folder, f"{dataset_name}_{search_algo}_{solver.name()}.csv"
+        output_folder,
+        f"{dataset_name}_{search_algo}_{solver.full_name()}.csv",
     )
     trace = []
     if os.path.exists(file):
