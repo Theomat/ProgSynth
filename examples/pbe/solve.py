@@ -68,6 +68,12 @@ parser.add_argument(
     "-o", "--output", type=str, default="./", help="output folder (default: './')"
 )
 parser.add_argument(
+    "--constrained",
+    action="store_true",
+    default=False,
+    help="use unambigous grammar to include constraints in the grammar if available",
+)
+parser.add_argument(
     "--support",
     type=str,
     default=None,
