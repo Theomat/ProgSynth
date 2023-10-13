@@ -35,13 +35,22 @@ class PBESolver(ABC):
         return self.name()
 
     def reset_stats(self) -> None:
+        """
+        Reset the statistics collected by this solver.
+        """
         self._stats = {}
         self._init_stats_()
 
     def get_stats(self, name: str) -> Optional[Any]:
+        """
+        Get a stat by name or None if it does not exist.
+        """
         return self._stats.get(name, None)
 
     def available_stats(self) -> List[str]:
+        """
+        List the name of all currently avialable stats.
+        """
         return list(self._stats.keys())
 
     def _init_task_solving_(
@@ -64,6 +73,13 @@ class PBESolver(ABC):
     def solve(
         self, task: Task[PBE], enumerator: HSEnumerator, timeout: float = 60
     ) -> Generator[Program, bool, None]:
+        """
+        Solve the given task by enumerating programs with the given enumerator.
+        When the timeout is reached, this function returns.
+        When a program that satisfies the task has been found, yield it.
+        The calling function should then send True if and only if it accepts the solution.
+        If False is sent the search continues.
+        """
         with chrono.clock(f"solve.{self.name()}") as c:  # type: ignore
             self._init_task_solving_(task, enumerator, timeout)
             for program in enumerator:
@@ -165,7 +181,7 @@ class MetaPBESolver(PBESolver, ABC):
 
 class CutoffPBESolver(PBESolver):
     """
-    A solver that fails a program on first fail.
+    A solver that fails a program on first example that fails.
     """
 
     @classmethod
@@ -185,7 +201,7 @@ class CutoffPBESolver(PBESolver):
 
 class ObsEqPBESolver(PBESolver):
     """
-    A solver that use observational equivalence.
+    A solver that uses observational equivalence.
     """
 
     @classmethod
