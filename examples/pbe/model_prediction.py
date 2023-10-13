@@ -1,3 +1,4 @@
+import argparse
 import atexit
 import os
 import sys
@@ -27,15 +28,13 @@ from synth.syntax import (
 )
 from synth.utils import load_object, save_object
 
-import argparse
-
 
 parser = argparse.ArgumentParser(
     description="Predict Probabilistic grammars for a dataset"
 )
-parser.add_argument("-m", "--model", default="", type=str, help="model file")
-add_dataset_choice_arg(parser)
 add_dsl_choice_arg(parser)
+add_dataset_choice_arg(parser)
+parser.add_argument("-m", "--model", default="", type=str, help="model file")
 add_model_choice_arg(parser)
 parser.add_argument(
     "--support",
