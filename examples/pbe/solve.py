@@ -222,9 +222,12 @@ if __name__ == "__main__":
     solver: PBESolver = method(evaluator=evaluator)
 
     pcfgs = load_object(pcfg_file)
+    model_name = os.path.split(pcfg_file)[1][
+        len(f"pcfgs_{dataset_name}_") : -len(".pickle")
+    ]
     file = os.path.join(
         output_folder,
-        f"{dataset_name}_{search_algo}_{solver.full_name()}.csv",
+        f"{dataset_name}_{search_algo}_{model_name}_{solver.full_name()}.csv",
     )
     trace = []
     if os.path.exists(file):
