@@ -17,6 +17,7 @@ class DatasetUnpickler(pickle.Unpickler):
 
 def add_dataset_choice_arg(parser: ArgumentParser) -> None:
     parser.add_argument(
+        "-d",
         "--dataset",
         type=str,
         default="{dsl_name}.pickle",
