@@ -43,10 +43,25 @@ def load_data(
             reader = csv.reader(fd)
             trace = [tuple(row) for row in reader]
             # Pop columns names
-            trace.pop(0)
+            columns = {name: ind for ind, name in enumerate(trace.pop(0))}
+            indices = [
+                columns["solved"],
+                columns["time"],
+                columns["programs"],
+                columns.get("merged", -1),
+                columns.get("restarts", -1),
+            ]
+            data = [tuple(row[k] if k >= 0 else 0 for k in indices) for row in trace]
             # Type conversion (success, time, num_of_programs)
             trace = [
-                (int(row[0] == "True"), float(row[1]), int(row[2])) for row in trace
+                (
+                    int(row[0] == "True"),
+                    float(row[1]),
+                    int(row[2]),
+                    int(row[3]),
+                    int(row[4]),
+                )
+                for row in data
             ]
             for x in trace:
                 if x[0] == 0:
@@ -193,6 +208,8 @@ __DATA__ = {
     "tasks": (0, "Tasks completed", 10, True, True),
     "time": (1, "Time (in s)", 5, False, False),
     "programs": (2, "Programs Enumerated", 0, False, False),
+    "merges": (3, "Programs Merged", 0, False, False),
+    "restarts": (4, "Retsarts", 0, False, False),
 }
 
 
