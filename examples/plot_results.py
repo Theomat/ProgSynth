@@ -25,11 +25,11 @@ def load_data(
                 print(f"\tskipped: does not start with {dataset_name}")
             continue
         name = filename[len(dataset_name) : -4]
-        if not name.startswith("_seed_"):
+        if "_seed_" not in name:
             if verbose:
-                print(f"\tskipped: does not start with {dataset_name}_seed_")
+                print(f"\tskipped: does not contain _seed_")
             continue
-        name = name[6:]
+        name = name[name.index("_seed_") + len("_seed_") :]
         seed = int(name[: name.index("_")])
         name = name[name.index("_") + 1 :].replace("_", " ")
         if name not in methods:
