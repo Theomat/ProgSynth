@@ -165,6 +165,8 @@ def plot_with_incertitude(
 
     x_min = np.min(np.array(x))
     x_max = np.max(np.array(x))
+    if x_max == x_min:
+        return
     target_x = np.arange(x_min, x_max + 1, step=(x_max - x_min) / 50)
     # Interpolate data
     data = []
