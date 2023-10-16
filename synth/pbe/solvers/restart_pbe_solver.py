@@ -65,6 +65,7 @@ class RestartPBESolver(MetaPBESolver):
                             task, self._enumerator, time, True, program
                         )
                         return
+                self._score = self.subsolver._score
                 # Saves data
                 if self._score > 0:
                     self._data.append((program, self._score))
