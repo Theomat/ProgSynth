@@ -94,7 +94,7 @@ class TaggedUGrammar(UGrammar[U, V, W], Generic[T, U, V, W]):
         new_start_tags: Dict[Tuple[Type, U], T] = {
             key: value + other.start_tags[key] for key, value in self.start_tags.items()  # type: ignore
         }
-        return TaggedUGrammar(self.grammar, new_probs, new_start_tags)
+        return self.__class__(self.grammar, new_probs, new_start_tags)
 
 
 class ProbUGrammar(TaggedUGrammar[float, U, V, W]):

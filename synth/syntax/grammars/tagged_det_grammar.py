@@ -92,7 +92,7 @@ class TaggedDetGrammar(DetGrammar[U, V, W], Generic[T, U, V, W]):
                 else:
                     safe = {P: other.tags[S][P]}
                 new_probs[S][P] = self.tags.get(S, safe)[P] + other.tags.get(S, safe)[P]  # type: ignore
-        return TaggedDetGrammar(self.grammar, new_probs)
+        return self.__class__(self.grammar, new_probs)
 
 
 class ProbDetGrammar(TaggedDetGrammar[float, U, V, W]):
