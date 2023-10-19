@@ -91,6 +91,7 @@ class RestartPBESolver(MetaPBESolver):
 
         for program, score in self._data:
             pcfg.reduce_derivations(reduce, score, program)
+        pcfg = pcfg + (pcfg.uniform(pcfg.grammar) * 0.027619514)
         pcfg.normalise()
         new_enumerator = enumerator.__class__(pcfg)
         new_enumerator.deleted = enumerator.deleted.copy()
