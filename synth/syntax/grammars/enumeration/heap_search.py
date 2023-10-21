@@ -15,7 +15,8 @@ from typing import (
 from dataclasses import dataclass, field
 from abc import ABC, abstractmethod
 
-from synth.syntax.program import Program, Function, Variable
+from synth.syntax.grammars.enumeration.program_enumerator import ProgramEnumerator
+from synth.syntax.program import Program, Function
 from synth.syntax.grammars.tagged_det_grammar import ProbDetGrammar
 from synth.syntax.type_system import Type
 from synth.utils.ordered import Ordered
@@ -34,7 +35,11 @@ class HeapElement:
         return f"({self.priority}, {self.program})"
 
 
-class HSEnumerator(ABC, Generic[U, V, W]):
+class HSEnumerator(
+    ProgramEnumerator[None],
+    ABC,
+    Generic[U, V, W],
+):
     def __init__(
         self, G: ProbDetGrammar[U, V, W], threshold: Optional[Ordered] = None
     ) -> None:
@@ -72,6 +77,13 @@ class HSEnumerator(ABC, Generic[U, V, W]):
             Union[Tuple[Type, U], Tuple[Tuple[Type, U], Program]], Program
         ] = {}
 
+    def probability(self, program: Program) -> float:
+        return self.G.probability(program)
+
+    @classmethod
+    def name(cls) -> str:
+        return "heap-search"
+
     def generator(self) -> Generator[Program, None, None]:
         """
         A generator which outputs the next most probable program
@@ -89,9 +101,6 @@ class HSEnumerator(ABC, Generic[U, V, W]):
             self.seen.add(h)
             self.current = program
             yield program
-
-    def __iter__(self) -> Generator[Program, None, None]:
-        return self.generator()
 
     def __init_non_terminal__(self, S: Tuple[Type, U]) -> None:
         if S in self._init:

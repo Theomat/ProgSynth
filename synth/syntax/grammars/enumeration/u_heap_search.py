@@ -14,6 +14,7 @@ from typing import (
 )
 from abc import ABC, abstractmethod
 
+from synth.syntax.grammars.enumeration.program_enumerator import ProgramEnumerator
 from synth.syntax.grammars.enumeration.heap_search import HeapElement, Bucket
 from synth.syntax.program import Program, Function
 from synth.syntax.grammars.tagged_u_grammar import ProbUGrammar
@@ -41,7 +42,7 @@ def __wrap__(el: Union[U, List[U]]) -> Union[U, Tuple[U, ...]]:
     return el
 
 
-class UHSEnumerator(ABC, Generic[U, V, W]):
+class UHSEnumerator(ProgramEnumerator[None], ABC, Generic[U, V, W]):
     def __init__(
         self, G: ProbUGrammar[U, V, W], threshold: Optional[Ordered] = None
     ) -> None:
@@ -78,6 +79,10 @@ class UHSEnumerator(ABC, Generic[U, V, W]):
             Union[Tuple[Type, U], Tuple[Tuple[Type, U], Program, V]], Program
         ] = {}
 
+    @classmethod
+    def name(cls) -> str:
+        return "u-heap-search"
+
     def generator(self) -> Generator[Program, None, None]:
         """
         A generator which outputs the next most probable program
@@ -96,8 +101,8 @@ class UHSEnumerator(ABC, Generic[U, V, W]):
             self.current = program
             yield program
 
-    def __iter__(self) -> Generator[Program, None, None]:
-        return self.generator()
+    def probability(self, program: Program) -> float:
+        return self.G.probability(program)
 
     def __init_helper__(
         self,
