@@ -20,7 +20,7 @@ from synth.syntax import (
     enumerate_bucket_prob_u_grammar,
     DSL,
 )
-from synth.syntax.grammars.enumeration.heap_search import HSEnumerator
+from synth.syntax.grammars.enumeration.program_enumerator import ProgramEnumerator
 from synth.utils import load_object
 from synth.pbe.solvers import (
     NaivePBESolver,
@@ -164,7 +164,9 @@ def enumerative_search(
     pcfgs: Union[List[ProbDetGrammar], List[ProbUGrammar]],
     trace: List[Tuple[bool, float]],
     solver: PBESolver,
-    custom_enumerate: Callable[[Union[ProbDetGrammar, ProbUGrammar]], HSEnumerator],
+    custom_enumerate: Callable[
+        [Union[ProbDetGrammar, ProbUGrammar]], ProgramEnumerator
+    ],
 ) -> None:
 
     start = max(0, len(trace) - 1)

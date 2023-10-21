@@ -3,7 +3,7 @@ from typing import Callable, Dict, Generator, List, Optional, Any
 
 from synth.semantic.evaluator import DSLEvaluator
 from synth.specification import PBE
-from synth.syntax.grammars.enumeration.heap_search import HSEnumerator
+from synth.syntax.grammars.enumeration.program_enumerator import ProgramEnumerator
 from synth.syntax.program import Program
 from synth.task import Task
 from synth.utils import chrono
@@ -54,24 +54,24 @@ class PBESolver(ABC):
         return list(self._stats.keys())
 
     def _init_task_solving_(
-        self, task: Task[PBE], enumerator: HSEnumerator, timeout: float = 60
+        self, task: Task[PBE], enumerator: ProgramEnumerator[None], timeout: float = 60
     ) -> None:
         self._programs = 0
 
     def _close_task_solving_(
         self,
         task: Task[PBE],
-        enumerator: HSEnumerator,
+        enumerator: ProgramEnumerator[None],
         time_used: float,
         solution: bool,
         last_program: Program,
     ) -> None:
         self._stats["time"] += time_used
-        self._stats["program_probability"] = enumerator.G.probability(last_program)
+        self._stats["program_probability"] = enumerator.probability(last_program)
         self._stats["programs"] += self._programs
 
     def solve(
-        self, task: Task[PBE], enumerator: HSEnumerator, timeout: float = 60
+        self, task: Task[PBE], enumerator: ProgramEnumerator[None], timeout: float = 60
     ) -> Generator[Program, bool, None]:
         """
         Solve the given task by enumerating programs with the given enumerator.
@@ -154,7 +154,7 @@ class MetaPBESolver(PBESolver, ABC):
         self.subsolver.reset_stats()
 
     def _init_task_solving_(
-        self, task: Task[PBE], enumerator: HSEnumerator, timeout: float = 60
+        self, task: Task[PBE], enumerator: ProgramEnumerator[None], timeout: float = 60
     ) -> None:
         super()._init_task_solving_(task, enumerator, timeout)
         self.subsolver._init_task_solving_(task, enumerator, timeout)
@@ -162,7 +162,7 @@ class MetaPBESolver(PBESolver, ABC):
     def _close_task_solving_(
         self,
         task: Task[PBE],
-        enumerator: HSEnumerator,
+        enumerator: ProgramEnumerator[None],
         time_used: float,
         solution: bool,
         last_program: Program,
@@ -214,7 +214,7 @@ class ObsEqPBESolver(PBESolver):
         self._stats["merged"] = 0
 
     def _init_task_solving_(
-        self, task: Task[PBE], enumerator: HSEnumerator, timeout: float = 60
+        self, task: Task[PBE], enumerator: ProgramEnumerator[None], timeout: float = 60
     ) -> None:
         super()._init_task_solving_(task, enumerator, timeout)
         self._merged = 0
@@ -224,7 +224,7 @@ class ObsEqPBESolver(PBESolver):
     def _close_task_solving_(
         self,
         task: Task[PBE],
-        enumerator: HSEnumerator,
+        enumerator: ProgramEnumerator[None],
         time_used: float,
         solution: bool,
         last_program: Program,

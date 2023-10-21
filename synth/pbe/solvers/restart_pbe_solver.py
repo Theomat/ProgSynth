@@ -2,7 +2,7 @@ from typing import Any, Generator, List, Tuple
 
 
 from synth.specification import PBE
-from synth.syntax.grammars.enumeration.heap_search import HSEnumerator
+from synth.syntax.grammars.enumeration.program_enumerator import ProgramEnumerator
 from synth.syntax.grammars.grammar import DerivableProgram
 from synth.syntax.program import Program
 from synth.syntax.type_system import Type
@@ -21,7 +21,7 @@ class RestartPBESolver(MetaPBESolver):
         return "restart"
 
     def _init_task_solving_(
-        self, task: Task[PBE], enumerator: HSEnumerator, timeout: float = 60
+        self, task: Task[PBE], enumerator: ProgramEnumerator[None], timeout: float = 60
     ) -> None:
         super()._init_task_solving_(task, enumerator, timeout)
         self._restarts = 0
@@ -31,7 +31,7 @@ class RestartPBESolver(MetaPBESolver):
     def _close_task_solving_(
         self,
         task: Task[PBE],
-        enumerator: HSEnumerator,
+        enumerator: ProgramEnumerator[None],
         time_used: float,
         solution: bool,
         last_program: Program,
@@ -42,7 +42,7 @@ class RestartPBESolver(MetaPBESolver):
         self._stats["restarts"] += self._restarts
 
     def solve(
-        self, task: Task[PBE], enumerator: HSEnumerator, timeout: float = 60
+        self, task: Task[PBE], enumerator: ProgramEnumerator[None], timeout: float = 60
     ) -> Generator[Program, bool, None]:
         with chrono.clock(f"solve.{self.name()}.{self.subsolver.name()}") as c:  # type: ignore
             self._enumerator = enumerator
@@ -79,8 +79,8 @@ class RestartPBESolver(MetaPBESolver):
     def _should_restart_(self) -> bool:
         return len(self._data) - self._last_size > 10000
 
-    def _restart_(self, enumerator: HSEnumerator) -> HSEnumerator:
-        pcfg = enumerator.G * 0
+    def _restart_(self, enumerator: ProgramEnumerator[None]) -> ProgramEnumerator[None]:
+        pcfg = enumerator.G * 0  # type: ignore
         self._last_size = len(self._data)
 
         def reduce(
@@ -93,7 +93,7 @@ class RestartPBESolver(MetaPBESolver):
             pcfg.reduce_derivations(reduce, score, program)
         pcfg = pcfg + (pcfg.uniform(pcfg.grammar) * 0.027619514)
         pcfg.normalise()
-        new_enumerator = enumerator.__class__(pcfg)
-        new_enumerator.deleted = enumerator.deleted.copy()
-        new_enumerator.seen = enumerator.seen.copy()
+        new_enumerator = enumerator.__class__(pcfg)  # type: ignore
+        new_enumerator.deleted = enumerator.deleted.copy()  # type: ignore
+        new_enumerator.seen = enumerator.seen.copy()  # type: ignore
         return new_enumerator
