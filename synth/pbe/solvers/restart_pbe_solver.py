@@ -93,7 +93,5 @@ class RestartPBESolver(MetaPBESolver):
             pcfg.reduce_derivations(reduce, score, program)
         pcfg = pcfg + (pcfg.uniform(pcfg.grammar) * 0.027619514)
         pcfg.normalise()
-        new_enumerator = enumerator.__class__(pcfg)  # type: ignore
-        new_enumerator.deleted = enumerator.deleted.copy()  # type: ignore
-        new_enumerator.seen = enumerator.seen.copy()  # type: ignore
+        new_enumerator = enumerator.clone_with_memory(pcfg)
         return new_enumerator

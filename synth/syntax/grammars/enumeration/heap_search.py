@@ -16,6 +16,7 @@ from dataclasses import dataclass, field
 from abc import ABC, abstractmethod
 
 from synth.syntax.grammars.enumeration.program_enumerator import ProgramEnumerator
+from synth.syntax.grammars.tagged_u_grammar import ProbUGrammar
 from synth.syntax.program import Program, Function
 from synth.syntax.grammars.tagged_det_grammar import ProbDetGrammar
 from synth.syntax.type_system import Type
@@ -236,6 +237,15 @@ class HSEnumerator(
     @abstractmethod
     def compute_priority(self, S: Tuple[Type, U], new_program: Program) -> Ordered:
         pass
+
+    def clone_with_memory(
+        self, G: Union[ProbDetGrammar, ProbUGrammar]
+    ) -> "HSEnumerator[U, V, W]":
+        assert isinstance(G, ProbDetGrammar)
+        enum = self.__class__(G, self.threshold)
+        enum.deleted = self.deleted.copy()
+        enum.seen = self.seen.copy()
+        return enum
 
 
 class HeapSearch(HSEnumerator[U, V, W]):

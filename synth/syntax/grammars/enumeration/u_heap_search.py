@@ -18,6 +18,7 @@ from synth.syntax.grammars.enumeration.program_enumerator import ProgramEnumerat
 from synth.syntax.grammars.enumeration.heap_search import HeapElement, Bucket
 from synth.syntax.program import Program, Function
 from synth.syntax.grammars.tagged_u_grammar import ProbUGrammar
+from synth.syntax.grammars.tagged_det_grammar import ProbDetGrammar
 from synth.syntax.type_system import Type
 from synth.utils.ordered import Ordered
 
@@ -311,6 +312,15 @@ class UHSEnumerator(ProgramEnumerator[None], ABC, Generic[U, V, W]):
         self, priority: Ordered, start: Tuple[Type, U]
     ) -> Ordered:
         pass
+
+    def clone_with_memory(
+        self, G: Union[ProbDetGrammar, ProbUGrammar]
+    ) -> "UHSEnumerator[U, V, W]":
+        assert isinstance(G, ProbUGrammar)
+        enum = self.__class__(G, self.threshold)
+        enum.deleted = self.deleted.copy()
+        enum.seen = self.seen.copy()
+        return enum
 
 
 class UHeapSearch(UHSEnumerator[U, V, W]):

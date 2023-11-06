@@ -19,6 +19,7 @@ from synth.syntax.grammars.enumeration.program_enumerator import ProgramEnumerat
 from synth.syntax.grammars.grammar import DerivableProgram
 from synth.syntax.program import Program, Function
 from synth.syntax.grammars.tagged_det_grammar import ProbDetGrammar
+from synth.syntax.grammars.tagged_u_grammar import ProbUGrammar
 from synth.syntax.type_system import Type
 from synth.utils.ordered import Ordered
 
@@ -41,8 +42,7 @@ class BSEnumerator(
     ABC,
     Generic[U, V, W],
 ):
-    def __init__(
-        self, G: ProbDetGrammar[U, V, W]) -> None:
+    def __init__(self, G: ProbDetGrammar[U, V, W]) -> None:
         self.G = G
         self.bank: Dict[Tuple[Type, U], Dict[int, List[Program]]] = defaultdict(
             lambda: defaultdict(list)
@@ -82,7 +82,7 @@ class BSEnumerator(
                 # Init bank with terminals
                 if nargs == 0:
                     self.bank[S][1].append(P)
-                    max_priority = min(max_priority, self.compute_priority(P, []))
+                    max_priority = min(max_priority, self.compute_priority(P, []))  # type: ignore
 
     def _possible_args_(
         self, info: W, S: Tuple[Type, U], cost_tuple: Tuple[int, ...], n: int
@@ -102,7 +102,7 @@ class BSEnumerator(
     ) -> Generator[Tuple[Program, int], None, None]:
         info, S = self.G.derive(self.G.start_information(), S, P)
         for args in self._possible_args_(info, S, cost_tuple, 0):
-            yield Function(P, args), self.compute_priority(P, args)
+            yield Function(P, args), self.compute_priority(P, args)  # type: ignore
 
     def query(self) -> HeapElement:
         elem = heappop(self.Q)
@@ -128,3 +128,10 @@ class BSEnumerator(
     @abstractmethod
     def compute_priority(self, P: DerivableProgram, args: List[Program]) -> Ordered:
         pass
+
+    def clone_with_memory(
+        self, G: Union[ProbDetGrammar, ProbUGrammar]
+    ) -> "BSEnumerator[U, V, W]":
+        assert isinstance(G, ProbDetGrammar)
+        enum = self.__class__(G)
+        return enum
