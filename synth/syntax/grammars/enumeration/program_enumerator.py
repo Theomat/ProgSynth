@@ -21,8 +21,8 @@ class ProgramEnumerator(ABC, Generic[U]):
     If U is None then no feedback is expected.
     """
 
-    @abstractmethod
     @classmethod
+    @abstractmethod
     def name(cls) -> str:
         pass
 
