@@ -6,14 +6,16 @@ from typing import (
     Generic,
     Iterable,
     List,
+    Optional,
     Set,
     Tuple,
     TypeVar,
     Union,
 )
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from abc import ABC, abstractmethod
 import bisect
+from synth.syntax.grammars.cfg import CFG
 
 from synth.syntax.grammars.enumeration.program_enumerator import ProgramEnumerator
 from synth.syntax.grammars.grammar import DerivableProgram
@@ -45,6 +47,7 @@ class BSEnumerator(
     Generic[U, V, W],
 ):
     def __init__(self, G: ProbDetGrammar[U, V, W]) -> None:
+        assert isinstance(G.grammar, CFG)
         self.G = G
         self._seen: Set[Program] = set()
 
@@ -129,11 +132,14 @@ class BSEnumerator(
         self, S: Tuple[Type, U], P: DerivableProgram, index: int
     ) -> Tuple[Type, U]:
         Sp = self.G.rules[S][P][0][index]  # type: ignore
+        # print("Fom S=", S, "getting:", Sp, "->", (Sp[0], (Sp[1], None)))
         return (Sp[0], (Sp[1], None))  # type: ignore
 
     def generator(self) -> Generator[Program, None, None]:
-        while self.order < 10000:
+        while True:
             non_terminals, cost = self._next_cheapest_()
+            if cost is None:
+                break
             # print("cost=", cost)
             if len(non_terminals) == 0:
                 if self._terminals:
@@ -155,7 +161,7 @@ class BSEnumerator(
                 yield program
             self._next_combination_()
 
-    def _next_cheapest_(self) -> Tuple[List[Tuple[Type, U]], Ordered]:
+    def _next_cheapest_(self) -> Tuple[List[Tuple[Type, U]], Optional[Ordered]]:
         cheapest = None
         non_terminals_container: List[Tuple[Type, U]] = []
         for S, heap in self._prog_queued.items():
@@ -173,7 +179,6 @@ class BSEnumerator(
         ):
             cheapest = self._terminals[0].cost
             non_terminals_container = []
-        assert cheapest is not None
         return non_terminals_container, cheapest
 
     def _next_combination_(self) -> None:

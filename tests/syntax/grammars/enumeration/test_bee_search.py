@@ -29,7 +29,7 @@ dsl = DSL(syntax)
 dsl.instantiate_polymorphic_types()
 testdata = [
     CFG.depth_constraint(dsl, FunctionType(INT, INT), 3),
-    # TTCFG.size_constraint(dsl, FunctionType(INT, INT), 5),
+    CFG.depth_constraint(dsl, FunctionType(INT, INT), 4),
 ]
 
 
