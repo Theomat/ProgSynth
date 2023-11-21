@@ -14,13 +14,14 @@ from synth.semantic.evaluator import DSLEvaluatorWithConstant
 from synth.syntax import (
     ProbDetGrammar,
     ProbUGrammar,
-    enumerate_prob_grammar,
-    enumerate_prob_u_grammar,
-    enumerate_bucket_prob_grammar,
-    enumerate_bucket_prob_u_grammar,
     DSL,
+    hs_enumerate_prob_grammar,
+    bs_enumerate_prob_grammar,
+    hs_enumerate_prob_u_grammar,
+    hs_enumerate_bucket_prob_grammar,
+    hs_enumerate_bucket_prob_u_grammar,
+    ProgramEnumerator,
 )
-from synth.syntax.grammars.enumeration.program_enumerator import ProgramEnumerator
 from synth.utils import load_object
 from synth.pbe.solvers import (
     NaivePBESolver,
@@ -45,6 +46,15 @@ for meta_solver in [RestartPBESolver]:
             *args, solver_builder=solver, **kwargs
         )
 
+SEARCH_ALGOS = {
+    "heap_search": (hs_enumerate_prob_grammar, hs_enumerate_prob_u_grammar),
+    "bucket_search": (
+        lambda x: hs_enumerate_bucket_prob_grammar(x, 3),
+        lambda x: hs_enumerate_bucket_prob_u_grammar(x, 3),
+    ),
+    "bee_search": (bs_enumerate_prob_grammar, None),
+}
+
 parser = argparse.ArgumentParser(
     description="Solve program synthesis tasks", fromfile_prefix_chars="@"
 )
@@ -54,9 +64,9 @@ parser.add_argument("--pcfg", type=str, help="files containing the predicted PCF
 parser.add_argument(
     "-s",
     "--search",
-    choices=["heap_search", "bucket_search"],
-    default="heap_search",
-    help="enumeration algorithm (default: heap_search)",
+    choices=SEARCH_ALGOS.keys(),
+    default=list(SEARCH_ALGOS.keys())[0],
+    help=f"enumeration algorithm (default: {list(SEARCH_ALGOS.keys())[0]})",
 )
 parser.add_argument(
     "--solver",
@@ -105,20 +115,13 @@ elif support is not None and (
 ):
     print("Support dataset must be a valid dataset file!", file=sys.stderr)
     sys.exit(1)
-if search_algo == "heap_search":
-    custom_enumerate = (
-        enumerate_prob_grammar if not constrained else enumerate_prob_u_grammar
-    )
-elif search_algo == "bucket_search":
-    custom_enumerate = (
-        lambda x: enumerate_bucket_prob_grammar(x, 3)
-        if not constrained
-        else enumerate_bucket_prob_u_grammar(x, 3)
-    )
-    # TODO: add parameter for bucket_search size
-else:
+
+det_search, u_search = SEARCH_ALGOS[search_algo]
+custom_enumerate = u_search if constrained else det_search
+if custom_enumerate is None:
+    txt = "det-CFG" if not constrained else "UCFG"
     print(
-        "search algorithm must be a valid name (heap_search / bucket_search)!",
+        f"search algorithm {search_algo} does not support enumeration for {txt}!",
         file=sys.stderr,
     )
     sys.exit(1)
