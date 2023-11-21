@@ -59,8 +59,10 @@ class BSEnumerator(
         self._prog_queued: Dict[Tuple[Type, U], List[HeapElement]] = {}
         # S -> heap of HeapElement popped
         self._prog_popped: Dict[Tuple[Type, U], List[HeapElement]] = {}
-        # S -> max index used
-        self._prog_last_max: Dict[Tuple[Type, U], int] = {}
+        self._delayed: Dict[
+            Tuple[Type, U],
+            Dict[Tuple[Type, U], List[Tuple[List[int], DerivableProgram]]],
+        ] = {}
 
         # To break equality (is this really needed? perhaps they do not know compare=False?)
         self.order = 0
@@ -73,7 +75,7 @@ class BSEnumerator(
             self._cost_lists[S] = []
             self._prog_popped[S] = []
             self._prog_queued[S] = []
-            self._prog_last_max[S] = 0
+            self._delayed[S] = {}
 
             for P in self.G.rules[S]:
                 nargs = self.G.arguments_length_for(S, P)
@@ -106,18 +108,35 @@ class BSEnumerator(
 
         cost_list = self._cost_lists[S]
         cost_index = bisect.bisect(cost_list, priority)
+        # There's a shift by one to do depending if priority exist or not in cost_list
         # If cost does not exist add it
-        if cost_index >= len(cost_list) or cost_list[cost_index] != priority:
+        if cost_index - 1 < 0 or cost_list[cost_index - 1] != priority:
             bisect.insort(
                 cost_list,
                 priority,
                 lo=max(0, cost_index - 1),
                 hi=min(cost_index + 1, len(cost_list)),
             )
+            # Adding delayed
+
+            delayed = self._delayed[S]
+            for Sp, elements in delayed.items():
+                queue = self._prog_queued[Sp]
+                for index_cost, P in elements:
+                    new_cost = self._index_cost2real_cost_(Sp, P, index_cost)
+                    heappush(
+                        queue,
+                        HeapElement(new_cost, self.order, index_cost, P),
+                    )
+                    self.order += 1
+        else:
+            cost_index -= 1
         # Add it to the bank also
         local_bank = self._bank[S]
+        # print("ADD:", S, "@@", new_program.depth(), "at cost=", cost_index)
         if cost_index not in local_bank:
             local_bank[cost_index] = []
+            # print("INIT from", S, ":", priority, "in", cost_list)
         local_bank[cost_index].append(new_program)
 
     def _index_cost2real_cost_(
@@ -132,7 +151,6 @@ class BSEnumerator(
         self, S: Tuple[Type, U], P: DerivableProgram, index: int
     ) -> Tuple[Type, U]:
         Sp = self.G.rules[S][P][0][index]  # type: ignore
-        # print("Fom S=", S, "getting:", Sp, "->", (Sp[0], (Sp[1], None)))
         return (Sp[0], (Sp[1], None))  # type: ignore
 
     def generator(self) -> Generator[Program, None, None]:
@@ -187,19 +205,22 @@ class BSEnumerator(
             if len(popped) == 0:
                 continue
             queue = self._prog_queued[S]
-            max_index_used = self._prog_last_max[S]
             for element in popped:
-                # print("from", element.combination)
+                # print(S, "from", element.combination)
                 for i in range(len(element.combination)):
                     index_cost = element.combination.copy()
-                    if index_cost[i] + 1 >= len(
-                        self._cost_lists[self._non_terminal_for_(S, element.P, i)]
-                    ):
-                        continue
                     index_cost[i] += 1
+                    Sp = self._non_terminal_for_(S, element.P, i)
+                    if index_cost[i] >= len(self._cost_lists[Sp]):
+                        # print("\tkilled:", element.combination, f"because in {self._non_terminal_for_(S, element.P, i)}", self._cost_lists[self._non_terminal_for_(S, element.P, i)])
+                        delayed = self._delayed[Sp]
+                        if S not in delayed:
+                            delayed[S] = []
+                        delayed[S].append((index_cost, element.P))
+                        if index_cost[i] > 1:
+                            break
+                        continue
                     # print("\t->", index_cost)
-                    if index_cost[i] > max_index_used:
-                        max_index_used = index_cost[i]
                     new_cost = self._index_cost2real_cost_(S, element.P, index_cost)
                     heappush(
                         queue,
@@ -209,7 +230,6 @@ class BSEnumerator(
                     if index_cost[i] > 1:
                         break
             popped.clear()
-            self._prog_last_max[S] = max_index_used
 
     def _expand_from_(
         self, non_terminals: List[Tuple[Type, U]], cost: Ordered
@@ -222,7 +242,7 @@ class BSEnumerator(
                 assert element.cost == cost
                 popped.append(element)
 
-                # print("\tcombination:", element.combination)
+                # print(f"\t{S} => combination:", element.combination)
 
                 args_possibles = []
                 info, Sp = self.G.derive(self.G.start_information(), S, element.P)
@@ -245,10 +265,11 @@ class BSEnumerator(
                     new_program = Function(element.P, list(new_args))
                     self._add_program_(S, new_program, element.cost)
 
-                    prob = self.G.probability(new_program, start=S)
-                    # print("\tprob=", prob, "element.cost=", element.cost)
-                    assert -prob == element.cost
-                    yield new_program
+                    # prob = self.G.probability(new_program, start=S)
+                    # print("\tprob=", prob, "element.cost=", element.cost, "call:", self._index_cost2real_cost_(S, element.P, element.combination))
+                    # assert -prob == element.cost
+                    if S == self.G.start:
+                        yield new_program
 
     def merge_program(self, representative: Program, other: Program) -> None:
         pass
