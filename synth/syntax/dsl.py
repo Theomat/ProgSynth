@@ -47,6 +47,8 @@ class DSL:
         for P in self.list_primitives:
             set_basic_types_P, set_polymorphic_types_P = P.type.decompose_type()
             set_basic_types = set_basic_types | set_basic_types_P
+        if UNIT in set_basic_types:
+            set_basic_types.remove(UNIT)
 
         set_types = set(set_basic_types)
         for type_ in set_basic_types:
@@ -62,7 +64,7 @@ class DSL:
         # Replace Primitive with Polymorphic types with their instanciated counterpart
         for P in self.list_primitives[:]:
             type_P = P.type
-            set_basic_types_P, set_polymorphic_types_P = type_P.decompose_type()
+            _, set_polymorphic_types_P = type_P.decompose_type()
             if set_polymorphic_types_P:
                 set_instantiated_types: Set[Type] = set()
                 set_instantiated_types.add(type_P)
