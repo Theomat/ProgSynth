@@ -22,11 +22,13 @@ class RestartPBESolver(MetaPBESolver):
         )
         - self._last_size
         > 10000,
+        uniform_prior: float = 0.05,
         **kwargs: Any,
     ) -> None:
         super().__init__(evaluator, solver_builder, **kwargs)
         self.restart_criterion = restart_criterion
         self._last_size: int = 0
+        self.uniform_prior = uniform_prior
 
     def _init_stats_(self) -> None:
         super()._init_stats_()
@@ -107,7 +109,8 @@ class RestartPBESolver(MetaPBESolver):
 
         for program, score in self._data:
             pcfg.reduce_derivations(reduce, score, program)
-        pcfg = pcfg + (pcfg.uniform(pcfg.grammar) * 0.027619514)
+        if self.uniform_prior > 0:
+            pcfg = pcfg + (pcfg.uniform(pcfg.grammar) * self.uniform_prior)
         pcfg.normalise()
         new_enumerator = enumerator.clone_with_memory(pcfg)
         return new_enumerator
