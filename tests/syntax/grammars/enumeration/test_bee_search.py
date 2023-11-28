@@ -12,7 +12,7 @@ from synth.syntax.type_system import (
     PolymorphicType,
     PrimitiveType,
 )
-from synth.syntax.type_helper import FunctionType
+from synth.syntax.type_helper import FunctionType, auto_type
 
 import pytest
 
@@ -71,3 +71,21 @@ def test_order_beeSearch(cfg: TTCFG) -> None:
 #     diff = seen.difference(new_seen)
 #     for x in diff:
 #         assert removed in x
+
+
+@pytest.mark.parametrize("cfg", testdata)
+def test_clone(cfg: TTCFG) -> None:
+    pcfg = ProbDetGrammar.uniform(cfg)
+    seen = set()
+    count = 1467
+    gen = enumerate_prob_grammar(pcfg)
+    for program in gen:
+        assert program not in seen
+        seen.add(program)
+        count -= 1
+        if count == 0:
+            break
+
+    gen2 = gen.clone_with_memory(pcfg)
+    for program in gen2:
+        assert program not in seen

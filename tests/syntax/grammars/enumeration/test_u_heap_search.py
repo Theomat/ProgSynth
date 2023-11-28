@@ -155,3 +155,21 @@ def test_merge(cfg: UCFG[U]) -> None:
     diff = seen.difference(new_seen)
     for x in diff:
         assert removed in x
+
+
+@pytest.mark.parametrize("cfg", testdata)
+def test_clone(cfg: UCFG[U]) -> None:
+    pcfg = ProbUGrammar.uniform(cfg)
+    seen = set()
+    count = 1467
+    gen = enumerate_prob_u_grammar(pcfg)
+    for program in gen:
+        assert program not in seen
+        seen.add(program)
+        count -= 1
+        if count == 0:
+            break
+
+    gen2 = gen.clone_with_memory(pcfg)
+    for program in gen2:
+        assert program not in seen
