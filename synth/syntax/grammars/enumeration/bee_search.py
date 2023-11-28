@@ -5,7 +5,6 @@ from typing import (
     Dict,
     Generator,
     Generic,
-    Iterable,
     List,
     Optional,
     Set,
@@ -14,7 +13,6 @@ from typing import (
     Union,
 )
 from dataclasses import dataclass
-from abc import ABC
 import bisect
 
 import numpy as np
@@ -64,14 +62,13 @@ class BeeSearch(
         self._bank: Dict[Tuple[Type, U], Dict[int, List[Program]]] = {}
         # S -> heap of HeapElement queued
         self._prog_queued: Dict[Tuple[Type, U], List[HeapElement]] = {}
-        # S -> heap of HeapElement popped
-        self._prog_popped: Dict[Tuple[Type, U], List[HeapElement]] = {}
-        # S -> max index used
+        # S -> max index currently queued
         self._max_index: Dict[Tuple[Type, U], int] = defaultdict(int)
         self._delayed: Dict[
             Tuple[Type, U],
             Dict[
-                Tuple[Type, U], List[Tuple[List[int], DerivableProgram, Optional[int]]]
+                Tuple[Type, U],
+                List[Tuple[List[int], DerivableProgram, Optional[int]]],
             ],
         ] = {}
         # S -> set of S' such that S' may consume a S as argument
@@ -81,29 +78,19 @@ class BeeSearch(
         # To break equality (is this really needed? perhaps they do not know compare=False?)
         self.order = 0
 
-        self._terminals: List[HeapElement] = []
-
         # Fill terminals first
         for S in self.G.rules:
             self._bank[S] = {}
             self._cost_lists[S] = []
-            self._prog_popped[S] = []
             self._prog_queued[S] = []
             self._delayed[S] = defaultdict(list)
 
             for P in self.G.rules[S]:
                 nargs = self.G.arguments_length_for(S, P)
                 if nargs == 0:
-                    new_priority = self._index_cost2real_cost_(S, P, [])
-                    self._add_program_(S, P, new_priority)
-                    if S == self.G.start:
-                        self.order += 1
-                        heappush(
-                            self._terminals,
-                            HeapElement(new_priority, self.order, [], P),
-                        )
+                    self._add_combination_(S, P, [])
 
-        # Init non terminals
+        # Init non terminals (otherwise add combination won't work correctly)
         for S in self.G.rules:
             for P in self.G.rules[S]:
                 nargs = self.G.arguments_length_for(S, P)
@@ -121,34 +108,17 @@ class BeeSearch(
         changed_index: Optional[int] = None,
     ) -> None:
         # Check if it needs to be delayed or not
-        if changed_index is not None:
-            i = changed_index
+        to_check = (
+            [changed_index]
+            if changed_index is not None
+            else [i for i in range(len(index_cost))]
+        )
+        for i in to_check:
             Sp = self._non_terminal_for_(S, P, i)
             if index_cost[i] >= len(self._cost_lists[Sp]):
                 self._delayed[Sp][S].append((index_cost, P, changed_index))
                 return
-            pass
-        else:
-            for i in range(len(index_cost)):
-                Sp = self._non_terminal_for_(S, P, i)
-                if index_cost[i] >= len(self._cost_lists[Sp]):
-                    self._delayed[Sp][S].append((index_cost, P, None))
-                    return
         # No need to delay add it
-        # print(
-        #     "QUEUED:",
-        #     S,
-        #     "->",
-        #     P,
-        #     ":",
-        #     index_cost,
-        #     "[",
-        #     [
-        #         max(self._bank[self._non_terminal_for_(S, P, i)].keys())
-        #         for i in range(len(index_cost))
-        #     ],
-        #     "]",
-        # )
         new_cost = self._index_cost2real_cost_(S, P, index_cost)
         heappush(
             self._prog_queued[S],
@@ -175,35 +145,37 @@ class BeeSearch(
             heapify(new_queue)
         self._heapify_queue.clear()
 
-    def _add_program_(
-        self, S: Tuple[Type, U], new_program: Program, priority: float
-    ) -> None:
+    def _trigger_delayed_(self, S: Tuple[Type, U]) -> None:
+        delayed = self._delayed[S]
+        copy = delayed.copy()
+        delayed.clear()
+        for Sp, elements in copy.items():
+            for index_cost, P, to_check in elements:
+                self._add_combination_(Sp, P, index_cost, to_check)
 
+    def _add_cost_(self, S: Tuple[Type, U], cost: float) -> Tuple[bool, int]:
         cost_list = self._cost_lists[S]
-        cost_index = bisect.bisect(cost_list, priority)
+        cost_index = bisect.bisect(cost_list, cost)
         # There's a shift by one to do depending if priority exist or not in cost_list
         # If cost does not exist add it
-        if cost_index - 1 < 0 or cost_list[cost_index - 1] != priority:
+        is_new = False
+        if cost_index - 1 < 0 or cost_list[cost_index - 1] != cost:
+            is_new = True
             if cost_index < self._max_index[S]:
                 self._heapify_queue |= self._consumers_of[S]
-                print("COST SHOULD NOT HAPPEN")
-            cost_list.insert(cost_index, priority)
-
-            # Trigger delayed
-            delayed = self._delayed[S]
-            copy = delayed.copy()
-            delayed.clear()
-            for Sp, elements in copy.items():
-                for index_cost, P, changed_index in elements:
-                    self._add_combination_(Sp, P, index_cost, changed_index)
+            cost_list.insert(cost_index, cost)
+            self._trigger_delayed_(S)
         else:
             cost_index -= 1
-        # Add it to the bank also
+        return is_new, cost_index
+
+    def _add_program_(
+        self, S: Tuple[Type, U], new_program: Program, cost_index: int
+    ) -> None:
         local_bank = self._bank[S]
-        # print("ADD:", S, "at cost=", cost_index, cost_list)
         if cost_index not in local_bank:
             local_bank[cost_index] = []
-            # print("INIT from", S, ":", priority, "in", cost_list)
+        # assert max(local_bank.keys()) + 1 == len(self._cost_lists[S]), f"index:{cost_index} {local_bank.keys()} vs {len(self._cost_lists[S])}"
         local_bank[cost_index].append(new_program)
 
     def _index_cost2real_cost_(
@@ -225,27 +197,14 @@ class BeeSearch(
             non_terminals, cost = self._next_cheapest_()
             if cost is None:
                 break
-            # print("cost=", cost)
             if len(non_terminals) == 0:
-                if self._terminals:
-                    program: Program = heappop(self._terminals).P
-                    if program in self._seen:
-                        continue
-                    self._seen.add(program)
-                    # print("\t>", program)
-
-                    yield program
-                    continue
-                else:
-                    break
+                break
             for program in self._produce_programs_from_cost_(non_terminals, cost):
                 if program in self._seen:
                     continue
                 self._seen.add(program)
-                # print("\t>", program)
                 yield program
             self._heapify_()
-            self._generate_next_combinations_(non_terminals)
 
     def _next_cheapest_(self) -> Tuple[List[Tuple[Type, U]], Optional[float]]:
         """
@@ -263,66 +222,43 @@ class BeeSearch(
                     non_terminals_container = []
                     cheapest = smallest_cost
                 non_terminals_container.append(S)
-        if len(self._terminals) > 0 and (
-            cheapest is None or self._terminals[0].cost <= cheapest
-        ):
-            cheapest = self._terminals[0].cost
-            non_terminals_container = []
         return non_terminals_container, cheapest
-
-    def _generate_next_combinations_(self, non_terminals: List[Tuple[Type, U]]) -> None:
-        for S in non_terminals:
-            maxi = self._max_index[S]
-            popped = self._prog_popped[S]
-            for element in popped:
-                print(S, "from", element.combination)
-                for i in range(len(element.combination)):
-                    index_cost = element.combination.copy()
-                    l = len(self._cost_lists[self._non_terminal_for_(S, element.P, i)])
-                    if index_cost[i] == l - 1:
-                        print("index_cost:", index_cost, "i=", i, "len=", l)
-                        print("WHY THEY DID NOT GET GENERATED")
-                        break
-                    index_cost[i] += 1
-                    self._add_combination_(S, element.P, index_cost, i)
-                    if index_cost[i] > maxi:
-                        maxi = index_cost[i]
-                    if index_cost[i] > 1:
-                        break
-            self._max_index[S] = maxi
-            popped.clear()
 
     def _produce_programs_from_cost_(
         self, non_terminals: List[Tuple[Type, U]], cost: float
     ) -> Generator[Program, None, None]:
-        """SHOULD WORK"""
         for S in non_terminals:
             queue = self._prog_queued[S]
-            popped = self._prog_popped[S]
+            maxi = self._max_index[S]
+            # Add cost since we are pre-generative
+            cost_index = self._add_cost_(S, cost)[1]
+
             while queue and queue[0].cost == cost:
                 element = heappop(queue)
                 assert element.cost == cost
-                popped.append(element)
-
-                print(f"\t{S} => {element.P} combination:", element.combination)
-
-                args_possibles = []
                 nargs = self.G.arguments_length_for(S, element.P)
+                Sargs = [self._non_terminal_for_(S, element.P, i) for i in range(nargs)]
+                # Generate next combinations
                 for i in range(nargs):
-                    Sp = self._non_terminal_for_(S, element.P, i)
-                    local_bank = self._bank[Sp]
-                    # print(f"\t\targ[{i}] => {Sp} bank keys:", local_bank.keys())
+                    index_cost = element.combination.copy()
+                    index_cost[i] += 1
+                    self._add_combination_(S, element.P, index_cost, i)
+                    if index_cost[i] > maxi:
+                        maxi = index_cost[i]
+                    # Avoid duplication with this condition
+                    if index_cost[i] > 1:
+                        break
+                # Generate programs
+                args_possibles = []
+                for i in range(nargs):
+                    local_bank = self._bank[Sargs[i]]
                     args_possibles.append(local_bank[element.combination[i]])
-                    # print("\t\t\tpossibles=", local_bank[element.combination[i]])
                 for new_args in product(*args_possibles):
                     new_program = Function(element.P, list(new_args))
-                    self._add_program_(S, new_program, element.cost)
-
-                    # prob = self.G.probability(new_program, start=S)
-                    # print("\tprob=", prob, "element.cost=", element.cost, "call:", self._index_cost2real_cost_(S, element.P, element.combination))
-                    # assert -prob == element.cost
+                    self._add_program_(S, new_program, cost_index)
                     if S == self.G.start:
                         yield new_program
+            self._max_index[S] = maxi
 
     def merge_program(self, representative: Program, other: Program) -> None:
         pass

@@ -12,7 +12,7 @@ from synth.syntax.type_system import (
     PolymorphicType,
     PrimitiveType,
 )
-from synth.syntax.type_helper import FunctionType, auto_type
+from synth.syntax.type_helper import FunctionType
 
 import pytest
 
@@ -40,6 +40,7 @@ def test_unicity_beeSearch(cfg: TTCFG) -> None:
     for program in enumerate_prob_grammar(pcfg):
         assert program not in seen
         seen.add(program)
+    # print(pcfg.grammar)
     assert len(seen) == cfg.programs()
 
 
