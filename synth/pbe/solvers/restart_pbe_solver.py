@@ -1,4 +1,5 @@
-from typing import Any, Generator, List, Tuple
+from typing import Any, Callable, Generator, List, Tuple
+from synth.semantic.evaluator import DSLEvaluator
 
 
 from synth.specification import PBE
@@ -8,10 +9,25 @@ from synth.syntax.program import Program
 from synth.syntax.type_system import Type
 from synth.task import Task
 from synth.utils import chrono
-from synth.pbe.solvers.pbe_solver import MetaPBESolver
+from synth.pbe.solvers.pbe_solver import MetaPBESolver, NaivePBESolver, PBESolver
 
 
 class RestartPBESolver(MetaPBESolver):
+    def __init__(
+        self,
+        evaluator: DSLEvaluator,
+        solver_builder: Callable[..., PBESolver] = NaivePBESolver,
+        restart_criterion: Callable[["RestartPBESolver"], bool] = lambda self: len(
+            self._data
+        )
+        - self._last_size
+        > 10000,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(evaluator, solver_builder, **kwargs)
+        self.restart_criterion = restart_criterion
+        self._last_size: int = 0
+
     def _init_stats_(self) -> None:
         super()._init_stats_()
         self._stats["restarts"] = 0
@@ -77,7 +93,7 @@ class RestartPBESolver(MetaPBESolver):
                 program = next(gen)
 
     def _should_restart_(self) -> bool:
-        return len(self._data) - self._last_size > 10000
+        return self.restart_criterion(self)
 
     def _restart_(self, enumerator: ProgramEnumerator[None]) -> ProgramEnumerator[None]:
         pcfg = enumerator.G * 0  # type: ignore
