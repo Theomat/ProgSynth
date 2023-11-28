@@ -29,9 +29,10 @@ def load_data(
             if verbose:
                 print(f"\tskipped: does not contain _seed_")
             continue
+        search = name[1 : name.index("_seed_")].replace("_", " ")
         name = name[name.index("_seed_") + len("_seed_") :]
         seed = int(name[: name.index("_")])
-        name = name[name.index("_") + 1 :].replace("_", " ")
+        name = search + name[name.index("_") + 1 :].replace("_", " ")
         if name not in methods:
             methods[name] = {}
         if seed in methods[name]:
