@@ -95,7 +95,7 @@ class HSEnumerator(
                 return
             h = hash(program)
             while h in self.seen:
-                program = self.query(self.start, self.current)
+                program = self.query(self.start, program)
                 if program is None:
                     return
                 h = hash(program)
