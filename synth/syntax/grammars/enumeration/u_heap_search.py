@@ -99,7 +99,6 @@ class UHSEnumerator(ProgramEnumerator[None], ABC, Generic[U, V, W]):
                     return
                 h = hash(program)
             self.seen.add(h)
-            self.current = program
             yield program
 
     def probability(self, program: Program) -> float:
