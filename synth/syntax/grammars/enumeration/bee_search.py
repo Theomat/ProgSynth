@@ -55,6 +55,7 @@ class BeeSearch(
             },
         )
         self._seen: Set[Program] = set()
+        self._deleted: Set[Program] = set()
 
         # S -> cost list
         self._cost_lists: Dict[Tuple[Type, U], List[float]] = {}
@@ -172,6 +173,8 @@ class BeeSearch(
     def _add_program_(
         self, S: Tuple[Type, U], new_program: Program, cost_index: int
     ) -> None:
+        if new_program in self._deleted:
+            return
         local_bank = self._bank[S]
         if cost_index not in local_bank:
             local_bank[cost_index] = []
@@ -261,7 +264,14 @@ class BeeSearch(
             self._max_index[S] = maxi
 
     def merge_program(self, representative: Program, other: Program) -> None:
-        pass
+        self._deleted.add(other)
+        for S in self.G.rules:
+            if S[0] != other.type:
+                continue
+            local_bank = self._bank[S]
+            for programs in local_bank.values():
+                if other in programs:
+                    programs.remove(other)
 
     def probability(self, program: Program) -> float:
         return self.G.probability(program)
