@@ -111,6 +111,12 @@ class ProbUGrammar(TaggedUGrammar[float, U, V, W]):
         return super().__hash__()
 
     @property
+    def start_probabilities(
+        self,
+    ) -> Dict[Tuple[Type, U], float]:
+        return self.start_tags
+
+    @property
     def probabilities(
         self,
     ) -> Dict[Tuple[Type, U], Dict[DerivableProgram, Dict[V, float]]]:
