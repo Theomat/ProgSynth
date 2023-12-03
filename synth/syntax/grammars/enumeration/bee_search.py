@@ -1,6 +1,6 @@
 from collections import defaultdict
 from itertools import product
-from heapq import heappush, heappop, heapify
+from heapq import heappush, heappop
 from typing import (
     Dict,
     Generator,
@@ -12,8 +12,7 @@ from typing import (
     TypeVar,
     Union,
 )
-from dataclasses import dataclass
-import bisect
+from dataclasses import dataclass, field
 
 import numpy as np
 
@@ -33,9 +32,8 @@ W = TypeVar("W")
 @dataclass(order=True, frozen=True)
 class HeapElement:
     cost: float
-    order: int
     combination: List[int]
-    P: DerivableProgram
+    P: DerivableProgram = field(compare=False)
 
     def __repr__(self) -> str:
         return f"({self.cost}, {self.combination}, {self.P})"
@@ -47,18 +45,11 @@ class BeeSearch(
 ):
     def __init__(self, G: ProbDetGrammar[U, V, W]) -> None:
         assert isinstance(G.grammar, CFG)
-        self.G: ProbDetGrammar = ProbDetGrammar(
-            G.grammar,
-            {
-                S: {P: np.log(p) for P, p in val.items() if p > 0}
-                for S, val in G.probabilities.items()
-            },
-        )
+        self.G = G
         self._seen: Set[Program] = set()
         self._deleted: Set[Program] = set()
 
-        # S -> cost list
-        self._cost_lists: Dict[Tuple[Type, U], List[float]] = {}
+        self._cost_list: List[float] = []
         # S -> cost_index -> program list
         self._bank: Dict[Tuple[Type, U], Dict[int, List[Program]]] = {}
         # S -> heap of HeapElement queued
@@ -66,25 +57,12 @@ class BeeSearch(
         # S -> max index currently queued
         self._max_index: Dict[Tuple[Type, U], int] = defaultdict(int)
         self._delayed: Dict[
-            Tuple[Type, U],
-            Dict[
-                Tuple[Type, U],
-                List[Tuple[List[int], DerivableProgram, Optional[int]]],
-            ],
-        ] = {}
-        # S -> set of S' such that S' may consume a S as argument
-        self._consumers_of: Dict[Tuple[Type, U], Set[Tuple[Type, U]]] = defaultdict(set)
-        self._heapify_queue: Set[Tuple[Type, U]] = set()
-
-        # To break equality (is this really needed? perhaps they do not know compare=False?)
-        self.order = 0
-
+            Tuple[Type, U], List[Tuple[List[int], DerivableProgram, Optional[int]]]
+        ] = defaultdict(list)
         # Fill terminals first
         for S in self.G.rules:
             self._bank[S] = {}
-            self._cost_lists[S] = []
             self._prog_queued[S] = []
-            self._delayed[S] = defaultdict(list)
 
             for P in self.G.rules[S]:
                 nargs = self.G.arguments_length_for(S, P)
@@ -98,8 +76,6 @@ class BeeSearch(
                 if nargs > 0:
                     index_cost = [0] * nargs
                     self._add_combination_(S, P, index_cost)
-                    for i in range(nargs):
-                        self._consumers_of[self._non_terminal_for_(S, P, i)].add(S)
 
     def _add_combination_(
         self,
@@ -115,60 +91,32 @@ class BeeSearch(
             else [i for i in range(len(index_cost))]
         )
         for i in to_check:
-            Sp = self._non_terminal_for_(S, P, i)
-            if index_cost[i] >= len(self._cost_lists[Sp]):
-                self._delayed[Sp][S].append((index_cost, P, changed_index))
+            if index_cost[i] >= len(self._cost_list):
+                self._delayed[S].append((index_cost, P, changed_index))
                 return
         # No need to delay add it
         new_cost = self._index_cost2real_cost_(S, P, index_cost)
         heappush(
             self._prog_queued[S],
-            HeapElement(new_cost, self.order, index_cost, P),
+            HeapElement(new_cost, index_cost, P),
         )
-        self.order += 1
 
-    def _heapify_(self) -> None:
-        """
-        We need to re compute the cost of our current tuples for some S since we updated our cost list.
-        """
-        for S in self._heapify_queue:
-            queue = self._prog_queued[S]
-            new_queue = [
-                HeapElement(
-                    self._index_cost2real_cost_(S, e.P, e.combination),
-                    e.order,
-                    e.combination,
-                    e.P,
-                )
-                for e in queue
-            ]
-            self._prog_queued[S] = new_queue
-            heapify(new_queue)
-        self._heapify_queue.clear()
-
-    def _trigger_delayed_(self, S: Tuple[Type, U]) -> None:
-        delayed = self._delayed[S]
-        copy = delayed.copy()
-        delayed.clear()
-        for Sp, elements in copy.items():
+    def _trigger_delayed_(self) -> None:
+        copy = self._delayed.copy()
+        self._delayed.clear()
+        for S, elements in copy.items():
             for index_cost, P, to_check in elements:
-                self._add_combination_(Sp, P, index_cost, to_check)
+                self._add_combination_(S, P, index_cost, to_check)
 
     def _add_cost_(self, S: Tuple[Type, U], cost: float) -> Tuple[bool, int]:
-        cost_list = self._cost_lists[S]
-        cost_index = bisect.bisect(cost_list, cost)
-        # There's a shift by one to do depending if priority exist or not in cost_list
-        # If cost does not exist add it
-        is_new = False
-        if cost_index - 1 < 0 or cost_list[cost_index - 1] != cost:
-            is_new = True
-            if cost_index < self._max_index[S]:
-                self._heapify_queue |= self._consumers_of[S]
-            cost_list.insert(cost_index, cost)
-            self._trigger_delayed_(S)
-        else:
-            cost_index -= 1
-        return is_new, cost_index
+        cost_list = self._cost_list
+        if len(cost_list) > 0 and cost_list[-1] == cost:
+            return False, len(cost_list) - 1
+        # assert len(cost_list) == 0 or cost > cost_list[-1], f"{cost} -> {cost_list}"
+        # print("adding:", cost, "to", cost_list)
+        cost_list.append(cost)
+        self._trigger_delayed_()
+        return True, len(cost_list) - 1
 
     def _add_program_(
         self, S: Tuple[Type, U], new_program: Program, cost_index: int
@@ -184,18 +132,19 @@ class BeeSearch(
     def _index_cost2real_cost_(
         self, S: Tuple[Type, U], P: DerivableProgram, indices: List[int]
     ) -> float:
-        out = -self.G.probabilities[S][P]
+        out = self.G.probabilities[S][P]
         for i in range(self.G.arguments_length_for(S, P)):
-            out += self._cost_lists[self._non_terminal_for_(S, P, i)][indices[i]]
+            out += self._cost_list[indices[i]]
         return out
 
     def _non_terminal_for_(
         self, S: Tuple[Type, U], P: DerivableProgram, index: int
     ) -> Tuple[Type, U]:
-        Sp = self.G.rules[S][P][0][index]
+        Sp = self.G.rules[S][P][0][index]  # type: ignore
         return (Sp[0], (Sp[1], None))  # type: ignore
 
     def generator(self) -> Generator[Program, None, None]:
+        progs = self.G.programs()
         while True:
             non_terminals, cost = self._next_cheapest_()
             if cost is None:
@@ -203,11 +152,13 @@ class BeeSearch(
             if len(non_terminals) == 0:
                 break
             for program in self._produce_programs_from_cost_(non_terminals, cost):
+                progs -= 1
                 if program in self._seen:
                     continue
                 self._seen.add(program)
                 yield program
-            self._heapify_()
+            if progs <= 0:
+                break
 
     def _next_cheapest_(self) -> Tuple[List[Tuple[Type, U]], Optional[float]]:
         """
@@ -255,7 +206,13 @@ class BeeSearch(
                 args_possibles = []
                 for i in range(nargs):
                     local_bank = self._bank[Sargs[i]]
-                    args_possibles.append(local_bank[element.combination[i]])
+                    ci = element.combination[i]
+                    if ci not in local_bank or len(local_bank[ci]) == 0:
+                        break
+                    args_possibles.append(local_bank[ci])
+                if len(args_possibles) != nargs:
+                    # print("failed")
+                    continue
                 for new_args in product(*args_possibles):
                     new_program = Function(element.P, list(new_args))
                     self._add_program_(S, new_program, cost_index)
@@ -290,4 +247,11 @@ class BeeSearch(
 
 
 def enumerate_prob_grammar(G: ProbDetGrammar[U, V, W]) -> BeeSearch[U, V, W]:
-    return BeeSearch(G)
+    Gp: ProbDetGrammar = ProbDetGrammar(
+        G.grammar,
+        {
+            S: {P: -np.log(p) for P, p in val.items() if p > 0}
+            for S, val in G.probabilities.items()
+        },
+    )
+    return BeeSearch(Gp)
