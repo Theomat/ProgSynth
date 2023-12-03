@@ -140,6 +140,8 @@ class BeepSearch(
                 bank[cost_index] = []
             for new_args in product(*args_possibles):
                 new_program = Function(element.P, list(new_args))
+                if new_program in self._deleted:
+                    continue
                 bank[cost_index].append(new_program)
                 yield new_program
 
