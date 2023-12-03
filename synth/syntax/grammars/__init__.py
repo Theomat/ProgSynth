@@ -6,6 +6,7 @@ from synth.syntax.grammars.tagged_det_grammar import ProbDetGrammar, TaggedDetGr
 from synth.syntax.grammars.enumeration import (
     ProgramEnumerator,
     bs_enumerate_prob_grammar,
+    bps_enumerate_prob_grammar,
     hs_enumerate_prob_grammar,
     hs_enumerate_prob_u_grammar,
     hs_enumerate_bucket_prob_grammar,

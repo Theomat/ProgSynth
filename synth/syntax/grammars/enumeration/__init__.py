@@ -12,3 +12,7 @@ from synth.syntax.grammars.enumeration.program_enumerator import ProgramEnumerat
 from synth.syntax.grammars.enumeration.bee_search import (
     enumerate_prob_grammar as bs_enumerate_prob_grammar,
 )
+
+from synth.syntax.grammars.enumeration.bee_search import (
+    enumerate_prob_grammar as bps_enumerate_prob_grammar,
+)
