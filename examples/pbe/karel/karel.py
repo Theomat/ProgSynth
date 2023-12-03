@@ -260,7 +260,7 @@ __forbidden_patterns = {
 }
 
 dsl = DSL(__syntax, __forbidden_patterns)
-evaluator = DSLEvaluator(__semantics)
+evaluator = DSLEvaluator(dsl.instantiate_semantics(__semantics))
 lexicon = []
 
 

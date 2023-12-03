@@ -398,7 +398,7 @@ __forbidden_patterns = {
 }
 dsl = DSL(__primitive_types, __forbidden_patterns)
 dsl_raw = DSL(__primitive_types)
-evaluator = DSLEvaluator(__semantics)
+evaluator = DSLEvaluator(dsl.instantiate_semantics(__semantics))
 evaluator.skip_exceptions.add(OverflowError)
 lexicon = list(range(-256, 256 + 1))
 

@@ -38,7 +38,7 @@ def test_gen() -> None:
     pcfg.init_sampling(20)
     g = TaskGenerator(
         LexiconSampler(int_lexicon, seed=10),
-        DSLEvaluator(semantics),
+        DSLEvaluator(dsl.instantiate_semantics(semantics)),
         LexiconSampler([type_req], seed=10),
         LexiconSampler(samples_lexicon, [0.25, 0.5, 0.25], seed=10),
         {pcfg},
@@ -61,7 +61,7 @@ def test_seed() -> None:
     pcfg.init_sampling(10)
     g1 = TaskGenerator(
         LexiconSampler(int_lexicon, seed=10),
-        DSLEvaluator(semantics),
+        DSLEvaluator(dsl.instantiate_semantics(semantics)),
         LexiconSampler([type_req], seed=10),
         LexiconSampler([2, 3, 4], [0.25, 0.5, 0.25], seed=10),
         {pcfg},
@@ -71,7 +71,7 @@ def test_seed() -> None:
     pcfg.init_sampling(10)
     g2 = TaskGenerator(
         LexiconSampler(int_lexicon, seed=10),
-        DSLEvaluator(semantics),
+        DSLEvaluator(dsl.instantiate_semantics(semantics)),
         LexiconSampler([type_req], seed=10),
         LexiconSampler([2, 3, 4], [0.25, 0.5, 0.25], seed=10),
         {pcfg},

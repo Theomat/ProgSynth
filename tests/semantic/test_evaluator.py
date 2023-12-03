@@ -28,7 +28,7 @@ cfg = CFG.depth_constraint(dsl, FunctionType(INT, INT), max_depth)
 
 
 def test_eval() -> None:
-    eval = DSLEvaluator(semantics)
+    eval = DSLEvaluator(dsl.instantiate_semantics(semantics))
     pcfg = ProbDetGrammar.uniform(cfg)
     pcfg.init_sampling(0)
     for _ in range(100):
@@ -41,7 +41,7 @@ def test_eval() -> None:
 
 
 def test_supports_list() -> None:
-    eval = DSLEvaluator(semantics)
+    eval = DSLEvaluator(dsl.instantiate_semantics(semantics))
     pcfg = ProbDetGrammar.uniform(cfg)
     pcfg.init_sampling(0)
     for _ in range(100):
@@ -54,7 +54,7 @@ def test_supports_list() -> None:
 
 
 def test_use_cache() -> None:
-    eval = DSLEvaluator(semantics)
+    eval = DSLEvaluator(dsl.instantiate_semantics(semantics))
     pcfg = ProbDetGrammar.uniform(cfg)
     pcfg.init_sampling(0)
     for _ in range(100):

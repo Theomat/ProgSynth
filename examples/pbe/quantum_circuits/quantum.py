@@ -15,6 +15,7 @@ from synth.semantic import DSLEvaluator
 
 
 import qiskit as qk
+from synth.syntax.program import Primitive
 
 __syntax = auto_type(
     {
@@ -60,7 +61,7 @@ class QiskitTester:
 
 
 class QuantumCircuitEvaluator(DSLEvaluator):
-    def __init__(self, semantics: Dict[str, Any], nqbits: int = 3) -> None:
+    def __init__(self, semantics: Dict[Primitive, Any], nqbits: int = 3) -> None:
         super().__init__(semantics, False)
         self.nqbits = nqbits
         self.backend = qk.Aer.get_backend("unitary_simulator")
@@ -73,4 +74,4 @@ class QuantumCircuitEvaluator(DSLEvaluator):
 
 
 dsl = DSL(__syntax)
-evaluator = QuantumCircuitEvaluator(__semantics)
+evaluator = QuantumCircuitEvaluator(dsl.instantiate_semantics(__semantics))

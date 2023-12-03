@@ -99,7 +99,7 @@ __forbidden_patterns = {
 }
 
 dsl = DSL(__primitive_types, __forbidden_patterns)
-evaluator = DSLEvaluator(__semantics)
+evaluator = DSLEvaluator(dsl.instantiate_semantics(__semantics))
 evaluator.skip_exceptions.add(re.error)
 lexicon = list([chr(i) for i in range(32, 126)])
 regexp_evaluator = RegexpEvaluator(__semantics)

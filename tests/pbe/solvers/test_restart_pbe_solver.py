@@ -35,7 +35,7 @@ semantics = {"+": lambda x: lambda y: x + y, "-": lambda x: lambda y: x - y, "1"
 type_req = FunctionType(INT, INT)
 max_depth = 4
 dsl = DSL(syntax)
-evaluator = DSLEvaluator(semantics)
+evaluator = DSLEvaluator(dsl.instantiate_semantics(semantics))
 testdata = [
     NaivePBESolver(evaluator),
     ObsEqPBESolver(evaluator),

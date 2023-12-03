@@ -35,7 +35,7 @@ type_req = FunctionType(INT, INT)
 int_lexicon = list(range(-100, 100))
 max_depth = 4
 dsl = DSL(syntax)
-evaluator = DSLEvaluator(semantics)
+evaluator = DSLEvaluator(dsl.instantiate_semantics(semantics))
 testdata = [
     NaivePBESolver(evaluator),
     ObsEqPBESolver(evaluator),

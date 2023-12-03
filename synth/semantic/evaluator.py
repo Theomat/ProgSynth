@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Iterable, List, Set
+from typing import Any, Dict, List, Set
 
 from synth.syntax.program import Function, Primitive, Program, Variable
 from synth.syntax.type_system import PrimitiveType
@@ -26,7 +26,7 @@ def __tuplify__(element: Any) -> Any:
 
 
 class DSLEvaluator(Evaluator):
-    def __init__(self, semantics: Dict[str, Any], use_cache: bool = True) -> None:
+    def __init__(self, semantics: Dict[Primitive, Any], use_cache: bool = True) -> None:
         super().__init__()
         self.semantics = semantics
         self.use_cache = use_cache
@@ -51,7 +51,7 @@ class DSLEvaluator(Evaluator):
                     self._cache_hits += 1
                     continue
                 if isinstance(sub_prog, Primitive):
-                    evaluations[sub_prog] = self.semantics[sub_prog.primitive]
+                    evaluations[sub_prog] = self.semantics[sub_prog]
                 elif isinstance(sub_prog, Variable):
                     evaluations[sub_prog] = input[sub_prog.variable]
                 elif isinstance(sub_prog, Function):
@@ -80,7 +80,7 @@ class DSLEvaluator(Evaluator):
 class DSLEvaluatorWithConstant(Evaluator):
     def __init__(
         self,
-        semantics: Dict[str, Any],
+        semantics: Dict[Primitive, Any],
         constant_types: Set[PrimitiveType],
         use_cache: bool = True,
     ) -> None:
@@ -140,7 +140,7 @@ class DSLEvaluatorWithConstant(Evaluator):
                     elif sub_prog.primitive == "cst_out":
                         evaluations[sub_prog] = constant_out
                     else:
-                        evaluations[sub_prog] = self.semantics[sub_prog.primitive]
+                        evaluations[sub_prog] = self.semantics[sub_prog]
                 elif isinstance(sub_prog, Variable):
                     evaluations[sub_prog] = input[sub_prog.variable]
                 elif isinstance(sub_prog, Function):

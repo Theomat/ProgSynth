@@ -53,7 +53,7 @@ _forbidden_patterns = {
 }
 
 dsl = DSL(__primitive_types, forbidden_patterns=_forbidden_patterns)
-evaluator = DSLEvaluator(__semantics)
+evaluator = DSLEvaluator(dsl.instantiate_semantics(__semantics))
 lexicon = [round(x, 1) for x in np.arange(-256, 256 + 1, 0.1)]
 
 
