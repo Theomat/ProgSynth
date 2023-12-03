@@ -1,5 +1,5 @@
 import copy
-from typing import Dict, Mapping, Optional, List as TList, Set, Tuple
+from typing import Callable, Dict, Mapping, Optional, List as TList, Set, Tuple
 
 from synth.syntax.type_system import UNIT, Type, Arrow, List
 from synth.syntax.program import Function, Primitive, Program, Variable
@@ -182,6 +182,19 @@ class DSL:
             if P.primitive == name:
                 return P
         return None
+
+    def instantiate_semantics(
+        self, semantics: Dict[str, Callable]
+    ) -> Dict[Primitive, Callable]:
+        """
+        Transform the semantics dictionnary from strings to primitives.
+        """
+        dico = {}
+        for key, f in semantics.items():
+            for p in self.list_primitives:
+                if p.primitive == key:
+                    dico[p] = f
+        return dico
 
     def __or__(self, other: "DSL") -> "DSL":
         out = DSL({})
