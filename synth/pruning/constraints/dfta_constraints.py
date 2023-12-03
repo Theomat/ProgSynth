@@ -262,7 +262,7 @@ def __process__(
             ), f"Unsupported topmost token for local constraint"
             out_grammar = __filter__(
                 out_grammar,
-                lambda P, _, dst: P not in token.function.allowed or dst[1][-1] == 1,  # type: ignore
+                lambda P, _, dst: P not in token.function.allowed or dst[1][-1] == 1,
             )
             # out_grammar.finals = out_grammar.finals.intersection(set(out_grammar.rules.keys()))
     return out_grammar
