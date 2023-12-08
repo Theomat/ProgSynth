@@ -17,6 +17,7 @@ from synth.syntax import (
     DSL,
     hs_enumerate_prob_grammar,
     bs_enumerate_prob_grammar,
+    bpluss_enumerate_prob_grammar,
     bps_enumerate_prob_grammar,
     hs_enumerate_prob_u_grammar,
     hs_enumerate_bucket_prob_grammar,
@@ -48,13 +49,14 @@ for meta_solver in [RestartPBESolver]:
         )
 
 SEARCH_ALGOS = {
+    "beep_search": (bps_enumerate_prob_grammar, None),
     "heap_search": (hs_enumerate_prob_grammar, hs_enumerate_prob_u_grammar),
     "bucket_search": (
         lambda x: hs_enumerate_bucket_prob_grammar(x, 3),
         lambda x: hs_enumerate_bucket_prob_u_grammar(x, 3),
     ),
     "bee_search": (bs_enumerate_prob_grammar, None),
-    "beep_search": (bps_enumerate_prob_grammar, None),
+    "bee+_search": (bpluss_enumerate_prob_grammar, None),
 }
 
 parser = argparse.ArgumentParser(
