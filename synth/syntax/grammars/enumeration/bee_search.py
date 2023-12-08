@@ -233,6 +233,14 @@ class BeeSearch(
     def probability(self, program: Program) -> float:
         return self.G.probability(program)
 
+    def programs_in_banks(self) -> int:
+        return sum(len(val) for val in self._bank.values())
+
+    def programs_in_queues(self) -> int:
+        return sum(len(val) for val in self._delayed.values()) + sum(
+            len(val) for val in self._prog_queued.values()
+        )
+
     @classmethod
     def name(cls) -> str:
         return "bee-search"

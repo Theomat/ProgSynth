@@ -84,6 +84,12 @@ class UHSEnumerator(ProgramEnumerator[None], ABC, Generic[U, V, W]):
     def name(cls) -> str:
         return "u-heap-search"
 
+    def programs_in_banks(self) -> int:
+        return sum(len(val) for val in self.succ.values())
+
+    def programs_in_queues(self) -> int:
+        return sum(len(val) for val in self.heaps.values())
+
     def generator(self) -> Generator[Program, None, None]:
         """
         A generator which outputs the next most probable program

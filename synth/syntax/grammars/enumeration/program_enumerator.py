@@ -34,6 +34,14 @@ class ProgramEnumerator(ABC, Generic[U]):
         return self.generator()
 
     @abstractmethod
+    def programs_in_banks(self) -> int:
+        pass
+
+    @abstractmethod
+    def programs_in_queues(self) -> int:
+        pass
+
+    @abstractmethod
     def probability(self, program: Program) -> float:
         """
         Return the probability of generating the given program according to the grammar associated with this enumerator.

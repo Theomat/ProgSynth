@@ -238,6 +238,12 @@ class HSEnumerator(
     def compute_priority(self, S: Tuple[Type, U], new_program: Program) -> Ordered:
         pass
 
+    def programs_in_banks(self) -> int:
+        return sum(len(val) for val in self.succ.values())
+
+    def programs_in_queues(self) -> int:
+        return sum(len(val) for val in self.heaps.values())
+
     def clone_with_memory(
         self, G: Union[ProbDetGrammar, ProbUGrammar]
     ) -> "HSEnumerator[U, V, W]":

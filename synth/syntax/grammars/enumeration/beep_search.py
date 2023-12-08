@@ -93,6 +93,12 @@ class BeepSearch(
                 yield prog
             n += 1
 
+    def programs_in_banks(self) -> int:
+        return sum(len(val) for val in self._bank.values())
+
+    def programs_in_queues(self) -> int:
+        return sum(len(val) for val in self._queues.values())
+
     def query(
         self, S: Tuple[Type, U], cost_index: int
     ) -> Generator[Program, None, None]:
