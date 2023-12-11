@@ -263,7 +263,7 @@ class ProbUGrammar(TaggedUGrammar[float, U, V, W]):
             grammar,
             {
                 S: {
-                    P: {tuple(x) if isinstance(x, List) else x: gen(prng) for x in der} #type: ignore
+                    P: {tuple(x) if isinstance(x, List) else x: gen(prng) for x in der}  # type: ignore
                     for P, der in grammar.rules[S].items()
                 }
                 for S in grammar.rules
