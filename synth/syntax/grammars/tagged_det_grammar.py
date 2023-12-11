@@ -1,4 +1,5 @@
 from typing import (
+    Callable,
     Dict,
     Generator,
     Generic,
@@ -201,6 +202,21 @@ class ProbDetGrammar(TaggedDetGrammar[float, U, V, W]):
                 for S in grammar.rules
             },
         )
+
+    @classmethod
+    def random(
+        cls,
+        grammar: DetGrammar[U, V, W],
+        seed: Optional[int] = None,
+        gen: Callable[[np.random.Generator], float] = lambda prng: prng.uniform(),
+    ) -> "ProbDetGrammar[U, V, W]":
+        prng = np.random.default_rng(seed)
+        pg = ProbDetGrammar(
+            grammar,
+            {S: {_: gen(prng) for _ in grammar.rules[S]} for S in grammar.rules},
+        )
+        pg.normalise()
+        return pg
 
     @classmethod
     def pcfg_from_samples(

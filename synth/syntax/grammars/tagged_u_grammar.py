@@ -1,5 +1,6 @@
 from typing import (
     Any,
+    Callable,
     Dict,
     Generator,
     Generic,
@@ -249,3 +250,25 @@ class ProbUGrammar(TaggedUGrammar[float, U, V, W]):
 
         start_probs = {start: 1 / len(grammar.starts) for start in grammar.starts}
         return ProbUGrammar(grammar, probs, start_probs)
+
+    @classmethod
+    def random(
+        cls,
+        grammar: UGrammar[U, V, W],
+        seed: Optional[int] = None,
+        gen: Callable[[np.random.Generator], float] = lambda prng: prng.uniform(),
+    ) -> "ProbUGrammar[U, V, W]":
+        prng = np.random.default_rng(seed)
+        pg = ProbUGrammar(
+            grammar,
+            {
+                S: {
+                    P: {tuple(x) if isinstance(x, List) else x: gen(prng) for x in der} #type: ignore
+                    for P, der in grammar.rules[S].items()
+                }
+                for S in grammar.rules
+            },
+            {S: gen(prng) for S in grammar.starts},
+        )
+        pg.normalise()
+        return pg
