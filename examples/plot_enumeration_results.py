@@ -93,7 +93,7 @@ for ydata in list(__DATA__.keys()):
         if xdata == ydata:
             continue
         __PLOTS__[f"{ydata}_wrt_{xdata}"] = make_plot_wrapper(
-            plot_y_wrt_x, __DATA__[xdata], __DATA__[ydata]
+            plot_y_wrt_x, __DATA__[xdata], __DATA__[ydata], cumulative=False
         )
     if ydata != "tasks":
         __PLOTS__[f"rank_by_{ydata}"] = make_plot_wrapper(plot_rank_by, __DATA__[ydata])
