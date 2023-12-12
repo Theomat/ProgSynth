@@ -58,9 +58,9 @@ def plot_with_incertitude(
     ax.fill_between(target_x, lower, upper, color=color, alpha=0.5)
 
 
-def make_plot_wrapper(func, *args) -> None:
+def make_plot_wrapper(func, *args, **kwargs) -> None:
     def f(ax: plt.Axes, methods: Dict[str, Dict[int, List]]) -> None:
-        return func(ax, methods, *args)
+        return func(ax, methods, *args, **kwargs)
 
     return f
 
