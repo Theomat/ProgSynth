@@ -91,8 +91,9 @@ def enumerative_search(
     datum_each: int = 1000,
 ) -> List[Tuple[str, Type, float, int, int, int]]:
     out = []
-    for cfg in tqdm.tqdm(cfgs, desc=name):
+    for cfg in cfgs:
         n = 0
+        pbar = tqdm.tqdm(total=programs, desc=name)
         start = time.perf_counter()
         enumerator = custom_enumerate(cfg)
         for program in enumerator.generator():
@@ -108,7 +109,11 @@ def enumerative_search(
                         enumerator.programs_in_banks(),
                     )
                 )
+                bef = time.perf_counter()
+                pbar.update(datum_each)
+                start -= time.perf_counter() - bef
                 if n >= programs:
+                    pbar.close()
                     break
     return out
 
