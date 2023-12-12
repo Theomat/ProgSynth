@@ -88,24 +88,24 @@ def enumerative_search(
         [Union[ProbDetGrammar, ProbUGrammar]], ProgramEnumerator
     ],
     programs: int,
-    datum_each: int = 1000,
+    datum_each: int = 50000,
 ) -> List[Tuple[str, Type, float, int, int, int]]:
     out = []
     for cfg in cfgs:
         n = 0
         pbar = tqdm.tqdm(total=programs, desc=name)
-        start = time.perf_counter()
+        start = time.perf_counter_ns()
         enumerator = custom_enumerate(cfg)
         for program in enumerator.generator():
             n += 1
             if n % datum_each == 0 or n >= programs:
-                used_time = time.perf_counter() - start
-                bef = time.perf_counter()
+                used_time = time.perf_counter_ns() - start
+                bef = time.perf_counter_ns()
                 out.append(
                     (
                         name,
                         cfg.type_request,
-                        used_time,
+                        used_time / 1e9,
                         n,
                         enumerator.programs_in_queues(),
                         enumerator.programs_in_banks(),
@@ -115,7 +115,7 @@ def enumerative_search(
                 if n >= programs:
                     pbar.close()
                     break
-                start -= time.perf_counter() - bef
+                start -= time.perf_counter_ns() - bef
     return out
 
 
