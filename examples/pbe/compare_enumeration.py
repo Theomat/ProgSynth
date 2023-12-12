@@ -125,9 +125,10 @@ if __name__ == "__main__":
 
     type_requests = [auto_type(str_tr)]
     pcfgs = []
+    n_gram = 2 if max_depth > 0 else 1
     for tr in type_requests:
         try:
-            cfg = CFG.depth_constraint(dsl, tr, max_depth)
+            cfg = CFG.depth_constraint(dsl, tr, max_depth, n_gram=n_gram)
             pcfg = ProbDetGrammar.random(cfg, seed=seed)
             pcfgs.append(pcfg)
         except KeyError:
