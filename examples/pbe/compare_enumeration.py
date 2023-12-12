@@ -99,22 +99,23 @@ def enumerative_search(
         for program in enumerator.generator():
             n += 1
             if n % datum_each == 0 or n >= programs:
+                used_time = time.perf_counter() - start
+                bef = time.perf_counter()
                 out.append(
                     (
                         name,
                         cfg.type_request,
-                        time.perf_counter() - start,
+                        used_time,
                         n,
                         enumerator.programs_in_queues(),
                         enumerator.programs_in_banks(),
                     )
                 )
-                bef = time.perf_counter()
                 pbar.update(datum_each)
-                start -= time.perf_counter() - bef
                 if n >= programs:
                     pbar.close()
                     break
+                start -= time.perf_counter() - bef
     return out
 
 
