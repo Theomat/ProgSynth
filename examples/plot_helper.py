@@ -13,6 +13,8 @@ def plot_with_incertitude(
     std_factor: float = 1.96,
     miny: Optional[float] = None,
     maxy: Optional[float] = None,
+    cumulative: bool = True,
+    n_points: int = 50,
 ) -> None:
     max_len = max(len(xi) for xi in x)
     x = [xi for xi in x if len(xi) == max_len]
@@ -22,16 +24,28 @@ def plot_with_incertitude(
     x_max = np.max(np.array(x))
     if x_max == x_min:
         return
-    target_x = np.arange(x_min, x_max + 1, step=(x_max - x_min) / 50)
-    # Interpolate data
-    data = []
-    for xi, yi in zip(x, y):
-        nyi = np.interp(target_x, xi, yi)
-        data.append(nyi)
-    # Compute distribution
-    Y = np.array(data)
-    mean = np.mean(Y, axis=0)
-    std = std_factor * np.std(Y, axis=0)
+    if cumulative:
+        x_mean = np.cumsum(np.mean(x, axis=0))
+        x_min = np.min(x_mean)
+        x_max = np.max(x_mean)
+        target_x = np.arange(x_min, x_max + 1, step=(x_max - x_min) / n_points)
+
+        y_mean = np.cumsum(np.mean(y, axis=0))
+        mean = np.interp(target_x, x_mean, y_mean)
+
+        y_var = np.cumsum(np.var(y, axis=0))
+        y_var = np.interp(target_x, x_mean, y_var)
+        std = std_factor * np.sqrt(y_var)
+    else:
+        target_x = np.arange(x_min, x_max + 1, step=(x_max - x_min) / n_points)
+        data = []
+        for xi, yi in zip(x, y):
+            nyi = np.interp(target_x, xi, yi)
+            data.append(nyi)
+        # Compute distribution
+        Y = np.array(data)
+        mean = np.mean(Y, axis=0)
+        std = std_factor * np.std(Y, axis=0)
 
     p = ax.plot(target_x, mean, label=label)
     color = p[0].get_color()
@@ -57,6 +71,7 @@ def plot_y_wrt_x(
     x_data: Tuple,
     y_data: Tuple,
     should_sort: bool = False,
+    cumulative: bool = True,
 ) -> None:
     # Plot data with incertitude
     a_index, a_name, a_margin, show_len_a, _ = y_data
@@ -73,17 +88,24 @@ def plot_y_wrt_x(
         data_length = max(data_length, len(data[0]))
         if should_sort:
             data = [sorted(seed_data) for seed_data in data]
-        xdata = [np.cumsum([x[0] for x in seed_data]) for seed_data in data]
-        ydata = [np.cumsum([x[1] for x in seed_data]) for seed_data in data]
-        max_a = max(max(np.max(yi) for yi in ydata), max_a)
-        max_b = max(max(np.max(xi) for xi in xdata), max_b)
+
+        xdata = [[x[0] for x in seed_data] for seed_data in data]
+        ydata = [[x[1] for x in seed_data] for seed_data in data]
         plot_with_incertitude(
             ax,
             xdata,
             ydata,
             method.capitalize(),
             maxy=data_length if show_len_a else None,
+            miny=0,
+            cumulative=cumulative,
         )
+        max_a = max(max(np.max(yi) for yi in ydata), max_a)
+        max_b = max(max(np.max(xi) for xi in xdata), max_b)
+        if cumulative:
+            max_a = max(max(np.sum(yi) for yi in ydata), max_a)
+            max_b = max(max(np.sum(xi) for xi in xdata), max_b)
+            pass
     ax.set_xlabel(b_name)
     ax.set_ylabel(a_name)
     ax.grid()
