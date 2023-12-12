@@ -35,17 +35,23 @@ class CFG(TTCFG[CFGState, NoneType]):
     @lru_cache()
     def programs(self) -> int:
         count: Dict[Tuple[Type, CFGState], int] = {}
+        try:
+            for S in sorted(self.rules.keys(), key=lambda s: -s[1][0][1]):
+                total = 0
+                for P in self.rules[S]:
+                    local = 1
+                    for arg in self.rules[S][P][0]:
+                        local *= count[arg]
+                    total += local
+                count[(S[0], S[1][0])] = total
+            S = self.start
+            return count[(S[0], S[1][0])]
+        except KeyError:
+            # Recursive grammar
+            return -1
 
-        for S in sorted(self.rules.keys(), key=lambda s: -s[1][0][1]):
-            total = 0
-            for P in self.rules[S]:
-                local = 1
-                for arg in self.rules[S][P][0]:
-                    local *= count[arg]
-                total += local
-            count[(S[0], S[1][0])] = total
-        S = self.start
-        return count[(S[0], S[1][0])]
+    def is_recursive(self) -> bool:
+        return self.programs() == -1
 
     def _remove_non_reachable_(self) -> None:
         """
@@ -82,14 +88,31 @@ class CFG(TTCFG[CFGState, NoneType]):
             CFGNonTerminal,
             Dict[DerivableProgram, Tuple[List[Tuple[Type, CFGState]], NoneType]],
         ] = {}
-        for S in sorted(self.rules, key=lambda rule: rule[1][0][1], reverse=True):
+        # 1. determine the relevant non terminals
+        candidates = [S for S in self.rules]
+        next_candidates = []
+        changed = True
+        while changed:
+            changed = False
+            for S in candidates:
+                for P in self.rules[S]:
+                    args_P = self.rules[S][P][0]
+                    if all((arg[0], (arg[1], None)) in new_rules for arg in args_P):
+                        if S not in new_rules:
+                            new_rules[S] = {}
+                if S not in new_rules:
+                    next_candidates.append(S)
+                else:
+                    changed = True
+            candidates = next_candidates
+            next_candidates = []
+        # 2. get the relevant derivation rules
+        for S in new_rules:
             for P in self.rules[S]:
                 args_P = self.rules[S][P][0]
                 if all((arg[0], (arg[1], None)) in new_rules for arg in args_P):
-                    if S not in new_rules:
-                        new_rules[S] = {}
                     new_rules[S][P] = self.rules[S][P]
-
+        # 3. prune current grammar
         for S in set(self.rules):
             if S in new_rules:
                 self.rules[S] = new_rules[S]
@@ -123,13 +146,22 @@ class CFG(TTCFG[CFGState, NoneType]):
 
         Parameters:
         -----------
-        - max_depth: the maximum depth of programs allowed
+        - max_depth: the maximum depth of programs allowed, if negative returns an infinite CFG
         - upper_bound_size_type: the maximum size type allowed for polymorphic type instanciations
         - min_variable_depth: min depth at which variables and constants are allowed
         - n_gram: the context, a bigram depends only in the parent node
         - recursive: enables the generated programs to call themselves
         - constant_types: the set of of types allowed for constant objects
         """
+        if max_depth < 0:
+            return CFG.infinite(
+                dsl,
+                type_request,
+                upper_bound_type_size,
+                n_gram,
+                recursive,
+                constant_types,
+            )
         dsl.instantiate_polymorphic_types(upper_bound_type_size)
 
         forbidden_sets = dsl.forbidden_patterns
@@ -245,3 +277,130 @@ class CFG(TTCFG[CFGState, NoneType]):
             start=initital_ctx,
             rules=rules,
         )
+
+    @classmethod
+    def infinite(
+        cls,
+        dsl: DSL,
+        type_request: Type,
+        upper_bound_type_size: int = 10,
+        n_gram: int = 2,
+        recursive: bool = False,
+        constant_types: Set[Type] = set(),
+    ) -> "CFG":
+        """
+        Constructs a CFG from a DSL imposing bounds on size of the types.
+        Non terminals can be recursive.
+
+        Parameters:
+        -----------
+        - upper_bound_size_type: the maximum size type allowed for polymorphic type instanciations
+        - n_gram: the context, a bigram depends only in the parent node
+        - recursive: enables the generated programs to call themselves
+        - constant_types: the set of of types allowed for constant objects
+        """
+        dsl.instantiate_polymorphic_types(upper_bound_type_size)
+
+        forbidden_sets = dsl.forbidden_patterns
+
+        return_type = type_request.returns()
+        args = type_request.arguments()
+
+        rules: Dict[
+            CFGNonTerminal,
+            Dict[DerivableProgram, Tuple[List[Tuple[Type, CFGState]], NoneType]],
+        ] = {}
+
+        list_to_be_treated: Deque[CFGNonTerminal] = deque()
+        initital_ctx = (return_type, ((NGram(n_gram), 0), None))
+        list_to_be_treated.append(initital_ctx)
+        done: Set[CFGNonTerminal] = set()
+
+        while len(list_to_be_treated) > 0:
+            non_terminal = list_to_be_treated.pop()
+            current_type = non_terminal[0]
+            # Create rule if non existent
+            if non_terminal not in rules:
+                rules[non_terminal] = {}
+
+            if non_terminal in done:
+                continue
+            done.add(non_terminal)
+
+            # Add variables rules
+            for i in range(len(args)):
+                if current_type == args[i]:
+                    var = Variable(i, current_type)
+                    rules[non_terminal][var] = ([], None)
+            if current_type in constant_types:
+                cst = Constant(current_type)
+                rules[non_terminal][cst] = ([], None)
+            # Try to add constants from the DSL
+            for P in dsl.list_primitives:
+                type_P = P.type
+                if type_P == current_type:
+                    rules[non_terminal][P] = ([], None)
+            # Function call
+            predecessors = non_terminal[1][0][0]
+            last_pred = predecessors.last() if len(predecessors) > 0 else None
+            forbidden = forbidden_sets.get(
+                (last_pred[0].primitive, last_pred[1])
+                if last_pred and isinstance(last_pred[0], Primitive)
+                else ("", 0),
+                set(),
+            )
+            # DSL Primitives
+            for P in dsl.list_primitives:
+                if P.primitive in forbidden:
+                    continue
+                type_P = P.type
+                arguments_P = type_P.ends_with(current_type)
+                if arguments_P is not None:
+                    decorated_arguments_P = []
+                    for i, arg in enumerate(arguments_P):
+                        new_predecessors = predecessors.successor((P, i))
+                        new_context = (
+                            arg,
+                            ((new_predecessors, 0), None),
+                        )
+                        decorated_arguments_P.append((arg, (new_predecessors, 0)))
+                        if (
+                            new_context not in list_to_be_treated
+                            and new_context not in done
+                        ):
+                            list_to_be_treated.appendleft(new_context)
+                    rules[non_terminal][P] = (decorated_arguments_P, None)
+            # Try to use variable as if there were functions
+            for vi, varg in enumerate(args):
+                arguments_V = varg.ends_with(current_type)
+                if arguments_V is not None:
+                    V = Variable(vi, varg)
+                    decorated_arguments_V = []
+                    for i, arg in enumerate(arguments_V):
+                        new_predecessors = predecessors.successor((V, i))
+                        new_context = (
+                            arg,
+                            ((new_predecessors, 0), None),
+                        )
+                        decorated_arguments_V.append((arg, (new_predecessors, 0)))
+                        if new_context not in list_to_be_treated:
+                            list_to_be_treated.appendleft(new_context)
+                        rules[non_terminal][V] = (decorated_arguments_V, None)
+            # Try to call self
+            if recursive:
+                arguments_self = type_request.ends_with(current_type)
+                if arguments_self is not None:
+                    P = Primitive("@self", type_request)
+                    decorated_arguments_self = []
+                    for i, arg in enumerate(arguments_self):
+                        new_predecessors = predecessors.successor((P, i))
+                        new_context = (
+                            arg,
+                            ((new_predecessors, 0), None),
+                        )
+                        decorated_arguments_self.append((arg, (new_predecessors, 0)))
+                        if new_context not in list_to_be_treated:
+                            list_to_be_treated.appendleft(new_context)
+                    rules[non_terminal][P] = (decorated_arguments_self, None)
+
+        return CFG(start=initital_ctx, rules=rules)
