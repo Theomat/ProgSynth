@@ -233,7 +233,7 @@ class BeeSearch(
         return self.G.probability(program)
 
     def programs_in_banks(self) -> int:
-        return sum(len(val) for val in self._bank.values())
+        return sum(sum(len(x) for x in val.values()) for val in self._bank.values())
 
     def programs_in_queues(self) -> int:
         return sum(len(val) for val in self._delayed.values()) + sum(
