@@ -1,6 +1,6 @@
 from collections import defaultdict
 from itertools import product
-from heapq import heappush, heappop
+from heapq import heappush, heappop, heapify
 from typing import (
     Dict,
     Generator,
@@ -45,6 +45,7 @@ class BeepSearch(
     def __init__(self, G: ProbDetGrammar[U, V, W]) -> None:
         assert isinstance(G.grammar, CFG)
         self.G = G
+        self.cfg: CFG = G.grammar
         self._seen: Set[Program] = set()
         self._deleted: Set[Program] = set()
 
@@ -58,7 +59,7 @@ class BeepSearch(
     def _init_non_terminal_(self, S: Tuple[Type, U]) -> None:
         if len(self._cost_lists[S]) > 0:
             return
-        self._cost_lists[S].append(0)
+        self._cost_lists[S].append(1e99)
         queue = self._queues[S]
         for P in self.G.rules[S]:
             # Init args
@@ -79,8 +80,34 @@ class BeepSearch(
         Sp = self.G.rules[S][P][0][index]  # type: ignore
         return (Sp[0], (Sp[1], None))  # type: ignore
 
+    def _reevaluate_(self) -> None:
+        if not self.cfg.is_recursive():
+            return
+        changed = True
+        while changed:
+            changed = False
+            for S in list(self._queues.keys()):
+                new_queue = [
+                    HeapElement(
+                        self.G.probabilities[S][el.P]
+                        + sum(
+                            self._cost_lists[self._non_terminal_for_(S, el.P, i)][0]
+                            for i in range(len(el.combination))
+                        ),
+                        el.combination,
+                        el.P,
+                    )
+                    for el in self._queues[S]
+                ]
+                if new_queue != self._queues[S]:
+                    changed = True
+                    heapify(new_queue)
+                    self._queues[S] = new_queue
+                    self._cost_lists[S][0] = self._queues[S][0].cost
+
     def generator(self) -> Generator[Program, None, None]:
         self._init_non_terminal_(self.G.start)
+        self._reevaluate_()
         n = 0
         failed = False
         while not failed:
@@ -116,6 +143,7 @@ class BeepSearch(
             element = heappop(queue)
             nargs = self.G.arguments_length_for(S, element.P)
             Sargs = [self._non_terminal_for_(S, element.P, i) for i in range(nargs)]
+            # necessary for finite grammars
             failed = False
             # Generate programs
             args_possibles = []
