@@ -154,7 +154,8 @@ class BeePlusSearch(
 
     def generator(self) -> Generator[Program, None, None]:
         progs = self.G.programs()
-        while progs > 0:
+        infinite = progs < 0
+        while infinite or progs > 0:
             non_terminals, cost = self._next_cheapest_()
             if cost is None:
                 break

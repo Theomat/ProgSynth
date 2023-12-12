@@ -145,7 +145,8 @@ class BeeSearch(
 
     def generator(self) -> Generator[Program, None, None]:
         progs = self.G.programs()
-        while True:
+        infinite = progs < 0
+        while infinite or progs > 0:
             non_terminals, cost = self._next_cheapest_()
             if cost is None:
                 break
@@ -157,8 +158,6 @@ class BeeSearch(
                     continue
                 self._seen.add(program)
                 yield program
-            if progs <= 0:
-                break
 
     def _next_cheapest_(self) -> Tuple[List[Tuple[Type, U]], Optional[float]]:
         """
