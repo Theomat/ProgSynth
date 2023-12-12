@@ -50,11 +50,16 @@ class BeepSearch(
         self._deleted: Set[Program] = set()
 
         # S -> cost list
-        self._cost_lists: Dict[Tuple[Type, U], List[float]] = defaultdict(list)
+        self._cost_lists: Dict[Tuple[Type, U], List[float]] = {}
         # S -> cost_index -> program list
-        self._bank: Dict[Tuple[Type, U], Dict[int, List[Program]]] = defaultdict(dict)
+        self._bank: Dict[Tuple[Type, U], Dict[int, List[Program]]] = {}
         # S -> heap of HeapElement queued
-        self._queues: Dict[Tuple[Type, U], List[HeapElement]] = defaultdict(list)
+        self._queues: Dict[Tuple[Type, U], List[HeapElement]] = {}
+
+        for S in self.cfg.rules:
+            self._cost_lists[S] = []
+            self._bank[S] = {}
+            self._queues[S] = []
 
     def _init_non_terminal_(self, S: Tuple[Type, U]) -> None:
         if len(self._cost_lists[S]) > 0:
@@ -130,11 +135,6 @@ class BeepSearch(
         self, S: Tuple[Type, U], cost_index: int
     ) -> Generator[Program, None, None]:
         bank = self._bank[S]
-        if cost_index in bank:
-            for prog in bank[cost_index]:
-                yield prog
-            return
-
         queue = self._queues[S]
         if cost_index >= len(self._cost_lists[S]):
             return
@@ -148,7 +148,7 @@ class BeepSearch(
             # Generate programs
             args_possibles = []
             for i in range(nargs):
-                possibles = list(self.query(Sargs[i], element.combination[i]))
+                possibles = self._query_list_(Sargs[i], element.combination[i])
                 if len(possibles) == 0:
                     failed = True
                     break
@@ -182,6 +182,14 @@ class BeepSearch(
         if queue:
             next_cost = queue[0].cost
             self._cost_lists[S].append(next_cost)
+
+    def _query_list_(self, S: Tuple[Type, U], cost_index: int) -> List[Program]:
+        bank = self._bank[S]
+        if cost_index in bank:
+            return bank[cost_index]
+        for x in self.query(S, cost_index):
+            pass
+        return bank[cost_index]
 
     def merge_program(self, representative: Program, other: Program) -> None:
         self._deleted.add(other)
