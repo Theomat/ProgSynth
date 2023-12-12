@@ -47,8 +47,8 @@ class HSEnumerator(
         self.current: Optional[Program] = None
         self.threshold = threshold
 
-        self.deleted: Set[int] = set()
-        self.seen: Set[int] = set()
+        self.deleted: Set[Program] = set()
+        self.seen: Set[Program] = set()
 
         self.G = G
         self.start = G.start
@@ -93,23 +93,21 @@ class HSEnumerator(
             program = self.query(self.start, self.current)
             if program is None:
                 return
-            h = hash(program)
-            while h in self.seen:
+            while program in self.seen:
                 program = self.query(self.start, program)
                 if program is None:
                     return
-                h = hash(program)
-            self.seen.add(h)
+            self.seen.add(program)
             self.current = program
             yield program
 
-    def __init_non_terminal__(self, S: Tuple[Type, U]) -> None:
-        if S in self._init:
-            return
-        self._init.add(S)
-        # 1) Compute max probablities
-        best_program = None
-        best_priority: Optional[Ordered] = None
+    def __compute_max_prio__(
+        self,
+        S: Tuple[Type, U],
+        recursive: bool = False,
+        best_program: Optional[Program] = None,
+        best_priority: Optional[Ordered] = None,
+    ) -> Tuple[Optional[Program], Optional[Ordered]]:
         for P in self.rules[S]:
             nargs = self.G.arguments_length_for(S, P)
             P_unique: Program = P
@@ -118,13 +116,16 @@ class HSEnumerator(
                 information, current = self.G.derive(self.G.start_information(), S, P)
                 for _ in range(nargs):
                     self.__init_non_terminal__(current)
+                    if current == S and not recursive:
+                        break
                     # Try to init sub Tuple[Type, U] in case they were not initialised
                     arguments.append(self.max_priority[current])
                     information, lst = self.G.derive_all(
                         information, current, arguments[-1]
                     )
                     current = lst[-1]
-
+                if len(arguments) != nargs:
+                    continue
                 new_program = Function(
                     function=P_unique,
                     arguments=arguments,
@@ -135,8 +136,21 @@ class HSEnumerator(
             if not best_priority or priority < best_priority:
                 best_program = P_unique
                 best_priority = priority
+        return best_program, best_priority
+
+    def __init_non_terminal__(self, S: Tuple[Type, U]) -> None:
+        if S in self._init:
+            return
+        self._init.add(S)
+        # 1) Compute max probablities
+        best_program, best_priority = self.__compute_max_prio__(S, False)
+
         assert best_program
         self.max_priority[S] = best_program
+        # Once again
+        best_program, best_priority = self.__compute_max_prio__(
+            S, True, best_program, best_priority
+        )
 
         # 2) add P(max(S1),max(S2), ...) to self.heaps[S]
         for P in self.rules[S]:
@@ -163,7 +177,7 @@ class HSEnumerator(
         In other words, other will no longer be generated through heap search
         """
         our_hash = hash(other)
-        self.deleted.add(our_hash)
+        self.deleted.add(other)
         for S in self.G.rules:
             if our_hash in self.pred[S] and our_hash in self.succ[S]:
                 pred_hash = self.pred[S][our_hash]
@@ -220,7 +234,7 @@ class HSEnumerator(
         try:
             element = heappop(self.heaps[S])
             succ = element.program
-            while hash(succ) in self.deleted:
+            while succ in self.deleted:
                 self.__add_successors__(succ, S)
                 element = heappop(self.heaps[S])
                 succ = element.program
