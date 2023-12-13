@@ -3,7 +3,7 @@ from typing import Optional
 from colorama import Fore as F
 
 from synth import Dataset, PBE
-from synth.syntax import CFG
+from synth.syntax import CFG, Program
 from synth.task import Task
 
 from dsl_loader import add_dsl_choice_arg, load_DSL
@@ -22,8 +22,8 @@ dataset_file: str = parameters.dataset
 # ================================
 # Load constants specific to DSL
 # ================================
-def pretty_print_solution(str: str):
-    return str
+def pretty_print_solution(program: Program):
+    return "\n".join(program.pretty_print())
 
 
 def pretty_print_inputs(str: str):
@@ -115,7 +115,10 @@ def task(*args: str) -> None:
     task: Task[PBE] = full_dataset[task_no]
     print_value(f"Name", task.metadata.get("name", "None"))
     print_value("Type", task.type_request)
-    print_value("Solution", pretty_print_solution(task.solution))
+    if task.solution is not None:
+        print_value("Solution", "\n" + pretty_print_solution(task.solution))
+    else:
+        print(f"{F.LIGHTRED_EX}No Solution{F.RESET}")
     print_value("Examples", "")
     for example in task.specification.examples:
         print_value(
