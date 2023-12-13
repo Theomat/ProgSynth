@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Generator, List as TList, Any, Optional, Set, Tuple
+from typing import Dict, Generator, List as TList, Any, Optional, Set, Tuple
 
 from synth.syntax.type_system import (
     PrimitiveType,
@@ -72,6 +72,26 @@ class Program(ABC):
         """
         yield self
 
+    def pretty_print(self) -> TList[str]:
+        """
+        Represents this program as a list of operations.
+        """
+        defined: Dict["Program", Tuple[int, str, str]] = {}
+        self.__pretty_print__(defined, 0)
+        data = sorted(defined.values())
+        order = [x[2] for x in data if len(x[2]) > 0]
+        return order
+
+    def __pretty_print__(
+        self, defined: Dict["Program", Tuple[int, str, str]], last: int
+    ) -> int:
+        if self not in defined:
+            var_name = f"x{last}"
+            defined[self] = (last, var_name, f"{var_name}: {self.type} = {self}")
+            return last + 1
+        else:
+            return last
+
     def __contains__(self, other: "Program") -> bool:
         return self == other
 
@@ -106,6 +126,15 @@ class Variable(Program):
 
     def __str__(self) -> str:
         return "var" + format(self.variable)
+
+    def __pretty_print__(
+        self, defined: Dict["Program", Tuple[int, str, str]], last: int
+    ) -> int:
+        if self not in defined:
+            defined[self] = (0, str(self), "")
+            return last + 1
+        else:
+            return last
 
     def __eq__(self, other: Any) -> bool:
         return isinstance(other, Variable) and self.variable == other.variable
@@ -206,6 +235,23 @@ class Function(Program):
             for arg in self.arguments:
                 s += " " + format(arg)
             return s + ")"
+
+    def __pretty_print__(
+        self, defined: Dict["Program", Tuple[int, str, str]], last: int
+    ) -> int:
+        if self in defined:
+            return last
+        out = []
+        for arg in self.arguments:
+            last = arg.__pretty_print__(defined, last)
+            out.append(defined[arg][1])
+        var_name = f"x{last}"
+        defined[self] = (
+            last,
+            var_name,
+            f"{var_name}: {self.type} = {self.function}({', '.join(out)})",
+        )
+        return last + 1
 
     def __eq__(self, other: object) -> bool:
         return (
