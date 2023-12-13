@@ -56,7 +56,7 @@ class BeepSearch(
         # S -> heap of HeapElement queued
         self._queues: Dict[Tuple[Type, U], List[HeapElement]] = {}
 
-        for S in self.cfg.rules:
+        for S in self.G.grammar.rules:
             self._cost_lists[S] = []
             self._bank[S] = {}
             self._queues[S] = []
