@@ -1,9 +1,9 @@
 from typing import Callable, Iterable, List, Tuple, Union
 import csv
 import time
+import argparse
 
 from dsl_loader import add_dsl_choice_arg, load_DSL
-
 
 from synth.syntax import (
     ProbDetGrammar,
@@ -17,14 +17,10 @@ from synth.syntax import (
     hs_enumerate_prob_u_grammar,
     ProgramEnumerator,
     Type,
+    auto_type,
 )
 
 import tqdm
-
-import argparse
-
-from synth.syntax.type_helper import auto_type
-
 
 SEARCH_ALGOS = {
     "beep_search": (bps_enumerate_prob_grammar, None),
@@ -82,7 +78,7 @@ def save(trace: Iterable) -> None:
 
 # Enumeration methods =====================================================
 def enumerative_search(
-    cfgs: List[CFG],
+    pcfg: ProbDetGrammar,
     name: str,
     custom_enumerate: Callable[
         [Union[ProbDetGrammar, ProbUGrammar]], ProgramEnumerator
@@ -91,58 +87,53 @@ def enumerative_search(
     datum_each: int = 50000,
 ) -> List[Tuple[str, Type, float, int, int, int]]:
     out = []
-    for cfg in cfgs:
-        n = 0
-        pbar = tqdm.tqdm(total=programs, desc=name)
-        start = time.perf_counter_ns()
-        enumerator = custom_enumerate(cfg)
-        for program in enumerator.generator():
-            n += 1
-            if n % datum_each == 0 or n >= programs:
-                used_time = time.perf_counter_ns() - start
-                bef = time.perf_counter_ns()
-                out.append(
-                    (
-                        name,
-                        cfg.type_request,
-                        used_time / 1e9,
-                        n,
-                        enumerator.programs_in_queues(),
-                        enumerator.programs_in_banks(),
-                    )
+    n = 0
+    pbar = tqdm.tqdm(total=programs, desc=name)
+    start = time.perf_counter_ns()
+    enumerator = custom_enumerate(pcfg)
+    for program in enumerator.generator():
+        n += 1
+        if n % datum_each == 0 or n >= programs:
+            used_time = time.perf_counter_ns() - start
+            bef = time.perf_counter_ns()
+            out.append(
+                (
+                    name,
+                    pcfg.type_request,
+                    used_time / 1e9,
+                    n,
+                    enumerator.programs_in_queues(),
+                    enumerator.programs_in_banks(),
                 )
-                pbar.update(datum_each)
-                if n >= programs:
-                    pbar.close()
-                    break
-                start -= time.perf_counter_ns() - bef
+            )
+            pbar.update(datum_each)
+            if n >= programs:
+                pbar.close()
+                break
+            start -= time.perf_counter_ns() - bef
     return out
 
 
 # Main ====================================================================
 
 if __name__ == "__main__":
+    import sys
+
     dsl_module = load_DSL(dsl_name)
     dsl: DSL = dsl_module.dsl
 
-    base_types = set()
-    for p in dsl.list_primitives:
-        base_types |= p.type.decompose_type()[0]
-
-    type_requests = [auto_type(str_tr)]
-    pcfgs = []
     n_gram = 2 if max_depth > 0 else 1
-    for tr in type_requests:
-        try:
-            cfg = CFG.depth_constraint(dsl, tr, max_depth, n_gram=n_gram)
-            pcfg = ProbDetGrammar.random(cfg, seed=seed)
-            pcfgs.append(pcfg)
-        except KeyError:
-            pass
-    assert len(pcfgs) > 0, f"failed to generate any simple CFGs for {type_requests}"
-    print(f"generated {len(pcfgs)} CFGs")
+    try:
+        cfg = CFG.depth_constraint(dsl, auto_type(str_tr), max_depth, n_gram=n_gram)
+        pcfg = ProbDetGrammar.random(cfg, seed=seed)
+    except KeyError:
+        print(
+            f"failed to instantiate a non empty grammar for dsl {dsl} and type: {str_tr}",
+            file=sys.stderr,
+        )
+        sys.exit(1)
     trace = [("search", "type", "time", "programs", "queue", "bank")]
     for name, (enum, _) in SEARCH_ALGOS.items():
-        trace += enumerative_search(pcfgs, name, enum, programs)
+        trace += enumerative_search(pcfg, name, enum, programs)
     save(trace)
     print("csv file was saved as:", output_file)
