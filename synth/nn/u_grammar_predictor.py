@@ -182,6 +182,7 @@ class UGrammarPredictorLayer(nn.Module, Generic[A, U, V, W]):
 
             # List of all variables derivable from S
             variables: List[Variable] = []
+            constants: List[Constant] = []
             # For each derivation parse probabilities
             for P in grammar.rules[S]:
                 cpy_P = P
@@ -198,6 +199,9 @@ class UGrammarPredictorLayer(nn.Module, Generic[A, U, V, W]):
                     variables.append(V)
                     # All variables together have probability mass self.variable_probability
                     # then the probability of selecting a variable is uniform
+                elif isinstance(P, Constant):
+                    C: Constant = P  # ensure typing
+                    constants.append(C)
                 else:
                     continue
             # If there are variables we need to normalise
@@ -205,7 +209,7 @@ class UGrammarPredictorLayer(nn.Module, Generic[A, U, V, W]):
                 sum(np.exp(t_prob.item()) for t_prob in dico.values())
                 for P, dico in tags[S].items()
             )
-            if variables:
+            if variables or constants:
                 var_probability = self.variable_probability
                 if total > 0:
                     # Normalise rest
@@ -219,7 +223,7 @@ class UGrammarPredictorLayer(nn.Module, Generic[A, U, V, W]):
                     var_probability = 1
                 # Normalise variable probability
                 normalised_variable_logprob: float = np.log(
-                    var_probability / len(variables)
+                    var_probability / (len(variables) + len(constants))
                 )
                 for P in variables:
                     for v in grammar.rules[S][P]:
@@ -231,6 +235,11 @@ class UGrammarPredictorLayer(nn.Module, Generic[A, U, V, W]):
                             normalised_variable_logprob = np.log(
                                 np.exp(normalised_variable_logprob) - 1e-7
                             )
+                for P in constants:
+                    for v in grammar.rules[S][P]:
+                        tags[S][P][tuple(v)] = torch.tensor(normalised_variable_logprob).to(  # type: ignore
+                            device
+                        )
             else:
                 # We still need to normalise probabilities
                 # Since all derivations aren't possible
