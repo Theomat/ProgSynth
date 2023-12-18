@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Set
 
-from synth.syntax.program import Function, Primitive, Program, Variable
+from synth.syntax.program import Constant, Function, Primitive, Program, Variable
 from synth.syntax.type_system import PrimitiveType
 
 
@@ -54,6 +54,8 @@ class DSLEvaluator(Evaluator):
                     evaluations[sub_prog] = self.semantics[sub_prog]
                 elif isinstance(sub_prog, Variable):
                     evaluations[sub_prog] = input[sub_prog.variable]
+                elif isinstance(sub_prog, Constant):
+                    evaluations[sub_prog] = sub_prog.value
                 elif isinstance(sub_prog, Function):
                     fun = evaluations[sub_prog.function]
                     for arg in sub_prog.arguments:
