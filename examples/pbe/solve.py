@@ -190,6 +190,8 @@ def enumerative_search(
     if start == 0:
         trace.append(["solved", "solution"] + stats_name)
     for task, pcfg in zip(tasks[start:], pcfgs[start:]):
+        if task.metadata.get("name", None) is not None:
+            pbar.set_description_str(task.metadata["name"])
         total += 1
         task_solved = False
         solution = None
