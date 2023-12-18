@@ -1,8 +1,9 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import List, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union
 
 from synth.syntax.program import Constant, Primitive, Program, Variable
+from synth.syntax.type_system import Type
 
 DerivableProgram = Union[Primitive, Variable, Constant]
 
@@ -57,5 +58,12 @@ class Grammar(ABC):
     def programs(self) -> int:
         """
         Return the number of programs contained within this grammar.
+        """
+        pass
+
+    @abstractmethod
+    def instantiate_constants(self, constants: Dict[Type, List[Any]]) -> "Grammar":
+        """
+        Replace all occurences of non instantiated constants with all possible values of instantiated ones.
         """
         pass

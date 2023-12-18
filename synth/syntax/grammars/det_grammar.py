@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import (
+    Any,
     Callable,
     Dict,
     List,
@@ -183,6 +184,12 @@ class DetGrammar(Grammar, ABC, Generic[U, V, W]):
         """
         Returns the number of arguments when deriving P from S.
         """
+        pass
+
+    @abstractmethod
+    def instantiate_constants(
+        self, constants: Dict[Type, List[Any]]
+    ) -> "DetGrammar[U, V, W]":
         pass
 
     @abstractmethod

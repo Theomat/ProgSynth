@@ -1,6 +1,7 @@
 from collections import defaultdict, deque
 from functools import lru_cache
 from typing import (
+    Any,
     Callable,
     Deque,
     Dict,
@@ -354,6 +355,22 @@ class TTCFG(
             candidates = self.possible_outcomes_after(new_S, PP, new_info)
             out |= candidates
         return out
+
+    def instantiate_constants(self, constants: Dict[Type, List[Any]]) -> "TTCFG[S, T]":
+        rules: Dict[
+            Tuple[Type, Tuple[S, T]],
+            Dict[DerivableProgram, Tuple[List[Tuple[Type, S]], T]],
+        ] = {}
+        for NT in self.rules:
+            rules[NT] = {}
+            for P in self.rules[NT]:
+                if isinstance(P, Constant) and P.type in constants:
+                    for val in constants[P.type]:
+                        rules[NT][Constant(P.type, val, True)] = self.rules[NT][P]
+                else:
+                    rules[NT][P] = self.rules[NT][P]
+        # Cleaning produces infinite loop
+        return self.__class__(self.start, rules, clean=False)
 
     @classmethod
     def size_constraint(
