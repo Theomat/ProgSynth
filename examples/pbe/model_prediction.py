@@ -2,7 +2,7 @@ import argparse
 import atexit
 import os
 import sys
-from typing import List, Optional, Tuple, Union
+from typing import List, Optional, Set, Tuple, Union
 
 import tqdm
 
@@ -19,13 +19,7 @@ from model_loader import (
 from synth import Dataset, PBE
 from synth.pruning.constraints.dfta_constraints import add_dfta_constraints
 from synth.semantic.evaluator import DSLEvaluatorWithConstant
-from synth.syntax import (
-    CFG,
-    UCFG,
-    ProbDetGrammar,
-    ProbUGrammar,
-    DSL,
-)
+from synth.syntax import CFG, UCFG, ProbDetGrammar, ProbUGrammar, DSL, Type
 from synth.utils import load_object, save_object
 
 
@@ -91,13 +85,16 @@ supported_type_requests = Dataset.load(support).type_requests() if support else 
 
 
 def load_dsl_and_dataset() -> Tuple[
-    Dataset[PBE], DSL, DSLEvaluatorWithConstant, List[int], str, List[str]
+    Dataset[PBE], DSL, DSLEvaluatorWithConstant, List[int], str, List[str], Set[Type]
 ]:
     dsl_module = load_DSL(dsl_name)
     dsl, lexicon = dsl_module.dsl, dsl_module.lexicon
+    constant_types = set()
     constraints = []
     if constrained and hasattr(dsl_module, "constraints"):
         constraints = dsl_module.constraints
+    if hasattr(dsl_module, "constant_types"):
+        constant_types = dsl_module.constant_types
     # ================================
     # Load dataset
     # ================================
@@ -109,13 +106,17 @@ def load_dsl_and_dataset() -> Tuple[
         else (len(model_file) - model_file[::-1].index(os.path.sep))
     )
     model_name = model_file[start_index : model_file.index(".", start_index)]
-    return full_dataset, dsl, lexicon, model_name, constraints
+    return full_dataset, dsl, lexicon, model_name, constraints, constant_types
 
 
 # Produce PCFGS ==========================================================
 @torch.no_grad()
 def produce_pcfgs(
-    full_dataset: Dataset[PBE], dsl: DSL, lexicon: List[int], constraints: List[str]
+    full_dataset: Dataset[PBE],
+    dsl: DSL,
+    lexicon: List[int],
+    constraints: List[str],
+    constant_types: Set[Type],
 ) -> Union[List[ProbDetGrammar], List[ProbUGrammar]]:
     # ================================
     # Load already done PCFGs
@@ -165,7 +166,7 @@ def produce_pcfgs(
             t,
             max_depth,
             upper_bound_type_size=10,
-            constant_types=set(),
+            constant_types=constant_types,
             min_variable_depth=0,
         )
         for t in all_type_requests
@@ -224,6 +225,7 @@ if __name__ == "__main__":
         lexicon,
         model_name,
         constraints,
+        constant_types,
     ) = load_dsl_and_dataset()
 
-    pcfgs = produce_pcfgs(full_dataset, dsl, lexicon, constraints)
+    pcfgs = produce_pcfgs(full_dataset, dsl, lexicon, constraints, constant_types)
