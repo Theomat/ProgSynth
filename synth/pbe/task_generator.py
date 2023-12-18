@@ -383,7 +383,7 @@ def reproduce_dataset(
         }
         type2samples = {
             t: [
-                type2grammar[t].embed(task.solution)
+                task.solution
                 for task in dataset
                 if task.solution and (t == task.type_request)
             ]
