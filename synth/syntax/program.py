@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Dict, Generator, List as TList, Any, Optional, Set, Tuple
+import itertools
 
 from synth.syntax.type_system import (
     PrimitiveType,
@@ -42,7 +43,7 @@ class Program(ABC):
         return False
 
     def is_invariant(self, constant_types: Set[PrimitiveType]) -> bool:
-        """ """
+        """SHOULD BE DELETED"""
         return True
 
     def count_constants(self) -> int:
@@ -50,6 +51,17 @@ class Program(ABC):
         Returns the number of constants that are present in this program.
         """
         return int(self.is_constant())
+
+    def constants(self) -> Generator[Optional["Constant"], None, None]:
+        """
+        Iterates over all constants of this program, yields a None only if the program does NOT contain any constant.
+        """
+        yield None
+
+    def all_constants_instantiation(
+        self, constants: Dict[Type, TList[Any]]
+    ) -> Generator["Program", None, None]:
+        yield self
 
     def size(self) -> int:
         """
@@ -168,6 +180,15 @@ class Constant(Program):
         """
         return self._has_value
 
+    def constants(self) -> Generator[Optional["Constant"], None, None]:
+        yield self
+
+    def all_constants_instantiation(
+        self, constants: Dict[Type, TList[Any]]
+    ) -> Generator["Program", None, None]:
+        for val in constants[self.type]:
+            yield Constant(self.type, val)
+
     def __str__(self) -> str:
         if self.has_value():
             return format(self.value)
@@ -182,6 +203,7 @@ class Constant(Program):
         """
         self._has_value = True
         self.value = value
+        self.hash = hash((str(self.value), self._has_value, self.type))
 
     def reset(self) -> None:
         """
@@ -189,6 +211,7 @@ class Constant(Program):
         """
         self._has_value = False
         self.value = None
+        self.hash = hash((str(self.value), self._has_value, self.type))
 
     def __eq__(self, other: Any) -> bool:
         return (
@@ -266,6 +289,25 @@ class Function(Program):
             arg.is_constant() for arg in self.arguments
         )
 
+    def constants(self) -> Generator[Optional["Constant"], None, None]:
+        g = [self.function.constants()] + [arg.constants() for arg in self.arguments]
+        for gen in g:
+            c = next(gen, None)
+            while c is not None:
+                yield c
+                c = next(gen, None)
+
+    def all_constants_instantiation(
+        self, constants: Dict[Type, TList[Any]]
+    ) -> Generator["Program", None, None]:
+        for f in self.function.all_constants_instantiation(constants):
+            possibles = [
+                list(arg.all_constants_instantiation(constants))
+                for arg in self.arguments
+            ]
+            for args in itertools.product(*possibles):
+                yield Function(f, list(args))
+
     def is_invariant(self, constant_types: Set[PrimitiveType]) -> bool:
         return self.function.is_invariant(constant_types) and all(
             arg.is_invariant(constant_types) for arg in self.arguments
@@ -315,6 +357,16 @@ class Lambda(Program):
 
     def __str__(self) -> str:
         return "(lambda " + format(self.body) + ")"
+
+    def constants(self) -> Generator[Optional["Constant"], None, None]:
+        for x in self.body.constants():
+            yield x
+
+    def all_constants_instantiation(
+        self, constants: Dict[Type, TList[Any]]
+    ) -> Generator["Program", None, None]:
+        for val in self.body.all_constants_instantiation(constants):
+            yield Lambda(val)
 
     def __eq__(self, other: Any) -> bool:
         return isinstance(other, Lambda) and self.body == other.body
