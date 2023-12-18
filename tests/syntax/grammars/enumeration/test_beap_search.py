@@ -1,4 +1,4 @@
-from synth.syntax.grammars.enumeration.beep_search import (
+from synth.syntax.grammars.enumeration.beap_search import (
     enumerate_prob_grammar,
 )
 from synth.syntax.grammars.cfg import CFG

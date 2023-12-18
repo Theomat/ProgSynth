@@ -38,7 +38,7 @@ class HeapElement:
         return f"({self.cost}, {self.combination}, {self.P})"
 
 
-class BeepSearch(
+class BeapSearch(
     ProgramEnumerator[None],
     Generic[U, V, W],
 ):
@@ -206,11 +206,11 @@ class BeepSearch(
 
     @classmethod
     def name(cls) -> str:
-        return "beep-search"
+        return "beap-search"
 
     def clone_with_memory(
         self, G: Union[ProbDetGrammar, ProbUGrammar]
-    ) -> "BeepSearch[U, V, W]":
+    ) -> "BeapSearch[U, V, W]":
         assert isinstance(G, ProbDetGrammar)
         enum = self.__class__(G)
         enum._seen = self._seen.copy()
@@ -218,7 +218,7 @@ class BeepSearch(
         return enum
 
 
-def enumerate_prob_grammar(G: ProbDetGrammar[U, V, W]) -> BeepSearch[U, V, W]:
+def enumerate_prob_grammar(G: ProbDetGrammar[U, V, W]) -> BeapSearch[U, V, W]:
     Gp: ProbDetGrammar = ProbDetGrammar(
         G.grammar,
         {
@@ -226,4 +226,4 @@ def enumerate_prob_grammar(G: ProbDetGrammar[U, V, W]) -> BeepSearch[U, V, W]:
             for S, val in G.probabilities.items()
         },
     )
-    return BeepSearch(Gp)
+    return BeapSearch(Gp)
