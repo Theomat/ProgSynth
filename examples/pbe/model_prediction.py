@@ -18,7 +18,6 @@ from model_loader import (
 
 from synth import Dataset, PBE
 from synth.pruning.constraints.dfta_constraints import add_dfta_constraints
-from synth.semantic.evaluator import DSLEvaluatorWithConstant
 from synth.syntax import CFG, UCFG, ProbDetGrammar, ProbUGrammar, DSL, Type
 from synth.utils import load_object, save_object
 
@@ -85,11 +84,11 @@ supported_type_requests = Dataset.load(support).type_requests() if support else 
 
 
 def load_dsl_and_dataset() -> Tuple[
-    Dataset[PBE], DSL, DSLEvaluatorWithConstant, List[int], str, List[str], Set[Type]
+    Dataset[PBE], DSL, List[int], str, List[str], Set[Type]
 ]:
     dsl_module = load_DSL(dsl_name)
     dsl, lexicon = dsl_module.dsl, dsl_module.lexicon
-    constant_types = set()
+    constant_types: Set[Type] = set()
     constraints = []
     if constrained and hasattr(dsl_module, "constraints"):
         constraints = dsl_module.constraints
