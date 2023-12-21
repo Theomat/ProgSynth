@@ -22,7 +22,7 @@ from synth.syntax import (
 import tqdm
 
 SEARCH_ALGOS = {
-    "beep_search": (bps_enumerate_prob_grammar, None),
+    "beap_search": (bps_enumerate_prob_grammar, None),
     "heap_search": (hs_enumerate_prob_grammar, hs_enumerate_prob_u_grammar),
     "bee_search": (bs_enumerate_prob_grammar, None),
 }

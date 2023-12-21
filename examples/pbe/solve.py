@@ -48,7 +48,7 @@ for meta_solver in [RestartPBESolver]:
         )
 
 SEARCH_ALGOS = {
-    "beep_search": (bps_enumerate_prob_grammar, None),
+    "beap_search": (bps_enumerate_prob_grammar, None),
     "heap_search": (hs_enumerate_prob_grammar, hs_enumerate_prob_u_grammar),
     "bucket_search": (
         lambda x: hs_enumerate_bucket_prob_grammar(x, 3),
