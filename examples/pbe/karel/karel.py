@@ -1,6 +1,4 @@
-from typing import List, Optional
-from dataclasses import dataclass, field
-
+from typing import List
 from synth.syntax import (
     DSL,
     auto_type,
@@ -10,51 +8,6 @@ from synth.semantic import DSLEvaluator
 import numpy as np
 
 import matplotlib.pyplot as plt
-
-
-@dataclass(frozen=True)
-class KarelProg:
-    def then(self, s2: "KarelProg") -> "KarelProg":
-        return KarelThen(self, s2)
-
-
-@dataclass(frozen=True)
-class KarelRepeat(KarelProg):
-    subroutine: KarelProg
-    n: int
-
-
-@dataclass(frozen=True)
-class KarelThen(KarelProg):
-    s1: KarelProg
-    s2: KarelProg
-
-
-@dataclass(frozen=True)
-class KarelAction(KarelProg):
-    action: str
-
-
-@dataclass(frozen=True)
-class KarelCond(KarelProg):
-    cond: str
-    negated: bool = field(default=False)
-
-    def neg(self) -> "KarelCond":
-        return KarelCond(self.cond, not self.negated)
-
-
-@dataclass(frozen=True)
-class KarelWhile(KarelProg):
-    subroutine: KarelProg
-    cond: KarelCond
-
-
-@dataclass(frozen=True)
-class KarelITE(KarelProg):
-    cond: KarelCond
-    yes: KarelProg
-    no: Optional[KarelProg]
 
 
 class KarelWorld:
@@ -90,10 +43,10 @@ class KarelWorld:
             return False
         return self.grid[new] <= 0
 
-    def act(self, command: str) -> None:
+    def act(self, command: str) -> "KarelWorld":
         if command == "move":
             if not self.isFrontClear():
-                return
+                return self
             x, y = self.karel
             if self.direction == self.DIRECTION_BOTTOM:
                 self.karel = (x, y + 1)
@@ -117,6 +70,7 @@ class KarelWorld:
             self.current_markers[self.karel] = 0
         else:
             raise Exception(f"invalid command:{command}")
+        return self
 
     def eval(self, cond: str) -> bool:
         if cond == "frontIsClear":
@@ -136,33 +90,6 @@ class KarelWorld:
         elif cond == "noMarkersPresent":
             return not self.markers[self.karel]
         raise Exception(f"invalid cond:{cond}")
-
-    def exec(self, prog: KarelProg) -> bool:
-        if isinstance(prog, KarelAction):
-            self.act(prog.action)
-        elif isinstance(prog, KarelCond):
-            out = self.eval(prog.cond)
-            if prog.negated:
-                out = not out
-            return out
-        elif isinstance(prog, KarelThen):
-            self.exec(prog.s1)
-            self.exec(prog.s2)
-        elif isinstance(prog, KarelRepeat):
-            for _ in range(prog.n):
-                self.exec(prog.subroutine)
-        elif isinstance(prog, KarelWhile):
-            n = 0
-            max_it = self.grid.shape[0] * self.grid.shape[1]
-            while self.exec(prog.cond) and n < max_it:
-                self.exec(prog.subroutine)
-                n += 1
-        elif isinstance(prog, KarelITE):
-            if self.exec(prog.cond):
-                self.exec(prog.yes)
-            elif prog.no is not None:
-                self.exec(prog.no)
-        return False
 
     def state(self) -> tuple:
         out = self.markers * 2 + self.grid + self.current_markers * 4
@@ -204,51 +131,51 @@ class KarelWorld:
 
 __syntax = auto_type(
     {
-        "run": "world -> stmt -> result",
-        "then": "stmt -> stmt -> stmt",
-        "move": "stmt",
-        "turnRight": "stmt",
-        "turnLeft": "stmt",
-        "pickMarker": "stmt",
-        "putMarker": "stmt",
-        "frontIsClear": "cond",
-        "leftIsClear": "cond",
-        "rightIsClear": "cond",
-        "markersPresent": "cond",
-        "noMarkersPresent": "cond",
-        "not": "cond -> cond",
-        "if": "cond -> stmt -> stmt",
-        "repeat": "int -> stmt -> stmt",
-        "while": "cond -> stmt -> stmt",
+        "then": "(world -> world) -> (world -> world)",
+        "move": "world -> world",
+        "turnRight": "world -> world",
+        "turnLeft": "world -> world",
+        "pickMarker": "world -> world",
+        "putMarker": "world -> world",
+        "frontIsClear": "world -> bool",
+        "leftIsClear": "world -> bool",
+        "rightIsClear": "world -> bool",
+        "markersPresent": "world -> bool",
+        "noMarkersPresent": "world -> bool",
+        "not": "bool -> bool",
+        "ite": "world -> bool -> (world -> world) -> (world -> world) -> world",
+        "repeat": "world -> int -> (world -> world) -> world",
+        "while": "world -> (world -> bool) -> (world -> world) -> world",
     }
 )
 
 
-def __run__(world: KarelWorld, prog: KarelProg) -> tuple:
-    world.reset()
-    world.exec(prog)
-    # print(prog)
-    # world.show()
-    return world.state()
+def __while(w: KarelWorld, c, s) -> KarelWorld:
+    n = 0
+    while c(w) and n < 10000:
+        w = s(w)
+        n += 1
+    return w
 
 
 __semantics = {
-    "run": lambda grid: lambda s: __run__(grid, s),
-    "then": lambda s1: lambda s2: s1.then(s2),
-    "move": KarelAction("move"),
-    "turnRight": KarelAction("turnRight"),
-    "turnLeft": KarelAction("turnLeft"),
-    "pickMarker": KarelAction("pickMarker"),
-    "putMarker": KarelAction("putMarker"),
-    "frontIsClear": KarelCond("frontIsClear"),
-    "leftIsClear": KarelCond("leftIsClear"),
-    "rightIsClear": KarelCond("rightIsClear"),
-    "markersPresent": KarelCond("markersPresent"),
-    "noMarkersPresent": KarelCond("noMarkersPresent"),
-    "not": lambda c: c.neg(),
-    "if": lambda c: lambda s: KarelITE(c, s, None),
-    "repeat": lambda n: lambda s: KarelRepeat(s, n),
-    "while": lambda c: lambda s: KarelWhile(s, c),
+    "then": lambda f: lambda g: lambda z: f(g(z)),
+    "move": lambda w: w.act("move"),
+    "turnRight": lambda w: w.act("turnRight"),
+    "turnLeft": lambda w: w.act("turnLeft"),
+    "pickMarker": lambda w: w.act("pickMarker"),
+    "putMarker": lambda w: w.act("putMarker"),
+    "frontIsClear": lambda w: w.eval("frontIsClear"),
+    "leftIsClear": lambda w: w.eval("leftIsClear"),
+    "rightIsClear": lambda w: w.eval("rightIsClear"),
+    "markersPresent": lambda w: w.eval("markersPresent"),
+    "noMarkersPresent": lambda w: w.eval("noMarkersPresent"),
+    "not": lambda c: not c,
+    "if": lambda w: lambda c: lambda ifblock: lambda elseblock: ifblock(w)
+    if c
+    else elseblock(w),
+    "repeat": lambda w: lambda n: lambda s: [s(w) for _ in range(n)][-1],
+    "while": lambda w: lambda c: lambda s: __while(w, c, s),
 }
 # Add constants
 for i in range(3, 10):
