@@ -244,41 +244,24 @@ If you are perhaps more interested in solving then you should probably look at t
 ```python
 from synth import Task, PBE
 from synth.semantic import DSLEvaluator
-from synth.syntax import ProbDetGrammar, enumerate_prob_grammar
+from synth.syntax import bps_enumerate_prob_grammar, ProbDetGrammar
+from synth.pbe import CutoffPBESolver
 
 def synthesis(
     evaluator: DSLEvaluator,
     task: Task[PBE],
     pcfg: ProbDetGrammar,
     task_timeout: float = 60
-) -> Tuple[bool, float, int, Optional[Program], Optional[float]]:
-    """
-    Returns:
-      - True if and only if a program was found 
-      - time elapsed in seconds
-      - the number of programs enumerated
-      - the program found if one was found otherwise None
-      - the program's probability if one was found otherwise None
-    """
-    start_time = time.time()
-    programs = 0
-    for program in enumerate_prob_grammar(pcfg):
-      current_time = time.time()
-      if current_time - start_time >= task_timeout:
-        return (False, time, programs, None, None)
-      programs += 1
-      failed = False
-      for ex in task.specification.examples:
-        if evaluator.eval(program, ex.inputs) != ex.output:
-          failed = True
-          break
-      if not failed:
-        return (
-                True,
-                time.time() - start_time,
-                programs,
-                program,
-                pcfg.probability(program),
-                )
-  return (False, time, programs, None, None)
+):
+    solver = CutoffPBESolver(evaluator)
+    solution_generator = solver.solve(task, bps_enumerate_prob_grammar(pcfg), task_timeout)
+    try:
+        solution = next(solution_generator)
+        print("Solution:", solution)
+    except StopIteration:
+        # Failed generating a solution
+        print("No solution found under timeout")
+    for stats in solver.available_stats():
+        print(f"\t{stats}: {solver.get_stats(stats)}")
+    
 ```
