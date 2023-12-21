@@ -167,7 +167,7 @@ This can be done easily by visualizing the tasks of a dataset with the dataset e
 A dataset can be explored using `dataset_explorer.py`.
 
 ```bash
-python dataset_explorer.py --dsl calculator --dataset calculator.pickle
+python examples/pbe/dataset_explorer.py --dsl calculator --dataset calculator.pickle
 ```
 
 ## Creating a Task Generator
@@ -187,7 +187,7 @@ The dataset generator works out of the box for our DSL but that may not always b
 You can generate datasets using:
 
 ```bash
-python dataset_generator_unique.py --dsl calculator --dataset calculator/calculator.pickle -o dataset.pickle --inputs 1 --programs 1000
+python examples/pbe/dataset_generator_unique.py --dsl calculator --dataset calculator/calculator.pickle -o dataset.pickle --inputs 1 --programs 1000
 ```
 
 ## Train a model
@@ -230,7 +230,7 @@ This will produce a CSV file in the output folder (``.`` above).
 This result file can then be plotted using:
 
 ```bash
-python experiments/plot_solve_results.py --dataset my_test_dataset.pickle --folder . --support my_train_dataset.pickle
+python examples/plot_solve_results.py --dataset my_test_dataset.pickle --folder . --support my_train_dataset.pickle
 ```
 
 Again there's a plethora of options available, so feel free to play with them.
