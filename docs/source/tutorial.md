@@ -220,7 +220,7 @@ If you are directly interested in synthesizing your first program then jump over
 You can easily evaluate a model using:
 
 ```bash
-python examples/pbe/solve.py --dsl calculator --dataset my_test_dataset.pickle --pcfg pcfgs_my_test_dattaset_my_model.pt -o . -t 60 --support my_train_dataset.pickle --solver cutoff
+python examples/pbe/solve.py --dsl calculator --dataset my_test_dataset.pickle --pcfg pcfgs_my_test_dataset_my_model.pt -o . -t 60 --support my_train_dataset.pickle --solver cutoff
 ```
 
 The most important parameter is perhaps ``-t 60`` which gives a timeout of 60 seconds per task.
