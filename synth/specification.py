@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Generic, List, Optional, TypeVar
+from typing import Any, Dict, Generic, List, Optional, TypeVar
 
 from synth.syntax.type_system import EmptyList, Type
 from synth.syntax.type_helper import FunctionType, guess_type
@@ -53,8 +53,7 @@ class PBEWithConstants(PBE):
     Programming By Example (PBE) with constants specification
     """
 
-    constants_in: List[Any]
-    constants_out: List[Any]
+    constants: Dict[Type, List[Any]]
 
 
 @dataclass
