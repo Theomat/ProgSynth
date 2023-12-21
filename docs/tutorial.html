@@ -247,7 +247,7 @@ An important point to note is that we need to develop the <code class="docutils 
 <p>You might want to check that you correctly translated your task to the ProgSynth format.
 This can be done easily by visualizing the tasks of a dataset with the dataset explorer.
 A dataset can be explored using <code class="docutils literal notranslate"><span class="pre">dataset_explorer.py</span></code>.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>dataset_explorer.py<span class="w"> </span>--dsl<span class="w"> </span>calculator<span class="w"> </span>--dataset<span class="w"> </span>calculator.pickle
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>examples/pbe/dataset_explorer.py<span class="w"> </span>--dsl<span class="w"> </span>calculator<span class="w"> </span>--dataset<span class="w"> </span>calculator.pickle
 </pre></div>
 </div>
 </section>
@@ -263,7 +263,7 @@ The code is at the end of <code class="docutils literal notranslate"><span class
 There is already existing script that does all of the job for us.</p>
 <p>The dataset generator works out of the box for our DSL but that may not always be the case, you can check out other DSLs files and look at the <code class="docutils literal notranslate"><span class="pre">task_generator_*.py</span></code> files.</p>
 <p>You can generate datasets using:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>dataset_generator_unique.py<span class="w"> </span>--dsl<span class="w"> </span>calculator<span class="w"> </span>--dataset<span class="w"> </span>calculator/calculator.pickle<span class="w"> </span>-o<span class="w"> </span>dataset.pickle<span class="w"> </span>--inputs<span class="w"> </span><span class="m">1</span><span class="w"> </span>--programs<span class="w"> </span><span class="m">1000</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>examples/pbe/dataset_generator_unique.py<span class="w"> </span>--dsl<span class="w"> </span>calculator<span class="w"> </span>--dataset<span class="w"> </span>calculator/calculator.pickle<span class="w"> </span>-o<span class="w"> </span>dataset.pickle<span class="w"> </span>--inputs<span class="w"> </span><span class="m">1</span><span class="w"> </span>--programs<span class="w"> </span><span class="m">1000</span>
 </pre></div>
 </div>
 </section>
@@ -290,14 +290,14 @@ There is already existing script that does all of the job for us.</p>
 To evaluate a model, we actually try to solve program synthesis tasks for a DSL so this is not simply an inference task.
 If you are directly interested in synthesizing your first program then jump over to <a class="reference internal" href="#simple-synthesis"><span class="xref myst">the next section</span></a> which tells you exactly how to do that.
 You can easily evaluate a model using:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>examples/pbe/solve.py<span class="w"> </span>--dsl<span class="w"> </span>calculator<span class="w"> </span>--dataset<span class="w"> </span>my_test_dataset.pickle<span class="w"> </span>--pcfg<span class="w"> </span>pcfgs_my_test_dattaset_my_model.pt<span class="w"> </span>-o<span class="w"> </span>.<span class="w"> </span>-t<span class="w"> </span><span class="m">60</span><span class="w"> </span>--support<span class="w"> </span>my_train_dataset.pickle<span class="w"> </span>--solver<span class="w"> </span>cutoff
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>examples/pbe/solve.py<span class="w"> </span>--dsl<span class="w"> </span>calculator<span class="w"> </span>--dataset<span class="w"> </span>my_test_dataset.pickle<span class="w"> </span>--pcfg<span class="w"> </span>pcfgs_my_test_dataset_my_model.pt<span class="w"> </span>-o<span class="w"> </span>.<span class="w"> </span>-t<span class="w"> </span><span class="m">60</span><span class="w"> </span>--support<span class="w"> </span>my_train_dataset.pickle<span class="w"> </span>--solver<span class="w"> </span>cutoff
 </pre></div>
 </div>
 <p>The most important parameter is perhaps <code class="docutils literal notranslate"><span class="pre">-t</span> <span class="pre">60</span></code> which gives a timeout of 60 seconds per task.
 You can also play with different solver, by default <code class="docutils literal notranslate"><span class="pre">cutoff</span></code> works pretty well on almost anything.</p>
 <p>This will produce a CSV file in the output folder (<code class="docutils literal notranslate"><span class="pre">.</span></code> above).
 This result file can then be plotted using:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>experiments/plot_results.py<span class="w"> </span>--dataset<span class="w"> </span>my_test_dataset.pickle<span class="w"> </span>--folder<span class="w"> </span>.<span class="w"> </span>--support<span class="w"> </span>my_train_dataset.pickle
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>examples/plot_solve_results.py<span class="w"> </span>--dataset<span class="w"> </span>my_test_dataset.pickle<span class="w"> </span>--folder<span class="w"> </span>.<span class="w"> </span>--support<span class="w"> </span>my_train_dataset.pickle
 </pre></div>
 </div>
 <p>Again there’s a plethora of options available, so feel free to play with them.</p>
