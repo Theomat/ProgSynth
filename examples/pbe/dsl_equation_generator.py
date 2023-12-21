@@ -19,7 +19,7 @@ from synth.specification import PBEWithConstants
 from synth.syntax import (
     CFG,
     ProbDetGrammar,
-    enumerate_prob_grammar,
+    bps_enumerate_prob_grammar as enumerate_prob_grammar,
     PrimitiveType,
     Function,
     Primitive,
