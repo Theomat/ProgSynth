@@ -253,11 +253,14 @@ class BeeSearch(
         return enum
 
 
-def enumerate_prob_grammar(G: ProbDetGrammar[U, V, W]) -> BeeSearch[U, V, W]:
+def enumerate_prob_grammar(
+    G: ProbDetGrammar[U, V, W], threshold: int = 2
+) -> BeeSearch[U, V, W]:
+    mult = 10**threshold
     Gp: ProbDetGrammar = ProbDetGrammar(
         G.grammar,
         {
-            S: {P: -np.log(p) for P, p in val.items() if p > 0}
+            S: {P: int(-np.log(p) * mult) for P, p in val.items() if p > 0}
             for S, val in G.probabilities.items()
         },
     )
