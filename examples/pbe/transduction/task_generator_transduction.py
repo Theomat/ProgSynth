@@ -16,11 +16,12 @@ from synth.pbe.task_generator import (
     reproduce_dataset,
 )
 from synth.syntax.program import Program
+from synth.syntax.type_helper import auto_type
 from synth.syntax.type_system import List, Type
 
 from synth.task import Dataset, Task
 from synth.specification import PBE, Example, PBEWithConstants
-from synth.semantic.evaluator import DSLEvaluatorWithConstant
+from synth.semantic.evaluator import DSLEvaluator
 from synth.syntax import (
     STRING,
     DSL,
@@ -30,24 +31,15 @@ from synth.generation import (
     UnionSampler,
 )
 
+CST_IN = auto_type("CST_STR_INPUT")
+CST_OUT = auto_type("CST_STR_OUTPUT")
+
 
 class TransductionTaskGenerator(TaskGenerator):
     def generate_program(self, type_request: Type) -> Tuple[Program, bool]:
         program, is_unique = super().generate_program(type_request)
         self.__constants = super().sample_input([STRING, STRING])
         return program, is_unique
-
-    def eval_input(self, solution: Program, input: TList) -> Any:
-        assert isinstance(self.evaluator, DSLEvaluatorWithConstant)
-        try:
-            return self.evaluator.eval_with_constant(
-                solution, input, self.__constants[0], self.__constants[1]
-            )
-        except Exception as e:
-            if type(e) in self.skip_exceptions:
-                return None
-            else:
-                raise e
 
     def make_task(
         self,
@@ -61,8 +53,7 @@ class TransductionTaskGenerator(TaskGenerator):
             type_request,
             PBEWithConstants(
                 [Example(inp, out) for inp, out in zip(inputs, outputs)],
-                [self.__constants[0]],
-                [self.__constants[1]],
+                {CST_IN: [self.__constants[0]], CST_OUT: [self.__constants[1]]},
             ),
             solution,
             {"generated": True, **kwargs},
@@ -72,7 +63,7 @@ class TransductionTaskGenerator(TaskGenerator):
 def reproduce_transduction_dataset(
     dataset: Dataset[PBE],
     dsl: DSL,
-    evaluator: DSLEvaluatorWithConstant,
+    evaluator: DSLEvaluator,
     seed: Optional[int] = None,
     *args: Any,
     **kwargs: Any

@@ -1,11 +1,10 @@
-from typing import Set
 import re
 
 from examples.pbe.transduction.task_generator_transduction import (
     reproduce_transduction_dataset,
 )
 
-from synth.semantic.evaluator import DSLEvaluatorWithConstant
+from synth.semantic.evaluator import DSLEvaluator
 from synth.syntax import (
     DSL,
     Arrow,
@@ -97,8 +96,6 @@ __semantics = {
     "split_snd_cst": lambda x: lambda text: __split_snd_cst__(x, text),
     "match_cst": lambda x: lambda text: __match_cst__(x, text),
     "compose": lambda x: lambda y: __compose__(x, y),
-    "cst_in": lambda x: x,
-    "cst_out": lambda x: x,
     "$": "$",
     ".": ".",
     "except": lambda x: "([^" + x + "]+",
@@ -116,8 +113,6 @@ __primitive_types = {
     "split_snd_cst": Arrow(STRING, Arrow(CST_IN, STRING)),
     "match_cst": Arrow(STRING, Arrow(CST_IN, STRING)),
     "compose": Arrow(REGEXP, Arrow(REGEXP, REGEXP)),
-    "cst_in": CST_IN,
-    "cst_out": CST_OUT,
     "$": REGEXP,
     ".": REGEXP,
     "except": Arrow(CST_IN, REGEXP),
@@ -128,9 +123,7 @@ __forbidden_patterns = {}
 
 dsl = DSL(__primitive_types, __forbidden_patterns)
 constant_types = {CST_IN, CST_OUT}
-evaluator = DSLEvaluatorWithConstant(
-    dsl.instantiate_semantics(__semantics), constant_types
-)
+evaluator = DSLEvaluator(dsl.instantiate_semantics(__semantics))
 evaluator.skip_exceptions.add(re.error)
 lexicon = list([chr(i) for i in range(32, 126)])
 constraints = [

@@ -20,6 +20,9 @@ from examples.pbe.regexp.type_regex import REGEXP
 from examples.pbe.transduction.transduction import dsl, evaluator
 
 import argparse
+from synth.syntax.program import Constant
+
+from synth.syntax.type_helper import auto_type
 
 
 TRANSDUCTION = "transduction"
@@ -491,8 +494,12 @@ def __flashfill_str2prog__(s: str) -> Tuple[Program, Type]:
             name = name_converter[name]
         # primitives that serve as constants
         if name in ["cst_in", "cst_out", "W", "$", ".", "epsilon"]:
-            primitive = Primitive(name, name2type[name])
-            stack.append(primitive)
+            if name.startswith("cst_"):
+                t = CST_IN if name == "cst_in" else CST_OUT
+                stack.append(Constant(t))
+            else:
+                primitive = Primitive(name, name2type[name])
+                stack.append(primitive)
         else:  # other primitives are functions, we want to add their type
             targets = [int(x) for x in subparts]
             arguments = [stack[x] for x in targets]
@@ -501,6 +508,10 @@ def __flashfill_str2prog__(s: str) -> Tuple[Program, Type]:
     type_stack.append(stack[-1].type)
     type_request = FunctionType(*type_stack)
     return stack[-1], type_request
+
+
+CST_IN = auto_type("CST_STR_INPUT")
+CST_OUT = auto_type("CST_STR_OUTPUT")
 
 
 def __convert__(load: Callable[[], Dataset[PBEWithConstants]], name: str) -> None:
@@ -513,32 +524,25 @@ def __convert__(load: Callable[[], Dataset[PBEWithConstants]], name: str) -> Non
         if task.solution is None:
             print("Unsolved task: ", task.metadata["name"])
             continue
-        for ex in task.specification.examples:
-            found = False
-            constants_in = task.specification.constants_in
-            constants_in.append("")
-            constants_out = task.specification.constants_out
-            constants_out.append("")
-            for cons_in in constants_in:
-                for cons_out in constants_out:
-                    if found:
-                        break
-                    # print(evaluator.eval_with_constant(task.solution, ex.inputs, cons_in, cons_out), " vs ", ex.output)
-                    found = (
-                        evaluator.eval_with_constant(
-                            task.solution, ex.inputs, cons_in, cons_out
-                        )
-                        == ex.output
-                    )
-
-            if not found:
-                print(task.metadata["name"], "FAILED")
-            assert found
+        failed = True
+        for instance in task.solution.all_constants_instantiation(
+            task.specification.constants
+        ):
+            found = True
+            for ex in task.specification.examples:
+                found &= evaluator.eval(instance, ex.inputs) == ex.output
+                if not found:
+                    break
+            failed &= not found
+        if failed:
+            print(task.metadata["name"], "FAILED:", task.solution)
+            print("\tconstants:", task.specification.constants)
+        assert not failed
 
 
 def convert_flashfill(input: str, name2type: Dict[str, Any]):
     def load():
-        tasks: TList[Task[PBE]] = []
+        tasks: TList[Task[PBEWithConstants]] = []
         with open(input, "r") as fd:
             raw_tasks: TList[Dict[str, Any]] = json.load(fd)
             for raw_task in tqdm.tqdm(raw_tasks, desc="converting"):
@@ -561,7 +565,9 @@ def convert_flashfill(input: str, name2type: Dict[str, Any]):
                 tasks.append(
                     Task[PBEWithConstants](
                         type_request,
-                        PBEWithConstants(examples, constants_in, constants_out),
+                        PBEWithConstants(
+                            examples, {CST_IN: constants_in, CST_OUT: constants_out}
+                        ),
                         prog,
                         {"name": name},
                     )
