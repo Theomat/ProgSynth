@@ -230,7 +230,7 @@ This will produce a CSV file in the output folder (``.`` above).
 This result file can then be plotted using:
 
 ```bash
-python experiments/plot_results.py --dataset my_test_dataset.pickle --folder . --support my_train_dataset.pickle
+python experiments/plot_solve_results.py --dataset my_test_dataset.pickle --folder . --support my_train_dataset.pickle
 ```
 
 Again there's a plethora of options available, so feel free to play with them.
