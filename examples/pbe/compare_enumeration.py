@@ -12,7 +12,6 @@ from synth.syntax import (
     DSL,
     hs_enumerate_prob_grammar,
     bs_enumerate_prob_grammar,
-    bpluss_enumerate_prob_grammar,
     bps_enumerate_prob_grammar,
     hs_enumerate_prob_u_grammar,
     ProgramEnumerator,
@@ -25,8 +24,7 @@ import tqdm
 SEARCH_ALGOS = {
     "beep_search": (bps_enumerate_prob_grammar, None),
     "heap_search": (hs_enumerate_prob_grammar, hs_enumerate_prob_u_grammar),
-    # "bee_search": (bs_enumerate_prob_grammar, None),
-    "bee+_search": (bpluss_enumerate_prob_grammar, None),
+    "bee_search": (bs_enumerate_prob_grammar, None),
 }
 
 parser = argparse.ArgumentParser(

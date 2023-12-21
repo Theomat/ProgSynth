@@ -36,7 +36,6 @@ from synth.syntax.grammars import (
     TaggedUGrammar,
     ProgramEnumerator,
     bs_enumerate_prob_grammar,
-    bpluss_enumerate_prob_grammar,
     bps_enumerate_prob_grammar,
     hs_enumerate_prob_grammar,
     hs_enumerate_prob_u_grammar,

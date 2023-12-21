@@ -17,7 +17,6 @@ from synth.syntax import (
     DSL,
     hs_enumerate_prob_grammar,
     bs_enumerate_prob_grammar,
-    bpluss_enumerate_prob_grammar,
     bps_enumerate_prob_grammar,
     hs_enumerate_prob_u_grammar,
     hs_enumerate_bucket_prob_grammar,
@@ -56,7 +55,6 @@ SEARCH_ALGOS = {
         lambda x: hs_enumerate_bucket_prob_u_grammar(x, 3),
     ),
     "bee_search": (bs_enumerate_prob_grammar, None),
-    "bee+_search": (bpluss_enumerate_prob_grammar, None),
 }
 
 parser = argparse.ArgumentParser(
