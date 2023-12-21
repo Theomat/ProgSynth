@@ -309,43 +309,26 @@ For more information about predictions and how to produce a P(U)CFG from a model
 If you are perhaps more interested in solving then you should probably look at the files in <code class="docutils literal notranslate"><span class="pre">synth.pbe.solvers</span></code> which offer different ways of solving our synthesis problem.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">synth</span> <span class="kn">import</span> <span class="n">Task</span><span class="p">,</span> <span class="n">PBE</span>
 <span class="kn">from</span> <span class="nn">synth.semantic</span> <span class="kn">import</span> <span class="n">DSLEvaluator</span>
-<span class="kn">from</span> <span class="nn">synth.syntax</span> <span class="kn">import</span> <span class="n">ProbDetGrammar</span><span class="p">,</span> <span class="n">enumerate_prob_grammar</span>
+<span class="kn">from</span> <span class="nn">synth.syntax</span> <span class="kn">import</span> <span class="n">bps_enumerate_prob_grammar</span><span class="p">,</span> <span class="n">ProbDetGrammar</span>
+<span class="kn">from</span> <span class="nn">synth.pbe</span> <span class="kn">import</span> <span class="n">CutoffPBESolver</span>
 
 <span class="k">def</span> <span class="nf">synthesis</span><span class="p">(</span>
     <span class="n">evaluator</span><span class="p">:</span> <span class="n">DSLEvaluator</span><span class="p">,</span>
     <span class="n">task</span><span class="p">:</span> <span class="n">Task</span><span class="p">[</span><span class="n">PBE</span><span class="p">],</span>
     <span class="n">pcfg</span><span class="p">:</span> <span class="n">ProbDetGrammar</span><span class="p">,</span>
     <span class="n">task_timeout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">60</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Program</span><span class="p">],</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Returns:</span>
-<span class="sd">      - True if and only if a program was found </span>
-<span class="sd">      - time elapsed in seconds</span>
-<span class="sd">      - the number of programs enumerated</span>
-<span class="sd">      - the program found if one was found otherwise None</span>
-<span class="sd">      - the program&#39;s probability if one was found otherwise None</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-    <span class="n">programs</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="k">for</span> <span class="n">program</span> <span class="ow">in</span> <span class="n">enumerate_prob_grammar</span><span class="p">(</span><span class="n">pcfg</span><span class="p">):</span>
-      <span class="n">current_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-      <span class="k">if</span> <span class="n">current_time</span> <span class="o">-</span> <span class="n">start_time</span> <span class="o">&gt;=</span> <span class="n">task_timeout</span><span class="p">:</span>
-        <span class="k">return</span> <span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">programs</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-      <span class="n">programs</span> <span class="o">+=</span> <span class="mi">1</span>
-      <span class="n">failed</span> <span class="o">=</span> <span class="kc">False</span>
-      <span class="k">for</span> <span class="n">ex</span> <span class="ow">in</span> <span class="n">task</span><span class="o">.</span><span class="n">specification</span><span class="o">.</span><span class="n">examples</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">evaluator</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="n">program</span><span class="p">,</span> <span class="n">ex</span><span class="o">.</span><span class="n">inputs</span><span class="p">)</span> <span class="o">!=</span> <span class="n">ex</span><span class="o">.</span><span class="n">output</span><span class="p">:</span>
-          <span class="n">failed</span> <span class="o">=</span> <span class="kc">True</span>
-          <span class="k">break</span>
-      <span class="k">if</span> <span class="ow">not</span> <span class="n">failed</span><span class="p">:</span>
-        <span class="k">return</span> <span class="p">(</span>
-                <span class="kc">True</span><span class="p">,</span>
-                <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span><span class="p">,</span>
-                <span class="n">programs</span><span class="p">,</span>
-                <span class="n">program</span><span class="p">,</span>
-                <span class="n">pcfg</span><span class="o">.</span><span class="n">probability</span><span class="p">(</span><span class="n">program</span><span class="p">),</span>
-                <span class="p">)</span>
-  <span class="k">return</span> <span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">programs</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+<span class="p">):</span>
+    <span class="n">solver</span> <span class="o">=</span> <span class="n">CutoffPBESolver</span><span class="p">(</span><span class="n">evaluator</span><span class="p">)</span>
+    <span class="n">solution_generator</span> <span class="o">=</span> <span class="n">solver</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">task</span><span class="p">,</span> <span class="n">bps_enumerate_prob_grammar</span><span class="p">(</span><span class="n">pcfg</span><span class="p">),</span> <span class="n">task_timeout</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">solution</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">solution_generator</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Solution:&quot;</span><span class="p">,</span> <span class="n">solution</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">StopIteration</span><span class="p">:</span>
+        <span class="c1"># Failed generating a solution</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;No solution found under timeout&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">stats</span> <span class="ow">in</span> <span class="n">solver</span><span class="o">.</span><span class="n">available_stats</span><span class="p">():</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t</span><span class="si">{</span><span class="n">stats</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">solver</span><span class="o">.</span><span class="n">get_stats</span><span class="p">(</span><span class="n">stats</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    
 </pre></div>
 </div>
 </section>
