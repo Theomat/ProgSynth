@@ -119,10 +119,17 @@ if __name__ == "__main__":
 
     dsl_module = load_DSL(dsl_name)
     dsl: DSL = dsl_module.dsl
+    constant_types = getattr(dsl, "constant_types", set())
 
     n_gram = 2 if max_depth > 0 else 1
     try:
-        cfg = CFG.depth_constraint(dsl, auto_type(str_tr), max_depth, n_gram=n_gram)
+        cfg = CFG.depth_constraint(
+            dsl,
+            auto_type(str_tr),
+            max_depth,
+            n_gram=n_gram,
+            constant_types=constant_types,
+        )
         pcfg = ProbDetGrammar.random(cfg, seed=seed)
     except KeyError:
         print(
