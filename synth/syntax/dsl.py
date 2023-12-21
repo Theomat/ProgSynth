@@ -1,8 +1,8 @@
 import copy
-from typing import Callable, Dict, Mapping, Optional, List as TList, Set, Tuple
+from typing import Any, Callable, Dict, Mapping, Optional, List as TList, Set, Tuple
 
 from synth.syntax.type_system import UNIT, Type, Arrow, List
-from synth.syntax.program import Function, Primitive, Program, Variable
+from synth.syntax.program import Constant, Function, Primitive, Program, Variable
 
 
 class DSL:
@@ -105,7 +105,13 @@ class DSL:
             o.list_primitives
         )
 
-    def parse_program(self, program: str, type_request: Type) -> Program:
+    def parse_program(
+        self,
+        program: str,
+        type_request: Type,
+        constants: Dict[str, Tuple[Type, Any]] = {},
+        check: bool = True,
+    ) -> Program:
         """
         Parse a program from its string representation given the type request.
 
@@ -113,6 +119,8 @@ class DSL:
         -----------
         - program: the string representation of the program, i.e. str(prog)
         - type_request: the type of the requested program in order to identify variable types
+        - constants: str representation of constants that map to their (type, value)
+        - check: ensure the program was correctly parsed
 
         Returns:
         -----------
@@ -120,7 +128,10 @@ class DSL:
         """
         if " " in program:
             parts = list(
-                map(lambda p: self.parse_program(p, type_request), program.split(" "))
+                map(
+                    lambda p: self.parse_program(p, type_request, constants, check),
+                    program.split(" "),
+                )
             )
             function_calls: TList[int] = []
             level = 0
@@ -153,9 +164,14 @@ class DSL:
                 return current
 
             sol = parse_stack(parts, function_calls)
-            assert (
-                str(sol) == program
-            ), f"Failed parsing:{program} got:{sol} type request:{type_request} obtained:{sol.type}"
+            if check:
+                str_repr = str(sol)
+                for ori, (__, rep) in constants.items():
+                    str_repr = str_repr.replace(f" {rep} ", f" {ori} ")
+                    str_repr = str_repr.replace(f" {rep})", f" {ori})")
+                assert (
+                    str_repr == program
+                ), f"Failed parsing:\n{program}\n\tgot:\n{str_repr}\n\ttype request:{type_request} obtained:{sol.type}"
             return sol
         else:
             program = program.strip("()")
@@ -168,7 +184,10 @@ class DSL:
                 if type_request.is_instance(Arrow):
                     vart = type_request.arguments()[varno]
                 return Variable(varno, vart)
-            assert False, f"can't parse: {program}"
+            elif program in constants:
+                t, val = constants[program]
+                return Constant(t, val, True)
+            assert False, f"can't parse: '{program}'"
 
     def get_primitive(self, name: str) -> Optional[Primitive]:
         """
