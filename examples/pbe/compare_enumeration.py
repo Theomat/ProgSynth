@@ -83,6 +83,7 @@ def enumerative_search(
     ],
     programs: int,
     datum_each: int = 50000,
+    timeout: int = 300,
 ) -> List[Tuple[str, Type, float, int, int, int]]:
     out = []
     n = 0
@@ -94,6 +95,8 @@ def enumerative_search(
         if n % datum_each == 0 or n >= programs:
             used_time = time.perf_counter_ns() - start
             bef = time.perf_counter_ns()
+            if used_time >= timeout * 1e9:
+                break
             out.append(
                 (
                     name,
