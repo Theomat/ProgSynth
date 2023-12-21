@@ -108,6 +108,7 @@ no_clean: bool = parameters.no_clean
 no_shuffle: bool = parameters.no_shuffle
 no_stats: bool = parameters.no_stats
 constrained: bool = parameters.constrained
+max_depth: int = parameters.max_depth
 
 random.seed(seed)
 torch.manual_seed(seed)
@@ -161,11 +162,7 @@ writer = SummaryWriter()
 # ================================
 # Generate the CFG dictionnary
 all_type_requests = full_dataset.type_requests()
-if all(task.solution is not None for task in full_dataset):
-    max_depth = max(task.solution.depth() for task in full_dataset)
-    print("max depth:", max_depth)
-else:
-    max_depth = 15  # TODO: set as parameter
+print("max depth:", max_depth)
 cfgs = [
     CFG.depth_constraint(
         dsl,

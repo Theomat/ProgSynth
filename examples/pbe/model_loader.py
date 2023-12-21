@@ -117,3 +117,9 @@ def add_model_choice_arg(parser: ArgumentParser) -> None:
         default=False,
         help="do not try to run things on cuda",
     )
+    gg.add_argument(
+        "--max-depth",
+        type=int,
+        default=5,
+        help="maximum depth of grammars used (-1 for infinite, default: 5)",
+    )

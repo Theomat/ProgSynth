@@ -51,6 +51,7 @@ dataset_file: str = parameters.dataset
 model_file: str = parameters.model
 batch_size: int = parameters.batch_size
 constrained: bool = parameters.constrained
+max_depth: int = parameters.max_depth
 support: Optional[str] = (
     None if not parameters.support else parameters.support.format(dsl_name=dsl_name)
 )
@@ -154,10 +155,6 @@ def produce_pcfgs(
     all_type_requests = (
         full_dataset.type_requests() if support is None else supported_type_requests
     )
-    if all(task.solution is not None for task in full_dataset):
-        max_depth = max(task.solution.depth() for task in full_dataset)
-    else:
-        max_depth = 5  # TODO: set as parameter
 
     cfgs = [
         CFG.depth_constraint(
