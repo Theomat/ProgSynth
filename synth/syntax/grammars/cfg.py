@@ -237,7 +237,7 @@ class CFG(TTCFG[CFGState, NoneType]):
                     if depth >= min_variable_depth:
                         for vi, varg in enumerate(args):
                             arguments_V = varg.ends_with(current_type)
-                            if arguments_V is not None:
+                            if arguments_V is not None and len(varg.arguments()) > 0:
                                 V = Variable(vi, varg)
                                 decorated_arguments_V = []
                                 for i, arg in enumerate(arguments_V):
