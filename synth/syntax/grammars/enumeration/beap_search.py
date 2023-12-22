@@ -173,7 +173,10 @@ class BeapSearch(
             if cost_index not in bank:
                 bank[cost_index] = []
             for new_args in product(*args_possibles):
-                new_program = Function(element.P, list(new_args))
+                if len(args_possibles) > 0:
+                    new_program: Program = Function(element.P, list(new_args))
+                else:
+                    new_program = element.P
                 if new_program in self._deleted:
                     continue
                 bank[cost_index].append(new_program)
