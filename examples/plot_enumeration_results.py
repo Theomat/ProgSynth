@@ -19,6 +19,7 @@ __DATA__ = {
     "programs": (1, "Programs Enumerated", 0, False, False),
     "queued": (2, "Programs Enqueued", 0, False, False),
     "banked": (3, "Programs in Banks", 0, False, False),
+    "non_terminals": (4, "Non Terminals in Grammar", 0, False, False),
 }
 
 
@@ -64,6 +65,7 @@ def load_data(output_folder: str, verbose: bool = False) -> Dict[str, Dict[int, 
                 columns["programs"],
                 columns["queue"],
                 columns["bank"],
+                columns.get("non_terminals", -1),
             ]
             data = [tuple(row[k] if k >= 0 else 0 for k in indices) for row in trace]
             if len(data) == 0:

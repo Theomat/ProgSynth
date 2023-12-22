@@ -46,6 +46,7 @@ parser.add_argument(
     "-d", "--depth", type=int, default=5, help="max program depth (default: 5)"
 )
 parser.add_argument("-s", "--seed", type=int, default=0, help="seed (default: 0)")
+parser.add_argument("--scaling", action="store_true", help="scaling with non terminals")
 
 
 parameters = parser.parse_args()
@@ -55,9 +56,14 @@ str_tr: str = parameters.type
 programs: int = parameters.n
 max_depth: int = parameters.depth
 seed: int = parameters.seed
+scaling: bool = parameters.scaling
 
 file_name = output_file[: -len(".csv")]
-suffix = f"_dsl_{dsl_name}_seed_{seed}_depth_{max_depth}"
+suffix = (
+    f"_dsl_{dsl_name}_seed_{seed}_depth_{max_depth}"
+    if not scaling
+    else f"_dsl_scaling_seed_{seed}_depth_{max_depth}"
+)
 if not file_name.endswith(suffix):
     file_name += suffix
 output_file = file_name + ".csv"
@@ -84,9 +90,11 @@ def enumerative_search(
     programs: int,
     datum_each: int = 50000,
     timeout: int = 300,
-) -> List[Tuple[str, Type, float, int, int, int]]:
+    average_only: bool = False,
+) -> List[Tuple[str, int, float, int, int, int]]:
     out = []
     n = 0
+    non_terminals = len(pcfg.rules)
     pbar = tqdm.tqdm(total=programs, desc=name)
     start = time.perf_counter_ns()
     enumerator = custom_enumerate(pcfg)
@@ -100,7 +108,7 @@ def enumerative_search(
             out.append(
                 (
                     name,
-                    pcfg.type_request,
+                    non_terminals,
                     used_time / 1e9,
                     n,
                     enumerator.programs_in_queues(),
@@ -112,6 +120,22 @@ def enumerative_search(
                 pbar.close()
                 break
             start -= time.perf_counter_ns() - bef
+    if n < programs:
+        pbar.close()
+    if average_only and len(out) > 0:
+        progs = out[-1][3]
+        factor = datum_each / progs
+        new_out = [
+            (
+                name,
+                non_terminals,
+                out[-1][2] * factor,
+                datum_each,
+                out[-1][-2] * factor,
+                out[-1][-1] * factor,
+            )
+        ]
+        out = new_out
     return out
 
 
@@ -120,28 +144,62 @@ def enumerative_search(
 if __name__ == "__main__":
     import sys
 
-    dsl_module = load_DSL(dsl_name)
-    dsl: DSL = dsl_module.dsl
-    constant_types = getattr(dsl, "constant_types", set())
+    trace = [("search", "non_terminals", "time", "programs", "queue", "bank")]
 
-    n_gram = 2 if max_depth > 0 else 1
-    try:
-        cfg = CFG.depth_constraint(
-            dsl,
-            auto_type(str_tr),
-            max_depth,
-            n_gram=n_gram,
-            constant_types=constant_types,
+    if not scaling:
+        dsl_module = load_DSL(dsl_name)
+        dsl: DSL = dsl_module.dsl
+        constant_types = getattr(dsl, "constant_types", set())
+
+        n_gram = 2 if max_depth > 0 else 1
+        try:
+            cfg = CFG.depth_constraint(
+                dsl,
+                auto_type(str_tr),
+                max_depth,
+                n_gram=n_gram,
+                constant_types=constant_types,
+            )
+            pcfg = ProbDetGrammar.random(cfg, seed=seed)
+        except KeyError:
+            print(
+                f"failed to instantiate a non empty grammar for dsl {dsl} and type: {str_tr}",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+        for name, (enum, _) in SEARCH_ALGOS.items():
+            trace += enumerative_search(pcfg, name, enum, programs)
+    else:
+        dsl = DSL(
+            auto_type(
+                {
+                    "+": "int -> int -> int",
+                    "-": "int -> int -> int",
+                    "*": "int -> int -> int",
+                    "1": "int",
+                }
+            )
         )
-        pcfg = ProbDetGrammar.random(cfg, seed=seed)
-    except KeyError:
-        print(
-            f"failed to instantiate a non empty grammar for dsl {dsl} and type: {str_tr}",
-            file=sys.stderr,
-        )
-        sys.exit(1)
-    trace = [("search", "type", "time", "programs", "queue", "bank")]
-    for name, (enum, _) in SEARCH_ALGOS.items():
-        trace += enumerative_search(pcfg, name, enum, programs)
+        for ngram in [1, 2]:
+            for depth in range(1, max_depth + 1):
+                try:
+                    cfg = CFG.depth_constraint(
+                        dsl,
+                        auto_type("int -> int"),
+                        depth,
+                        n_gram=ngram,
+                    )
+                    print("depth:", depth, "non terminals:", len(cfg.rules))
+                    pcfg = ProbDetGrammar.random(cfg, seed=seed)
+                except KeyError:
+                    print(
+                        f"failed to instantiate a non empty grammar for dsl {dsl} and type: {str_tr}",
+                        file=sys.stderr,
+                    )
+                    sys.exit(1)
+                for name, (enum, _) in SEARCH_ALGOS.items():
+                    trace += enumerative_search(
+                        pcfg, name, enum, programs, average_only=True
+                    )
     save(trace)
     print("csv file was saved as:", output_file)
