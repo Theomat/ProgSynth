@@ -212,7 +212,19 @@ class ProbDetGrammar(TaggedDetGrammar[float, U, V, W]):
     def instantiate_constants(
         self, constants: Dict[Type, List[Any]]
     ) -> "ProbDetGrammar[U, V, W]":
-        return super().instantiate_constants(constants)  # type: ignore
+        tags: Dict[Tuple[Type, U], Dict[DerivableProgram, float]] = {}
+
+        for S in self.tags:
+            tags[S] = {}
+            for P in self.tags[S]:
+                if isinstance(P, Constant) and P.type in constants:
+                    for val in constants[P.type]:
+                        tags[S][Constant(P.type, val, True)] = self.tags[S][P] / len(
+                            constants[P.type]
+                        )
+                else:
+                    tags[S][P] = self.tags[S][P]
+        return self.__class__(self.grammar.instantiate_constants(constants), tags)
 
     @classmethod
     def uniform(cls, grammar: DetGrammar[U, V, W]) -> "ProbDetGrammar[U, V, W]":

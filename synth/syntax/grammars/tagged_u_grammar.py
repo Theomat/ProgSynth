@@ -255,7 +255,22 @@ class ProbUGrammar(TaggedUGrammar[float, U, V, W]):
     def instantiate_constants(
         self, constants: Dict[Type, List[Any]]
     ) -> "ProbUGrammar[U, V, W]":
-        return super().instantiate_constants(constants)  # type: ignore
+        tags: Dict[Tuple[Type, U], Dict[DerivableProgram, Dict[V, float]]] = {}
+
+        for S in self.tags:
+            tags[S] = {}
+            for P in self.tags[S]:
+                if isinstance(P, Constant) and P.type in constants:
+                    for val in constants[P.type]:
+                        tags[S][Constant(P.type, val, True)] = {
+                            k: v / len(constants[P.type])
+                            for k, v in self.tags[S][P].items()
+                        }
+                else:
+                    tags[S][P] = self.tags[S][P]
+        return self.__class__(
+            self.grammar.instantiate_constants(constants), tags, self.start_tags
+        )
 
     @classmethod
     def uniform(cls, grammar: UGrammar[U, V, W]) -> "ProbUGrammar[U, V, W]":
