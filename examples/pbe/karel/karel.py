@@ -131,7 +131,7 @@ class KarelWorld:
 
 __syntax = auto_type(
     {
-        "then": "(world -> world) -> (world -> world)",
+        "then": "(world -> world) -> (world -> world) -> (world -> world)",
         "move": "world -> world",
         "turnRight": "world -> world",
         "turnLeft": "world -> world",
@@ -142,10 +142,10 @@ __syntax = auto_type(
         "rightIsClear": "world -> bool",
         "markersPresent": "world -> bool",
         "noMarkersPresent": "world -> bool",
-        "not": "bool -> bool",
-        "ite": "world -> bool -> (world -> world) -> (world -> world) -> world",
-        "repeat": "world -> int -> (world -> world) -> world",
-        "while": "world -> (world -> bool) -> (world -> world) -> world",
+        "not": "'a [bool | (world -> bool)] -> 'a [bool | (world -> bool)]",
+        "ite": "bool -> (world -> world) -> (world -> world) -> (world -> world)",
+        "repeat": "int -> (world -> world) -> (world -> world)",
+        "while": "(world -> bool) -> (world -> world) -> (world -> world)",
     }
 )
 
@@ -170,23 +170,20 @@ __semantics = {
     "rightIsClear": lambda w: w.eval("rightIsClear"),
     "markersPresent": lambda w: w.eval("markersPresent"),
     "noMarkersPresent": lambda w: w.eval("noMarkersPresent"),
-    "not": lambda c: not c,
-    "if": lambda w: lambda c: lambda ifblock: lambda elseblock: ifblock(w)
-    if c
-    else elseblock(w),
-    "repeat": lambda w: lambda n: lambda s: [s(w) for _ in range(n)][-1],
-    "while": lambda w: lambda c: lambda s: __while(w, c, s),
+    "not": lambda c: not c if isinstance(c, bool) else lambda w: not c(w),
+    "if": lambda c: lambda ifblock: lambda elseblock: ifblock if c else elseblock,
+    "repeat": lambda n: lambda s: lambda w: [s(w) for _ in range(n)][-1],
+    "while": lambda c: lambda s: lambda w: __while(w, c, s),
 }
 # Add constants
 for i in range(3, 10):
     __syntax[str(i)] = auto_type("int")
     __semantics[str(i)] = i
 
-__forbidden_patterns = {
-    ("not", 0): {"not", "markersPresent"},
-}
+__forbidden_patterns = {("not", 0): {"not", "markersPresent"}, ("then", 0): {"then"}}
 
 dsl = DSL(__syntax, __forbidden_patterns)
+dsl.instantiate_polymorphic_types(3)
 evaluator = DSLEvaluator(dsl.instantiate_semantics(__semantics))
 lexicon = []
 
