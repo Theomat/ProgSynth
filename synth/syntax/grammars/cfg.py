@@ -232,7 +232,6 @@ class CFG(TTCFG[CFGState, NoneType]):
                                     list_to_be_treated.appendleft(new_context)
 
                             rules[non_terminal][P] = (decorated_arguments_P, None)
-
                     # Try to use variable as if there were functions
                     if depth >= min_variable_depth:
                         for vi, varg in enumerate(args):
