@@ -21,9 +21,9 @@ import tqdm
 import timeout_decorator
 
 SEARCH_ALGOS = {
+    "bee_search": (bs_enumerate_prob_grammar, None),
     "beap_search": (bps_enumerate_prob_grammar, None),
     "heap_search": (hs_enumerate_prob_grammar, None),
-    "bee_search": (bs_enumerate_prob_grammar, None),
 }
 
 parser = argparse.ArgumentParser(
@@ -195,12 +195,12 @@ if __name__ == "__main__":
                 {
                     "+": "int -> int -> int",
                     "-": "int -> int -> int",
-                    "*": "int -> int -> int",
+                    # "*": "int -> int -> int",
                     "1": "int",
                 }
             )
         )
-        for depth in range(4, max_depth + 1, 2):
+        for depth in range(4, max_depth + 1, 1):
             try:
                 cfg = CFG.depth_constraint(
                     dsl,
@@ -208,6 +208,9 @@ if __name__ == "__main__":
                     depth,
                     n_gram=1,
                 )
+                if cfg.programs() < 1e6:
+                    # Not enough programs to have accurate measurement
+                    continue
                 pcfg = ProbDetGrammar.uniform(cfg)
             except KeyError:
                 print(
