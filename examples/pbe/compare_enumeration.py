@@ -13,16 +13,16 @@ from synth.syntax import (
     hs_enumerate_prob_grammar,
     bs_enumerate_prob_grammar,
     bps_enumerate_prob_grammar,
-    hs_enumerate_prob_u_grammar,
     ProgramEnumerator,
     auto_type,
 )
 
 import tqdm
+import timeout_decorator
 
 SEARCH_ALGOS = {
     "beap_search": (bps_enumerate_prob_grammar, None),
-    "heap_search": (hs_enumerate_prob_grammar, hs_enumerate_prob_u_grammar),
+    "heap_search": (hs_enumerate_prob_grammar, None),
     "bee_search": (bs_enumerate_prob_grammar, None),
 }
 
@@ -95,28 +95,41 @@ def enumerative_search(
     pbar = tqdm.tqdm(total=programs, desc=name)
     start = time.perf_counter_ns()
     enumerator = custom_enumerate(pcfg)
-    for program in enumerator.generator():
-        n += 1
-        if n % datum_each == 0 or n >= programs:
-            used_time = time.perf_counter_ns() - start
-            bef = time.perf_counter_ns()
-            if used_time >= timeout * 1e9:
-                break
-            out.append(
-                (
-                    name,
-                    non_terminals,
-                    used_time / 1e9,
-                    n,
-                    enumerator.programs_in_queues(),
-                    enumerator.programs_in_banks(),
+    gen = enumerator.generator()
+    get_next = timeout_decorator.timeout(timeout, timeout_exception=StopIteration)(
+        lambda: next(gen)
+    )
+    program = 1
+    try:
+        while program is not None:
+            program = get_next()
+            n += 1
+            if n % datum_each == 0 or n >= programs:
+                used_time = time.perf_counter_ns() - start
+                bef = time.perf_counter_ns()
+                if used_time >= timeout * 1e9:
+                    break
+                out.append(
+                    (
+                        name,
+                        non_terminals,
+                        used_time / 1e9,
+                        n,
+                        enumerator.programs_in_queues(),
+                        enumerator.programs_in_banks(),
+                    )
                 )
-            )
-            pbar.update(datum_each)
-            if n >= programs:
-                pbar.close()
-                break
-            start -= time.perf_counter_ns() - bef
+                pbar.update(datum_each)
+                if n >= programs:
+                    pbar.close()
+                    break
+                rem_time = timeout - used_time / 1e9
+                get_next = timeout_decorator.timeout(
+                    rem_time, timeout_exception=StopIteration
+                )(lambda: next(gen))
+                start -= time.perf_counter_ns() - bef
+    except StopIteration:
+        pass
     if n < programs:
         pbar.close()
     if average_only and len(out) > 0:
@@ -173,8 +186,6 @@ if __name__ == "__main__":
                     "+": "int -> int -> int",
                     "-": "int -> int -> int",
                     "*": "int -> int -> int",
-                    "/": "int -> int -> int",
-                    "%": "int -> int -> int",
                     "1": "int",
                 }
             )
@@ -196,7 +207,7 @@ if __name__ == "__main__":
                 sys.exit(1)
             for name, (enum, _) in SEARCH_ALGOS.items():
                 trace += enumerative_search(
-                    pcfg, name, enum, programs, average_only=True
+                    pcfg, name, enum, programs, average_only=True, datum_each=25000
                 )
     save(trace)
     print("csv file was saved as:", output_file)
