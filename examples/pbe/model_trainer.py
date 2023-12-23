@@ -109,6 +109,7 @@ no_shuffle: bool = parameters.no_shuffle
 no_stats: bool = parameters.no_stats
 constrained: bool = parameters.constrained
 max_depth: int = parameters.max_depth
+ngram: int = parameters.ngram
 
 random.seed(seed)
 torch.manual_seed(seed)
@@ -171,12 +172,13 @@ cfgs = [
         upper_bound_type_size=upper_bound_type_size,
         constant_types=dsl_constant_types,
         min_variable_depth=0,
+        n_gram=ngram,
     )
     for t in all_type_requests
 ]
 type2cfg = {
     cfg.type_request: UCFG.from_DFTA_with_ngrams(
-        add_dfta_constraints(cfg, constraints, progress=False), 2
+        add_dfta_constraints(cfg, constraints, progress=False), ngram
     )
     if constrained
     else cfg

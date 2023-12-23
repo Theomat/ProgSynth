@@ -52,6 +52,7 @@ model_file: str = parameters.model
 batch_size: int = parameters.batch_size
 constrained: bool = parameters.constrained
 max_depth: int = parameters.max_depth
+ngram: int = parameters.ngram
 support: Optional[str] = (
     None if not parameters.support else parameters.support.format(dsl_name=dsl_name)
 )
@@ -164,12 +165,13 @@ def produce_pcfgs(
             upper_bound_type_size=10,
             constant_types=constant_types,
             min_variable_depth=0,
+            n_gram=ngram,
         )
         for t in all_type_requests
     ]
     cfgs = [
         UCFG.from_DFTA_with_ngrams(
-            add_dfta_constraints(cfg, constraints, progress=False), 2
+            add_dfta_constraints(cfg, constraints, progress=False), ngram
         )
         if constrained
         else cfg

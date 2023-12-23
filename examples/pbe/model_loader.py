@@ -85,12 +85,6 @@ def instantiate_predictor(
 def add_model_choice_arg(parser: ArgumentParser) -> None:
     gg = parser.add_argument_group("model parameters")
     gg.add_argument(
-        "--constrained",
-        action="store_true",
-        default=False,
-        help="use unambigous grammar to include constraints in the grammar if available",
-    )
-    gg.add_argument(
         "-v",
         "--var-prob",
         type=float,
@@ -117,9 +111,24 @@ def add_model_choice_arg(parser: ArgumentParser) -> None:
         default=False,
         help="do not try to run things on cuda",
     )
+    gg = parser.add_argument_group("grammar parameters")
+    gg.add_argument(
+        "--constrained",
+        action="store_true",
+        default=False,
+        help="use unambigous grammar to include constraints in the grammar if available",
+    )
+
     gg.add_argument(
         "--max-depth",
         type=int,
         default=5,
         help="maximum depth of grammars used (-1 for infinite, default: 5)",
+    )
+    gg.add_argument(
+        "--ngram",
+        type=int,
+        default=2,
+        choices=[1, 2],
+        help="ngram used by grammars (default: 2)",
     )
