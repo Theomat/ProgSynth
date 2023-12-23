@@ -15,7 +15,6 @@ from synth.syntax import (
     bps_enumerate_prob_grammar,
     hs_enumerate_prob_u_grammar,
     ProgramEnumerator,
-    Type,
     auto_type,
 )
 
@@ -59,11 +58,9 @@ seed: int = parameters.seed
 scaling: bool = parameters.scaling
 
 file_name = output_file[: -len(".csv")]
-suffix = (
-    f"_dsl_{dsl_name}_seed_{seed}_depth_{max_depth}"
-    if not scaling
-    else f"_dsl_scaling_seed_{seed}_depth_{max_depth}"
-)
+if scaling:
+    dsl_name = "scaling"
+suffix = f"_dsl_{dsl_name}_seed_{seed}_depth_{max_depth}"
 if not file_name.endswith(suffix):
     file_name += suffix
 output_file = file_name + ".csv"
@@ -176,30 +173,30 @@ if __name__ == "__main__":
                     "+": "int -> int -> int",
                     "-": "int -> int -> int",
                     "*": "int -> int -> int",
+                    "/": "int -> int -> int",
+                    "%": "int -> int -> int",
                     "1": "int",
                 }
             )
         )
-        for ngram in [1, 2]:
-            for depth in range(1, max_depth + 1):
-                try:
-                    cfg = CFG.depth_constraint(
-                        dsl,
-                        auto_type("int -> int"),
-                        depth,
-                        n_gram=ngram,
-                    )
-                    print("depth:", depth, "non terminals:", len(cfg.rules))
-                    pcfg = ProbDetGrammar.random(cfg, seed=seed)
-                except KeyError:
-                    print(
-                        f"failed to instantiate a non empty grammar for dsl {dsl} and type: {str_tr}",
-                        file=sys.stderr,
-                    )
-                    sys.exit(1)
-                for name, (enum, _) in SEARCH_ALGOS.items():
-                    trace += enumerative_search(
-                        pcfg, name, enum, programs, average_only=True
-                    )
+        for depth in range(4, max_depth + 1, 2):
+            try:
+                cfg = CFG.depth_constraint(
+                    dsl,
+                    auto_type("int -> int"),
+                    depth,
+                    n_gram=1,
+                )
+                pcfg = ProbDetGrammar.uniform(cfg)
+            except KeyError:
+                print(
+                    f"failed to instantiate a non empty grammar for dsl {dsl} and type: {str_tr}",
+                    file=sys.stderr,
+                )
+                sys.exit(1)
+            for name, (enum, _) in SEARCH_ALGOS.items():
+                trace += enumerative_search(
+                    pcfg, name, enum, programs, average_only=True
+                )
     save(trace)
     print("csv file was saved as:", output_file)
