@@ -72,6 +72,8 @@ def plot_y_wrt_x(
     y_data: Tuple,
     should_sort: bool = False,
     cumulative: bool = True,
+    logx: bool = False,
+    logy: bool = False,
 ) -> None:
     # Plot data with incertitude
     a_index, a_name, a_margin, show_len_a, _ = y_data
@@ -108,7 +110,6 @@ def plot_y_wrt_x(
             pass
     ax.set_xlabel(b_name)
     ax.set_ylabel(a_name)
-    ax.grid()
     if show_len_a:
         ax.hlines(
             [data_length],
@@ -119,8 +120,15 @@ def plot_y_wrt_x(
             linestyles="dashed",
         )
         max_a = data_length
-    ax.set_xlim(0, max_b + b_margin)
-    ax.set_ylim(0, max_a + a_margin)
+    if logx:
+        ax.set_xscale("log")
+    else:
+        ax.set_xlim(0, max_b + b_margin)
+    if logy:
+        ax.set_yscale("log")
+    else:
+        ax.set_ylim(0, max_a + a_margin)
+    ax.grid()
     ax.legend()
 
 
