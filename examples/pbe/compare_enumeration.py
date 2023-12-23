@@ -129,7 +129,17 @@ def enumerative_search(
                 )(lambda: next(gen))
                 start -= time.perf_counter_ns() - bef
     except StopIteration:
-        pass
+        if n < programs:
+            out.append(
+                (
+                    name,
+                    non_terminals,
+                    timeout,
+                    n,
+                    enumerator.programs_in_queues(),
+                    enumerator.programs_in_banks(),
+                )
+            )
     if n < programs:
         pbar.close()
     if average_only and len(out) > 0:
