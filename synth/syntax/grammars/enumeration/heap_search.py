@@ -17,6 +17,7 @@ from abc import ABC, abstractmethod
 
 from synth.syntax.grammars.enumeration.program_enumerator import ProgramEnumerator
 from synth.syntax.grammars.tagged_u_grammar import ProbUGrammar
+from synth.syntax.grammars.cfg import CFG
 from synth.syntax.program import Program, Function
 from synth.syntax.grammars.tagged_det_grammar import ProbDetGrammar
 from synth.syntax.type_system import Type
@@ -89,6 +90,15 @@ class HSEnumerator(
         """
         A generator which outputs the next most probable program
         """
+        self.__init_non_terminal__(self.G.start)
+        self._reevaluate_()
+        # Now we can init the heaps
+        for S in self.G.rules:
+            self.__init_heap__(S)
+        # And now that ALL heaps have been init
+        # Query(S, None) for all
+        for S in self.G.rules:
+            self.query(S, None)
         while True:
             program = self.query(self.start, self.current)
             if program is None:
@@ -104,7 +114,6 @@ class HSEnumerator(
     def __compute_max_prio__(
         self,
         S: Tuple[Type, U],
-        recursive: bool = False,
         best_program: Optional[Program] = None,
         best_priority: Optional[Ordered] = None,
     ) -> Tuple[Optional[Program], Optional[Ordered]]:
@@ -116,7 +125,7 @@ class HSEnumerator(
                 information, current = self.G.derive(self.G.start_information(), S, P)
                 for _ in range(nargs):
                     self.__init_non_terminal__(current)
-                    if current == S and not recursive:
+                    if current not in self.max_priority:
                         break
                     # Try to init sub Tuple[Type, U] in case they were not initialised
                     arguments.append(self.max_priority[current])
@@ -133,7 +142,7 @@ class HSEnumerator(
                 P_unique = new_program
             priority = self.compute_priority(S, P_unique)
             self.max_priority[(S, P)] = P_unique
-            if not best_priority or priority < best_priority:
+            if best_priority is None or priority < best_priority:
                 best_program = P_unique
                 best_priority = priority
         return best_program, best_priority
@@ -143,21 +152,33 @@ class HSEnumerator(
             return
         self._init.add(S)
         # 1) Compute max probablities
-        best_program, best_priority = self.__compute_max_prio__(S, False)
+        best_program, _ = self.__compute_max_prio__(S)
 
-        assert best_program
+        if best_program is None:
+            self._init.remove(S)
+            return
         self.max_priority[S] = best_program
-        # Once again
-        best_program, best_priority = self.__compute_max_prio__(
-            S, True, best_program, best_priority
-        )
+        self._init.remove(S)
 
+    def _reevaluate_(self) -> None:
+        changed = True
+        while changed:
+            changed = False
+            for S in list(self.G.rules.keys()):
+                old = self.max_priority.get(S, None)
+                self.__init_non_terminal__(S)
+
+                if S not in self.max_priority or old != self.max_priority[S]:
+                    changed = True
+
+    def __init_heap__(self, S: Tuple[Type, U]) -> None:
         # 2) add P(max(S1),max(S2), ...) to self.heaps[S]
         for P in self.rules[S]:
             program = self.max_priority[(S, P)]
             hash_program = hash(program)
             # Remark: the program cannot already be in self.heaps[S]
             assert hash_program not in self.hash_table_program[S]
+            # Init heap all others so that query will work
             self.hash_table_program[S].add(hash_program)
             # we assume that the programs from max_probability
             # are represented by the same object
@@ -167,9 +188,6 @@ class HSEnumerator(
                     self.heaps[S],
                     HeapElement(priority, program),
                 )
-
-        # 3) Do the 1st query
-        self.query(S, None)
 
     def merge_program(self, representative: Program, other: Program) -> None:
         """
@@ -199,7 +217,10 @@ class HSEnumerator(
                     new_arguments[i] = succ_sub_program
                     new_program = Function(F, new_arguments)
                     hash_new_program = hash(new_program)
-                    if hash_new_program not in self.hash_table_program[S]:
+                    if (
+                        hash_new_program not in self.hash_table_program[S]
+                        and new_program not in self.deleted
+                    ):
                         self.hash_table_program[S].add(hash_new_program)
                         try:
                             priority: Ordered = self.compute_priority(S, new_program)
@@ -219,8 +240,6 @@ class HSEnumerator(
         """
         computing the successor of program from S
         """
-        if S not in self._init:
-            self.__init_non_terminal__(S)
         if program:
             hash_program = hash(program)
         else:
