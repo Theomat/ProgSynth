@@ -22,6 +22,8 @@ def load_data(
     # Dict[name, Dict[seed, data]]
     methods = {}
     timeout = 1e99
+    all_search = set()
+    all_solver = set()
 
     for file in glob(os.path.join(output_folder, "*.csv")):
         filename = os.path.relpath(file, output_folder)
@@ -38,9 +40,12 @@ def load_data(
                 print(f"\tskipped: does not contain _seed_")
             continue
         search = name[1 : name.index("_seed_")].replace("_", " ")
+        all_search.add(search)
         name = name[name.index("_seed_") + len("_seed_") :]
         seed = int(name[: name.index("_")])
-        name = search + name[name.index("_") + 1 :].replace("_", " ")
+        solver = name[name.index("_") + 1 :].replace("_", " ")
+        all_solver.add(solver)
+        name = search + " " + solver
         if name not in methods:
             methods[name] = {}
         if seed in methods[name]:
@@ -88,6 +93,16 @@ def load_data(
                 "/",
                 len(trace),
             )
+    if len(all_search) == 1 and len(all_solver) > 1:
+        search = list(all_search)[0]
+        methods = {
+            k.replace(search, "").strip(" ").capitalize(): v for k, v in methods.items()
+        }
+    elif len(all_solver) == 1 and len(all_search) > 1:
+        solver = list(all_solver)[0]
+        methods = {
+            k.replace(solver, "").strip(" ").capitalize(): v for k, v in methods.items()
+        }
     return methods, timeout
 
 
