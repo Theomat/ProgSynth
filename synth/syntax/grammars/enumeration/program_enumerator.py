@@ -1,4 +1,5 @@
 from typing import (
+    Callable,
     Generator,
     Generic,
     TypeVar,
@@ -52,8 +53,19 @@ class ProgramEnumerator(ABC, Generic[U]):
         """
         Merge other into representative.
         Function used for observational equivalence, that means other and representative are semantically equivalent for the current task.
+        This is for a posteriori merging, it is rather inefficient compared to evaluating subprograms for most enumerative algorithms.
         """
         pass
+
+    def set_subprogram_filter(self, filter: Callable[[Program], bool]) -> None:
+        """
+        Function that can be called to filter out subprograms, can be used for observational equivalence and is the most efficient way to do so.
+        When filter returns True the program will be discarded by the enumerator.
+        """
+        self._filter = filter
+
+    def _should_keep_subprogram(self, program: Program) -> bool:
+        return self._filter is None or not self._filter(program)
 
     @abstractmethod
     def clone_with_memory(

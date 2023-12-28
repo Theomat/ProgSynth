@@ -2,6 +2,7 @@ from collections import defaultdict
 from itertools import product
 from heapq import heappush, heappop
 from typing import (
+    Callable,
     Dict,
     Generator,
     Generic,
@@ -48,6 +49,7 @@ class BeeSearch(
         self.G = G
         self._seen: Set[Program] = set()
         self._deleted: Set[Program] = set()
+        self._filter: Optional[Callable[[Program], bool]] = None
 
         self._cost_list: List[float] = []
         # S -> cost_index -> program list

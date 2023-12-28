@@ -2,10 +2,12 @@ from collections import defaultdict
 from itertools import product
 from heapq import heappush, heappop, heapify
 from typing import (
+    Callable,
     Dict,
     Generator,
     Generic,
     List,
+    Optional,
     Set,
     Tuple,
     TypeVar,
@@ -48,6 +50,7 @@ class BeapSearch(
         self.cfg: CFG = G.grammar
         self._seen: Set[Program] = set()
         self._deleted: Set[Program] = set()
+        self._filter: Optional[Callable[[Program], bool]] = None
 
         # S -> cost list
         self._cost_lists: Dict[Tuple[Type, U], List[float]] = {}

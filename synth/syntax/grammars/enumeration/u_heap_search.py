@@ -2,6 +2,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from heapq import heappush, heappop
 from typing import (
+    Callable,
     Dict,
     Generator,
     Generic,
@@ -47,6 +48,7 @@ class UHSEnumerator(ProgramEnumerator[None], ABC, Generic[U, V, W]):
     def __init__(
         self, G: ProbUGrammar[U, V, W], threshold: Optional[Ordered] = None
     ) -> None:
+        self._filter: Optional[Callable[[Program], bool]] = None
         self.G = G
         symbols = [S for S in self.G.rules]
         self.threshold = threshold
@@ -104,6 +106,9 @@ class UHSEnumerator(ProgramEnumerator[None], ABC, Generic[U, V, W]):
                 if program is None:
                     return
                 h = hash(program)
+            if not self._should_keep_subprogram(program):
+                self.deleted.add(program)
+                continue
             self.seen.add(h)
             yield program
 

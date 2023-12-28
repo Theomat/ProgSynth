@@ -2,6 +2,7 @@ from collections import defaultdict
 from heapq import heappush, heappop
 from typing import (
     Any,
+    Callable,
     Dict,
     Generator,
     Generic,
@@ -47,6 +48,7 @@ class HSEnumerator(
     ) -> None:
         self.current: Optional[Program] = None
         self.threshold = threshold
+        self._filter: Optional[Callable[[Program], bool]] = None
 
         self.deleted: Set[Program] = set()
         self.seen: Set[Program] = set()
@@ -107,8 +109,11 @@ class HSEnumerator(
                 program = self.query(self.start, program)
                 if program is None:
                     return
-            self.seen.add(program)
             self.current = program
+            if not self._should_keep_subprogram(program):
+                self.deleted.add(program)
+                continue
+            self.seen.add(program)
             yield program
 
     def __compute_max_prio__(
