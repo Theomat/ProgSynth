@@ -21,7 +21,7 @@ import tqdm
 import timeout_decorator
 
 SEARCH_ALGOS = {
-    "bee_search": (bs_enumerate_prob_grammar, None),
+    # "bee_search": (bs_enumerate_prob_grammar, None),
     "beap_search": (bps_enumerate_prob_grammar, None),
     "heap_search": (hs_enumerate_prob_grammar, None),
 }
@@ -190,27 +190,21 @@ if __name__ == "__main__":
         for name, (enum, _) in SEARCH_ALGOS.items():
             trace += enumerative_search(pcfg, name, enum, programs)
     else:
-        dsl = DSL(
-            auto_type(
-                {
-                    "+": "int -> int -> int",
-                    "-": "int -> int -> int",
-                    # "*": "int -> int -> int",
-                    "1": "int",
-                }
-            )
-        )
-        for depth in range(4, max_depth + 1, 1):
+
+        for nterminals in range(1, max_depth + 1, 1):
+            syntax = {}
+            args = "->".join(map(lambda x: f"nt{x}", (range(1, nterminals + 1)))) + "->"
+            for k in range(1, nterminals + 1):
+                syntax[f"+{k}"] = args + f"nt{k}"
+                syntax[f"1{k}"] = f"nt{k}"
+            dsl = DSL(auto_type(syntax))
             try:
                 cfg = CFG.depth_constraint(
                     dsl,
-                    auto_type("int -> int"),
-                    depth,
+                    auto_type("nt1 -> nt1"),
+                    -1,
                     n_gram=1,
                 )
-                if cfg.programs() < 1e6:
-                    # Not enough programs to have accurate measurement
-                    continue
                 pcfg = ProbDetGrammar.uniform(cfg)
             except KeyError:
                 print(
