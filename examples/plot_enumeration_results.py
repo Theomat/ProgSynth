@@ -1,5 +1,3 @@
-from glob import glob
-import os
 from collections import OrderedDict, defaultdict
 from typing import Dict, List
 import matplotlib.pyplot as plt
@@ -20,71 +18,50 @@ __DATA__ = {
     "queued": (2, "Programs Enqueued", 0, False, False),
     "banked": (3, "Programs in Banks", 0, False, False),
     "non_terminals": (4, "Non Terminals in Grammar", 0, False, False),
+    "rules": (5, "Derivation Rules in Grammar", 0, False, False),
 }
 
 
-def load_data(output_folder: str, verbose: bool = False) -> Dict[str, Dict[int, List]]:
-    # Dict[name, Dict[seed, data]]
+def load_data(output_file: str, verbose: bool = False) -> Dict[str, Dict[int, List]]:
+    # Dict[name, data]
     methods = {}
 
-    chosen_dsl = None
-
-    for file in glob(os.path.join(output_folder, "*.csv")):
-        filename = os.path.relpath(file, output_folder)
+    # filename should end with _rules.csv or _non_terminals
+    name = output_file[:-4]
+    if not (name.endswith("_rules") or name.endswith("_non_terminals")):
         if verbose:
-            print("found csv file:", file)
-        # filename should end with dsl_{dsl}_seed_{seed}_depth_{max_depth}.csv
-        name = filename[:-4]
-        if "_seed_" not in name:
+            print(f"filename:{output_file} does not seem valid!")
+        return {}
+    trace = []
+    with open(output_file, "r") as fd:
+        reader = csv.reader(fd)
+        trace = [tuple(row) for row in reader]
+        # Pop columns names
+        columns = {name: ind for ind, name in enumerate(trace.pop(0))}
+        indices = [
+            columns["search"],
+            columns["time"],
+            columns["programs"],
+            columns["queue"],
+            columns["bank"],
+            columns["non_terminals"],
+            columns["derivation_rules"],
+        ]
+        data = [tuple(row[k] for k in indices) for row in trace]
+        if len(data) == 0:
             if verbose:
-                print(f"\tskipped: does not contain _seed_")
-            continue
-
-        dsl = name[name.index("dsl_") + 4 : name.index("_seed_")].replace("_", " ")
-        if not (chosen_dsl is None or dsl == chosen_dsl):
-            if verbose:
-                print(
-                    f"\tskipped: does not contain data belonging to the same dsl: {dsl}"
-                )
-                continue
-            if chosen_dsl is None:
-                chosen_dsl = dsl
-                if verbose:
-                    print(f"found dsl: {dsl}")
-        seed = int(name[name.index("_seed_") + 6 : name.index("_depth_")])
-
-        trace = []
-        with open(os.path.join(output_folder, filename), "r") as fd:
-            reader = csv.reader(fd)
-            trace = [tuple(row) for row in reader]
-            # Pop columns names
-            columns = {name: ind for ind, name in enumerate(trace.pop(0))}
-            indices = [
-                columns["search"],
-                columns["time"],
-                columns["programs"],
-                columns["queue"],
-                columns["bank"],
-                columns.get("non_terminals", -1),
-            ]
-            data = [tuple(row[k] if k >= 0 else 0 for k in indices) for row in trace]
-            if len(data) == 0:
-                if verbose:
-                    print(f"\tskipped: no data")
-                continue
-            agg = defaultdict(list)
-            for row in data:
-                agg[row[0]].append(row[1:])
-
-            for name, data in agg.items():
-                if name not in methods:
-                    methods[name] = {}
-                if seed in methods[name]:
-                    print(f"Warning: duplicate seed {seed} for method {name}!")
-                    continue
-
-                # Save data for method
-                methods[name][seed] = [tuple(float(x) for x in row) for row in data]
+                print(f"filename:{output_file} is empty!")
+            return {}
+        agg = defaultdict(list)
+        for row in data:
+            agg[row[0]].append(row[1:])
+        for name, data in agg.items():
+            name = name.replace("_", " ")
+            if name not in methods:
+                methods[name] = {}
+            # Save data for method
+            methods[name][1] = [tuple(float(x) for x in row) for row in data]
+            # Backend support onl yseeded data so we register every data as seed 1
     return methods
 
 
@@ -95,13 +72,13 @@ for ydata in list(__DATA__.keys()):
         if xdata == ydata:
             continue
         __PLOTS__[f"{ydata}_wrt_{xdata}"] = make_plot_wrapper(
-            plot_y_wrt_x, __DATA__[xdata], __DATA__[ydata], cumulative=False
+            plot_y_wrt_x,
+            __DATA__[xdata],
+            __DATA__[ydata],
+            cumulative=False,
+            logy=xdata == "non_terminals",
         )
-    if ydata != "tasks":
-        __PLOTS__[f"rank_by_{ydata}"] = make_plot_wrapper(plot_rank_by, __DATA__[ydata])
-        __PLOTS__[f"dist_{ydata}_by_programs"] = make_plot_wrapper(
-            plot_dist, __DATA__[ydata], "tasks"
-        )
+    __PLOTS__[f"rank_by_{ydata}"] = make_plot_wrapper(plot_rank_by, __DATA__[ydata])
 
 
 if __name__ == "__main__":
@@ -109,12 +86,10 @@ if __name__ == "__main__":
     import sys
 
     parser = argparse.ArgumentParser(description="Plot results")
-
     parser.add_argument(
-        "--folder",
+        "file",
         type=str,
-        default="./",
-        help="folder in which to look for CSV files (default: './')",
+        help="data file to load",
     )
     parser.add_argument(
         "-v",
@@ -125,13 +100,13 @@ if __name__ == "__main__":
     )
     parser.add_argument("plots", nargs="+", choices=list(__PLOTS__.keys()))
     parameters = parser.parse_args()
-    output_folder: str = parameters.folder
+    output_file: str = parameters.file
     verbose: bool = parameters.verbose
     plots: List[str] = parameters.plots
 
     # Load data
     pub.setup()
-    methods = load_data(output_folder, verbose)
+    methods = load_data(output_file, verbose)
     # Check we have at least one file
     if len(methods) == 0:
         print("Error: no performance file was found!", file=sys.stderr)

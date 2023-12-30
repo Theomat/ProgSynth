@@ -1,9 +1,9 @@
-from typing import Callable, Iterable, List, Tuple, Union
+from typing import Callable, Iterable, Optional, Tuple, Union
 import csv
 import time
 import argparse
 
-from dsl_loader import add_dsl_choice_arg, load_DSL
+from dsl_loader import add_dsl_choice_arg
 
 from synth.syntax import (
     ProbDetGrammar,
@@ -21,9 +21,9 @@ import tqdm
 import timeout_decorator
 
 SEARCH_ALGOS = {
-    # "bee_search": (bs_enumerate_prob_grammar, None),
-    "beap_search": (bps_enumerate_prob_grammar, None),
-    "heap_search": (hs_enumerate_prob_grammar, None),
+    "bee_search": bs_enumerate_prob_grammar,
+    "beap_search": bps_enumerate_prob_grammar,
+    "heap_search": hs_enumerate_prob_grammar,
 }
 
 parser = argparse.ArgumentParser(
@@ -40,30 +40,26 @@ parser.add_argument(
 parser.add_argument(
     dest="n", metavar="programs", type=int, help="number of programs to be enumerated"
 )
-parser.add_argument("type", type=str, help="type request")
+# parser.add_argument(
+#     dest="max_rules", type=int, help="maximum number of derivation rules"
+# )
 parser.add_argument(
-    "-d", "--depth", type=int, default=5, help="max program depth (default: 5)"
+    dest="max_non_terminals", type=int, help="maximum number of non terminals"
 )
-parser.add_argument("-s", "--seed", type=int, default=0, help="seed (default: 0)")
-parser.add_argument("--scaling", action="store_true", help="scaling with non terminals")
+parser.add_argument(
+    "-t", "--timeout", type=int, default=300, help="timeout in seconds (default: 300)"
+)
 
 
 parameters = parser.parse_args()
 dsl_name: str = parameters.dsl
 output_file: str = parameters.output
-str_tr: str = parameters.type
 programs: int = parameters.n
-max_depth: int = parameters.depth
-seed: int = parameters.seed
-scaling: bool = parameters.scaling
+timeout: int = parameters.timeout
+# max_rules: int = parameters.max_rules
+max_non_terminals: int = parameters.max_non_terminals
 
-file_name = output_file[: -len(".csv")]
-if scaling:
-    dsl_name = "scaling"
-suffix = f"_dsl_{dsl_name}_seed_{seed}_depth_{max_depth}"
-if not file_name.endswith(suffix):
-    file_name += suffix
-output_file = file_name + ".csv"
+file_name = output_file[: -len(".csv")] if output_file.endswith(".csv") else output_file
 
 
 # ================================
@@ -71,8 +67,8 @@ output_file = file_name + ".csv"
 # ================================
 
 
-def save(trace: Iterable) -> None:
-    with open(output_file, "w") as fd:
+def save(trace: Iterable, name: str) -> None:
+    with open(name, "w") as fd:
         writer = csv.writer(fd)
         writer.writerows(trace)
 
@@ -85,22 +81,29 @@ def enumerative_search(
         [Union[ProbDetGrammar, ProbUGrammar]], ProgramEnumerator
     ],
     programs: int,
-    datum_each: int = 50000,
     timeout: int = 300,
-    average_only: bool = False,
-) -> List[Tuple[str, int, float, int, int, int]]:
-    out = []
+    title: Optional[str] = None,
+) -> Tuple[str, int, int, float, int, int, int]:
     n = 0
     non_terminals = len(pcfg.rules)
-    pbar = tqdm.tqdm(total=programs, desc=name)
-    start = time.perf_counter_ns()
+    derivation_rules = sum(len(pcfg.rules[S]) for S in pcfg.rules)
+    used_time = 0
+
+    pbar = tqdm.tqdm(total=programs, desc=title or name)
     enumerator = custom_enumerate(pcfg)
     gen = enumerator.generator()
-    get_next = timeout_decorator.timeout(timeout, timeout_exception=StopIteration)(
-        lambda: next(gen)
-    )
     program = 1
+    datum_each = 100000
+    start = 0
     try:
+
+        def fun():
+            return next(gen)
+
+        get_next = timeout_decorator.timeout(timeout, timeout_exception=StopIteration)(
+            fun
+        )
+        start = time.perf_counter_ns()
         while program is not None:
             program = get_next()
             n += 1
@@ -109,112 +112,88 @@ def enumerative_search(
                 bef = time.perf_counter_ns()
                 if used_time >= timeout * 1e9:
                     break
-                out.append(
-                    (
-                        name,
-                        non_terminals,
-                        used_time / 1e9,
-                        n,
-                        enumerator.programs_in_queues(),
-                        enumerator.programs_in_banks(),
-                    )
-                )
                 pbar.update(datum_each)
                 if n >= programs:
-                    pbar.close()
                     break
                 rem_time = timeout - used_time / 1e9
                 get_next = timeout_decorator.timeout(
                     rem_time, timeout_exception=StopIteration
-                )(lambda: next(gen))
+                )(fun)
                 start -= time.perf_counter_ns() - bef
-    except StopIteration:
-        if n < programs:
-            out.append(
-                (
-                    name,
-                    non_terminals,
-                    timeout,
-                    n,
-                    enumerator.programs_in_queues(),
-                    enumerator.programs_in_banks(),
-                )
-            )
-    if n < programs:
-        pbar.close()
-    if average_only and len(out) > 0:
-        progs = out[-1][3]
-        factor = datum_each / progs
-        new_out = [
-            (
-                name,
-                non_terminals,
-                out[-1][2] * factor,
-                datum_each,
-                out[-1][-2] * factor,
-                out[-1][-1] * factor,
-            )
-        ]
-        out = new_out
-    return out
+    except (StopIteration, RuntimeError):
+        used_time = time.perf_counter_ns() - start
+    pbar.close()
+    datum_each = 1000000
+    factor = datum_each / n
+    return (
+        name,
+        non_terminals,
+        derivation_rules,
+        used_time * factor / 1e9,
+        datum_each,
+        int(enumerator.programs_in_queues() * factor),
+        int(enumerator.programs_in_banks() * factor),
+    )
 
 
 # Main ====================================================================
 
 if __name__ == "__main__":
-    import sys
 
-    trace = [("search", "non_terminals", "time", "programs", "queue", "bank")]
-
-    if not scaling:
-        dsl_module = load_DSL(dsl_name)
-        dsl: DSL = dsl_module.dsl
-        constant_types = getattr(dsl, "constant_types", set())
-
-        n_gram = 2 if max_depth > 0 else 1
-        try:
-            cfg = CFG.depth_constraint(
-                dsl,
-                auto_type(str_tr),
-                max_depth,
-                n_gram=n_gram,
-                constant_types=constant_types,
+    # trace_rules = [
+    #     (
+    #         "search",
+    #         "non_terminals",
+    #         "derivation_rules",
+    #         "time",
+    #         "programs",
+    #         "queue",
+    #         "bank",
+    #     )
+    # ]
+    # print("Working on derivation rules scaling")
+    # for derivation_rules in range(2, max_rules + 1, 10):
+    #     syntax = {
+    #         "+": "s -> s",
+    #         "1": "s",
+    #     }
+    #     for i in range(2, derivation_rules):
+    #         syntax[f"{i}"] = "s"
+    #     cfg = CFG.infinite(DSL(auto_type(syntax)), auto_type("s->s"), n_gram=1)
+    #     pcfg = ProbDetGrammar.uniform(cfg)
+    #     for name, enum in SEARCH_ALGOS.items():
+    #         trace_rules.append(
+    #             enumerative_search(pcfg, name, enum, programs, timeout=timeout, title=f"{name}-{derivation_rules}")  # type: ignore
+    #         )
+    #     save(trace_rules, file_name + "_rules.csv")
+    # print("csv file was saved as:", file_name + "_rules.csv")
+    trace_non_terminals = [
+        (
+            "search",
+            "non_terminals",
+            "derivation_rules",
+            "time",
+            "programs",
+            "queue",
+            "bank",
+        )
+    ]
+    print("Working on non terminals scaling")
+    for non_terminals in range(4, max_non_terminals + 1, 2):
+        syntax = {
+            "1": "s1",
+        }
+        for i in range(2, non_terminals + 1):
+            syntax[f"cast{i}"] = f"s1 -> s{i}"
+            syntax[f"cst{i}"] = f"s{i}"
+        syntax["+"] = (
+            "->".join(map(lambda x: f"s{x}", list(range(2, non_terminals)))) + "-> s1"
+        )
+        cfg = CFG.infinite(DSL(auto_type(syntax)), auto_type("s1->s1"), n_gram=1)
+        pcfg = ProbDetGrammar.uniform(cfg)
+        for name, enum in SEARCH_ALGOS.items():
+            trace_non_terminals.append(
+                enumerative_search(pcfg, name, enum, programs, timeout=timeout, title=f"{name}-{non_terminals}")  # type: ignore
             )
-            pcfg = ProbDetGrammar.random(cfg, seed=seed)
-        except KeyError:
-            print(
-                f"failed to instantiate a non empty grammar for dsl {dsl} and type: {str_tr}",
-                file=sys.stderr,
-            )
-            sys.exit(1)
-        for name, (enum, _) in SEARCH_ALGOS.items():
-            trace += enumerative_search(pcfg, name, enum, programs)
-    else:
-
-        for nterminals in range(1, max_depth + 1, 1):
-            syntax = {}
-            args = "->".join(map(lambda x: f"nt{x}", (range(1, nterminals + 1)))) + "->"
-            for k in range(1, nterminals + 1):
-                syntax[f"+{k}"] = args + f"nt{k}"
-                syntax[f"1{k}"] = f"nt{k}"
-            dsl = DSL(auto_type(syntax))
-            try:
-                cfg = CFG.depth_constraint(
-                    dsl,
-                    auto_type("nt1 -> nt1"),
-                    -1,
-                    n_gram=1,
-                )
-                pcfg = ProbDetGrammar.uniform(cfg)
-            except KeyError:
-                print(
-                    f"failed to instantiate a non empty grammar for dsl {dsl} and type: {str_tr}",
-                    file=sys.stderr,
-                )
-                sys.exit(1)
-            for name, (enum, _) in SEARCH_ALGOS.items():
-                trace += enumerative_search(
-                    pcfg, name, enum, programs, average_only=True, datum_each=25000
-                )
-    save(trace)
-    print("csv file was saved as:", output_file)
+        save(trace_non_terminals, file_name + "_non_terminals.csv")
+    print("csv file was saved as:", file_name + "_non_terminals.csv")
