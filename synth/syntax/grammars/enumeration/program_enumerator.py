@@ -2,6 +2,7 @@ from typing import (
     Callable,
     Generator,
     Generic,
+    Optional,
     TypeVar,
     Union,
 )
@@ -62,7 +63,7 @@ class ProgramEnumerator(ABC, Generic[U]):
         Function that can be called to filter out subprograms, can be used for observational equivalence and is the most efficient way to do so.
         When filter returns True the program will be discarded by the enumerator.
         """
-        self._filter = filter
+        self._filter: Optional[Callable[[Program], bool]] = filter
 
     def _should_keep_subprogram(self, program: Program) -> bool:
         return self._filter is None or not self._filter(program)
