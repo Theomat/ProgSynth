@@ -142,25 +142,25 @@ def plot_y_wrt_x(
 
 def get_rank_matrix(
     methods: Dict[str, Dict[int, List]], yindex: int, maximize: bool
-) -> Tuple[List[str], np.ndarray]:
-    seeds = list(methods.values())[0].keys()
-    task_len = len(list(list(methods.values())[0].values())[0])
-    rank_matrix = np.ndarray((len(methods), task_len, len(methods)), dtype=float)
+) -> np.ndarray:
     method_names = list(methods.keys())
+    task_len = len(list(list(methods.values())[0].values())[0])
+    for val in methods.values():
+        task_len = max(max(len(x) for x in val.values()), task_len)
+    seeds = set(list(methods.values())[0].keys())
+    for val in methods.values():
+        local_seeds = set(x for x, y in val.items() if len(y) == task_len)
+        seeds &= local_seeds
+    rank_matrix = np.ndarray((len(methods), task_len, len(methods)), dtype=float)
     data = np.ndarray((len(methods), len(seeds)), dtype=float)
-    np.random.seed(1)
+    rng = np.random.default_rng(1)
     for task_no in range(task_len):
         for i, method in enumerate(method_names):
             for j, seed in enumerate(seeds):
                 data[i, j] = methods[method][seed][task_no][yindex]
-        # data_for_seed = []
-        # for method in method_names:
-        #     data = methods[method][seed]
-        #     data_for_seed.append([d[yindex] for d in data])
-        # data_for_seed = np.array(data_for_seed)
         if maximize:
             data = -data
-        rand_x = np.random.random(size=data.shape)
+        rand_x = rng.random(size=data.shape)
         # This is done to randomly break ties.
         # Last key is the primary key,
         indices = np.lexsort((rand_x, data), axis=0)
