@@ -186,7 +186,8 @@ def filter(
     return {
         m: {
             s: [x for i, x in enumerate(data) if should_keep[i]]
-            for s, data in val.items() if len(data) == task_len
+            for s, data in val.items()
+            if len(data) == task_len
         }
         for m, val in methods.items()
     }
