@@ -91,16 +91,14 @@ def plot_y_wrt_x(
     b_index, b_name = x_data
     max_a = 0
     max_b = 0
-    y_data_length = 0
-    x_data_length = 0
+    data_length = 0
     for method, seeds_dico in methods.items():
         seeds = list(seeds_dico.keys())
         data = [
             [(elems[b_index], elems[a_index]) for elems in seeds_dico[seed]]
             for seed in seeds
         ]
-        y_data_length = max(y_data_length, len(data[0]))
-        x_data_length = max(x_data_length, len(data[1]))
+        data_length = max(data_length, len(data[0]))
 
         xdata = [[x[0] for x in seed_data] for seed_data in data]
         ydata = [[x[1] for x in seed_data] for seed_data in data]
@@ -110,7 +108,7 @@ def plot_y_wrt_x(
             ydata,
             method.capitalize(),
             miny=0,
-            maxy=y_data_length if hline_at_length else None,
+            maxy=data_length if hline_at_length else None,
             cumulative=cumulative,
         )
         max_a = max(max(np.max(yi) for yi in ydata), max_a)
@@ -122,7 +120,7 @@ def plot_y_wrt_x(
     ax.set_ylabel(a_name)
     if hline_at_length:
         ax.hlines(
-            [y_data_length],
+            [data_length],
             xmin=0,
             xmax=(xlim[1] or max_b),
             label=f"All {a_name}",
@@ -131,7 +129,7 @@ def plot_y_wrt_x(
         )
     if vline_at_length:
         ax.vlines(
-            [x_data_length],
+            [data_length],
             ymin=0,
             ymax=(xlim[1] or max_a),
             label=f"All {b_name}",
