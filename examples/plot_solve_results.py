@@ -124,6 +124,9 @@ def timeout_filter(
         if nbr_timeouts == -1:
             nbr_timeouts = len(methods) * len(seeds_dico)
         for seed, data in seeds_dico.items():
+            if task_index >= len(data):
+                nbr_timeouts -= 1
+                continue
             timeouts += 1 - data[task_index][0]
             if timeouts > nbr_timeouts:
                 return False
@@ -183,7 +186,7 @@ def filter(
     return {
         m: {
             s: [x for i, x in enumerate(data) if should_keep[i]]
-            for s, data in val.items()
+            for s, data in val.items() if len(data) == task_len
         }
         for m, val in methods.items()
     }
