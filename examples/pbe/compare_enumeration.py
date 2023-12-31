@@ -179,7 +179,15 @@ if __name__ == "__main__":
         )
     ]
     print("Working on non terminals scaling")
-    for non_terminals in range(4, max_non_terminals + 1, 2):
+    non_terminals_values = [4]
+    while non_terminals_values[-1] < max_non_terminals:
+        last = non_terminals_values[-1]
+        if last <= 10:
+            last += 2
+        else:
+            last += 10
+        non_terminals_values.append(last)
+    for non_terminals in non_terminals_values:
         syntax = {
             "1": "s1",
         }
