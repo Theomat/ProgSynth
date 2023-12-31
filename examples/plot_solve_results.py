@@ -190,11 +190,11 @@ def filter(
 
 
 __DATA__ = {
-    "tasks": (0, "Tasks completed", 10, True, True),
-    "time": (1, "Time (in s)", 5, False, False),
-    "programs": (2, "Programs Enumerated", 0, False, False),
-    "merges": (3, "Programs Merged", 0, False, False),
-    "restarts": (4, "Retsarts", 0, False, False),
+    "tasks": (0, "Tasks completed"),
+    "time": (1, "Time (in s)"),
+    "programs": (2, "Programs Enumerated"),
+    "merges": (3, "Programs Merged"),
+    "restarts": (4, "Restarts"),
 }
 
 
@@ -205,10 +205,16 @@ for ydata in list(__DATA__.keys()):
         if xdata == ydata:
             continue
         __PLOTS__[f"{ydata}_wrt_{xdata}"] = make_plot_wrapper(
-            plot_y_wrt_x, __DATA__[xdata], __DATA__[ydata]
+            plot_y_wrt_x,
+            __DATA__[xdata],
+            __DATA__[ydata],
+            hline_at_length=ydata == "tasks",
+            vline_at_length=xdata == "tasks",
         )
     if ydata != "tasks":
-        __PLOTS__[f"rank_by_{ydata}"] = make_plot_wrapper(plot_rank_by, __DATA__[ydata])
+        __PLOTS__[f"rank_by_{ydata}"] = make_plot_wrapper(
+            plot_rank_by, __DATA__[ydata], maximize=ydata == "tasks"
+        )
         __PLOTS__[f"dist_{ydata}_by_task"] = make_plot_wrapper(
             plot_dist, __DATA__[ydata], "tasks"
         )
@@ -233,9 +239,6 @@ if __name__ == "__main__":
         help="folder in which to look for CSV files (default: './')",
     )
     parser.add_argument(
-        "--sorted", action="store_true", help="sort data by task solving time"
-    )
-    parser.add_argument(
         "-v",
         "--verbose",
         action="store_true",
@@ -254,7 +257,6 @@ if __name__ == "__main__":
     dataset_file: str = parameters.dataset
     output_folder: str = parameters.folder
     verbose: bool = parameters.verbose
-    no_sort: bool = not parameters.sorted
     plots: List[str] = parameters.plots
     filters: List[str] = parameters.filter or []
 

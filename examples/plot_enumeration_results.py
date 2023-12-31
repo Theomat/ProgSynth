@@ -7,18 +7,16 @@ import csv
 from plot_helper import (
     plot_y_wrt_x,
     make_plot_wrapper,
-    plot_dist,
-    plot_rank_by,
 )
 
 
 __DATA__ = {
-    "time": (0, "Time (in s)", 5, False, False),
-    "programs": (1, "Programs Enumerated", 0, False, False),
-    "queued": (2, "Programs Enqueued", 0, False, False),
-    "banked": (3, "Programs in Banks", 0, False, False),
-    "non_terminals": (4, "Non Terminals in Grammar", 0, False, False),
-    "rules": (5, "Derivation Rules in Grammar", 0, False, False),
+    "time": (0, "Time (in s)"),
+    "programs": (1, "Programs Enumerated"),
+    "queued": (2, "Programs Enqueued"),
+    "banked": (3, "Programs in Banks"),
+    "non_terminals": (4, "Non Terminals in Grammar"),
+    "rules": (5, "Derivation Rules in Grammar"),
 }
 
 
@@ -78,8 +76,6 @@ for ydata in list(__DATA__.keys()):
             cumulative=False,
             logy=xdata == "non_terminals",
         )
-    __PLOTS__[f"rank_by_{ydata}"] = make_plot_wrapper(plot_rank_by, __DATA__[ydata])
-
 
 if __name__ == "__main__":
     import argparse

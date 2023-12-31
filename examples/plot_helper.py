@@ -76,28 +76,31 @@ def make_plot_wrapper(func, *args, **kwargs) -> None:
 def plot_y_wrt_x(
     ax: plt.Axes,
     methods: Dict[str, Dict[int, List]],
-    x_data: Tuple,
-    y_data: Tuple,
-    should_sort: bool = False,
+    x_data: Tuple[int, str],
+    y_data: Tuple[int, str],
     cumulative: bool = True,
     logx: bool = False,
     logy: bool = False,
+    xlim: Tuple[Optional[int], Optional[int]] = (0, None),
+    ylim: Tuple[Optional[int], Optional[int]] = (0, None),
+    hline_at_length: bool = False,
+    vline_at_length: bool = False,
 ) -> None:
     # Plot data with incertitude
-    a_index, a_name, a_margin, show_len_a, _ = y_data
-    b_index, b_name, b_margin, show_len_b, _ = x_data
+    a_index, a_name = y_data
+    b_index, b_name = x_data
     max_a = 0
     max_b = 0
-    data_length = 0
+    y_data_length = 0
+    x_data_length = 0
     for method, seeds_dico in methods.items():
         seeds = list(seeds_dico.keys())
         data = [
             [(elems[b_index], elems[a_index]) for elems in seeds_dico[seed]]
             for seed in seeds
         ]
-        data_length = max(data_length, len(data[0]))
-        if should_sort:
-            data = [sorted(seed_data) for seed_data in data]
+        y_data_length = max(y_data_length, len(data[0]))
+        x_data_length = max(x_data_length, len(data[1]))
 
         xdata = [[x[0] for x in seed_data] for seed_data in data]
         ydata = [[x[1] for x in seed_data] for seed_data in data]
@@ -106,8 +109,8 @@ def plot_y_wrt_x(
             xdata,
             ydata,
             method.capitalize(),
-            maxy=data_length if show_len_a else None,
             miny=0,
+            maxy=y_data_length if hline_at_length else None,
             cumulative=cumulative,
         )
         max_a = max(max(np.max(yi) for yi in ydata), max_a)
@@ -115,27 +118,34 @@ def plot_y_wrt_x(
         if cumulative:
             max_a = max(max(np.sum(yi) for yi in ydata), max_a)
             max_b = max(max(np.sum(xi) for xi in xdata), max_b)
-            pass
     ax.set_xlabel(b_name)
     ax.set_ylabel(a_name)
-    if show_len_a:
+    if hline_at_length:
         ax.hlines(
-            [data_length],
+            [y_data_length],
             xmin=0,
-            xmax=max_b + b_margin,
+            xmax=(xlim[1] or max_b),
             label=f"All {a_name}",
             color="k",
             linestyles="dashed",
         )
-        max_a = data_length
+    if vline_at_length:
+        ax.vlines(
+            [x_data_length],
+            ymin=0,
+            ymax=(xlim[1] or max_a),
+            label=f"All {b_name}",
+            color="k",
+            linestyles="dashed",
+        )
     if logx:
         ax.set_xscale("log")
     else:
-        ax.set_xlim(0, max_b + b_margin)
+        ax.set_xlim(xlim[0], xlim[1])
     if logy:
         ax.set_yscale("log")
     else:
-        ax.set_ylim(0, max_a + a_margin)
+        ax.set_ylim(ylim[0], ylim[1])
     ax.grid()
     ax.legend()
 
@@ -193,11 +203,14 @@ def __ready_for_stacked_dist_plot__(ax: plt.Axes) -> None:
 
 
 def plot_rank_by(
-    ax: plt.Axes, methods: Dict[str, Dict[int, List]], y_data: Tuple
+    ax: plt.Axes,
+    methods: Dict[str, Dict[int, List]],
+    y_data: Tuple[int, str],
+    maximize: bool = True,
 ) -> None:
     width = 1.0
-    a_index, a_name, a_margin, show_len_a, should_max = y_data
-    rank_matrix = get_rank_matrix(methods, a_index, should_max)
+    a_index, a_name = y_data
+    rank_matrix = get_rank_matrix(methods, a_index, maximize)
     labels = list(range(1, len(methods) + 1))
     mean_ranks = np.mean(rank_matrix, axis=-2)
     bottom = np.zeros_like(mean_ranks[0])
@@ -224,16 +237,19 @@ def plot_rank_by(
     ax.set_xticks(labels)
     ax.set_xticklabels(labels)
     __ready_for_stacked_dist_plot__(ax)
-    word = "Most" if should_max else "Least"
+    word = "Most" if maximize else "Least"
     ax.set_title(f"{word} {a_name}")
 
 
 def plot_dist(
-    ax: plt.Axes, methods: Dict[str, Dict[int, List]], y_data: Tuple, x_axis_name: str
+    ax: plt.Axes,
+    methods: Dict[str, Dict[int, List]],
+    y_data: Tuple[int, str],
+    x_axis_name: str,
 ) -> None:
     width = 1.0
     data_length = 0
-    a_index, a_name, a_margin, show_len_a, should_max = y_data
+    a_index, a_name = y_data
     max_a = max(
         max(max([y[a_index] for y in x]) for x in seed_dico.values())
         for seed_dico in methods.values()
