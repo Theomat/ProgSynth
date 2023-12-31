@@ -17,29 +17,37 @@ def plot_with_incertitude(
     n_points: int = 50,
 ) -> None:
     max_len = max(len(xi) for xi in x)
-    x = [xi for xi in x if len(xi) == max_len]
-    y = [yi for yi in y if len(yi) == max_len]
+    X = np.array([xi for xi in x if len(xi) == max_len])
+    Y = np.array([yi for yi in y if len(yi) == max_len])
 
-    x_min = np.min(np.array(x))
-    x_max = np.max(np.array(x))
+    x_min = np.min(X)
+    x_max = np.max(X)
     if x_max == x_min:
         return
     if cumulative:
-        x_mean = np.cumsum(np.mean(x, axis=0))
+        x_mean = np.cumsum(np.mean(X, axis=0))
         x_min = np.min(x_mean)
         x_max = np.max(x_mean)
-        target_x = np.arange(x_min, x_max + 1, step=(x_max - x_min) / n_points)
+        target_x = (
+            np.arange(x_min, x_max + 1, step=(x_max - x_min) / n_points)
+            if len(X.shape) > 1 or len(X) > n_points
+            else X.reshape(-1)
+        )
 
-        y_mean = np.cumsum(np.mean(y, axis=0))
+        y_mean = np.cumsum(np.mean(Y, axis=0))
         mean = np.interp(target_x, x_mean, y_mean)
 
-        y_var = np.cumsum(np.var(y, axis=0))
+        y_var = np.cumsum(np.var(Y, axis=0))
         y_var = np.interp(target_x, x_mean, y_var)
         std = std_factor * np.sqrt(y_var)
     else:
-        target_x = np.arange(x_min, x_max + 1, step=(x_max - x_min) / n_points)
+        target_x = (
+            np.arange(x_min, x_max + 1, step=(x_max - x_min) / n_points)
+            if len(X.shape) > 1 or len(X) > n_points
+            else X.reshape(-1)
+        )
         data = []
-        for xi, yi in zip(x, y):
+        for xi, yi in zip(X, Y):
             nyi = np.interp(target_x, xi, yi)
             data.append(nyi)
         # Compute distribution
