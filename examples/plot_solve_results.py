@@ -25,6 +25,8 @@ def load_data(
     all_search = set()
     all_solver = set()
 
+    summary = {}
+
     for file in glob(os.path.join(output_folder, "*.csv")):
         filename = os.path.relpath(file, output_folder)
         if verbose:
@@ -86,23 +88,37 @@ def load_data(
             continue
         # Save data for method
         methods[name][seed] = trace
+        # Save summary data
+        if seed not in summary:
+            summary[seed] = {}
+        solved = sum(x[0] for x in trace)
+        summary[seed][name] = (solved, len(trace))
         if verbose:
             print(
                 f"{name} (seed={seed}) solved",
-                sum(x[0] for x in trace),
+                solved,
                 "/",
                 len(trace),
             )
+    to_replace = ""
     if len(all_search) == 1 and len(all_solver) > 1:
         search = list(all_search)[0]
+        to_replace = search
         methods = {
             k.replace(search, "").strip(" ").capitalize(): v for k, v in methods.items()
         }
     elif len(all_solver) == 1 and len(all_search) > 1:
         solver = list(all_solver)[0]
+        to_replace = solver
         methods = {
             k.replace(solver, "").strip(" ").capitalize(): v for k, v in methods.items()
         }
+    for seed in sorted(summary):
+        print("seed", seed)
+        for name, (solved, total) in sorted(summary[seed].items()):
+            if len(to_replace) > 0:
+                name = name.replace(to_replace, "").strip()
+            print(f"\t{name} solved {solved}/{total} ({solved/total:.1%}) tasks")
     return methods, timeout
 
 
