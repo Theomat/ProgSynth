@@ -29,7 +29,7 @@ def plot_with_incertitude(
         x_min = np.min(x_mean)
         x_max = np.max(x_mean)
         target_x = (
-            np.arange(x_min, x_max + 1, step=(x_max - x_min) / n_points)
+            np.arange(x_min, x_max, step=(x_max - x_min) / n_points)
             if len(X.shape) > 1 or len(X) > n_points
             else X.reshape(-1)
         )
@@ -42,7 +42,7 @@ def plot_with_incertitude(
         std = std_factor * np.sqrt(y_var)
     else:
         target_x = (
-            np.arange(x_min, x_max + 1, step=(x_max - x_min) / n_points)
+            np.arange(x_min, x_max, step=(x_max - x_min) / n_points)
             if len(X.shape) > 1 or len(X) > n_points
             else X.reshape(-1)
         )
