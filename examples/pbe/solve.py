@@ -263,9 +263,10 @@ if __name__ == "__main__":
     model_name = os.path.split(pcfg_file)[1][
         len(f"pcfgs_{dataset_name}_") : -len(".pickle")
     ]
+    pruning_suffix = "_".join(pruning)
     file = os.path.join(
         output_folder,
-        f"{dataset_name}_{search_algo}_{model_name}_{solver.full_name()}.csv",
+        f"{dataset_name}_{search_algo}_{model_name}_{solver.full_name()}{pruning_suffix}.csv",
     )
     trace = []
     if os.path.exists(file):
