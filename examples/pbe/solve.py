@@ -155,7 +155,7 @@ supported_type_requests = Dataset.load(support).type_requests() if support else 
 # ================================
 
 
-def load_dsl_and_dataset() -> Tuple[Dataset[PBE], DSL, DSLEvaluator]:
+def load_dsl_and_dataset() -> Tuple[Dataset[PBE], DSL, DSLEvaluator, List[str]]:
     dsl_module = load_DSL(dsl_name)
     dsl, evaluator = dsl_module.dsl, dsl_module.evaluator
     # ================================
@@ -163,7 +163,7 @@ def load_dsl_and_dataset() -> Tuple[Dataset[PBE], DSL, DSLEvaluator]:
     # ================================
     full_dataset = load_dataset(dsl_name, dataset_file)
 
-    return full_dataset, dsl, evaluator
+    return full_dataset, dsl, evaluator, getattr(dsl_module, "constraints", [])
 
 
 # Produce PCFGS ==========================================================
@@ -251,11 +251,7 @@ def enumerative_search(
 # Main ====================================================================
 
 if __name__ == "__main__":
-    (
-        full_dataset,
-        dsl,
-        evaluator,
-    ) = load_dsl_and_dataset()
+    (full_dataset, dsl, evaluator, constraints) = load_dsl_and_dataset()
 
     solver: PBESolver = method(evaluator=evaluator)
 
@@ -283,7 +279,14 @@ if __name__ == "__main__":
                 "%)",
             )
     enumerative_search(
-        full_dataset, evaluator, pcfgs, trace, solver, custom_enumerate, file
+        full_dataset,
+        evaluator,
+        pcfgs,
+        trace,
+        solver,
+        custom_enumerate,
+        constraints,
+        file,
     )
     save(trace, file)
     print("csv file was saved as:", file)
