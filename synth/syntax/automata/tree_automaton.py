@@ -91,6 +91,9 @@ class DFTA(Generic[U, V]):
             alphabet.add(letter)
         return alphabet
 
+    def read(self, letter: V, children: Tuple[U, ...]) -> Optional[U]:
+        return self.rules.get((letter, children), None)
+
     def __remove_unreachable__(self) -> None:
         new_states = self.states
         new_rules = {
