@@ -24,6 +24,8 @@ from synth.syntax import (
     hs_enumerate_bucket_prob_u_grammar,
     ProgramEnumerator,
 )
+from synth.pruning import DFTAPruner, ObsEqPruner
+from synth.pruning.constraints import add_dfta_constraints
 from synth.utils import load_object
 from synth.pbe.solvers import (
     NaivePBESolver,
@@ -57,6 +59,8 @@ SEARCH_ALGOS = {
     ),
     "bee_search": (bs_enumerate_prob_grammar, None),
 }
+
+PRUNING = {"dfta", "obs-eq"}
 
 parser = argparse.ArgumentParser(
     description="Solve program synthesis tasks", fromfile_prefix_chars="@"
@@ -96,6 +100,13 @@ parser.add_argument(
     "-t", "--timeout", type=float, default=300, help="task timeout in s (default: 300)"
 )
 
+parser.add_argument(
+    "-p",
+    "--pruning",
+    nargs="*",
+    choices=list(x for x in PRUNING),
+    help="runtime pruning",
+)
 
 parameters = parser.parse_args()
 dsl_name: str = parameters.dsl
@@ -109,6 +120,7 @@ constrained: bool = parameters.constrained
 support: Optional[str] = (
     None if not parameters.support else parameters.support.format(dsl_name=dsl_name)
 )
+pruning: List[str] = parameters.pruning or []
 
 if not os.path.exists(dataset_file) or not os.path.isfile(dataset_file):
     print("Dataset must be a valid dataset file!", file=sys.stderr)
@@ -157,7 +169,7 @@ def load_dsl_and_dataset() -> Tuple[Dataset[PBE], DSL, DSLEvaluator]:
 # Produce PCFGS ==========================================================
 
 
-def save(trace: Iterable) -> None:
+def save(trace: Iterable, file: str) -> None:
     with open(file, "w") as fd:
         writer = csv.writer(fd)
         writer.writerows(trace)
@@ -173,6 +185,8 @@ def enumerative_search(
     custom_enumerate: Callable[
         [Union[ProbDetGrammar, ProbUGrammar]], ProgramEnumerator
     ],
+    constraints: List[str],
+    save_file: str,
 ) -> None:
 
     start = max(0, len(trace) - 1)
@@ -197,9 +211,21 @@ def enumerative_search(
         if isinstance(task.specification, PBEWithConstants):
             pcfg = pcfg.instantiate_constants(task.specification.constants)
         try:
-            sol_generator = solver.solve(
-                task, custom_enumerate(pcfg), timeout=task_timeout
-            )
+            enumerator = custom_enumerate(pcfg)
+            if "dfta" in pruning:
+                enumerator.pruner = DFTAPruner(
+                    add_dfta_constraints(pcfg.grammar, constraints, progress=False)
+                )
+            if "obs-eq" in pruning:
+                pruner = ObsEqPruner(
+                    solver.evaluator, [ex.inputs for ex in task.specification.examples]
+                )
+                enumerator.pruner = (
+                    pruner
+                    if enumerator.pruner is None
+                    else enumerator.pruner.intersection(pruner)
+                )
+            sol_generator = solver.solve(task, enumerator, timeout=task_timeout)
             solution = next(sol_generator)
             task_solved = True
             solved += 1
@@ -216,7 +242,7 @@ def enumerative_search(
         # print("Programs tried:", trace[len(trace) - 1][2])
         if i % 10 == 0:
             pbar.set_postfix_str("Saving...")
-            save(trace)
+            save(trace, save_file)
         pbar.set_postfix_str(f"Solved {solved}/{total}")
 
     pbar.close()
@@ -255,6 +281,8 @@ if __name__ == "__main__":
                 int((len(trace) - 1) * 100 / len(full_dataset)),
                 "%)",
             )
-    enumerative_search(full_dataset, evaluator, pcfgs, trace, solver, custom_enumerate)
-    save(trace)
+    enumerative_search(
+        full_dataset, evaluator, pcfgs, trace, solver, custom_enumerate, file
+    )
+    save(trace, file)
     print("csv file was saved as:", file)
