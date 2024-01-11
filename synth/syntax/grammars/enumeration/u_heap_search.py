@@ -14,6 +14,7 @@ from typing import (
     Union,
 )
 from abc import ABC, abstractmethod
+from synth.pruning.pruner import Pruner
 
 from synth.syntax.grammars.enumeration.program_enumerator import ProgramEnumerator
 from synth.syntax.grammars.enumeration.heap_search import HeapElement, Bucket
@@ -46,9 +47,12 @@ def __wrap__(el: Union[U, List[U]]) -> Union[U, Tuple[U, ...]]:
 
 class UHSEnumerator(ProgramEnumerator[None], ABC, Generic[U, V, W]):
     def __init__(
-        self, G: ProbUGrammar[U, V, W], threshold: Optional[Ordered] = None
+        self,
+        G: ProbUGrammar[U, V, W],
+        threshold: Optional[Ordered] = None,
+        pruner: Optional[Pruner[Program]] = None,
     ) -> None:
-        self._filter: Optional[Callable[[Program], bool]] = None
+        super().__init__(pruner)
         self.G = G
         symbols = [S for S in self.G.rules]
         self.threshold = threshold

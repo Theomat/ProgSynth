@@ -15,6 +15,7 @@ from typing import (
 )
 from dataclasses import dataclass, field
 from abc import ABC, abstractmethod
+from synth.pruning.pruner import Pruner
 
 from synth.syntax.grammars.enumeration.program_enumerator import ProgramEnumerator
 from synth.syntax.grammars.tagged_u_grammar import ProbUGrammar
@@ -44,11 +45,14 @@ class HSEnumerator(
     Generic[U, V, W],
 ):
     def __init__(
-        self, G: ProbDetGrammar[U, V, W], threshold: Optional[Ordered] = None
+        self,
+        G: ProbDetGrammar[U, V, W],
+        threshold: Optional[Ordered] = None,
+        pruner: Optional[Pruner[Program]] = None,
     ) -> None:
+        super().__init__(pruner)
         self.current: Optional[Program] = None
         self.threshold = threshold
-        self._filter: Optional[Callable[[Program], bool]] = None
 
         self.deleted: Set[Program] = set()
         self.seen: Set[Program] = set()

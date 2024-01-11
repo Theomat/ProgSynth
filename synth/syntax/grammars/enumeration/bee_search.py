@@ -16,6 +16,7 @@ from typing import (
 from dataclasses import dataclass, field
 
 import numpy as np
+from synth.pruning.pruner import Pruner
 
 from synth.syntax.grammars.cfg import CFG
 from synth.syntax.grammars.enumeration.program_enumerator import ProgramEnumerator
@@ -44,12 +45,14 @@ class BeeSearch(
     ProgramEnumerator[None],
     Generic[U, V, W],
 ):
-    def __init__(self, G: ProbDetGrammar[U, V, W]) -> None:
+    def __init__(
+        self, G: ProbDetGrammar[U, V, W], pruner: Optional[Pruner[Program]] = None
+    ) -> None:
+        super().__init__(pruner)
         assert isinstance(G.grammar, CFG)
         self.G = G
         self._seen: Set[Program] = set()
         self._deleted: Set[Program] = set()
-        self._filter: Optional[Callable[[Program], bool]] = None
 
         self._cost_list: List[float] = []
         # S -> cost_index -> program list
@@ -125,6 +128,9 @@ class BeeSearch(
         self, S: Tuple[Type, U], new_program: Program, cost_index: int
     ) -> bool:
         if new_program in self._deleted:
+            return False
+        if not self._should_keep_subprogram(new_program):
+            self._deleted.add(new_program)
             return False
         local_bank = self._bank[S]
         if cost_index not in local_bank:
