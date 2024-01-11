@@ -3,6 +3,7 @@ Module that contains anything relevant to pruning
 """
 from synth.pruning.pruner import Pruner, UnionPruner, IntersectionPruner
 from synth.pruning.dfta_pruner import DFTAPruner
+from synth.pruning.obs_eq_pruner import ObsEqPruner
 from synth.pruning.syntactic_pruner import (
     UseAllVariablesPruner,
     FunctionPruner,
