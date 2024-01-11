@@ -3,8 +3,6 @@ import csv
 import time
 import argparse
 
-from dsl_loader import add_dsl_choice_arg
-
 from synth.syntax import (
     ProbDetGrammar,
     ProbUGrammar,
@@ -29,7 +27,6 @@ SEARCH_ALGOS = {
 parser = argparse.ArgumentParser(
     description="Compare search algorithms", fromfile_prefix_chars="@"
 )
-add_dsl_choice_arg(parser)
 parser.add_argument(
     "-o",
     "--output",
