@@ -23,6 +23,8 @@ class CFG(TTCFG[CFGState, NoneType]):
         """
         Returns the maximum depth of a program contained in this grammar.
         """
+        if self.programs() < 0:
+            return -1
         return max(S[1][0][1] for S in self.rules) + 1
 
     def __hash__(self) -> int:
@@ -64,15 +66,16 @@ class CFG(TTCFG[CFGState, NoneType]):
         new_reach: Set[CFGNonTerminal] = set()
         reach.add(self.start)
 
-        for _ in range(self.max_program_depth()):
+        while reach:
             new_reach.clear()
             for S in reach:
                 for P in self.rules[S]:
                     args_P = self.rules[S][P][0]
                     for arg in args_P:
                         nctx = (arg[0], (arg[1], None))
-                        new_reach.add(nctx)
-                        reachable.add(nctx)
+                        if nctx not in reachable:
+                            new_reach.add(nctx)
+                            reachable.add(nctx)
             reach.clear()
             reach = new_reach.copy()
 
