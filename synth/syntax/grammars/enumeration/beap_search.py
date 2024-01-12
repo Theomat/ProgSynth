@@ -15,7 +15,7 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-from synth.filter.pruner import Pruner
+from synth.filter.filter import Filter
 from synth.syntax.grammars.cfg import CFG
 from synth.syntax.grammars.enumeration.program_enumerator import ProgramEnumerator
 from synth.syntax.grammars.grammar import DerivableProgram
@@ -44,9 +44,9 @@ class BeapSearch(
     Generic[U, V, W],
 ):
     def __init__(
-        self, G: ProbDetGrammar[U, V, W], pruner: Optional[Pruner[Program]] = None
+        self, G: ProbDetGrammar[U, V, W], filter: Optional[Filter[Program]] = None
     ) -> None:
-        super().__init__(pruner)
+        super().__init__(filter)
         assert isinstance(G.grammar, CFG)
         self.G = G
         self.cfg: CFG = G.grammar

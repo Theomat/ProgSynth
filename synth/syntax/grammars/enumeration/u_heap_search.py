@@ -15,7 +15,7 @@ from typing import (
 )
 from abc import ABC, abstractmethod
 
-from synth.filter.pruner import Pruner
+from synth.filter.filter import Filter
 from synth.syntax.grammars.enumeration.program_enumerator import ProgramEnumerator
 from synth.syntax.grammars.enumeration.heap_search import HeapElement, Bucket
 from synth.syntax.program import Program, Function
@@ -50,9 +50,9 @@ class UHSEnumerator(ProgramEnumerator[None], ABC, Generic[U, V, W]):
         self,
         G: ProbUGrammar[U, V, W],
         threshold: Optional[Ordered] = None,
-        pruner: Optional[Pruner[Program]] = None,
+        filter: Optional[Filter[Program]] = None,
     ) -> None:
-        super().__init__(pruner)
+        super().__init__(filter)
         self.G = G
         symbols = [S for S in self.G.rules]
         self.threshold = threshold

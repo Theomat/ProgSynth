@@ -13,7 +13,7 @@ from dsl_loader import add_dsl_choice_arg, load_DSL
 from synth import Dataset, PBE
 from synth.generation.sampler import Sampler
 from synth.pbe import reproduce_dataset
-from synth.filter import UseAllVariablesPruner
+from synth.filter import UseAllVariablesFilter
 from synth.semantic.evaluator import DSLEvaluator
 from synth.specification import PBEWithConstants
 from synth.syntax import (
@@ -365,7 +365,7 @@ def check_symmetries() -> None:
 
 
 def check_equivalent() -> None:
-    simpler_pruner = UseAllVariablesPruner()
+    simpler_filter = UseAllVariablesFilter()
     ftypes = tqdm.tqdm(sampled_inputs.keys())
     for ftype in ftypes:
         # Add forbidden patterns to speed up search
@@ -383,7 +383,7 @@ def check_equivalent() -> None:
         # Check all programs starting with max depth
         # ========================
         for done, program in enumerate(enumerate_prob_grammar(pcfg)):
-            if program in programs_done or not simpler_pruner.accept((ftype, program)):
+            if program in programs_done or not simpler_filter.accept((ftype, program)):
                 continue
             is_constant = True
             my_outputs = []

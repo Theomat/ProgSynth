@@ -15,7 +15,7 @@ from typing import (
 from dataclasses import dataclass, field
 from abc import ABC, abstractmethod
 
-from synth.filter.pruner import Pruner
+from synth.filter.filter import Filter
 from synth.syntax.grammars.enumeration.program_enumerator import ProgramEnumerator
 from synth.syntax.grammars.tagged_u_grammar import ProbUGrammar
 from synth.syntax.program import Program, Function
@@ -46,9 +46,9 @@ class HSEnumerator(
         self,
         G: ProbDetGrammar[U, V, W],
         threshold: Optional[Ordered] = None,
-        pruner: Optional[Pruner[Program]] = None,
+        filter: Optional[Filter[Program]] = None,
     ) -> None:
-        super().__init__(pruner)
+        super().__init__(filter)
         self.current: Optional[Program] = None
         self.threshold = threshold
 

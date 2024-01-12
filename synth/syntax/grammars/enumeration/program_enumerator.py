@@ -10,7 +10,7 @@ from abc import ABC, abstractmethod
 from synth.syntax.grammars.tagged_det_grammar import ProbDetGrammar
 from synth.syntax.grammars.tagged_u_grammar import ProbUGrammar
 from synth.syntax.program import Program
-from synth.filter import Pruner
+from synth.filter import Filter
 
 
 U = TypeVar("U")
@@ -23,9 +23,9 @@ class ProgramEnumerator(ABC, Generic[U]):
     If U is None then no feedback is expected.
     """
 
-    def __init__(self, pruner: Optional[Pruner[Program]] = None) -> None:
+    def __init__(self, filter: Optional[Filter[Program]] = None) -> None:
         super().__init__()
-        self.pruner = pruner
+        self.filter = filter
 
     @classmethod
     @abstractmethod
@@ -63,7 +63,7 @@ class ProgramEnumerator(ABC, Generic[U]):
         pass
 
     def _should_keep_subprogram(self, program: Program) -> bool:
-        return self.pruner is None or not self.pruner.accept(program)
+        return self.filter is None or self.filter.accept(program)
 
     @abstractmethod
     def clone_with_memory(

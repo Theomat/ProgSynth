@@ -1,6 +1,6 @@
 from typing import Dict, Generic, TypeVar, Optional
 
-from synth.filter.pruner import Pruner
+from synth.filter.filter import Filter
 from synth.syntax.automata.tree_automaton import DFTA
 from synth.syntax.grammars.grammar import DerivableProgram
 from synth.syntax.program import Function, Program, Lambda
@@ -8,7 +8,7 @@ from synth.syntax.program import Function, Program, Lambda
 V = TypeVar("V")
 
 
-class DFTAPruner(Pruner, Generic[V]):
+class DFTAFilter(Filter, Generic[V]):
     def __init__(self, dfta: DFTA[V, DerivableProgram]) -> None:
         self.dfta = dfta
         self._cache: Dict[Program, V] = {}

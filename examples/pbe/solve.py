@@ -24,7 +24,7 @@ from synth.syntax import (
     hs_enumerate_bucket_prob_u_grammar,
     ProgramEnumerator,
 )
-from synth.filter import DFTAPruner, ObsEqPruner
+from synth.filter import DFTAFilter, ObsEqFilter
 from synth.filter.constraints import add_dfta_constraints
 from synth.utils import load_object
 from synth.pbe.solvers import (
@@ -209,17 +209,17 @@ def enumerative_search(
         try:
             enumerator = custom_enumerate(pcfg)
             if "dfta" in pruning:
-                enumerator.pruner = DFTAPruner(
+                enumerator.filter = DFTAFilter(
                     add_dfta_constraints(pcfg.grammar, constraints, progress=False)
                 )
             if "obs-eq" in pruning:
-                pruner = ObsEqPruner(
+                filter = ObsEqFilter(
                     solver.evaluator, [ex.inputs for ex in task.specification.examples]
                 )
-                enumerator.pruner = (
-                    pruner
-                    if enumerator.pruner is None
-                    else enumerator.pruner.intersection(pruner)
+                enumerator.filter = (
+                    filter
+                    if enumerator.filter is None
+                    else enumerator.filter.intersection(filter)
                 )
             sol_generator = solver.solve(task, enumerator, timeout=task_timeout)
             solution = next(sol_generator)

@@ -1,11 +1,11 @@
 from typing import Any, Dict, List, Tuple
 
-from synth.filter.pruner import Pruner
+from synth.filter.filter import Filter
 from synth.semantic.evaluator import Evaluator
 from synth.syntax.program import Program
 
 
-class ObsEqPruner(Pruner):
+class ObsEqFilter(Filter):
     def __init__(self, evaluator: Evaluator, inputs_list: List[List[Any]]) -> None:
         self.evaluator = evaluator
         self.inputs_list = inputs_list
