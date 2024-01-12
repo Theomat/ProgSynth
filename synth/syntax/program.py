@@ -95,14 +95,13 @@ class Program(ABC):
         return order
 
     def __pretty_print__(
-        self, defined: Dict["Program", Tuple[int, str, str]], last: int
+        self,
+        defined: Dict["Program", Tuple[int, str, str]],
+        last: int,
     ) -> int:
         if self not in defined:
-            var_name = f"x{last}"
-            defined[self] = (last, var_name, f"{var_name}: {self.type} = {self}")
-            return last + 1
-        else:
-            return last
+            defined[self] = (0, str(self), "")
+        return last
 
     def __contains__(self, other: "Program") -> bool:
         return self == other
@@ -138,15 +137,6 @@ class Variable(Program):
 
     def __str__(self) -> str:
         return "var" + format(self.variable)
-
-    def __pretty_print__(
-        self, defined: Dict["Program", Tuple[int, str, str]], last: int
-    ) -> int:
-        if self not in defined:
-            defined[self] = (0, str(self), "")
-            return last + 1
-        else:
-            return last
 
     def __eq__(self, other: Any) -> bool:
         return isinstance(other, Variable) and self.variable == other.variable
@@ -260,7 +250,9 @@ class Function(Program):
             return s + ")"
 
     def __pretty_print__(
-        self, defined: Dict["Program", Tuple[int, str, str]], last: int
+        self,
+        defined: Dict["Program", Tuple[int, str, str]],
+        last: int,
     ) -> int:
         if self in defined:
             return last
