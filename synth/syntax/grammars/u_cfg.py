@@ -216,7 +216,6 @@ class UCFG(UGrammar[U, List[Tuple[Type, U]], List[Tuple[Type, U]]], Generic[U]):
         dsl: DSL,
         type_request: Type,
         max_depth: int,
-        upper_bound_type_size: int = 10,
         min_variable_depth: int = 1,
         n_gram: int = 2,
         recursive: bool = False,
@@ -229,7 +228,6 @@ class UCFG(UGrammar[U, List[Tuple[Type, U]], List[Tuple[Type, U]]], Generic[U]):
         Parameters:
         -----------
         - max_depth: the maximum depth of programs allowed
-        - upper_bound_size_type: the maximum size type allowed for polymorphic type instanciations
         - min_variable_depth: min depth at which variables and constants are allowed
         - n_gram: the context, a bigram depends only in the parent node
         - recursive: enables the generated programs to call themselves
@@ -239,7 +237,6 @@ class UCFG(UGrammar[U, List[Tuple[Type, U]], List[Tuple[Type, U]]], Generic[U]):
             dsl,
             type_request,
             max_depth,
-            upper_bound_type_size,
             min_variable_depth,
             n_gram,
             recursive,
