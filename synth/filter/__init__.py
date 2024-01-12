@@ -10,4 +10,4 @@ from synth.filter.syntactic_pruner import (
     SyntacticPruner,
     SetPruner,
 )
-from synth.filter.constraints import add_constraints
+from synth.filter.constraints import add_constraints, add_dfta_constraints
