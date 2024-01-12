@@ -9,7 +9,7 @@ from synth.syntax.type_system import (
     PrimitiveType,
 )
 from synth.syntax.type_helper import FunctionType
-from synth.pruning.constraints.dfta_constraints import add_dfta_constraints
+from synth.filter.constraints.dfta_constraints import add_dfta_constraints
 
 
 syntax = {

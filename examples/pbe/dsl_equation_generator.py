@@ -13,8 +13,8 @@ from dsl_loader import add_dsl_choice_arg, load_DSL
 from synth import Dataset, PBE
 from synth.generation.sampler import Sampler
 from synth.pbe import reproduce_dataset
-from synth.pruning import UseAllVariablesPruner
-from synth.semantic.evaluator import DSLEvaluatorWithConstant
+from synth.filter import UseAllVariablesPruner
+from synth.semantic.evaluator import DSLEvaluator
 from synth.specification import PBEWithConstants
 from synth.syntax import (
     CFG,

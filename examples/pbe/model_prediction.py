@@ -17,7 +17,7 @@ from model_loader import (
 
 
 from synth import Dataset, PBE
-from synth.pruning.constraints.dfta_constraints import add_dfta_constraints
+from synth.filter.constraints.dfta_constraints import add_dfta_constraints
 from synth.syntax import CFG, UCFG, ProbDetGrammar, ProbUGrammar, DSL, Type
 from synth.utils import load_object, save_object
 

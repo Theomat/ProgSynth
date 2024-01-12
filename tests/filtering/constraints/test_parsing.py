@@ -9,7 +9,7 @@ from synth.syntax.type_system import (
     PrimitiveType,
 )
 from synth.syntax.type_helper import FunctionType
-from synth.pruning.constraints.parsing import (
+from synth.filter.constraints.parsing import (
     parse_specification,
     TokenAnything,
     TokenAllow,

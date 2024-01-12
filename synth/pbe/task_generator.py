@@ -16,7 +16,7 @@ from collections.abc import Container
 
 import numpy as np
 
-from synth.pruning.constraints.dfta_constraints import add_dfta_constraints
+from synth.filter.constraints.dfta_constraints import add_dfta_constraints
 from synth.syntax.grammars.tagged_u_grammar import ProbUGrammar
 from synth.syntax.grammars.u_cfg import UCFG
 from synth.task import Dataset, Task

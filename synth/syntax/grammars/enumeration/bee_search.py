@@ -2,7 +2,6 @@ from collections import defaultdict
 from itertools import product
 from heapq import heappush, heappop
 from typing import (
-    Callable,
     Dict,
     Generator,
     Generic,
@@ -16,8 +15,8 @@ from typing import (
 from dataclasses import dataclass, field
 
 import numpy as np
-from synth.pruning.pruner import Pruner
 
+from synth.filter.pruner import Pruner
 from synth.syntax.grammars.cfg import CFG
 from synth.syntax.grammars.enumeration.program_enumerator import ProgramEnumerator
 from synth.syntax.grammars.grammar import DerivableProgram

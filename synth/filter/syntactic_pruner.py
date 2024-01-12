@@ -1,7 +1,7 @@
 from typing import Any, Callable, Dict, List, Literal, Set, Tuple, Union
 from dataclasses import dataclass, field
 
-from synth.pruning.pruner import Pruner
+from synth.filter.pruner import Pruner
 from synth.syntax.dsl import DSL
 from synth.syntax.program import Function, Primitive, Program, Variable
 from synth.syntax.type_system import Arrow, Type

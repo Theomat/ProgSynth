@@ -2,7 +2,6 @@ from collections import defaultdict
 from heapq import heappush, heappop
 from typing import (
     Any,
-    Callable,
     Dict,
     Generator,
     Generic,
@@ -15,11 +14,10 @@ from typing import (
 )
 from dataclasses import dataclass, field
 from abc import ABC, abstractmethod
-from synth.pruning.pruner import Pruner
 
+from synth.filter.pruner import Pruner
 from synth.syntax.grammars.enumeration.program_enumerator import ProgramEnumerator
 from synth.syntax.grammars.tagged_u_grammar import ProbUGrammar
-from synth.syntax.grammars.cfg import CFG
 from synth.syntax.program import Program, Function
 from synth.syntax.grammars.tagged_det_grammar import ProbDetGrammar
 from synth.syntax.type_system import Type

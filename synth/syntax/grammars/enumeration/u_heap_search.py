@@ -14,8 +14,8 @@ from typing import (
     Union,
 )
 from abc import ABC, abstractmethod
-from synth.pruning.pruner import Pruner
 
+from synth.filter.pruner import Pruner
 from synth.syntax.grammars.enumeration.program_enumerator import ProgramEnumerator
 from synth.syntax.grammars.enumeration.heap_search import HeapElement, Bucket
 from synth.syntax.program import Program, Function

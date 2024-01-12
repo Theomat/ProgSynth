@@ -23,7 +23,7 @@ from synth import Dataset, PBE, Task
 from synth.nn import print_model_summary
 from synth.syntax import CFG, UCFG
 from synth.utils import chrono
-from synth.pruning.constraints import add_dfta_constraints
+from synth.filter.constraints import add_dfta_constraints
 
 DREAMCODER = "dreamcoder"
 REGEXP = "regexp"

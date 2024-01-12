@@ -19,7 +19,7 @@ from model_loader import (
 
 from synth import Dataset, PBE, Task
 from synth.nn import free_pytorch_memory
-from synth.pruning.constraints.dfta_constraints import add_dfta_constraints
+from synth.filter.constraints.dfta_constraints import add_dfta_constraints
 from synth.semantic import DSLEvaluator
 from synth.semantic.evaluator import DSLEvaluatorWithConstant
 from synth.specification import Example, PBEWithConstants

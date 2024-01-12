@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Tuple
 
-from synth.pruning.pruner import Pruner
+from synth.filter.pruner import Pruner
 from synth.semantic.evaluator import Evaluator
 from synth.syntax.program import Program
 

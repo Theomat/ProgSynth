@@ -1,5 +1,5 @@
 from typing import TypeVar
-from synth.pruning.constraints import add_dfta_constraints
+from synth.filter.constraints import add_dfta_constraints
 from synth.syntax.grammars.cfg import CFG
 from synth.syntax.grammars.enumeration.heap_search import enumerate_prob_grammar
 from synth.syntax.grammars.enumeration.u_heap_search import (

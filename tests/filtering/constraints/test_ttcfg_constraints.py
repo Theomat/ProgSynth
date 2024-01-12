@@ -8,7 +8,7 @@ from synth.syntax.type_system import (
     PrimitiveType,
 )
 from synth.syntax.type_helper import FunctionType
-from synth.pruning.constraints.ttcfg_constraints import add_constraints
+from synth.filter.constraints.ttcfg_constraints import add_constraints
 
 
 syntax = {

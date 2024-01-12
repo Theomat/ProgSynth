@@ -13,7 +13,7 @@ from typing import (
 )
 
 import tqdm
-from synth.pruning.constraints.parsing import (
+from synth.filter.constraints.parsing import (
     Token,
     TokenAllow,
     TokenAtLeast,
@@ -26,7 +26,6 @@ from synth.pruning.constraints.parsing import (
 from synth.syntax.automata.dfa import DFA
 from synth.syntax.grammars.det_grammar import DerivableProgram
 from synth.syntax.grammars.ttcfg import TTCFG
-from synth.syntax.program import Variable
 from synth.syntax.type_system import Type
 
 

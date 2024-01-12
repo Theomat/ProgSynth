@@ -10,7 +10,7 @@ from abc import ABC, abstractmethod
 from synth.syntax.grammars.tagged_det_grammar import ProbDetGrammar
 from synth.syntax.grammars.tagged_u_grammar import ProbUGrammar
 from synth.syntax.program import Program
-from synth.pruning import Pruner
+from synth.filter import Pruner
 
 
 U = TypeVar("U")

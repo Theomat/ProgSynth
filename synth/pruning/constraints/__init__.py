@@ -1,2 +1,0 @@
-from synth.pruning.constraints.ttcfg_constraints import add_constraints
-from synth.pruning.constraints.dfta_constraints import add_dfta_constraints

@@ -24,8 +24,8 @@ from synth.syntax import (
     hs_enumerate_bucket_prob_u_grammar,
     ProgramEnumerator,
 )
-from synth.pruning import DFTAPruner, ObsEqPruner
-from synth.pruning.constraints import add_dfta_constraints
+from synth.filter import DFTAPruner, ObsEqPruner
+from synth.filter.constraints import add_dfta_constraints
 from synth.utils import load_object
 from synth.pbe.solvers import (
     NaivePBESolver,

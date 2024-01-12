@@ -1,6 +1,6 @@
 from typing import Dict, Generic, TypeVar, Optional
 
-from synth.pruning.pruner import Pruner
+from synth.filter.pruner import Pruner
 from synth.syntax.automata.tree_automaton import DFTA
 from synth.syntax.grammars.grammar import DerivableProgram
 from synth.syntax.program import Function, Program, Lambda

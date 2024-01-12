@@ -33,7 +33,7 @@ At a granular level, ProgSynth is a library that consists of the following compo
 | [**synth.generation**](./synth/generation) | A compilation of tools to generate objects needed for the synthesis, it is mainly used with deep learning  |
 | [**synth.nn**](./synth/nn) | A library to build neural network with for synthesis  |
 | [**synth.pbe**](./synth/pbe) | A library to work in the Programming By Example (PBE) framework |
-| [**synth.pruning**](./synth/pruning) | A library with pruning strategies |
+| [**synth.filter**](./synth/filter) | A library with filtering strategies |
 | [**synth.semantic**](./synth/semantic) | A library of program evaluators |
 | [**synth.syntax**](./synth/syntax) | A library to manipulate dsl, grammars, probabilistic grammars |
 | [**synth.utils**](./synth/utils) | Utility objects and functions that do not fit elsewhere |

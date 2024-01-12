@@ -13,11 +13,11 @@ from synth.generation.sampler import (
     Sampler,
     UnionSampler,
 )
-from synth.pruning import UseAllVariablesPruner
+from synth.filter import UseAllVariablesPruner
 from synth.syntax import (
     CFG,
     ProbDetGrammar,
-    enumerate_prob_grammar,
+    bps_enumerate_prob_grammar as enumerate_prob_grammar,
     Function,
     Primitive,
     Program,
