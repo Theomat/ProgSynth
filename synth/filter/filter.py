@@ -1,10 +1,8 @@
 from abc import ABC, abstractmethod
-from types import UnionType
-from typing import Any, Generic, TypeVar
+from typing import Generic, TypeVar
 
 
 T = TypeVar("T")
-U = TypeVar("U")
 
 
 class Filter(ABC, Generic[T]):
@@ -48,18 +46,35 @@ class Filter(ABC, Generic[T]):
         else:
             return UnionFilter(self, other)
 
+    def __neg__(self) -> "Filter[T]":
+        return self.complementary()
 
-class UnionFilter(Filter, Generic[U]):
-    def __init__(self, *filters: Filter[U]) -> None:
+    def complementary(self) -> "Filter[T]":
+        return NegFilter(self)
+
+
+class NegFilter(Filter, Generic[T]):
+    def __init__(self, filter: Filter[T]) -> None:
+        self.filter = filter
+
+    def accept(self, obj: T) -> bool:
+        return not self.filter.accept(obj)
+
+    def complementary(self) -> "Filter[T]":
+        return self.filter
+
+
+class UnionFilter(Filter, Generic[T]):
+    def __init__(self, *filters: Filter[T]) -> None:
         self.filters = list(filters)
 
-    def accept(self, obj: U) -> bool:
+    def accept(self, obj: T) -> bool:
         return any(p.accept(obj) for p in self.filters)
 
 
-class IntersectionFilter(Filter, Generic[U]):
-    def __init__(self, *filters: Filter[U]) -> None:
+class IntersectionFilter(Filter, Generic[T]):
+    def __init__(self, *filters: Filter[T]) -> None:
         self.filters = list(filters)
 
-    def accept(self, obj: U) -> bool:
+    def accept(self, obj: T) -> bool:
         return all(p.accept(obj) for p in self.filters)
