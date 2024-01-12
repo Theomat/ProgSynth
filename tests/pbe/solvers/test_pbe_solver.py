@@ -12,7 +12,7 @@ from synth.syntax.type_system import (
     PrimitiveType,
 )
 from synth.syntax.type_helper import FunctionType
-from synth.pbe.solvers import NaivePBESolver, ObsEqPBESolver, CutoffPBESolver, PBESolver
+from synth.pbe.solvers import NaivePBESolver, CutoffPBESolver, PBESolver
 
 import pytest
 
@@ -38,7 +38,6 @@ dsl = DSL(syntax)
 evaluator = DSLEvaluator(dsl.instantiate_semantics(semantics))
 testdata = [
     NaivePBESolver(evaluator),
-    ObsEqPBESolver(evaluator),
     CutoffPBESolver(evaluator),
 ]
 

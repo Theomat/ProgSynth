@@ -31,7 +31,6 @@ from synth.pbe.solvers import (
     NaivePBESolver,
     PBESolver,
     CutoffPBESolver,
-    ObsEqPBESolver,
     RestartPBESolver,
 )
 
@@ -39,10 +38,7 @@ from synth.pbe.solvers import (
 import argparse
 
 
-SOLVERS = {
-    solver.name(): solver
-    for solver in [NaivePBESolver, CutoffPBESolver, ObsEqPBESolver]
-}
+SOLVERS = {solver.name(): solver for solver in [NaivePBESolver, CutoffPBESolver]}
 base_solvers = {x: y for x, y in SOLVERS.items()}
 for meta_solver in [RestartPBESolver]:
     for name, solver in base_solvers.items():
