@@ -123,6 +123,7 @@ class BeapSearch(
         n = 0
         failed = False
         while not failed:
+            self._failed_by_empties = False
             failed = True
             for prog in self.query(self.G.start, n):
                 failed = False
@@ -130,6 +131,7 @@ class BeapSearch(
                     continue
                 self._seen.add(prog)
                 yield prog
+            failed &= not self._failed_by_empties
             n += 1
 
     def programs_in_banks(self) -> int:
@@ -183,6 +185,7 @@ class BeapSearch(
                     break
 
             if failed and failed_by_empties:
+                self._failed_by_empties = True
                 continue
 
             if cost_index not in bank:
@@ -212,7 +215,7 @@ class BeapSearch(
             return bank[cost_index]
         for x in self.query(S, cost_index):
             pass
-        return bank[cost_index]
+        return bank[cost_index] if not self._failed_by_empties else []
 
     def merge_program(self, representative: Program, other: Program) -> None:
         self._deleted.add(other)
