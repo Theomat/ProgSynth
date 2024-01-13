@@ -194,6 +194,9 @@ class BeapSearch(
                     new_program = element.P
                 if new_program in self._deleted:
                     continue
+                elif not self._should_keep_subprogram(new_program):
+                    self._deleted.add(new_program)
+                    continue
                 generated_program = True
                 bank[cost_index].append(new_program)
                 yield new_program
