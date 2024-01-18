@@ -145,6 +145,7 @@ class BeapSearch(
     ) -> Generator[Program, None, None]:
         bank = self._bank[S]
         queue = self._queues[S]
+        # When we return this way, it actually mean that we have generated all programs that this non terminal could generate
         if cost_index >= len(self._cost_lists[S]):
             return
         cost = self._cost_lists[S][cost_index]
@@ -159,12 +160,11 @@ class BeapSearch(
             # Generate programs
             args_possibles = []
             for i in range(nargs):
-                possibles = self._query_list_(Sargs[i], element.combination[i])
+                failed_by_empties, possibles = self._query_list_(
+                    Sargs[i], element.combination[i]
+                )
                 if len(possibles) == 0:
                     failed = True
-                    failed_by_empties = (
-                        element.combination[i] in self._empties[Sargs[i]]
-                    )
                     break
                 args_possibles.append(possibles)
             if failed and not failed_by_empties:
@@ -184,8 +184,7 @@ class BeapSearch(
                 if index_cost[i] > 1:
                     break
 
-            if failed and failed_by_empties:
-                self._failed_by_empties = True
+            if failed_by_empties:
                 continue
 
             if cost_index not in bank:
@@ -202,20 +201,30 @@ class BeapSearch(
                     continue
                 generated_program = True
                 bank[cost_index].append(new_program)
+                self._failed_by_empties = False
                 yield new_program
         if not generated_program:
             self._empties[S].add(cost_index)
+            self._failed_by_empties = True
         if queue:
             next_cost = queue[0].cost
             self._cost_lists[S].append(next_cost)
 
-    def _query_list_(self, S: Tuple[Type, U], cost_index: int) -> List[Program]:
+    def _query_list_(
+        self, S: Tuple[Type, U], cost_index: int
+    ) -> Tuple[bool, List[Program]]:
+        """
+        returns failed_by_empties, programs
+        """
+        # It's an empty cost index
+        if cost_index in self._empties[S]:
+            return True, []
         bank = self._bank[S]
         if cost_index in bank:
-            return bank[cost_index]
+            return False, bank[cost_index]
         for x in self.query(S, cost_index):
             pass
-        return bank[cost_index] if not self._failed_by_empties else []
+        return False, bank[cost_index]
 
     def merge_program(self, representative: Program, other: Program) -> None:
         self._deleted.add(other)
