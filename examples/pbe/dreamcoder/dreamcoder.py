@@ -368,6 +368,7 @@ constraints = [
 
 
 dsl = DSL(__primitive_types__)
+dsl.instantiate_polymorphic_types(10)
 evaluator = DSLEvaluator(dsl.instantiate_semantics(__semantics__))
 evaluator.skip_exceptions.add(ValueError)
 evaluator.skip_exceptions.add(IndexError)
