@@ -50,7 +50,6 @@ class BeeSearch(
         super().__init__(filter)
         assert isinstance(G.grammar, CFG)
         self.G = G
-        self._seen: Set[Program] = set()
         self._deleted: Set[Program] = set()
 
         self._cost_list: List[float] = []
@@ -173,9 +172,6 @@ class BeeSearch(
                 if not succ:
                     failed -= 1
                 succ = True
-                if program in self._seen:
-                    continue
-                self._seen.add(program)
                 yield program
 
     def _next_cheapest_(self) -> Tuple[List[Tuple[Type, U]], Optional[float]]:
@@ -269,12 +265,9 @@ class BeeSearch(
     def name(cls) -> str:
         return "bee-search"
 
-    def clone_with_memory(
-        self, G: Union[ProbDetGrammar, ProbUGrammar]
-    ) -> "BeeSearch[U, V, W]":
+    def clone(self, G: Union[ProbDetGrammar, ProbUGrammar]) -> "BeeSearch[U, V, W]":
         assert isinstance(G, ProbDetGrammar)
         enum = self.__class__(G)
-        enum._seen = self._seen.copy()
         return enum
 
 

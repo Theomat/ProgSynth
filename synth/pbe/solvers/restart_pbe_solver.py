@@ -112,5 +112,5 @@ class RestartPBESolver(MetaPBESolver):
         if self.uniform_prior > 0:
             pcfg = pcfg + (pcfg.uniform(pcfg.grammar) * self.uniform_prior)
         pcfg.normalise()
-        new_enumerator = enumerator.clone_with_memory(pcfg)
+        new_enumerator = enumerator.clone(pcfg)
         return new_enumerator

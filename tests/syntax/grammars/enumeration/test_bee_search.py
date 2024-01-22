@@ -73,24 +73,6 @@ def test_merge(cfg: TTCFG) -> None:
         assert removed in x
 
 
-@pytest.mark.parametrize("cfg", testdata)
-def test_clone(cfg: TTCFG) -> None:
-    pcfg = ProbDetGrammar.uniform(cfg)
-    seen = set()
-    count = 1467
-    gen = enumerate_prob_grammar(pcfg)
-    for program in gen:
-        assert program not in seen
-        seen.add(program)
-        count -= 1
-        if count == 0:
-            break
-
-    gen2 = gen.clone_with_memory(pcfg)
-    for program in gen2:
-        assert program not in seen
-
-
 def test_infinite() -> None:
     pcfg = ProbDetGrammar.random(
         CFG.infinite(dsl, testdata[0].type_request, n_gram=1), 1

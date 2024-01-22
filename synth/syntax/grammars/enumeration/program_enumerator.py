@@ -66,7 +66,7 @@ class ProgramEnumerator(ABC, Generic[U]):
         return self.filter is None or self.filter.accept(program)
 
     @abstractmethod
-    def clone_with_memory(
+    def clone(
         self, grammar: Union[ProbDetGrammar, ProbUGrammar]
     ) -> "ProgramEnumerator[U]":
         """

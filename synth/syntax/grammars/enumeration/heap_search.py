@@ -53,7 +53,6 @@ class HSEnumerator(
         self.threshold = threshold
 
         self.deleted: Set[Program] = set()
-        self.seen: Set[Program] = set()
 
         self.G = G
         self.start = G.start
@@ -107,15 +106,10 @@ class HSEnumerator(
             program = self.query(self.start, self.current)
             if program is None:
                 return
-            while program in self.seen:
-                program = self.query(self.start, program)
-                if program is None:
-                    return
             self.current = program
             if not self._should_keep_subprogram(program):
                 self.deleted.add(program)
                 continue
-            self.seen.add(program)
             yield program
 
     def __compute_max_prio__(
@@ -284,13 +278,10 @@ class HSEnumerator(
     def programs_in_queues(self) -> int:
         return sum(len(val) for val in self.heaps.values())
 
-    def clone_with_memory(
-        self, G: Union[ProbDetGrammar, ProbUGrammar]
-    ) -> "HSEnumerator[U, V, W]":
+    def clone(self, G: Union[ProbDetGrammar, ProbUGrammar]) -> "HSEnumerator[U, V, W]":
         assert isinstance(G, ProbDetGrammar)
         enum = self.__class__(G, self.threshold)
         enum.deleted = self.deleted.copy()
-        enum.seen = self.seen.copy()
         return enum
 
 

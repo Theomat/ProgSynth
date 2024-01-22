@@ -50,7 +50,6 @@ class BeapSearch(
         assert isinstance(G.grammar, CFG)
         self.G = G
         self.cfg: CFG = G.grammar
-        self._seen: Set[Program] = set()
         self._deleted: Set[Program] = set()
 
         # S -> cost list
@@ -127,9 +126,6 @@ class BeapSearch(
             failed = True
             for prog in self.query(self.G.start, n):
                 failed = False
-                if prog in self._seen:
-                    continue
-                self._seen.add(prog)
                 yield prog
             failed &= not self._failed_by_empties
             n += 1
@@ -243,12 +239,9 @@ class BeapSearch(
     def name(cls) -> str:
         return "beap-search"
 
-    def clone_with_memory(
-        self, G: Union[ProbDetGrammar, ProbUGrammar]
-    ) -> "BeapSearch[U, V, W]":
+    def clone(self, G: Union[ProbDetGrammar, ProbUGrammar]) -> "BeapSearch[U, V, W]":
         assert isinstance(G, ProbDetGrammar)
         enum = self.__class__(G)
-        enum._seen = self._seen.copy()
         enum._deleted = self._deleted.copy()
         return enum
 
