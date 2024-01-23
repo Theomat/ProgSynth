@@ -162,7 +162,6 @@ def produce_pcfgs(
             dsl,
             t,
             max_depth,
-            upper_bound_type_size=10,
             constant_types=constant_types,
             min_variable_depth=0,
             n_gram=ngram,
