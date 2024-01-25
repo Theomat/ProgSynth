@@ -1,6 +1,6 @@
 import os
 import sys
-from typing import Any, Callable, Iterable, List, Optional, Tuple, Union
+from typing import Any, Callable, Iterable, List, Optional, Set, Tuple, Union
 import csv
 
 import tqdm
@@ -23,6 +23,8 @@ from synth.syntax import (
     hs_enumerate_bucket_prob_grammar,
     hs_enumerate_bucket_prob_u_grammar,
     ProgramEnumerator,
+    Type,
+    CFG,
 )
 from synth.filter import DFTAFilter, ObsEqFilter
 from synth.filter.constraints import add_dfta_constraints
@@ -151,7 +153,9 @@ supported_type_requests = Dataset.load(support).type_requests() if support else 
 # ================================
 
 
-def load_dsl_and_dataset() -> Tuple[Dataset[PBE], DSL, DSLEvaluator, List[str]]:
+def load_dsl_and_dataset() -> Tuple[
+    Dataset[PBE], DSL, DSLEvaluator, List[str], Set[Type]
+]:
     dsl_module = load_DSL(dsl_name)
     dsl, evaluator = dsl_module.dsl, dsl_module.evaluator
     # ================================
@@ -159,7 +163,13 @@ def load_dsl_and_dataset() -> Tuple[Dataset[PBE], DSL, DSLEvaluator, List[str]]:
     # ================================
     full_dataset = load_dataset(dsl_name, dataset_file)
 
-    return full_dataset, dsl, evaluator, getattr(dsl_module, "constraints", [])
+    return (
+        full_dataset,
+        dsl,
+        evaluator,
+        getattr(dsl_module, "constraints", []),
+        getattr(dsl_module, "constant_types", set()),
+    )
 
 
 # Produce PCFGS ==========================================================
@@ -183,6 +193,8 @@ def enumerative_search(
     ],
     constraints: List[str],
     save_file: str,
+    dsl: DSL,
+    constant_types: Set[Type],
 ) -> None:
 
     start = max(0, len(trace) - 1)
@@ -209,8 +221,11 @@ def enumerative_search(
         try:
             enumerator = custom_enumerate(pcfg)
             if "dfta" in pruning:
+                base_grammar = CFG.infinite(
+                    dsl, pcfg.grammar.type_request, -1, constant_types
+                )
                 enumerator.filter = DFTAFilter(
-                    add_dfta_constraints(pcfg.grammar, constraints, progress=False)
+                    add_dfta_constraints(base_grammar, constraints, progress=False)
                 )
             if "obs-eq" in pruning:
                 filter = ObsEqFilter(
@@ -247,7 +262,7 @@ def enumerative_search(
 # Main ====================================================================
 
 if __name__ == "__main__":
-    (full_dataset, dsl, evaluator, constraints) = load_dsl_and_dataset()
+    (full_dataset, dsl, evaluator, constraints, constant_types) = load_dsl_and_dataset()
 
     solver: PBESolver = method(evaluator=evaluator)
 
@@ -283,6 +298,8 @@ if __name__ == "__main__":
         custom_enumerate,
         constraints,
         file,
+        dsl,
+        constant_types,
     )
     save(trace, file)
     print("csv file was saved as:", file)
