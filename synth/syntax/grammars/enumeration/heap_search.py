@@ -151,15 +151,15 @@ class HSEnumerator(
     def __init_non_terminal__(self, S: Tuple[Type, U]) -> None:
         if S in self._init:
             return
+        if all((S, P) in self.max_priority for P in self.rules[S]):
+            return
         self._init.add(S)
         # 1) Compute max probablities
         best_program, _ = self.__compute_max_prio__(S)
 
-        if best_program is None:
-            self._init.remove(S)
-            return
-        self.max_priority[S] = best_program
         self._init.remove(S)
+        if best_program is not None:
+            self.max_priority[S] = best_program
 
     def _reevaluate_(self) -> None:
         changed = True
