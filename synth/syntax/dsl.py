@@ -71,14 +71,16 @@ class DSL:
                 for poly_type in set_polymorphic_types_P:
                     new_set_instantiated_types: Set[Type] = set()
                     for type_ in set_types:
-                        if not poly_type.can_be(type_):
+                        if (
+                            not poly_type.can_be(type_)
+                            or type_.size() > upper_bound_type_size
+                        ):
                             continue
                         for instantiated_type in set_instantiated_types:
                             unifier = {str(poly_type): type_}
                             intermediate_type = copy.deepcopy(instantiated_type)
                             new_type = intermediate_type.unify(unifier)
-                            if new_type.size() <= upper_bound_type_size:
-                                new_set_instantiated_types.add(new_type)
+                            new_set_instantiated_types.add(new_type)
                     set_instantiated_types = new_set_instantiated_types
                 for type_ in set_instantiated_types:
                     instantiated_P = Primitive(P.primitive, type=type_)
