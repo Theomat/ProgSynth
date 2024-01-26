@@ -222,7 +222,7 @@ def enumerative_search(
             enumerator = custom_enumerate(pcfg)
             if "dfta" in pruning:
                 base_grammar = CFG.infinite(
-                    dsl, pcfg.grammar.type_request, -1, constant_types
+                    dsl, pcfg.grammar.type_request, constant_types=constant_types
                 )
                 enumerator.filter = DFTAFilter(
                     add_dfta_constraints(base_grammar, constraints, progress=False)
