@@ -291,7 +291,6 @@ class CFG(TTCFG[CFGState, NoneType]):
 
         Parameters:
         -----------
-        - upper_bound_size_type: the maximum size type allowed for polymorphic type instanciations
         - n_gram: the context, a bigram depends only in the parent node
         - recursive: enables the generated programs to call themselves
         - constant_types: the set of of types allowed for constant objects
