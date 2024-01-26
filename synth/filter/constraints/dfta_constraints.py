@@ -43,35 +43,53 @@ def __cfg2dfta__(
     all_cases: Dict[
         Tuple[int, Tuple[Type, ...]], Set[Tuple[Tuple[Type, int], ...]]
     ] = {}
-    for S in grammar.rules:
-        for P in grammar.rules[S]:
-            args = grammar.rules[S][P][0]
-            if len(args) == 0:
-                dfta_rules[(P, ())] = (P.type, 0)
-            else:
-                key = (len(args), tuple([arg[0] for arg in args]))
-                if key not in all_cases:
-                    all_cases[key] = set(
-                        [
-                            tuple(x)
-                            for x in product(
-                                *[
-                                    [(arg[0], j) for j in range(max_depth)]
-                                    for arg in args
-                                ]
-                            )
-                        ]
-                    )
-                for nargs in all_cases[key]:
-                    new_depth = max(i for _, i in nargs) + 1
-                    if new_depth >= max_depth:
-                        continue
-                    dfta_rules[(P, nargs)] = (
-                        S[0],
-                        new_depth,
-                    )
+    if max_depth == -1:
+        for S in grammar.rules:
+            for P in grammar.rules[S]:
+                args = grammar.rules[S][P][0]
+                if len(args) == 0:
+                    dfta_rules[(P, ())] = (P.type, 0)
+                else:
+                    key = (len(args), tuple([arg[0] for arg in args]))
+                    if key not in all_cases:
+                        all_cases[key] = set([tuple([(arg[0], 0) for arg in args])])
+                    for nargs in all_cases[key]:
+                        dfta_rules[(P, nargs)] = (
+                            S[0],
+                            0,
+                        )
+    else:
+        for S in grammar.rules:
+            for P in grammar.rules[S]:
+                args = grammar.rules[S][P][0]
+                if len(args) == 0:
+                    dfta_rules[(P, ())] = (P.type, 0)
+                else:
+                    key = (len(args), tuple([arg[0] for arg in args]))
+                    if key not in all_cases:
+                        all_cases[key] = set(
+                            [
+                                tuple(x)
+                                for x in product(
+                                    *[
+                                        [(arg[0], j) for j in range(max_depth)]
+                                        for arg in args
+                                    ]
+                                )
+                            ]
+                        )
+                    for nargs in all_cases[key]:
+                        new_depth = max(i for _, i in nargs) + 1
+                        if new_depth >= max_depth:
+                            continue
+                        dfta_rules[(P, nargs)] = (
+                            S[0],
+                            new_depth,
+                        )
     r = grammar.type_request.returns()
-    dfta = DFTA(dfta_rules, {(r, x) for x in range(max_depth)})
+    dfta = DFTA(
+        dfta_rules, {(r, x) for x in range(max_depth)} if max_depth > 0 else {(r, 0)}
+    )
     dfta.reduce()
     return dfta
 
