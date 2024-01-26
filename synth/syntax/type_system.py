@@ -513,7 +513,7 @@ class Generic(Type):
         return max(t.depth() for t in self.types)
 
     def size(self) -> int:
-        return max(t.size() for t in self.types)
+        return 1 + sum(t.size() for t in self.types)
 
 
 class GenericFunctor(TypeFunctor):
