@@ -6,6 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pltpublish as pub
 import csv
+from colorama import Fore as F
 
 
 from plot_helper import (
@@ -114,11 +115,13 @@ def load_data(
             k.replace(solver, "").strip(" ").capitalize(): v for k, v in methods.items()
         }
     for seed in sorted(summary):
-        print("seed", seed)
+        print(f"{F.BLUE}seed", seed, F.RESET)
         for name, (solved, total) in sorted(summary[seed].items()):
             if len(to_replace) > 0:
                 name = name.replace(to_replace, "").strip()
-            print(f"\t{name} solved {solved}/{total} ({solved/total:.1%}) tasks")
+            print(
+                f"\t{F.GREEN}{name}{F.RESET} solved {F.YELLOW}{solved}{F.RESET}/{total} ({F.YELLOW}{solved/total:.1%}{F.RESET}) tasks"
+            )
     return methods, timeout
 
 
@@ -292,7 +295,7 @@ if __name__ == "__main__":
     methods, timeout = load_data(dataset_name, output_folder, verbose)
     # Check we have at least one file
     if len(methods) == 0:
-        print("Error: no performance file was found!", file=sys.stderr)
+        print(f"{F.RED}Error: no performance file was found!{F.RESET}", file=sys.stderr)
         sys.exit(1)
     for filter_name in filters:
         methods = filter(methods, filter_name, timeout)
@@ -300,7 +303,7 @@ if __name__ == "__main__":
         task_len = len(list(list(methods.values())[0].values())[0])
         if task_len == 0:
 
-            print("Error: filters left no tasks!", file=sys.stderr)
+            print(f"{F.RED}Error: filters left no tasks!{F.RESET}", file=sys.stderr)
             sys.exit(1)
     # Order by name so that it is always the same color for the same methods if diff. DSL
     ordered_methods = OrderedDict()
