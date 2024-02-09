@@ -3,21 +3,10 @@ Module to change to add your own DSL easily in all scripts.
 Some constants may need to be changed directly in the script. 
 """
 from argparse import ArgumentParser
-import importlib
 from types import SimpleNamespace
-from typing import Callable, Dict, Iterable, List, Optional, Tuple, TypeVar, Union
+from typing import Callable, Dict, Iterable, List, Optional, Tuple, Union
 
-U = TypeVar("U")
-
-
-def __try_names__(name: str, f: Callable[[str], U]) -> U:
-    try:
-        return f(name)
-    except ModuleNotFoundError:
-        try:
-            return f("pbe." + name)
-        except ModuleNotFoundError:
-            return f("examples.pbe." + name)
+from synth.utils.import_utils import import_file_function
 
 
 def __base_loader(
@@ -30,18 +19,7 @@ def __base_loader(
     where "X, Y, ..." are elements of keys
     """
 
-    def loader(fully_load: bool = True) -> Optional[SimpleNamespace]:
-        if not fully_load:
-            return __try_names__(name, importlib.util.find_spec)
-
-        module = __try_names__(name, importlib.import_module)
-        out = {}
-        for key in keys:
-            get, set = key if isinstance(key, tuple) else (key, key)
-            out[set] = module.__getattribute__(get)
-        return SimpleNamespace(**out)
-
-    return loader
+    return import_file_function(name, keys, ["pbe", "examples.pbe"])
 
 
 # ======================================================================================
