@@ -597,7 +597,7 @@ class UnknownType(Type):
         return "UnknownType"
 
     def __eq__(self, __o: object) -> bool:
-        return False
+        return isinstance(__o, UnknownType)
 
     def __decompose_type_rec__(
         self,
