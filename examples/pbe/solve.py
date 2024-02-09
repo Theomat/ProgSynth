@@ -10,6 +10,7 @@ from dsl_loader import add_dsl_choice_arg, load_DSL
 
 
 from synth import Dataset, PBE
+from synth.filter.filter import Filter
 from synth.semantic.evaluator import DSLEvaluator
 from synth.specification import PBEWithConstants
 from synth.syntax import (
@@ -28,7 +29,10 @@ from synth.syntax import (
 )
 from synth.filter import DFTAFilter, ObsEqFilter
 from synth.filter.constraints import add_dfta_constraints
+from synth.syntax.program import Program
+from synth.task import Task
 from synth.utils import load_object
+from synth.utils.import_utils import import_file_function
 from synth.pbe.solvers import (
     NaivePBESolver,
     PBESolver,
@@ -105,6 +109,12 @@ parser.add_argument(
     choices=list(x for x in PRUNING),
     help="runtime pruning",
 )
+parser.add_argument(
+    "--filter",
+    nargs="*",
+    type=str,
+    help="load the given files and call their get_filter functions to get a Filter[Program]",
+)
 
 parameters = parser.parse_args()
 dsl_name: str = parameters.dsl
@@ -119,6 +129,7 @@ support: Optional[str] = (
     None if not parameters.support else parameters.support.format(dsl_name=dsl_name)
 )
 pruning: List[str] = parameters.pruning or []
+filter_files: List[str] = parameters.filter or []
 
 if not os.path.exists(dataset_file) or not os.path.isfile(dataset_file):
     print("Dataset must be a valid dataset file!", file=sys.stderr)
@@ -147,6 +158,15 @@ start_index = (
 dataset_name = dataset_file[start_index : dataset_file.index(".", start_index)]
 
 supported_type_requests = Dataset.load(support).type_requests() if support else None
+
+# ================================
+# Load dftas files
+# ================================
+filter_pot_funs = [
+    import_file_function(file[:-3].replace("/", "."), ["get_filter"])()
+    for file in filter_files
+]
+filter_funs = [x.get_filter for x in filter_pot_funs if x is not None]
 
 # ================================
 # Load constants specific to dataset
@@ -182,6 +202,30 @@ def save(trace: Iterable, file: str) -> None:
 
 
 # Enumeration methods =====================================================
+def setup_filters(
+    task: Task[PBE], constant_types: Set[Type]
+) -> Optional[Filter[Program]]:
+    out = None
+    # Dynamic DFTA filters
+    filters = [f(task.type_request, constant_types) for f in filter_funs]
+    for filter in filters:
+        out = filter if out is None else out.intersection(filter)
+    if "dfta" in pruning:
+        base_grammar = CFG.infinite(
+            dsl, task.type_request, constant_types=constant_types
+        )
+        filter = DFTAFilter(
+            add_dfta_constraints(base_grammar, constraints, progress=False)
+        )
+        out = filter if out is None else out.intersection(filter)
+    if "obs-eq" in pruning:
+        filter = ObsEqFilter(
+            solver.evaluator, [ex.inputs for ex in task.specification.examples]
+        )
+        out = filter if out is None else out.intersection(filter)
+    return out
+
+
 def enumerative_search(
     dataset: Dataset[PBE],
     evaluator: DSLEvaluator,
@@ -191,9 +235,7 @@ def enumerative_search(
     custom_enumerate: Callable[
         [Union[ProbDetGrammar, ProbUGrammar]], ProgramEnumerator
     ],
-    constraints: List[str],
     save_file: str,
-    dsl: DSL,
     constant_types: Set[Type],
 ) -> None:
 
@@ -220,22 +262,7 @@ def enumerative_search(
             pcfg = pcfg.instantiate_constants(task.specification.constants)
         try:
             enumerator = custom_enumerate(pcfg)
-            if "dfta" in pruning:
-                base_grammar = CFG.infinite(
-                    dsl, pcfg.grammar.type_request, constant_types=constant_types
-                )
-                enumerator.filter = DFTAFilter(
-                    add_dfta_constraints(base_grammar, constraints, progress=False)
-                )
-            if "obs-eq" in pruning:
-                filter = ObsEqFilter(
-                    solver.evaluator, [ex.inputs for ex in task.specification.examples]
-                )
-                enumerator.filter = (
-                    filter
-                    if enumerator.filter is None
-                    else enumerator.filter.intersection(filter)
-                )
+            enumerator.filter = setup_filters(task, constant_types)
             sol_generator = solver.solve(task, enumerator, timeout=task_timeout)
             solution = next(sol_generator)
             task_solved = True
@@ -296,9 +323,7 @@ if __name__ == "__main__":
         trace,
         solver,
         custom_enumerate,
-        constraints,
         file,
-        dsl,
         constant_types,
     )
     save(trace, file)
