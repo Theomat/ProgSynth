@@ -121,7 +121,9 @@ def derivable_program_to_code(
     assert False, "not implemented"
 
 
-def dfta_to_code(dfta: DFTA[Tuple[Type, DerivableProgram], DerivableProgram]) -> str:
+def dfta_to_code(
+    dfta: DFTA[Tuple[Type, DerivableProgram], DerivableProgram], commented: bool = False
+) -> str:
     states = list(set(dfta.rules.values()))
     state2index = {s: i for i, s in enumerate(states)}
     letters = list(dfta.alphabet)
@@ -148,11 +150,22 @@ def dfta_to_code(dfta: DFTA[Tuple[Type, DerivableProgram], DerivableProgram]) ->
     out += "__rules = {\n"
     for state, dst in dfta.rules.items():
         dst_code = state2code(dst, True)
-        elems = map(lambda p: state2code(p, True), list(state[1]))
-        state_code = (
-            f"(__primitives[{prim2index[state[0]]}], tuple(" + ",".join(elems) + "))"
-        )
-        out += f"\t{state_code}: {dst_code},\n"
+        state_code = f"(__primitives[{prim2index[state[0]]}], "
+        if len(state[1]) > 0:
+            if len(state[1]) == 1:
+                state_code += "(" + state2code(state[1][0], True) + ",)"
+            else:
+                state_code += (
+                    "("
+                    + ",".join(map(lambda p: state2code(p, True), list(state[1])))
+                    + ")"
+                )
+        else:
+            state_code += "tuple()"
+        out += f"\t{state_code}): {dst_code},\n"
+        if commented:
+            out += f"#\t{state} -> {dst}\n"
+
     out += "}\n\n"
     out += "def get_filter(type_request: Type, constant_types: Set[Type]) -> Filter[Program]:\n"
     out += "\timport copy\n"
@@ -193,9 +206,17 @@ if __name__ == "__main__":
         default=False,
         help="verbose mode",
     )
+    parser.add_argument(
+        "-c",
+        "--comment",
+        action="store_true",
+        default=False,
+        help="comment the output automaton",
+    )
     parameters = parser.parse_args()
     data_file: str = parameters.data
     verbose: bool = parameters.verbose
+    comment: bool = parameters.comment
     dsl_module = dsl_loader.load_DSL(parameters.dsl)
     output_file: str = parameters.output.format(dsl=parameters.dsl)
 
@@ -224,5 +245,5 @@ if __name__ == "__main__":
             f"reduced size to {F.GREEN}{dfta.size()/initial_size:.1%}{F.RESET} of original size"
         )
     with open(output_file, "w") as fd:
-        fd.write(dfta_to_code(dfta))
+        fd.write(dfta_to_code(dfta, commented=comment))
     print(f"Saved to {output_file}!")
