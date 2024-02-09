@@ -60,6 +60,12 @@ class DFTA(Generic[U, V]):
                 rules[S] = (dst1, dst2)
         return DFTA(rules, finals)
 
+    def size(self) -> int:
+        """
+        Return the size of the DFTA which is the number of rules.
+        """
+        return len(self.rules)
+
     @property
     def states(self) -> Set[U]:
         """
