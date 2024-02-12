@@ -313,6 +313,15 @@ class DFTA(Generic[U, V]):
             new_rules[(l, t_args)] = f(cls2states[state2cls[dst]])
         return DFTA(new_rules, {f(cls2states[state2cls[q]]) for q in self.finals})  # type: ignore
 
+    def map_states(self, mapping: Callable[[U], X]) -> "DFTA[X, V]":
+        return DFTA(
+            {
+                (l, tuple(map(mapping, args))): mapping(dst)
+                for (l, args), dst in self.rules.items()
+            },
+            set(map(mapping, self.finals)),
+        )
+
     def __repr__(self) -> str:
         return str(self)
 
