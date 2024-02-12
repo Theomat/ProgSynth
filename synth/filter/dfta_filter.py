@@ -9,9 +9,17 @@ V = TypeVar("V")
 
 
 class DFTAFilter(Filter, Generic[V]):
-    def __init__(self, dfta: DFTA[V, DerivableProgram]) -> None:
+    """
+    Filters out programs depending on the given DFTA.
+
+    If accepting_dfta then rejects programs that are not in the language of the DFTA.
+    If not accepting_dfta, rejects programs that are in the language of the DFTA.
+    
+    """
+    def __init__(self, dfta: DFTA[V, DerivableProgram], accepting_dfta: bool = True) -> None:
         self.dfta = dfta
         self._cache: Dict[Program, V] = {}
+        self.accepting_dfta = accepting_dfta
 
     def _get_prog_state(self, prog: Program) -> Optional[V]:
         state = self._cache.get(prog, None)
@@ -33,7 +41,7 @@ class DFTAFilter(Filter, Generic[V]):
             return state
 
     def accept(self, obj: Program) -> bool:
-        return self._get_prog_state(obj) is not None
+        return (self._get_prog_state(obj) is not None) == self.accepting_dfta
 
     def reset_cache(self) -> None:
         self._cache.clear()
