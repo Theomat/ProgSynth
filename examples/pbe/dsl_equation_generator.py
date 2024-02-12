@@ -322,9 +322,7 @@ def update_filter(
         print(
             f"\tcurrently found {F.YELLOW}{len(classes)}{F.RESET} equivalence classes"
         )
-    dfta, stats = equivalence_classes_to_filters(
-        commutatives + identities + constants, classes, dsl
-    )
+    dfta, stats = equivalence_classes_to_filters(commutatives, classes, dsl)
     if verbose:
         print(
             f"\tfound {F.YELLOW}{stats['added']}{F.RESET} ({F.YELLOW}{stats['added']/stats['total']:.1%}{F.RESET}) constraints"
