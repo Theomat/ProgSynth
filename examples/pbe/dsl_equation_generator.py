@@ -353,9 +353,7 @@ print()
 
 classes = get_equivalence_classes()
 with open(f"equivalent_classes_{dsl_name}.json", "w") as fd:
-    my_list = [
-        list(map(str, l)) for l in (classes + [identities + constants + [Variable(0)]])
-    ]
+    my_list = [list(map(str, l)) for l in classes]
     json.dump({"classes": my_list, "commutatives": list(map(str, commutatives))}, fd)
 
 
