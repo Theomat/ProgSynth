@@ -14,9 +14,12 @@ class DFTAFilter(Filter, Generic[V]):
 
     If accepting_dfta then rejects programs that are not in the language of the DFTA.
     If not accepting_dfta, rejects programs that are in the language of the DFTA.
-    
+
     """
-    def __init__(self, dfta: DFTA[V, DerivableProgram], accepting_dfta: bool = True) -> None:
+
+    def __init__(
+        self, dfta: DFTA[V, DerivableProgram], accepting_dfta: bool = True
+    ) -> None:
         self.dfta = dfta
         self._cache: Dict[Program, V] = {}
         self.accepting_dfta = accepting_dfta
