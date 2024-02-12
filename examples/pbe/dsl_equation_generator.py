@@ -62,13 +62,6 @@ max_depth: int = parameters.max_depth
 no_reproduce: bool = parameters.no_reproduce
 seed: int = parameters.seed
 # ================================
-# Constants
-# ================================
-DREAMCODER = "dreamcoder"
-REGEXP = "regexp"
-CALCULATOR = "calculator"
-TRANSDUCTION = "transduction"
-# ================================
 # Initialisation
 # ================================
 dsl_module = load_DSL(dsl_name)
