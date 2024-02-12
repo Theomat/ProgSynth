@@ -49,7 +49,6 @@ parser.add_argument(
 
 
 parameters = parser.parse_args()
-dsl_name: str = parameters.dsl
 output_file: str = parameters.output
 programs: int = parameters.n
 timeout: int = parameters.timeout
