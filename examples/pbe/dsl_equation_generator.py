@@ -94,18 +94,14 @@ if not no_reproduce:
     input_sampler = task_generator.input_generator
 else:
     inputs_from_type = defaultdict(list)
-    CSTE_IN = PrimitiveType("CST_STR_INPUT")
-    CSTE_OUT = PrimitiveType("CST_STR_OUTPUT")
     for task in full_dataset:
         for ex in task.specification.examples:
             for inp, arg in zip(ex.inputs, task.type_request.arguments()):
                 inputs_from_type[arg].append(inp)
         # Manage input/output constants
         if isinstance(task.specification, PBEWithConstants):
-            for c_in in task.specification.constants_in:
-                inputs_from_type[CSTE_IN].append(c_in)
-            for c_out in task.specification.constants_out:
-                inputs_from_type[CSTE_OUT].append(c_out)
+            for ct, values in task.specification.constants:
+                inputs_from_type[ct] += values
 
     class SamplesSampler(Sampler):
         def __init__(self, samples: Dict[Type, List[Any]], seed: int) -> None:
@@ -116,20 +112,6 @@ else:
             return self._gen.choice(self.samples[type])
 
     input_sampler = SamplesSampler(inputs_from_type, seed=seed)
-
-    if isinstance(evaluator, DSLEvaluatorWithConstant):
-        cstes_mapper = {}
-
-        def the_our_eval(prog: Program, inp: List[Any]) -> Any:
-            key = tuple(inp)
-            if key not in cstes_mapper:
-                cstes_mapper[key] = input_sampler.sample(CSTE_IN), input_sampler.sample(
-                    CSTE_OUT
-                )
-            c_in, c_out = cstes_mapper[key]
-            return evaluator.eval_with_constant(prog, inp, c_in, c_out)
-
-        our_eval = the_our_eval
 
 # ================================
 # Load dataset & Task Generator
