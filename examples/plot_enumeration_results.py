@@ -12,7 +12,7 @@ from plot_helper import (
 
 __DATA__ = {
     "time": (0, "Time (in s)"),
-    # "programs": (1, "Programs Enumerated"),
+    "programs": (1, "Programs Enumerated"),
     "queued": (2, "Programs Enqueued"),
     "banked": (3, "Programs in Banks"),
     "non_terminals": (4, "Non Terminals in Grammar"),
@@ -24,9 +24,9 @@ def load_data(output_file: str, verbose: bool = False) -> Dict[str, Dict[int, Li
     # Dict[name, data]
     methods = {}
 
-    # filename should end with _rules.csv or _non_terminals
+    # filename should end with a specific pattern
     name = output_file[:-4]
-    if not (name.endswith("_rules") or name.endswith("_non_terminals")):
+    if not (name.endswith("_detailed") or name.endswith("_growth")):
         if verbose:
             print(f"filename:{output_file} does not seem valid!")
         return {}
