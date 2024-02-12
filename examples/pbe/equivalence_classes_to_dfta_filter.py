@@ -90,14 +90,18 @@ def add_commutativity_constraint(
     return True
 
 
-def program_to_constraints(
+def __simple_constraint(
     program: Program, dfta: DFTA[Tuple[Type, DerivableProgram], DerivableProgram]
 ) -> bool:
-    if program.depth() > 3 or not isinstance(program, Function):
+    vars = 0
+    for p in program.depth_first_iter():
+        if isinstance(p, Variable):
+            vars += 1
+    if vars > 1:
         return False
     fun = program.function
     relevant = []
-    for state, dst in dfta.rules.items():
+    for state in dfta.rules:
         if state[0] == fun:
             success = True
             for arg, sarg in zip(program.arguments, state[1]):
@@ -109,6 +113,14 @@ def program_to_constraints(
     for state in relevant:
         del dfta.rules[state]
     return True
+
+
+def program_to_constraints(
+    program: Program, dfta: DFTA[Tuple[Type, DerivableProgram], DerivableProgram]
+) -> bool:
+    if program.depth() > 3 or not isinstance(program, Function):
+        return False
+    return __simple_constraint(program, dfta)
 
 
 def class_to_constaints(
