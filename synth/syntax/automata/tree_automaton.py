@@ -131,6 +131,9 @@ class DFTA(Generic[U, V]):
         self.__remove_unproductive__()
 
     def read_product(self, other: "DFTA[W, V]") -> "DFTA[Tuple[U, W], V]":
+        """
+        Read self and other
+        """
         rules: Dict[
             Tuple[
                 V,
@@ -158,6 +161,9 @@ class DFTA(Generic[U, V]):
         other: "DFTA[W, V]",
         fusion: Callable[[Optional[U], Optional[W]], X] = lambda x, y: (x, y),  # type: ignore
     ) -> "DFTA[X, V]":
+        """
+        Read self or other.
+        """
         rules: Dict[
             Tuple[
                 V,
