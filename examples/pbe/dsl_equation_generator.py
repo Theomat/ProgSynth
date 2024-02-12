@@ -248,13 +248,23 @@ def check_symmetries() -> None:
             )
             programs_done.add(current_prog)
             is_symmetric = current_prog != base_program
+            is_identity = [len(current_prog.used_variables()) == 1 for _ in args]
+            is_constant = True
+
             outputs = []
             for inp, sol in zip(inputs, solutions):
                 out = our_eval(current_prog, inp)
-                outputs.append(out)
                 if is_symmetric and out != sol:
                     is_symmetric = False
-            if is_symmetric:
+                is_identity = [x and out == inp[i] for i, x in enumerate(is_identity)]
+                if is_constant and len(outputs) > 0 and outputs[-1] != out:
+                    is_constant = False
+                outputs.append(out)
+            if any(is_identity):
+                identities.append(current_prog)
+            elif is_constant:
+                constants.append(current_prog)
+            elif is_symmetric:
                 commutatives.append(current_prog)
                 merge_equivalence_classes(current_prog, base_program)
             else:
@@ -271,7 +281,7 @@ def check_equivalent() -> None:
         all_sol = all_solutions[ftype.returns()]
 
         cfg_size = cfg.programs()
-        ftypes.set_postfix_str(f"{0 / cfg_size:.0%}")
+        ftypes.set_postfix_str(f"{F.GREEN}{0 / cfg_size:.0%}{F.RESET}")
 
         # ========================
         # Check all programs starting with max depth
@@ -282,17 +292,18 @@ def check_equivalent() -> None:
             is_constant = True
             my_outputs = []
             candidates = set(all_sol.keys())
-            is_identity = len(program.used_variables()) == 1
+            is_identity = [
+                len(program.used_variables()) == 1 for _ in program.type.arguments()
+            ]
             for i, inp in enumerate(inputs):
                 out = our_eval(program, inp)
                 # Update candidates
                 candidates = {c for c in candidates if all_sol[c][i] == out}
-                if is_identity and out != inp[0]:
-                    is_identity = False
+                is_identity = [x and out == inp[i] for i, x in enumerate(is_identity)]
                 if is_constant and len(my_outputs) > 0 and my_outputs[-1] != out:
                     is_constant = False
                 my_outputs.append(out)
-            if is_identity:
+            if any(is_identity):
                 identities.append(program)
             elif is_constant:
                 constants.append(program)
@@ -301,8 +312,8 @@ def check_equivalent() -> None:
             else:
                 new_equivalence_class(program)
                 all_sol[program] = my_outputs
-            if done & 256 == 0:
-                ftypes.set_postfix_str(f"{done / cfg_size:.0%}")
+            ftypes.set_postfix_str(f"{F.GREEN}{done / cfg_size:.0%}{F.RESET}")
+    ftypes.close()
 
 
 def get_equivalence_classes() -> List[Set[Program]]:
@@ -354,7 +365,15 @@ print()
 classes = get_equivalence_classes()
 with open(f"equivalent_classes_{dsl_name}.json", "w") as fd:
     my_list = [list(map(str, l)) for l in classes]
-    json.dump({"classes": my_list, "commutatives": list(map(str, commutatives))}, fd)
+    json.dump(
+        {
+            "classes": my_list,
+            "commutatives": list(map(str, commutatives)),
+            "identities": list(map(str, identities)),
+            "constants": list(map(str, constants)),
+        },
+        fd,
+    )
 
 
 print(f"Data saved to {F.GREEN}equivalent_classes_{dsl_name}.json{F.RESET}.")
