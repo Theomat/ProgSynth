@@ -64,6 +64,32 @@ def __compress__(dsl: DSL, dfta: DFTA[Tuple[Type, DerivableProgram], DerivablePr
     # pass
 
 
+def add_commutativity_constraint(
+    program: Program, dfta: DFTA[Tuple[Type, DerivableProgram], DerivableProgram]
+) -> bool:
+    assert program.depth() == 2, f"{program}: depth={program.depth()}"
+    assert isinstance(program, Function), f"{program}: type={type(program)}"
+    swapped_indices = []
+    for i, arg in enumerate(program.arguments):
+        assert isinstance(arg, Variable)
+        if i != arg.variable:
+            swapped_indices.append(i)
+    if len(swapped_indices) > 2:
+        return False
+    x, y = min(swapped_indices), max(swapped_indices)
+    fun = program.function
+    relevant = []
+    for state in dfta.rules:
+        if state[0] == fun:
+            x_arg = state[1][x]
+            y_arg = state[1][y]
+            if hash(x_arg[1]) < hash(y_arg[1]):
+                relevant.append(state)
+    for state in relevant:
+        del dfta.rules[state]
+    return True
+
+
 def program_to_constraints(
     program: Program, dfta: DFTA[Tuple[Type, DerivableProgram], DerivableProgram]
 ) -> bool:
@@ -116,6 +142,9 @@ def equivalence_classes_to_filters(
     total = 0
     dfta = dsl_2_dfta(dsl)
     initial_size = dfta.size()
+    for program in commutatives:
+        added += add_commutativity_constraint(program, dfta)
+        total += 1
     for eq_class in pbar:
         total += len(eq_class)
         added += class_to_constaints(list(eq_class), dfta)
