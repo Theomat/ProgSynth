@@ -1,15 +1,22 @@
-from typing import List, Dict, Optional, Tuple
+from typing import List, Dict, Optional, Set, Tuple
 import itertools
 
+import tqdm
 from colorama import Fore as F
 
-from synth.syntax import Program, Primitive, Variable, Function, DSL, Type
-from synth.syntax import DFTA
-
-import tqdm
-
+from synth.syntax import (
+    Program,
+    Constant,
+    Primitive,
+    Variable,
+    Function,
+    DSL,
+    Type,
+    DFTA,
+    UnknownType,
+)
+from synth.filter import DFTAFilter
 from synth.syntax.grammars.grammar import DerivableProgram
-from synth.syntax.type_system import UnknownType
 
 uk = UnknownType()
 
@@ -79,11 +86,9 @@ def program_to_constraints(
 
 
 def class_to_constaints(
-    eq_class: List[str],
+    programs: List[Program],
     dfta: DFTA[Tuple[Type, DerivableProgram], DerivableProgram],
-    dsl: DSL,
 ) -> int:
-    programs = list(map(lambda p: dsl.auto_parse_program(p), eq_class))
     # Find representative
     representative = programs[0]
     for p in programs:
@@ -98,6 +103,49 @@ def class_to_constaints(
     for p in programs:
         added += program_to_constraints(p, dfta)
     return added
+
+
+def equivalence_classes_to_filters(
+    commutatives: List[Program],
+    eq_classes: List[Set[Program]],
+    dsl: DSL,
+    progress: bool = True,
+) -> Tuple[DFTA[Tuple[Type, DerivableProgram], DerivableProgram], Dict[str, float]]:
+    added = 0
+    pbar = tqdm.tqdm(eq_classes) if progress else eq_classes
+    total = 0
+    dfta = dsl_2_dfta(dsl)
+    initial_size = dfta.size()
+    for eq_class in pbar:
+        total += len(eq_class)
+        added += class_to_constaints(list(eq_class), dfta)
+        if progress:
+            pbar.set_postfix_str(
+                f"{F.CYAN}{added}{F.RESET}/{total} constraints ({F.GREEN}{added/total:.1%}{F.RESET})"
+            )
+    __compress__(dsl, dfta)
+    return dfta, {
+        "initial_size": initial_size,
+        "final_size": dfta.size(),
+        "added": added,
+        "total": total,
+    }
+
+
+def get_filter(
+    dfta: DFTA[Tuple[Type, DerivableProgram], DerivableProgram],
+    type_request: Type,
+    constant_types: Set[Type],
+) -> DFTAFilter:
+    import copy
+
+    r = copy.deepcopy(dfta.rules)
+    dst = r[(Variable(0, uk), tuple())]
+    for i, arg_type in enumerate(type_request.arguments()):
+        r[(Variable(i, arg_type), tuple())] = dst
+    for cst_type in constant_types:
+        r[(Constant(cst_type), tuple())] = dst
+    return DFTAFilter(DFTA(r, set()))
 
 
 def type_to_code(type: Type) -> str:
@@ -220,29 +268,25 @@ if __name__ == "__main__":
     dsl_module = dsl_loader.load_DSL(parameters.dsl)
     output_file: str = parameters.output.format(dsl=parameters.dsl)
 
-    dfta = dsl_2_dfta(dsl_module.dsl)
-    initial_size = dfta.size()
+    dsl: DSL = dsl_module.dsl
 
     with open(data_file) as fd:
-        classes = json.load(fd)
+        dico = json.load(fd)
+        classes = dico["classes"]
+        commutatives = dico["commutatives"]
+        classes = [
+            list(map(lambda p: dsl.auto_parse_program(p), eq_class))
+            for eq_class in classes
+        ]
     if verbose:
         print(f"found {F.CYAN}{len(classes)}{F.RESET} equivalence classes")
-    added = 0
-    pbar = tqdm.tqdm(classes)
-    total = 0
-    for eq_class in pbar:
-        total += len(eq_class)
-        added += class_to_constaints(eq_class, dfta, dsl_module.dsl)
-        pbar.set_postfix_str(
-            f"{F.CYAN}{added}{F.RESET}/{total} constraints ({F.GREEN}{added/total:.1%}{F.RESET})"
-        )
-    __compress__(dsl_module.dsl, dfta)
+    dfta, stats = equivalence_classes_to_filters(commutatives, classes, dsl)
     if verbose:
         print(
-            f"found {F.CYAN}{added}{F.RESET} ({F.GREEN}{added/total:.1%}{F.RESET}) constraints"
+            f"found {F.CYAN}{stats['added']}{F.RESET} ({F.GREEN}{stats['added']/stats['total']:.1%}{F.RESET}) constraints"
         )
         print(
-            f"reduced size to {F.GREEN}{dfta.size()/initial_size:.1%}{F.RESET} of original size"
+            f"reduced size to {F.GREEN}{stats['final_size']/stats['initial_size']:.1%}{F.RESET} of original size"
         )
     with open(output_file, "w") as fd:
         fd.write(dfta_to_code(dfta, commented=comment))
