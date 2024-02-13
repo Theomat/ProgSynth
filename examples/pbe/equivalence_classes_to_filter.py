@@ -88,7 +88,8 @@ class FiltersBuilder:
         if program.depth() == 2 and isinstance(program, Function):
             diff = []
             for i, arg in enumerate(program.arguments):
-                assert isinstance(arg, Variable)
+                if not isinstance(arg, Variable):
+                    return False
                 if i != arg.variable:
                     diff.append((min(i, arg.variable), max(i, arg.variable)))
             self.equal_parameters_reject.add((program.function, tuple(diff)))
