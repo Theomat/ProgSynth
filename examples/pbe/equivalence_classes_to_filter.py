@@ -360,7 +360,9 @@ if __name__ == "__main__":
     with open(data_file) as fd:
         dico = json.load(fd)
         classes = dico["classes"]
-        commutatives = dico["commutatives"]
+        commutatives = list(
+            map(lambda p: dsl.auto_parse_program(p), dico["commutatives"])
+        )
         classes = [
             list(map(lambda p: dsl.auto_parse_program(p), eq_class))
             for eq_class in classes
