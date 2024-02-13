@@ -232,11 +232,11 @@ class FiltersBuilder:
         out += f"\t\tr[(Variable(i, arg_type), tuple())] = __states[{state2index[(uk, Variable(0, uk))]}]\n"
         out += "\tfor cst_type in constant_types:\n"
         out += f"\t\tr[(Constant(cst_type), tuple())] = __states[{state2index[(uk, Variable(0, uk))]}]\n"
-        out += "\tx: Filter[Program] DFTAFilter(DFTA(r, set()))"
+        out += "\tx: Filter[Program] = DFTAFilter(DFTA(r, set()))\n"
         if len(self.equal_parameters_reject) > 0:
-            out += "\ty = LocalStateLessFilter(__should_reject)"
-            out += "\tx = x.intersection(y)"
-        out += "\treturn x"
+            out += "\ty = LocalStatelessFilter(__should_reject)\n"
+            out += "\tx = x.intersection(y)\n"
+        out += "\treturn x\n"
         return out
 
     @staticmethod
