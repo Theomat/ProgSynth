@@ -183,7 +183,7 @@ class DSL:
         nvars = 0
         for s in program.split("var"):
             i = 0
-            while s[i].isdigit():
+            while i < len(s) and s[i].isdigit():
                 i += 1
             if i > 0:
                 nvars = max(int(s[:i]) + 1, nvars)
