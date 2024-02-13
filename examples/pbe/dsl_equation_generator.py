@@ -9,10 +9,8 @@ from colorama import Fore as F
 
 from dataset_loader import add_dataset_choice_arg, load_dataset
 from dsl_loader import add_dsl_choice_arg, load_DSL
-from equivalence_classes_to_dfta_filter import (
-    equivalence_classes_to_filters,
-    get_filter,
-)
+from equivalence_classes_to_filter import equivalence_classes_to_filters
+
 
 from synth import Dataset, PBE
 from synth.generation.sampler import Sampler
@@ -173,7 +171,7 @@ def produce_all_variants(possibles: List[List[T]]) -> Generator[List[T], None, N
 # =========================================================================================
 
 sampled_inputs = {}
-all_solutions = defaultdict(dict)
+all_solutions: Dict[Type, Dict[Program, List]] = defaultdict(dict)
 programs_done = set()
 forbidden_types = set()
 
@@ -207,9 +205,40 @@ def init_base_primitives() -> None:
             primitive,
             [Variable(i, arg_type) for i, arg_type in enumerate(arguments)],
         )
+        programs_done.add(base_program)
         solutions = [our_eval(base_program, inp) for inp in inputs]
         all_solutions[base_program.type.returns()][base_program] = solutions
         new_equivalence_class(base_program)
+
+
+def check_program(
+    program: Program, inputs: List, all_sol: Dict[Program, List]
+) -> Tuple[bool, bool, Set[Program], List[Any]]:
+    is_constant = True
+    is_list_constant = True
+    my_outputs = []
+    candidates = set(all_sol.keys())
+    is_identity = [len(program.used_variables()) == 1 for _ in program.type.arguments()]
+    for i, inp in enumerate(inputs):
+        out = our_eval(program, inp)
+        # Update candidates
+        candidates = {c for c in candidates if all_sol[c][i] == out}
+        is_identity = [x and out == inp[i] for i, x in enumerate(is_identity)]
+        if is_constant and len(my_outputs) > 0 and my_outputs[-1] != out:
+            is_constant = False
+        is_list_constant = (
+            is_list_constant
+            and isinstance(out, List)
+            and all(x == out[0] for x in out)
+            and (
+                len(my_outputs) == 0
+                or len(out) == 0
+                or all(len(x) == 0 for x in my_outputs)
+                or ([x for x in my_outputs if len(x) > 0][0] == out[0])
+            )
+        )
+        my_outputs.append(out)
+    return is_constant or is_list_constant, any(is_identity), candidates, my_outputs
 
 
 def check_symmetries() -> None:
@@ -229,7 +258,6 @@ def check_symmetries() -> None:
         )
         inputs = sampled_inputs[primitive.type]
         all_sol = all_solutions[base_program.type.returns()]
-        solutions = all_sol[base_program]
 
         # ========================
         # Symmetry+Identity part
@@ -246,21 +274,14 @@ def check_symmetries() -> None:
                 primitive,
                 args,
             )
+            if current_prog in programs_done:
+                continue
             programs_done.add(current_prog)
-            is_symmetric = current_prog != base_program
-            is_identity = [len(current_prog.used_variables()) == 1 for _ in args]
-            is_constant = True
-
-            outputs = []
-            for inp, sol in zip(inputs, solutions):
-                out = our_eval(current_prog, inp)
-                if is_symmetric and out != sol:
-                    is_symmetric = False
-                is_identity = [x and out == inp[i] for i, x in enumerate(is_identity)]
-                if is_constant and len(outputs) > 0 and outputs[-1] != out:
-                    is_constant = False
-                outputs.append(out)
-            if any(is_identity):
+            is_constant, is_identity, candidates, my_outputs = check_program(
+                current_prog, inputs, all_sol
+            )
+            is_symmetric = base_program in candidates
+            if is_identity:
                 identities.append(current_prog)
             elif is_constant:
                 constants.append(current_prog)
@@ -269,7 +290,7 @@ def check_symmetries() -> None:
                 merge_equivalence_classes(current_prog, base_program)
             else:
                 new_equivalence_class(base_program)
-                all_sol[current_prog] = outputs
+                all_sol[current_prog] = my_outputs
 
 
 def check_equivalent() -> None:
@@ -289,21 +310,10 @@ def check_equivalent() -> None:
         for done, program in enumerate(get_enumerator(cfg)):
             if program in programs_done:
                 continue
-            is_constant = True
-            my_outputs = []
-            candidates = set(all_sol.keys())
-            is_identity = [
-                len(program.used_variables()) == 1 for _ in program.type.arguments()
-            ]
-            for i, inp in enumerate(inputs):
-                out = our_eval(program, inp)
-                # Update candidates
-                candidates = {c for c in candidates if all_sol[c][i] == out}
-                is_identity = [x and out == inp[i] for i, x in enumerate(is_identity)]
-                if is_constant and len(my_outputs) > 0 and my_outputs[-1] != out:
-                    is_constant = False
-                my_outputs.append(out)
-            if any(is_identity):
+            is_constant, is_identity, candidates, my_outputs = check_program(
+                program, inputs, all_sol
+            )
+            if is_identity:
                 identities.append(program)
             elif is_constant:
                 constants.append(program)
@@ -333,12 +343,12 @@ def update_filter(
         print(
             f"\tcurrently found {F.YELLOW}{len(classes)}{F.RESET} equivalence classes"
         )
-    dfta, stats = equivalence_classes_to_filters(commutatives, classes, dsl)
+    builder = equivalence_classes_to_filters(commutatives, classes, dsl)
     if verbose:
         print(
-            f"\tfound {F.YELLOW}{stats['added']}{F.RESET} ({F.YELLOW}{stats['added']/stats['total']:.1%}{F.RESET}) constraints"
+            f"\tfound {F.YELLOW}{builder.stats['constraints.successes']}{F.RESET} ({F.YELLOW}{builder.stats['constraints.successes']/builder.stats['constraints.total']:.1%}{F.RESET}) constraints"
         )
-    return (lambda t: get_filter(dfta, t, set())), stats
+    return (lambda t: builder.get_filter(t, set())), builder.stats
 
 
 def get_enumerator(cfg: DetGrammar) -> ProgramEnumerator:
@@ -350,8 +360,8 @@ def get_enumerator(cfg: DetGrammar) -> ProgramEnumerator:
 
 def reduced_explosion() -> Tuple[float, float]:
     stats = update_filter(False)[1]
-    ratio_added = stats["added"] / stats["total"]
-    ratio_size = stats["final_size"] / stats["initial_size"]
+    ratio_added = stats["constraints.successes"] / stats["constraints.total"]
+    ratio_size = stats["dfta.size.final"] / stats["dfta.size.initial"]
     return ratio_added, ratio_size
 
 
