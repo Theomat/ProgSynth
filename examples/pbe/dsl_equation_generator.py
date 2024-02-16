@@ -229,12 +229,15 @@ def check_program(
         is_list_constant = (
             is_list_constant
             and isinstance(out, List)
-            and all(x == out[0] for x in out)
+            and all(x == out[0] for x in out)  # list with only one same element
             and (
-                len(my_outputs) == 0
-                or len(out) == 0
-                or all(len(x) == 0 for x in my_outputs)
-                or ([x for x in my_outputs if len(x) > 0][0] == out[0])
+                len(my_outputs) == 0  # no input so far
+                or len(out) == 0  # out is empty list
+                or all(
+                    len(x) == 0 for x in my_outputs
+                )  # all elements previously in my_outputs are empty
+                or [x for x in my_outputs if len(x) > 0][0][0]
+                == out[0]  # sole value of out == previous sole value of my_outputs
             )
         )
         my_outputs.append(out)
