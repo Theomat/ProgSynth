@@ -26,7 +26,6 @@ class DSL:
             Primitive(primitive=p, type=t) for p, t in syntax.items()
         ]
         self.forbidden_patterns = forbidden_patterns or {}
-        self._forbidden_computed = False
 
     def __str__(self) -> str:
         s = "Print a DSL\n"
