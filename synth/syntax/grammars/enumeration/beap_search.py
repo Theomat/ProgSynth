@@ -85,8 +85,7 @@ class BeapSearch(
             # Init args
             nargs = self.G.arguments_length_for(S, P)
             cost = self.G.probabilities[S][P]
-            for i in range(nargs):
-                Si = self._non_terminal_for[S][P][i]
+            for Si in self._non_terminal_for[S][P]:
                 self._init_non_terminal_(Si)
                 cost += self._cost_lists[Si][0]
             index_cost = [0] * nargs
@@ -105,8 +104,8 @@ class BeapSearch(
                     HeapElement(
                         self.G.probabilities[S][el.P]
                         + sum(
-                            self._cost_lists[self._non_terminal_for[S][el.P][i]][0]
-                            for i in range(len(el.combination))
+                            self._cost_lists[Si][0]
+                            for Si in self._non_terminal_for[S][el.P]
                         ),
                         el.combination,
                         el.P,
@@ -130,7 +129,7 @@ class BeapSearch(
             for prog in self.query(self.G.start, n):
                 failed = False
                 yield prog
-            failed &= not self._failed_by_empties
+            failed = failed and not self._failed_by_empties
             n += 1
 
     def programs_in_banks(self) -> int:
@@ -142,35 +141,37 @@ class BeapSearch(
     def query(
         self, S: Tuple[Type, U], cost_index: int
     ) -> Generator[Program, None, None]:
-        bank = self._bank[S]
-        queue = self._queues[S]
         # When we return this way, it actually mean that we have generated all programs that this non terminal could generate
         if cost_index >= len(self._cost_lists[S]):
             return
         cost = self._cost_lists[S][cost_index]
         has_generated_program = False
-        has_failed_all = True
+        no_successor = True
+        bank = self._bank[S]
+        queue = self._queues[S]
         while len(queue) > 0 and queue[0].cost == cost:
             element = heappop(queue)
-            nargs = self.G.arguments_length_for(S, element.P)
             Sargs = self._non_terminal_for[S][element.P]
+            nargs = len(Sargs)
             # necessary for finite grammars
-            has_failed = False
-            has_failed_by_empties = False
+            arg_gen_failed = False
+            is_allowed_empty = False
+            # is_allowed_empty => arg_gen_failed
             # Generate programs
             args_possibles = []
             for i in range(nargs):
-                has_failed_by_empties, possibles = self._query_list_(
+                is_allowed_empty, possibles = self._query_list_(
                     Sargs[i], element.combination[i]
                 )
-                # TODO: Should we continue the loop if we failed by empties?
                 if len(possibles) == 0:
-                    has_failed = True
-                    break
+                    arg_gen_failed = True
+                    if not is_allowed_empty:
+                        break
                 args_possibles.append(possibles)
+            failed_for_other_reasons = arg_gen_failed and not is_allowed_empty
+            no_successor = no_successor and failed_for_other_reasons
             # a Non terminal as arg is finite and we reached the end of enumeration
-            has_failed_all = has_failed_all and has_failed
-            if has_failed and not has_failed_by_empties:
+            if failed_for_other_reasons:
                 continue
             # Generate next combinations
             for i in range(nargs):
@@ -190,7 +191,7 @@ class BeapSearch(
                 if index_cost[i] > 1:
                     break
             # If empty cost index set then no need to generate programs
-            if has_failed_by_empties:
+            if is_allowed_empty:
                 continue
 
             if cost_index not in bank:
@@ -208,9 +209,11 @@ class BeapSearch(
                 has_generated_program = True
                 bank[cost_index].append(new_program)
                 yield new_program
-        if not has_generated_program and not has_failed_all:
-            self._empties[S].add(cost_index)
-            self._failed_by_empties = True
+        if not has_generated_program:
+            # If we failed because of allowed empties we can tag this as allowed empty
+            if not no_successor:
+                self._empties[S].add(cost_index)
+                self._failed_by_empties = True
         if len(queue) > 0:
             next_cost = queue[0].cost
             self._cost_lists[S].append(next_cost)
@@ -219,9 +222,9 @@ class BeapSearch(
         self, S: Tuple[Type, U], cost_index: int
     ) -> Tuple[bool, List[Program]]:
         """
-        returns failed_by_empties, programs
+        returns is_allowed_empty, programs
         """
-        # It's an empty cost index
+        # It's an empty cost index but a valid one
         if cost_index in self._empties[S]:
             return True, []
         if cost_index >= len(self._cost_lists[S]):
@@ -231,6 +234,8 @@ class BeapSearch(
             return False, bank[cost_index]
         for x in self.query(S, cost_index):
             pass
+        if cost_index in self._empties[S]:
+            return True, []
         return False, bank[cost_index]
 
     def merge_program(self, representative: Program, other: Program) -> None:
