@@ -53,6 +53,7 @@ class BeapSearch(
         self._deleted: Set[Program] = set()
 
         # S -> cost list
+        # IDEA: Change from cost list to increase diffs
         self._cost_lists: Dict[Tuple[Type, U], List[float]] = {}
         # S -> cost_index -> program list
         self._bank: Dict[Tuple[Type, U], Dict[int, List[Program]]] = {}
@@ -61,11 +62,19 @@ class BeapSearch(
         # S -> cost index set
         self._empties: Dict[Tuple[Type, U], Set[int]] = {}
 
+        self._non_terminal_for: Dict[
+            Tuple[Type, U], Dict[DerivableProgram, List[Tuple[Type, U]]]
+        ] = {}
+
         for S in self.G.grammar.rules:
             self._cost_lists[S] = []
             self._bank[S] = {}
             self._empties[S] = set()
             self._queues[S] = []
+            self._non_terminal_for[S] = {
+                P: [(Sp[0], (Sp[1], None)) for Sp in self.G.rules[S][P][0]]  # type: ignore
+                for P in self.G.grammar.rules[S]
+            }
 
     def _init_non_terminal_(self, S: Tuple[Type, U]) -> None:
         if len(self._cost_lists[S]) > 0:
@@ -77,19 +86,13 @@ class BeapSearch(
             nargs = self.G.arguments_length_for(S, P)
             cost = self.G.probabilities[S][P]
             for i in range(nargs):
-                Si = self._non_terminal_for_(S, P, i)
+                Si = self._non_terminal_for[S][P][i]
                 self._init_non_terminal_(Si)
                 cost += self._cost_lists[Si][0]
             index_cost = [0] * nargs
             heappush(queue, HeapElement(cost, index_cost, P))
 
         self._cost_lists[S][0] = queue[0].cost
-
-    def _non_terminal_for_(
-        self, S: Tuple[Type, U], P: DerivableProgram, index: int
-    ) -> Tuple[Type, U]:
-        Sp = self.G.rules[S][P][0][index]  # type: ignore
-        return (Sp[0], (Sp[1], None))  # type: ignore
 
     def _reevaluate_(self) -> None:
         if not self.cfg.is_recursive():
@@ -102,7 +105,7 @@ class BeapSearch(
                     HeapElement(
                         self.G.probabilities[S][el.P]
                         + sum(
-                            self._cost_lists[self._non_terminal_for_(S, el.P, i)][0]
+                            self._cost_lists[self._non_terminal_for[S][el.P][i]][0]
                             for i in range(len(el.combination))
                         ),
                         el.combination,
@@ -145,32 +148,39 @@ class BeapSearch(
         if cost_index >= len(self._cost_lists[S]):
             return
         cost = self._cost_lists[S][cost_index]
-        generated_program = False
-        while queue and queue[0].cost == cost:
+        has_generated_program = False
+        has_failed_all = True
+        while len(queue) > 0 and queue[0].cost == cost:
             element = heappop(queue)
             nargs = self.G.arguments_length_for(S, element.P)
-            Sargs = [self._non_terminal_for_(S, element.P, i) for i in range(nargs)]
+            Sargs = self._non_terminal_for[S][element.P]
             # necessary for finite grammars
-            failed = False
-            failed_by_empties = False
+            has_failed = False
+            has_failed_by_empties = False
             # Generate programs
             args_possibles = []
             for i in range(nargs):
-                failed_by_empties, possibles = self._query_list_(
+                has_failed_by_empties, possibles = self._query_list_(
                     Sargs[i], element.combination[i]
                 )
+                # TODO: Should we continue the loop if we failed by empties?
                 if len(possibles) == 0:
-                    failed = True
+                    has_failed = True
                     break
                 args_possibles.append(possibles)
-            if failed and not failed_by_empties:
+            # a Non terminal as arg is finite and we reached the end of enumeration
+            has_failed_all = has_failed_all and has_failed
+            if has_failed and not has_failed_by_empties:
                 continue
             # Generate next combinations
             for i in range(nargs):
                 index_cost = element.combination.copy()
                 index_cost[i] += 1
                 cl = self._cost_lists[Sargs[i]]
+                # Finite grammar has reached the end of costs for Sarg[i]
                 if index_cost[i] >= len(cl):
+                    # Either index_cost[i] > 1 so we break or
+                    # index_cost[i] = 1 but then len(cl) = 1 so we need to check
                     if index_cost[i] > 1:
                         break
                     continue
@@ -179,8 +189,8 @@ class BeapSearch(
                 # Avoid duplication with this condition
                 if index_cost[i] > 1:
                     break
-
-            if failed_by_empties:
+            # If empty cost index set then no need to generate programs
+            if has_failed_by_empties:
                 continue
 
             if cost_index not in bank:
@@ -195,14 +205,13 @@ class BeapSearch(
                 elif not self._should_keep_subprogram(new_program):
                     self._deleted.add(new_program)
                     continue
-                generated_program = True
+                has_generated_program = True
                 bank[cost_index].append(new_program)
-                self._failed_by_empties = False
                 yield new_program
-        if not generated_program:
+        if not has_generated_program and not has_failed_all:
             self._empties[S].add(cost_index)
             self._failed_by_empties = True
-        if queue:
+        if len(queue) > 0:
             next_cost = queue[0].cost
             self._cost_lists[S].append(next_cost)
 
@@ -215,6 +224,8 @@ class BeapSearch(
         # It's an empty cost index
         if cost_index in self._empties[S]:
             return True, []
+        if cost_index >= len(self._cost_lists[S]):
+            return False, []
         bank = self._bank[S]
         if cost_index in bank:
             return False, bank[cost_index]
