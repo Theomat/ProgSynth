@@ -82,17 +82,25 @@ class PBESolver(ABC):
         """
         with chrono.clock(f"solve.{self.name()}") as c:  # type: ignore
             self._init_task_solving_(task, enumerator, timeout)
-            for program in enumerator:
-                time = c.elapsed_time()
-                if time >= timeout:
-                    self._close_task_solving_(task, enumerator, time, False, program)
-                    return
-                self._programs += 1
-                if self._test_(task, program):
-                    should_stop = yield program
-                    if should_stop:
-                        self._close_task_solving_(task, enumerator, time, True, program)
+            try:
+                for program in enumerator:
+                    time = c.elapsed_time()
+                    if time >= timeout:
+                        self._close_task_solving_(
+                            task, enumerator, time, False, program
+                        )
                         return
+                    self._programs += 1
+                    if self._test_(task, program):
+                        should_stop = yield program
+                        if should_stop:
+                            self._close_task_solving_(
+                                task, enumerator, time, True, program
+                            )
+                            return
+            except StopIteration as e:
+                self._close_task_solving_(task, enumerator, time, False, program)
+                raise e
 
     def _test_(self, task: Task[PBE], program: Program) -> bool:
         """
