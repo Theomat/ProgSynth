@@ -265,6 +265,7 @@ def enumerative_search(
             enumerator.filter = setup_filters(task, constant_types)
             sol_generator = solver.solve(task, enumerator, timeout=task_timeout)
             solution = next(sol_generator)
+            sol_generator.send(True)
             task_solved = True
             solved += 1
         except KeyboardInterrupt:
