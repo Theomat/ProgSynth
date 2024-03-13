@@ -22,6 +22,8 @@ class ObsEqFilter(Filter):
             out = self.evaluator.eval(prog, inputs)
             if out is None:
                 return False
+            elif isinstance(out, List):
+                out = tuple(out)
             outputs = (outputs, out)
         original = self._cache[prog.type].get(outputs)  # type: ignore
         if original is not None and hash(original) != hash(prog):
