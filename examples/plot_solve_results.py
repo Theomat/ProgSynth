@@ -38,15 +38,20 @@ def load_data(
                 print(f"\tskipped: does not start with {dataset_name}")
             continue
         name = filename[len(dataset_name) : -4]
-        if "_seed_" not in name:
-            if verbose:
-                print(f"\tskipped: does not contain _seed_")
-            continue
-        search = name[1 : name.index("_seed_")].replace("_", " ")
+        seed_text = "_seed_"
+        if seed_text not in name:
+            seed_text = "_uniform_"
+            if seed_text not in name:
+                if verbose:
+                    print(f"\tskipped: does not contain _seed_ nor _uniform_")
+                continue
+        search = name[1 : name.index(seed_text)].replace("_", " ")
         all_search.add(search)
-        name = name[name.index("_seed_") + len("_seed_") :]
-        seed = int(name[: name.index("_")])
-        solver = name[name.index("_") + 1 :].replace("_", " ")
+        name = name[name.index(seed_text) + len(seed_text) :]
+        seed = int(name[: name.index("_")]) if "seed" in seed_text else 0
+        solver = name
+        if "_" in solver:
+            solver = solver[solver.index("_") + 1 :].replace("_", " ")
         all_solver.add(solver)
         name = search + " " + solver
         if name not in methods:
