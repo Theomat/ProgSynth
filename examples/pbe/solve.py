@@ -69,7 +69,9 @@ parser = argparse.ArgumentParser(
 )
 add_dsl_choice_arg(parser)
 add_dataset_choice_arg(parser)
-parser.add_argument("--pcfg", type=str, help="files containing the predicted PCFGs")
+parser.add_argument(
+    "--pcfg", type=str, default=None, help="files containing the predicted PCFGs"
+)
 parser.add_argument(
     "-s",
     "--search",
@@ -119,7 +121,7 @@ parser.add_argument(
 parameters = parser.parse_args()
 dsl_name: str = parameters.dsl
 dataset_file: str = parameters.dataset
-pcfg_file: str = parameters.pcfg
+pcfg_file: Optional[str] = parameters.pcfg
 search_algo: str = parameters.search
 method: Callable[[Any], PBESolver] = SOLVERS[parameters.solver]
 output_folder: str = parameters.output
@@ -287,6 +289,21 @@ def enumerative_search(
     pbar.close()
 
 
+def load_pcfgs(
+    pcfg_file: Optional[str],
+) -> Union[List[ProbDetGrammar], List[ProbUGrammar]]:
+    if pcfg_file is not None:
+        return load_object(pcfg_file)
+    pcfgs = []
+    for task in full_dataset:
+        constant_types = set()
+        if isinstance(task.specification, PBEWithConstants):
+            constant_types = set(task.specification.constants.keys())
+        g = CFG.infinite(dsl, task.type_request, 1, constant_types=constant_types)
+        pcfgs.append(ProbDetGrammar.uniform(g))
+    return pcfgs
+
+
 # Main ====================================================================
 
 if __name__ == "__main__":
@@ -294,10 +311,13 @@ if __name__ == "__main__":
 
     solver: PBESolver = method(evaluator=evaluator)
 
-    pcfgs = load_object(pcfg_file)
-    model_name = os.path.split(pcfg_file)[1][
-        len(f"pcfgs_{dataset_name}_") : -len(".pickle")
-    ]
+    pcfgs = load_pcfgs(pcfg_file)
+    if pcfg_file is None:
+        model_name = "uniform"
+    else:
+        model_name = os.path.split(pcfg_file)[1][
+            len(f"pcfgs_{dataset_name}_") : -len(".pickle")
+        ]
     pruning_suffix = "_".join(pruning)
     file = os.path.join(
         output_folder,
