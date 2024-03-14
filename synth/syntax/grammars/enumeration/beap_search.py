@@ -160,12 +160,13 @@ class BeapSearch(
             # Generate programs
             args_possibles = []
             for i in range(nargs):
-                is_allowed_empty, possibles = self._query_list_(
+                one_is_allowed_empty, possibles = self._query_list_(
                     Sargs[i], element.combination[i]
                 )
+                is_allowed_empty |= one_is_allowed_empty
                 if len(possibles) == 0:
                     arg_gen_failed = True
-                    if not is_allowed_empty:
+                    if not one_is_allowed_empty:
                         break
                 args_possibles.append(possibles)
             failed_for_other_reasons = arg_gen_failed and not is_allowed_empty
