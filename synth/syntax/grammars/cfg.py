@@ -271,10 +271,12 @@ class CFG(TTCFG[CFGState, NoneType]):
 
                             rules[non_terminal][P] = (decorated_arguments_self, None)
 
-        return CFG(
+        cfg = CFG(
             start=initital_ctx,
             rules=rules,
         )
+        cfg.type_request = type_request
+        return cfg
 
     @classmethod
     def infinite(
