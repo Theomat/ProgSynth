@@ -227,11 +227,9 @@ class UGrammarPredictorLayer(nn.Module, Generic[A, U, V, W]):
                 )
                 for P in variables:
                     for v in grammar.rules[S][P]:
-                        tags[S][P][tuple(v)] = torch.tensor(
+                        tags[S][P][tuple(v)] = torch.tensor(  # type: ignore
                             normalised_variable_logprob
-                        ).to(  # type: ignore
-                            device
-                        )
+                        ).to(device)
                         # Trick to allow a total ordering on variables
                         if total_variable_order:
                             normalised_variable_logprob = np.log(
@@ -239,11 +237,9 @@ class UGrammarPredictorLayer(nn.Module, Generic[A, U, V, W]):
                             )
                 for P in constants:
                     for v in grammar.rules[S][P]:
-                        tags[S][P][tuple(v)] = torch.tensor(
+                        tags[S][P][tuple(v)] = torch.tensor(  # type: ignore
                             normalised_variable_logprob
-                        ).to(  # type: ignore
-                            device
-                        )
+                        ).to(device)
             else:
                 # We still need to normalise probabilities
                 # Since all derivations aren't possible

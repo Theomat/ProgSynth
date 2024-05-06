@@ -492,8 +492,8 @@ def __process__(
                 if old_S == start:
                     try:
                         path, SSS, Sinfo = __restore_save__(
-                            out_grammar,
-                            (SS, hist[:], info),  # type: ignore
+                            out_grammar,  # type: ignore
+                            (SS, hist[:], info),
                         )
                         assert len(path) == len(
                             or_path

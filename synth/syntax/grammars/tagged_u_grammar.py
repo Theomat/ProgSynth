@@ -93,8 +93,8 @@ class TaggedUGrammar(UGrammar[U, V, W], Generic[T, U, V, W]):
                 for key in self.tags[S][P]:
                     new_probs[S][P][key] = self.tags[S][P][key] + other.tags[S][P][key]  # type: ignore
         new_start_tags: Dict[Tuple[Type, U], T] = {
-            key: value + other.start_tags[key]
-            for key, value in self.start_tags.items()  # type: ignore
+            key: value + other.start_tags[key]  # type: ignore
+            for key, value in self.start_tags.items()
         }
         return self.__class__(self.grammar, new_probs, new_start_tags)
 

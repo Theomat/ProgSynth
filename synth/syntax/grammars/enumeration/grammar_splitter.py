@@ -326,9 +326,9 @@ def __create_path__(
             rules[Sp][P] = []
             probabilities[Sp][P] = {}
         rules[Sp][P].append(mapped_v)
-        probabilities[Sp][P][tuple(mapped_v)] = original_pcfg.probabilities[S][P][
-            tuple(v)
-        ]  # type: ignore
+        probabilities[Sp][P][tuple(mapped_v)] = original_pcfg.probabilities[S][P][  # type: ignore
+            tuple(v)  # type: ignore
+        ]
         info = [current] + next_derivation
     return info
 
