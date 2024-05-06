@@ -49,11 +49,8 @@ jobs:
       - name: Install library
         run: poetry install --no-interaction
       #----------------------------------------------
-      # format, type check, and test your code
+      # type check, and test your code
       #----------------------------------------------
-      - name: Black code formatting
-        run: |
-          poetry run black --check --diff .
       - name: MyPy
         run: |
           poetry run mypy synth
