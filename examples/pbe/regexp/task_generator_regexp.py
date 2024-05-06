@@ -95,9 +95,8 @@ def reproduce_regexp_dataset(
     evaluator: Evaluator,
     seed: Optional[int] = None,
     *args: Any,
-    **kwargs: Any
+    **kwargs: Any,
 ) -> Tuple[RegexpTaskGenerator, TList[int]]:
-
     str_lexicon = list([chr(i) for i in range(32, 126)])
     n_lexicon = [chr(i) for i in range(48, 58)]
     u_lexicon = [chr(i) for i in range(65, 91)]
@@ -127,7 +126,7 @@ def reproduce_regexp_dataset(
         lambda _: str_lexicon,
         seed,
         *args,
-        **kwargs
+        **kwargs,
     )
 
     return (

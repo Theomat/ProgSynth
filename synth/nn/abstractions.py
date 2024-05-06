@@ -10,7 +10,7 @@ S = TypeVar("S")
 
 
 def ucfg_bigram(
-    ctx: Tuple[Type, Tuple[NGram, T]]
+    ctx: Tuple[Type, Tuple[NGram, T]],
 ) -> Optional[Tuple[DerivableProgram, int]]:
     """
     Abstract away a TTCFG into tuples of (parent, no_arg).
@@ -25,7 +25,7 @@ def ucfg_bigram(
 
 
 def ttcfg_bigram(
-    ctx: Tuple[Type, Tuple[S, T]]
+    ctx: Tuple[Type, Tuple[S, T]],
 ) -> Optional[Tuple[DerivableProgram, int]]:
     """
     Abstract away a TTCFG into tuples of (parent, no_arg).
@@ -40,7 +40,7 @@ def ttcfg_bigram(
 
 
 def cfg_bigram_without_depth(
-    ctx: Tuple[Type, Tuple[CFGState, NoneType]]
+    ctx: Tuple[Type, Tuple[CFGState, NoneType]],
 ) -> Optional[Tuple[DerivableProgram, int]]:
     """
     Abstract away a CFG into tuples of (parent, no_arg).

@@ -1,6 +1,7 @@
 """
 Module that contains anything relevant to the syntax
 """
+
 from synth.syntax.dsl import DSL
 from synth.syntax.program import (
     Primitive,

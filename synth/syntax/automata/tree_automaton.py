@@ -242,7 +242,7 @@ class DFTA(Generic[U, V]):
                 ]
             ],
         ] = {q: [] for q in self.states}
-        for (l, args) in self.rules:
+        for l, args in self.rules:
             for k, ik in enumerate(args):
                 consumer_of[ik].append(((l, args), k))
         # 2. Init equiv classes
@@ -255,6 +255,7 @@ class DFTA(Generic[U, V]):
 
         n = 1
         finished = False
+
         # Routine
         def are_equivalent(a: U, b: U) -> bool:
             for S, k in consumer_of[a]:

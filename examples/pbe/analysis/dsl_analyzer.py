@@ -54,9 +54,7 @@ def __count_programs__(solution: Program, pcfg: ProbDetGrammar) -> int:
                     counters[str(sub_program)] = (counter, sub_program.depth())
                     found = True
                     break
-            if (
-                not found
-            ):  # can happen when function signature does not correspond to pcfg (thus, cannot be found)
+            if not found:  # can happen when function signature does not correspond to pcfg (thus, cannot be found)
                 counters[str(sub_program)] = (MAX_TESTS, sub_program.depth())
     return counters
 
@@ -234,6 +232,7 @@ def produce_pcfgs(
     predictor.load_state_dict(torch.load(model_file))
     predictor = predictor.to(device)
     predictor.eval()
+
     # ================================
     # Predict PCFG
     # ================================

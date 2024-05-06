@@ -326,7 +326,9 @@ def __create_path__(
             rules[Sp][P] = []
             probabilities[Sp][P] = {}
         rules[Sp][P].append(mapped_v)
-        probabilities[Sp][P][tuple(mapped_v)] = original_pcfg.probabilities[S][P][tuple(v)]  # type: ignore
+        probabilities[Sp][P][tuple(mapped_v)] = original_pcfg.probabilities[S][P][
+            tuple(v)
+        ]  # type: ignore
         info = [current] + next_derivation
     return info
 
@@ -517,7 +519,6 @@ def __pcfg_from__(
 ) -> ProbUGrammar[
     Tuple[U, int], List[Tuple[Type, Tuple[U, int]]], List[Tuple[Type, Tuple[U, int]]]
 ]:
-
     # print()
     # print("=" * 60)
     # print("NODE")
@@ -619,6 +620,7 @@ def __pcfg_from__(
 #     pcfg: ProbUGrammar[U, List[Tuple[Type, U]], List[Tuple[Type, U]]], splits: int, desired_ratio: float = 1.1
 # ) -> Tuple[List[ProbUGrammar[U, List[Tuple[Type, U]], List[Tuple[Type, U]]]], float]:
 #     pass
+
 
 # def split(
 #     pcfg: Union[ProbUGrammar[U, List[Tuple[Type, U]], List[Tuple[Type, U]]], ProbDetGrammar[U, List[Tuple[Type, U]], List[Tuple[Type, U]]]], splits: int, desired_ratio: float = 1.1

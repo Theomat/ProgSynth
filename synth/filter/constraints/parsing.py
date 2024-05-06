@@ -21,6 +21,8 @@ SYMBOL_FORBIDDEN = "^"
 SYMBOL_SEPARATOR = ","
 SYMBOL_SUBTREE = ">"
 SYMBOL_AGGREGATOR = "#"
+
+
 # ========================================================================================
 # TOKENS
 # ========================================================================================
@@ -199,9 +201,9 @@ def __interpret_word__(
             return TokenAnything()
         return TokenAllow(out)
     elif word.startswith(SYMBOL_SUBTREE):
-        cst: Union[
-            Type[TokenForceSubtree], Type[TokenForbidSubtree]
-        ] = TokenForceSubtree
+        cst: Union[Type[TokenForceSubtree], Type[TokenForbidSubtree]] = (
+            TokenForceSubtree
+        )
         str_content = word[1:]
         if str_content.startswith(SYMBOL_FORBIDDEN):
             str_content = str_content[1:]

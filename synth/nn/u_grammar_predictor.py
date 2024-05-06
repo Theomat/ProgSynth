@@ -227,7 +227,9 @@ class UGrammarPredictorLayer(nn.Module, Generic[A, U, V, W]):
                 )
                 for P in variables:
                     for v in grammar.rules[S][P]:
-                        tags[S][P][tuple(v)] = torch.tensor(normalised_variable_logprob).to(  # type: ignore
+                        tags[S][P][tuple(v)] = torch.tensor(
+                            normalised_variable_logprob
+                        ).to(  # type: ignore
                             device
                         )
                         # Trick to allow a total ordering on variables
@@ -237,7 +239,9 @@ class UGrammarPredictorLayer(nn.Module, Generic[A, U, V, W]):
                             )
                 for P in constants:
                     for v in grammar.rules[S][P]:
-                        tags[S][P][tuple(v)] = torch.tensor(normalised_variable_logprob).to(  # type: ignore
+                        tags[S][P][tuple(v)] = torch.tensor(
+                            normalised_variable_logprob
+                        ).to(  # type: ignore
                             device
                         )
             else:

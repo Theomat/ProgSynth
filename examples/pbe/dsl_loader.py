@@ -1,7 +1,8 @@
 """
 Module to change to add your own DSL easily in all scripts.
-Some constants may need to be changed directly in the script. 
+Some constants may need to be changed directly in the script.
 """
+
 from argparse import ArgumentParser
 from types import SimpleNamespace
 from typing import Callable, Dict, Iterable, List, Optional, Tuple, Union

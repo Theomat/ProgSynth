@@ -2,6 +2,7 @@
 An helper file that contains useful methods to make type creation and manipulation very easy.
 
 """
+
 from synth.syntax.type_system import FixedPolymorphicType, Generic, PrimitiveType, Sum
 from synth.syntax.type_system import (
     Type,

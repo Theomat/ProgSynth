@@ -124,7 +124,9 @@ class UGrammar(Grammar, ABC, Generic[U, V, W]):
             args_P = program.arguments
             if function not in self.rules[start]:
                 return False, [(information, start)]
-            possibles = [(a, b) for a, b, _ in self.derive(information, start, function)]  # type: ignore
+            possibles = [
+                (a, b) for a, b, _ in self.derive(information, start, function)
+            ]  # type: ignore
             for arg in args_P:
                 next_possibles = []
                 for possible in possibles:
@@ -294,7 +296,12 @@ class UGrammar(Grammar, ABC, Generic[U, V, W]):
         if isinstance(program, Function):
             function = program.function
             args_P = program.arguments
-            possibles: List[List[Tuple[Tuple[Type, U], Tuple[Type, U], DerivableProgram, V, W]]] = [[(b, start, function, c, a)] for a, b, c in self.derive(information, start, function)]  # type: ignore
+            possibles: List[
+                List[Tuple[Tuple[Type, U], Tuple[Type, U], DerivableProgram, V, W]]
+            ] = [
+                [(b, start, function, c, a)]
+                for a, b, c in self.derive(information, start, function)
+            ]  # type: ignore
             for arg in args_P:
                 next_possibles = []
                 for possible in possibles:

@@ -68,7 +68,6 @@ class RestartPBESolver(MetaPBESolver):
             gen = self._enumerator.generator()
             program = next(gen)
             while program is not None:
-
                 time = c.elapsed_time()
                 if time >= timeout:
                     self._close_task_solving_(

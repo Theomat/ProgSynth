@@ -212,7 +212,6 @@ def enumerative_search(
 # Main ====================================================================
 
 if __name__ == "__main__":
-
     # trace_rules = [
     #     (
     #         "search",
@@ -286,12 +285,26 @@ if __name__ == "__main__":
         pcfg = ProbDetGrammar.uniform(cfg)
         for name, enum in SEARCH_ALGOS.items():
             if first:
-                summary, detailed = enumerative_search(pcfg, name, enum, programs, timeout=timeout, title=f"{name}-{non_terminals}")  # type: ignore
+                summary, detailed = enumerative_search(
+                    pcfg,
+                    name,
+                    enum,
+                    programs,
+                    timeout=timeout,
+                    title=f"{name}-{non_terminals}",
+                )  # type: ignore
                 summary_trace.append(summary)
                 detailed_trace += detailed
             else:
                 summary_trace.append(
-                    summary_enumerative_search(pcfg, name, enum, programs, timeout=timeout, title=f"{name}-{non_terminals}")  # type: ignore
+                    summary_enumerative_search(
+                        pcfg,
+                        name,
+                        enum,
+                        programs,
+                        timeout=timeout,
+                        title=f"{name}-{non_terminals}",
+                    )  # type: ignore
                 )
         save(summary_trace, file_name + "_growth.csv")
         save(detailed_trace, file_name + "_detailed.csv")

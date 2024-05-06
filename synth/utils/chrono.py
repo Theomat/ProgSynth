@@ -1,6 +1,7 @@
 """
 Module to measure time spent in parts of the code programmatically and easily.
 """
+
 from functools import wraps
 import time
 from dataclasses import dataclass, field

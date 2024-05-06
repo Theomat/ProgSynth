@@ -2,6 +2,7 @@
 This file provides useful structures in order to treat with regular expressions (regex).
 Inspired by pregex project of github user Hieuzest: https://github.com/Hieuzest/pregex/blob/master/pregex.py
 """
+
 from typing import Any, Callable, Dict, List, Tuple, Optional, Match
 from abc import ABC, abstractmethod
 from functools import lru_cache
@@ -224,9 +225,9 @@ class Match:
         self._match = match
         self._pattern = pattern
         self._flags = flags
-        self._repeat_map: Dict[
-            str, Tuple[str, CompiledPattern]
-        ] = self._pattern._kwargs["_repeat_map"]
+        self._repeat_map: Dict[str, Tuple[str, CompiledPattern]] = (
+            self._pattern._kwargs["_repeat_map"]
+        )
         self._require_post: Dict[str, Callable] = self._pattern._kwargs["_require_post"]
 
     @property

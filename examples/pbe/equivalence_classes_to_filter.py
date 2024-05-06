@@ -142,6 +142,7 @@ class FiltersBuilder:
 
         if len(self.equal_parameters_reject) == 0:
             return x
+
         # Local Stateless Part
         def make_equal_filter(to_look):
             return lambda *args: all(args[i] == args[j] for i, j in to_look)

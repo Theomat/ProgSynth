@@ -23,7 +23,6 @@ def convert_dreamcoder(
         with open(file, "rb") as fd:
             li: List[Dict[str, Any]] = json.load(fd)
             for task_dict in tqdm.tqdm(li, desc="converting"):
-
                 examples = [
                     Example([dico["i"]], dico["o"]) for dico in task_dict["examples"]
                 ]

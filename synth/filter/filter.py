@@ -8,7 +8,6 @@ T = TypeVar("T")
 class Filter(ABC, Generic[T]):
     @abstractmethod
     def accept(self, obj: T) -> bool:
-
         """
         Accepts objects that should be kept.
         """

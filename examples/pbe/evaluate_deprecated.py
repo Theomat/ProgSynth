@@ -147,9 +147,9 @@ supported_type_requests = Dataset.load(support).type_requests() if support else 
 # ================================
 
 
-def load_dsl_and_dataset() -> Tuple[
-    Dataset[PBE], DSL, DSLEvaluatorWithConstant, List[int], str, List[str]
-]:
+def load_dsl_and_dataset() -> (
+    Tuple[Dataset[PBE], DSL, DSLEvaluatorWithConstant, List[int], str, List[str]]
+):
     dsl_module = load_DSL(dsl_name)
     dsl, evaluator, lexicon = dsl_module.dsl, dsl_module.evaluator, dsl_module.lexicon
     constraints = []
@@ -240,6 +240,7 @@ def produce_pcfgs(
     predictor.load_state_dict(torch.load(model_file, map_location=device))
     predictor = predictor.to(device)
     predictor.eval()
+
     # ================================
     # Predict PCFG
     # ================================
@@ -302,7 +303,6 @@ def enumerative_search(
     ],
     custom_enumerate: Callable[[Union[ProbDetGrammar, ProbUGrammar]], HSEnumerator],
 ) -> None:
-
     start = len(trace)
     pbar = tqdm.tqdm(total=len(pcfgs) - start, desc="Tasks", smoothing=0)
     i = 0
@@ -343,7 +343,6 @@ def base(
     time = 0.0
     programs = 0
     with chrono.clock("search.base") as c:
-
         for program in custom_enumerate(pcfg):
             time = c.elapsed_time()
             if time >= task_timeout:
@@ -457,7 +456,6 @@ def constants_injector(
     # if program == None:
     #     return (False, time, programs, None, None)
     with chrono.clock("search.constant_injector") as c:
-
         # print("\n-----------------------")
         # print(name)
         for program in custom_enumerate(pcfg):

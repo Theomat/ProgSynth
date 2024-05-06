@@ -307,7 +307,6 @@ if __name__ == "__main__":
         # Check we did not remove everything
         task_len = len(list(list(methods.values())[0].values())[0])
         if task_len == 0:
-
             print(f"{F.RED}Error: filters left no tasks!{F.RESET}", file=sys.stderr)
             sys.exit(1)
     # Order by name so that it is always the same color for the same methods if diff. DSL

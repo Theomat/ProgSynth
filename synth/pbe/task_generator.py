@@ -124,7 +124,7 @@ class TaskGenerator:
         solution: Program,
         inputs: TList,
         outputs: TList,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> Task[PBE]:
         return Task(
             type_request,
@@ -217,9 +217,8 @@ def reproduce_int_dataset(
     int_bound: int = 1000,
     default_max_depth: int = 5,
     max_list_length: Optional[int] = None,
-    **kwargs: Any
+    **kwargs: Any,
 ) -> Tuple[TaskGenerator, TList[int]]:
-
     int_range: TList[int] = [999999999, 0]
     int_range[1] = -int_range[0]
 
@@ -260,7 +259,7 @@ def reproduce_int_dataset(
         max_tries,
         default_max_depth,
         max_list_length,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -282,7 +281,7 @@ def reproduce_dataset(
     default_max_depth: int = 5,
     max_list_length: Optional[int] = None,
     constraints: TList[str] = [],
-    **kwargs: Any
+    **kwargs: Any,
 ) -> Tuple[TaskGenerator, TList]:
     """
 
@@ -419,7 +418,7 @@ def reproduce_dataset(
                 or -1,
             ),
             max_tries,
-            **kwargs
+            **kwargs,
         ),
         get_lexicon(out[0]),
     )
@@ -440,7 +439,6 @@ def __multi_discrete_to_gen__(
     seed: Optional[int] = None,
     maxi: Optional[int] = None,
 ) -> RequestSampler[int]:
-
     choice_map: Dict[Type, TList[int]] = {k: list(v.keys()) for k, v in distr.items()}
     probs_map: Dict[Type, np.ndarray] = {
         k: np.array(list(v.values()), dtype=float) for k, v in distr.items()

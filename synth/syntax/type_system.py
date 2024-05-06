@@ -2,6 +2,7 @@
 Objective: define a type system.
 A type can be either PolymorphicType, FixedPolymorphicType, PrimitiveType, Generic, Arrow, Sum or List
 """
+
 from itertools import product
 from typing import Dict, List as TList, Optional, Set, Tuple, Union
 from abc import ABC, abstractmethod
@@ -622,13 +623,15 @@ def match(a: Type, b: Type) -> bool:
     if type(a) == type(b):
         if isinstance(a, Generic):
             return a.name == b.name and all(  # type: ignore
-                match(x, y) for x, y in zip(a.types, b.types)  # type: ignore
+                match(x, y)
+                for x, y in zip(a.types, b.types)  # type: ignore
             )
         elif a.is_instance(Arrow):
             return match(a.type_in, b.type_in) and match(a.type_out, b.type_out)  # type: ignore
         elif isinstance(a, Sum):
             return all(any(match(x, y) for y in b.types) for x in a.types) and all(  # type: ignore
-                any(match(x, y) for y in a.types) for x in b.types  # type: ignore
+                any(match(x, y) for y in a.types)
+                for x in b.types  # type: ignore
             )
         elif isinstance(a, UnknownType):
             return False

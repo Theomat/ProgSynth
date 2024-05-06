@@ -259,7 +259,8 @@ def __process__(
         else:
             allowed = [token.count]
         out_grammar = __tag__(
-            out_grammar, lambda _, __, state: state[1][0][-1] in allowed  # type: ignore
+            out_grammar,
+            lambda _, __, state: state[1][0][-1] in allowed,  # type: ignore
         )
 
     elif isinstance(token, TokenForbidSubtree):

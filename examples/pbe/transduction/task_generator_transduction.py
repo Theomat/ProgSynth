@@ -47,7 +47,7 @@ class TransductionTaskGenerator(TaskGenerator):
         solution: Program,
         inputs: TList,
         outputs: TList,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> Task[PBEWithConstants]:
         return Task(
             type_request,
@@ -66,7 +66,7 @@ def reproduce_transduction_dataset(
     evaluator: DSLEvaluator,
     seed: Optional[int] = None,
     *args: Any,
-    **kwargs: Any
+    **kwargs: Any,
 ) -> Tuple[TaskGenerator, TList[int]]:
     def analyser(start: None, elment: Any) -> None:
         pass
@@ -141,7 +141,7 @@ def reproduce_transduction_dataset(
         lambda _: str_lexicon + regexp_symbols,
         seed,
         *args,
-        **kwargs
+        **kwargs,
     )
 
     generator = TransductionTaskGenerator(

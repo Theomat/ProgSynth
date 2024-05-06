@@ -65,9 +65,8 @@ def reproduce_calculator_dataset(
     seed: Optional[int] = None,
     int_bound: int = 1000,
     *args: Any,
-    **kwargs: Any
+    **kwargs: Any,
 ) -> Tuple[TaskGenerator, TList[int]]:
-
     int_range: TList[int] = [int_bound, 0]
     int_range[1] = -int_range[0]
 
@@ -122,5 +121,5 @@ def reproduce_calculator_dataset(
         get_lexicon,
         seed,
         *args,
-        **kwargs
+        **kwargs,
     )

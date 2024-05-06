@@ -175,9 +175,9 @@ filter_funs = [x.get_filter for x in filter_pot_funs if x is not None]
 # ================================
 
 
-def load_dsl_and_dataset() -> Tuple[
-    Dataset[PBE], DSL, DSLEvaluator, List[str], Set[Type]
-]:
+def load_dsl_and_dataset() -> (
+    Tuple[Dataset[PBE], DSL, DSLEvaluator, List[str], Set[Type]]
+):
     dsl_module = load_DSL(dsl_name)
     dsl, evaluator = dsl_module.dsl, dsl_module.evaluator
     # ================================
@@ -240,7 +240,6 @@ def enumerative_search(
     save_file: str,
     constant_types: Set[Type],
 ) -> None:
-
     start = max(0, len(trace) - 1)
     pbar = tqdm.tqdm(total=len(pcfgs) - start, desc="Tasks", smoothing=0)
     i = 0

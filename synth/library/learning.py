@@ -347,7 +347,7 @@ def make_score_probabilistic(
     lvar_prob = np.log(var_prob)
 
     def probability(
-        cur_type2dict: Dict[Type, Dict[Tuple[str, str, int], int]]
+        cur_type2dict: Dict[Type, Dict[Tuple[str, str, int], int]],
     ) -> float:
         total: Dict[Type, Dict[Tuple[str, int], int]] = {}
         vars = defaultdict(set)

@@ -57,7 +57,6 @@ def try_parse_variable(value: str, ctx: ParseContext) -> Optional[Variable]:
 
 def build_program(node: ast.AST, ctx: ParseContext) -> Program:
     if isinstance(node, ast.Call):
-
         func = build_program(node.func, ctx)
         if len(node.args) == 0:
             return func

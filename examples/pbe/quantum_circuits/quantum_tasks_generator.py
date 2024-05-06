@@ -129,7 +129,6 @@ class ParametricSubstitution(qk.transpiler.TransformationPass):
                 )
 
             if node.op.name in ["p"] and node.op.params[0] == np.pi / 2:
-
                 # calculate the replacement
                 replacement = qk.QuantumCircuit(1)
                 replacement.s([0])
@@ -140,7 +139,6 @@ class ParametricSubstitution(qk.transpiler.TransformationPass):
                 )
 
             elif node.op.name in ["p"] and node.op.params[0] == 3 * np.pi / 2:
-
                 # calculate the replacement
                 replacement = qk.QuantumCircuit(1)
                 replacement.tdg([0])
@@ -152,7 +150,6 @@ class ParametricSubstitution(qk.transpiler.TransformationPass):
                 )
 
             elif node.op.name in ["p"] and node.op.params[0] == 5 * np.pi / 2:
-
                 # calculate the replacement
                 replacement = qk.QuantumCircuit(1)
                 replacement.t([0])
@@ -172,7 +169,6 @@ def decompose(
     pm: qk.transpiler.PassManager,
     skd: SolovayKitaev,
 ) -> qk.QuantumCircuit:
-
     transpiled = qk.transpile(circuit, backend)
     circuit2 = pm.run(transpiled)
     discretized = skd(circuit2)
@@ -180,7 +176,6 @@ def decompose(
 
 
 def circuit_to_program(circuit: qk.QuantumCircuit, dsl: DSL, tr: Type) -> Program:
-
     program = "var0"
     for inst in circuit.data:
         name: str = inst.operation.name
@@ -350,7 +345,6 @@ def generate_tasks(
 
 
 if __name__ == "__main__":
-
     import argparse
 
     from synth.utils import chrono

@@ -11,7 +11,6 @@ import matplotlib.pyplot as plt
 
 
 class KarelWorld:
-
     DIRECTION_TOP = 0
     DIRECTION_LEFT = 1
     DIRECTION_BOTTOM = 2
@@ -116,7 +115,6 @@ class KarelWorld:
         # Draw Grid
         for x in range(self.grid.shape[0]):
             for y in range(self.grid.shape[1]):
-
                 if self.grid[x, y] > 0:
                     plt.fill([x, x, x + 1, x + 1], [y + 1, y, y, y + 1], "g")
                 elif self.current_markers[x, y] > 0:

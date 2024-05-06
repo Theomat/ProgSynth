@@ -354,7 +354,8 @@ class UCFG(UGrammar[U, List[Tuple[Type, U]], List[Tuple[Type, U]]], Generic[U]):
                 if not match(local_d2state(dst, None), tgt):
                     continue
                 new_args = [
-                    local_d2state(arg, last.successor((P, i))) for i, arg in enumerate(args)  # type: ignore
+                    local_d2state(arg, last.successor((P, i)))
+                    for i, arg in enumerate(args)  # type: ignore
                 ]
                 new_rules[tgt][P].append(new_args)
                 for new_state in new_args:

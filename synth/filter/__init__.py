@@ -1,6 +1,7 @@
 """
 Module that contains anything relevant to pruning
 """
+
 from synth.filter.filter import Filter, UnionFilter, IntersectionFilter
 from synth.filter.dfta_filter import DFTAFilter
 from synth.filter.obs_eq_filter import ObsEqFilter

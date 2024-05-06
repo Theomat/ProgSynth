@@ -33,7 +33,6 @@ def find_constants(
     my_indices: Optional[List[int]] = None,
     memory: Optional[Dict[Tuple[int, ...], List[Union[str, None]]]] = None,
 ) -> List[Union[str, None]]:
-
     indices = my_indices or [0 for _ in strings]
     start = indices[0]
     iterator = list(range(len(strings)))

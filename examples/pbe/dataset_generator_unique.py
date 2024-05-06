@@ -146,7 +146,6 @@ def generate_programs_and_samples_for(
     task_generator: TaskGenerator,
     threshold: int = 1000,
 ):
-
     # 3 Phases algorithm to generate m programs
     # Phase 1 generate n programs
     # Phase 2 generate k examples to differentiate as much as possible programs in n
