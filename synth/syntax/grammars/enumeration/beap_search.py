@@ -176,16 +176,16 @@ class BeapSearch(
                 continue
             # Generate next combinations
             for i in range(nargs):
-                index_cost = element.combination.copy()
-                index_cost[i] += 1
                 cl = self._cost_lists[Sargs[i]]
                 # Finite grammar has reached the end of costs for Sarg[i]
-                if index_cost[i] >= len(cl):
+                if element.combination[i] + 1 >= len(cl):
                     # Either index_cost[i] > 1 so we break or
                     # index_cost[i] = 1 but then len(cl) = 1 so we need to check
-                    if index_cost[i] > 1:
+                    if element.combination[i] + 1 > 1:
                         break
                     continue
+                index_cost = element.combination.copy()
+                index_cost[i] += 1
                 new_cost = cost - cl[index_cost[i] - 1] + cl[index_cost[i]]
                 heappush(queue, HeapElement(new_cost, index_cost, element.P))
                 # Avoid duplication with this condition
