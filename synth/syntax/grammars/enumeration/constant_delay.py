@@ -49,7 +49,6 @@ class CDSearch(
         G: ProbDetGrammar[U, V, W],
         filter: Optional[Filter[Program]] = None,
         k: int = 5,
-        precision: float = 1e-5,
     ) -> None:
         super().__init__(filter)
         assert isinstance(G.grammar, CFG)
@@ -101,7 +100,7 @@ class CDSearch(
             for P in self.G.grammar.rules[S]:
                 args = self._non_terminal_for[S][P]
                 if args and args not in self._queue_derivation:
-                    self._queue_derivation[args] = CDQueue(self.M, k, precision)
+                    self._queue_derivation[args] = CDQueue(self.M, k)
                     self._bank_derivation[args] = {}
                     self._cost_lists_derivation[args] = []
 
@@ -113,23 +112,9 @@ class CDSearch(
             return self._queue_derivation[args].peek().cost
         return 0
 
-    def _push_derivation_(
-        self, S: Tuple[Type, U], P: DerivableProgram, element: CostTuple
-    ) -> None:
-        args = self._non_terminal_for[S][P]
-        self._queue_derivation[args].push(element)
-
-    def _pop_derivation_(self, S: Tuple[Type, U], P: DerivableProgram) -> CostTuple:
-        args = self._non_terminal_for[S][P]
-        return self._queue_derivation[args].pop()
-
     def _queue_size_(self, S: Tuple[Type, U], P: DerivableProgram) -> int:
         args = self._non_terminal_for[S][P]
         return self._queue_derivation[args].size()
-
-    def _queue_is_empty_(self, S: Tuple[Type, U], P: DerivableProgram) -> bool:
-        args = self._non_terminal_for[S][P]
-        return self._queue_derivation[args].is_empty()
 
     def _init_derivation_(self, S: Tuple[Type, U], P: DerivableProgram) -> None:
         args = self._non_terminal_for[S][P]
@@ -144,6 +129,7 @@ class CDSearch(
         index_cost = [0] * len(args)
         ct = CostTuple(cost, [index_cost])
         queue.push(ct)
+        queue.update()
         self._cost_lists_derivation[args][0] = queue.peek().cost
 
     def _init_non_terminal_(self, S: Tuple[Type, U]) -> None:
@@ -155,7 +141,7 @@ class CDSearch(
             args = self._non_terminal_for[S][P]
             if args:
                 self._init_derivation_(S, P)
-                base_cost = self._peek_next_derivation_cost_(S, P)
+                base_cost = self._queue_derivation[args].peek().cost
             else:
                 base_cost = 0
             heappush(queue, Derivation(base_cost + self.G.probabilities[S][P], 0, P))
@@ -206,16 +192,27 @@ class CDSearch(
                     self._queue_nt[S] = new_queue
                     self._cost_lists_nt[S][0] = self._queue_nt[S][0].cost
 
-    def generator(self) -> Generator[Program, None, None]:
-        self._init_non_terminal_(self.G.start)
-        self._reevaluate_()
-        # Update M
-        values = set()
-        for q in self._queue_nt.values():
-            values |= set(el.cost for el in q)
-        print("previous M:", self.M)
-        self.M = max(self.basic_M, max(abs(x - y) for x in values for y in values))
-        print("new M:", self.M)
+    def __compute_bounds__(self) -> None:
+        diff = {S: sorted(el.cost for el in self._queue_nt[S]) for S in self.G.rules}
+
+        values = {S: int(diff[S][-1] - diff[S][0]) for S in self.G.rules}
+        changed = True
+        while changed:
+            changed = False
+            for S in self.G.rules:
+                for P in self.G.rules[S]:
+                    maxi = max(
+                        (values[arg] for arg in self._non_terminal_for[S][P]), default=0
+                    )
+                    if maxi > values[S]:
+                        values[S] = maxi
+                        changed = True
+
+        # print("previous M:", self.M)
+        # print("new M:", values[self.G.start])
+        # print(self.G)
+        # for S, val in values.items():
+        #     print("S=", S, "M=", val)
         # Update queues
         for arg in self._queue_derivation:
             elems = []
@@ -223,11 +220,19 @@ class CDSearch(
             # print("before:", queue)
             while not queue.is_empty():
                 elems.append(queue.pop())
-            self._queue_derivation[arg] = CDQueue(self.M, queue.k, queue.precision)
+            # The max 1 is for a terminal rule where all derivations have same cost
+            M = max(1, max(values[X] for X in arg))
+            self._queue_derivation[arg] = CDQueue(M, queue.k - 1 if M > 1000 else M)
             elems = sorted(elems)
             while not (len(elems) == 0):
                 self._queue_derivation[arg].push(elems.pop(0))
             assert len(self._queue_derivation[arg]) == 1
+
+    def generator(self) -> Generator[Program, None, None]:
+        self._init_non_terminal_(self.G.start)
+        self._reevaluate_()
+        # Update M
+        self.__compute_bounds__()
 
         n = 0
         failed = False
@@ -262,6 +267,7 @@ class CDSearch(
         bank[cost_index] = []
         queue = self._queue_derivation[args]
         # print("before QUERY:", queue)
+        # print("\tS=", S)
 
         if not queue.is_empty():
             ct = queue.pop()
@@ -298,7 +304,7 @@ class CDSearch(
             # print(f"[BANK {args}][{cost_index}] = {bank[cost_index]}")
             if not queue.is_empty():
                 queue.update()
-                # print(queue)
+                # print("BEFORE PEEK:", queue)
                 self._cost_lists_derivation[args].append(queue.peek().cost)
         return bank[cost_index]
 
@@ -406,8 +412,8 @@ def enumerate_prob_grammar(
     Gp: ProbDetGrammar = ProbDetGrammar(
         G.grammar,
         {
-            S: {P: -np.log(p) for P, p in val.items() if p > 0}
+            S: {P: -int(np.log(p) * 1 / precision) for P, p in val.items() if p > 0}
             for S, val in G.probabilities.items()
         },
     )
-    return CDSearch(Gp, k=k, precision=precision)
+    return CDSearch(Gp, k=k)
