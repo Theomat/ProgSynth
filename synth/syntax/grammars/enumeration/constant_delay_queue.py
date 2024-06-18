@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Union, Any
 
 
 @dataclass(order=True, frozen=True)
@@ -9,9 +9,6 @@ class CostTuple:
 
     def __repr__(self) -> str:
         return f"({self.cost}, {self.combinations})"
-
-
-from colorama import Fore as F
 
 
 class CDQueue:
@@ -30,22 +27,30 @@ class CDQueue:
         # multiply otherwise when you get exactly maxi then it is equal to 0
         self.maxi = maxi * (k + 1) / k
         self.k = k + 1
+        self.mini: Optional[float] = None
+        self.cells: List[Tuple[int, Optional[Union[CostTuple, Any]]]] = [
+            (0, None) for _ in range(self.k)
+        ]
+        self.translation = 0
+        self.nelements = 0
+        self.start: Optional[float] = None
+        self.n = 0
         self.clear()
 
     def update(self) -> None:
         """
-        Update its internal representation., should be done after all elements have been pushed.
+        Update its internal representation, should be done after all elements have been pushed.
         """
         if self.nelements > 0:
             while self.cells[self.translation][0] == 0:
                 self.translation = (self.translation + 1) % self.k
                 self.n += 1
             if self.nelements == 1:
-                self.mini = self.cells[self.translation][1].cost
+                self.mini = self.cells[self.translation][1].cost  # type: ignore
                 self.start = self.mini
                 self.n = 0
             else:
-                self.mini = self.start + self.maxi * self.n / self.k
+                self.mini = self.start + self.maxi * self.n / self.k  # type: ignore
 
     def clear(self) -> None:
         """
@@ -87,7 +92,7 @@ class CDQueue:
         translation: int,
         add: bool = True,
     ) -> None:
-        stack = []
+        stack: List[Tuple[List[List[int]], int]] = []
         while True:
             unit = maxi / self.k
             lbi = int(cost / maxi * self.k)
@@ -143,7 +148,7 @@ class CDQueue:
                 translation = 0
         return
 
-    def __cleanup__(self, cells: Tuple, index: int) -> None:
+    def __cleanup__(self, cells: List[Tuple[int, Any]], index: int) -> None:
         # print(f"[CLEANUP] {F.LIGHTBLUE_EX}BEFORE{F.RESET}:", cells[index])
         n, _ = cells[index]
         if n > 1:
@@ -151,7 +156,7 @@ class CDQueue:
                 cells[index] = (1, self.__pop__(cells[index]))
                 # print("AFTER:", self)
             else:
-                cells[index][0] -= 1
+                cells[index][0] -= 1  # type: ignore
         else:
             cells[index] = (0, None)
         # print("[CLEANUP] AFTER:", cells[index])
@@ -161,18 +166,18 @@ class CDQueue:
         self.__cleanup__(self.cells, self.translation)
         self.nelements -= 1
         self.last_pop = popped
-        return popped
+        return popped  # type: ignore
 
-    def __pop__(self, cells) -> Optional[CostTuple]:
+    def __pop__(self, cells: Tuple[int, Any]) -> Optional[CostTuple]:
         nelems, val = cells
         if nelems <= 1:
-            return val
+            return val  # type: ignore
         for i, elem in enumerate(val):
             n, v = elem
             if n > 0:
                 if n == 1:
                     val[i] = (0, None)
-                    return v
+                    return v  # type: ignore
                 else:
                     popped = self.__pop__(elem)
                     if popped is not None:
@@ -187,17 +192,17 @@ class CDQueue:
         # assert content is not None
         popped = self.__peek__(self.cells[self.translation])
         # assert popped is not None
-        return popped
+        return popped  # type: ignore
 
     def __peek__(self, cells: Tuple) -> Optional[CostTuple]:
         nelems, val = cells
         if nelems <= 1:
-            return val
+            return val  # type: ignore
         for elem in val:
             n, v = elem
             if v is not None:
                 if n == 1:
-                    return v
+                    return v  # type: ignore
                 else:
                     popped = self.__peek__(elem)
                     if popped is not None:
@@ -207,7 +212,7 @@ class CDQueue:
     def size(self) -> int:
         return sum(self.__size__(el) for el in self.cells)
 
-    def __size__(self, cell) -> int:
+    def __size__(self, cell: Tuple) -> int:
         terminal, val = cell
         if val is None:
             return 0
@@ -221,7 +226,7 @@ class CDQueue:
 
     def __repr__(self) -> str:
         ordered = self.cells[self.translation :] + self.cells[: self.translation]
-        out = f"CDQueue[size={self.nelements}/{self.size()}, mini={self.mini}, maxi={self.mini + self.maxi * (self.k / (self.k + 1))}/{self.mini + self.maxi}, k={self.k}]\n\t{ordered}"
+        out = f"CDQueue[size={self.nelements}/{self.size()}, mini={self.mini}, maxi={self.mini + self.maxi * (self.k / (self.k + 1))}/{self.mini + self.maxi}, k={self.k}]\n\t{ordered}"  # type: ignore
         return out
 
     def __len__(self) -> int:

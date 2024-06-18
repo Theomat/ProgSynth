@@ -89,10 +89,14 @@ class CDSearch(
         self._non_terminal_for: Dict[
             Tuple[Type, U], Dict[DerivableProgram, Tuple[Tuple[Type, U]]]
         ] = {}
+        self._empties_nt: Dict[Tuple[Type, U], Set[int]] = {}
+        self._empties_derivation: Dict[Tuple[Tuple[Type, U]], Set[int]] = {}
+
         for S in self.G.grammar.rules:
             self._queue_nt[S] = []
             self._cost_lists_nt[S] = []
             self._bank_nt[S] = {}
+            self._empties_nt[S] = set()
             self._non_terminal_for[S] = {
                 P: tuple([(Sp[0], (Sp[1], None)) for Sp in self.G.rules[S][P][0]])  # type: ignore
                 for P in self.G.grammar.rules[S]
@@ -100,9 +104,10 @@ class CDSearch(
             for P in self.G.grammar.rules[S]:
                 args = self._non_terminal_for[S][P]
                 if args and args not in self._queue_derivation:
-                    self._queue_derivation[args] = CDQueue(self.M, k)
+                    self._queue_derivation[args] = CDQueue(int(self.M), k)
                     self._bank_derivation[args] = {}
                     self._cost_lists_derivation[args] = []
+                    self._empties_derivation[args] = set()
 
     def _peek_next_derivation_cost_(
         self, S: Tuple[Type, U], P: DerivableProgram
@@ -268,21 +273,32 @@ class CDSearch(
         queue = self._queue_derivation[args]
         # print("before QUERY:", queue)
         # print("\tS=", S)
+        no_successor = True
+        has_generated_program = False
 
         if not queue.is_empty():
             ct = queue.pop()
             # print("\t\tAFTER POP:", queue)
             # print("\t\tpopping:", ct)
             for combination in ct.combinations:
+                arg_gen_failed = False
+                is_allowed_empty = False
+                # is_allowed_empty => arg_gen_failed
                 args_possibles = []
                 for ci, Si in zip(combination, args):
-                    allowed_empty, elems = self._query_list_(Si, ci)
+                    one_is_allowed_empty, elems = self._query_list_(Si, ci)
+                    is_allowed_empty |= one_is_allowed_empty
                     if len(elems) == 0:
-                        break
+                        arg_gen_failed = True
+                        if not one_is_allowed_empty:
+                            break
                     args_possibles.append(elems)
-                if len(args_possibles) != len(combination):
+
+                failed_for_other_reasons = arg_gen_failed and not is_allowed_empty
+                no_successor = no_successor and failed_for_other_reasons
+                # a Non terminal as arg is finite and we reached the end of enumeration
+                if failed_for_other_reasons:
                     continue
-                bank[cost_index].append(args_possibles)
 
                 # add successors
                 for i in range(len(combination)):
@@ -300,8 +316,16 @@ class CDSearch(
                     # Avoid duplication with this condition
                     if index_cost[i] > 1:
                         break
+                if is_allowed_empty:
+                    continue
+                has_generated_program = True
+                bank[cost_index].append(args_possibles)
             # print("after QUERY:", queue)
             # print(f"[BANK {args}][{cost_index}] = {bank[cost_index]}")
+            if not has_generated_program:
+                # If we failed because of allowed empties we can tag this as allowed empty
+                if not no_successor:
+                    self._empties_derivation[args].add(cost_index)
             if not queue.is_empty():
                 queue.update()
                 # print("BEFORE PEEK:", queue)
@@ -317,6 +341,8 @@ class CDSearch(
         cost = self._cost_lists_nt[S][cost_index]
         bank = self._bank_nt[S]
         queue = self._queue_nt[S]
+        has_generated_program = False
+        no_successor = True
         while len(queue) > 0 and queue[0].cost == cost:
             element = heappop(queue)
             # print("[POP]:", element)
@@ -327,6 +353,7 @@ class CDSearch(
                 args_possibles = self.query_derivation(
                     S, element.P, element.combination
                 )
+                is_empty = element.combination in self._empties_derivation[args]
                 # Finite nonterminal check
                 if element.combination + 1 < len(self._cost_lists_derivation[args]):
                     next_cost = (
@@ -336,6 +363,9 @@ class CDSearch(
                     heappush(
                         queue, Derivation(next_cost, element.combination + 1, element.P)
                     )
+                    no_successor = False
+                if is_empty:
+                    continue
                 # Generate programs
                 for possibles in args_possibles:
                     # print("S", S, "P", element.P, "index:", element.combination, "args:", possibles)
@@ -346,6 +376,7 @@ class CDSearch(
                         elif not self._should_keep_subprogram(new_program):
                             self._deleted.add(new_program)
                             continue
+                        has_generated_program = True
                         bank[cost_index].append(new_program)
                         yield new_program
             else:
@@ -356,8 +387,12 @@ class CDSearch(
                     self._deleted.add(new_program)
                     continue
                 bank[cost_index].append(new_program)
+                has_generated_program = True
                 yield new_program
-
+        if not has_generated_program:
+            if not no_successor:
+                self._failed_by_empties = True
+                self._empties_nt[S].add(cost_index)
         if len(queue) > 0:
             next_cost = queue[0].cost
             self._cost_lists_nt[S].append(next_cost)
@@ -369,8 +404,8 @@ class CDSearch(
         returns is_allowed_empty, programs
         """
         # It's an empty cost index but a valid one
-        # if cost_index in self._empties[S]:
-        # return True, []
+        if cost_index in self._empties_nt[S]:
+            return True, []
         if cost_index >= len(self._cost_lists_nt[S]):
             return False, []
         bank = self._bank_nt[S]
@@ -378,8 +413,8 @@ class CDSearch(
             return False, bank[cost_index]
         for x in self.query(S, cost_index):
             pass
-        # if cost_index in self._empties[S]:
-        # return True, []
+        if cost_index in self._empties_nt[S]:
+            return True, []
         return False, bank[cost_index]
 
     def merge_program(self, representative: Program, other: Program) -> None:
