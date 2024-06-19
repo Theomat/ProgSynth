@@ -14,7 +14,9 @@ from synth.syntax import (
     ProgramEnumerator,
     auto_type,
 )
-
+from synth.syntax.grammars.enumeration.constant_delay import (
+    enumerate_prob_grammar as cd,
+)
 import tqdm
 import timeout_decorator
 
@@ -22,6 +24,9 @@ SEARCH_ALGOS = {
     "bee_search": bs_enumerate_prob_grammar,
     "beap_search": bps_enumerate_prob_grammar,
     "heap_search": hs_enumerate_prob_grammar,
+    "cd4": lambda x: cd(x, k=4),
+    "cd12": lambda x: cd(x, k=12),
+    "cd100": lambda x: cd(x, k=100),
 }
 
 parser = argparse.ArgumentParser(
@@ -150,7 +155,7 @@ def enumerative_search(
     derivation_rules = sum(len(pcfg.rules[S]) for S in pcfg.rules)
     used_time = 0
 
-    pbar = tqdm.tqdm(total=programs, desc=title or name)
+    pbar = tqdm.tqdm(total=programs, desc=title or name, smoothing=0)
     enumerator = custom_enumerate(pcfg)
     gen = enumerator.generator()
     program = 1
@@ -276,11 +281,10 @@ if __name__ == "__main__":
             "1": "s1",
         }
         for i in range(2, non_terminals + 1):
-            syntax[f"cast{i}"] = f"s1 -> s{i}"
-            syntax[f"cst{i}"] = f"s{i}"
-        syntax["+"] = (
-            "->".join(map(lambda x: f"s{x}", list(range(2, non_terminals)))) + "-> s1"
-        )
+            syntax[f"cast{i}"] = f"s{i} -> s1"
+            syntax[f"s{i}"] = f"s{i}"
+            syntax[f"+{i}"] = f"s1 -> s{i} -> s{i}"
+            syntax[f"*{i}"] = f"s{i-1} -> s{i} -> s{i+1} -> s{i}"
         cfg = CFG.infinite(DSL(auto_type(syntax)), auto_type("s1->s1"), n_gram=1)
         pcfg = ProbDetGrammar.uniform(cfg)
         for name, enum in SEARCH_ALGOS.items():
