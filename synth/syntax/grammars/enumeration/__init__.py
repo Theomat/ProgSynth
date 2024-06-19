@@ -15,3 +15,8 @@ from synth.syntax.grammars.enumeration.bee_search import (
 from synth.syntax.grammars.enumeration.beap_search import (
     enumerate_prob_grammar as bps_enumerate_prob_grammar,
 )
+from synth.syntax.grammars.enumeration.constant_delay import (
+    enumerate_prob_grammar as cd_enumerate_prob_grammar,
+)
+
+enumerate_prob_grammar = cd_enumerate_prob_grammar
