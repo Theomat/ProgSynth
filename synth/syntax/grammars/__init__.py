@@ -11,6 +11,7 @@ from synth.syntax.grammars.enumeration import (
     hs_enumerate_prob_u_grammar,
     hs_enumerate_bucket_prob_grammar,
     hs_enumerate_bucket_prob_u_grammar,
+    cd_enumerate_prob_grammar,
     split,
 )
 from synth.syntax.grammars.u_grammar import UGrammar

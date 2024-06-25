@@ -23,6 +23,7 @@ from synth.syntax import (
     hs_enumerate_prob_u_grammar,
     hs_enumerate_bucket_prob_grammar,
     hs_enumerate_bucket_prob_u_grammar,
+    cd_enumerate_prob_grammar,
     ProgramEnumerator,
     Type,
     CFG,
@@ -53,6 +54,7 @@ for meta_solver in [RestartPBESolver]:
         )
 
 SEARCH_ALGOS = {
+    "cd_search": (lambda x: cd_enumerate_prob_grammar(x, 20), None),
     "beap_search": (bps_enumerate_prob_grammar, None),
     "heap_search": (hs_enumerate_prob_grammar, hs_enumerate_prob_u_grammar),
     "bucket_search": (
