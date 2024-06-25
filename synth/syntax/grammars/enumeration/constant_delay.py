@@ -146,7 +146,7 @@ class CDSearch(
             args = self._non_terminal_for[S][P]
             if args:
                 self._init_derivation_(S, P)
-                base_cost = self._queue_derivation[args].peek().cost
+                base_cost = self._cost_lists_derivation[args][0]
             else:
                 base_cost = 0
             heappush(queue, Derivation(base_cost + self.G.probabilities[S][P], 0, P))
@@ -173,8 +173,6 @@ class CDSearch(
             self._cost_lists_derivation[args][0] = queue.peek().cost
 
     def _reevaluate_(self) -> None:
-        if not self.cfg.is_recursive():
-            return
         changed = True
         while changed:
             changed = False
