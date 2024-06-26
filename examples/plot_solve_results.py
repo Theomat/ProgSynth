@@ -67,7 +67,7 @@ def load_data(
             # Pop columns names
             columns = {name: ind for ind, name in enumerate(trace.pop(0))}
             indices = [
-                columns["solved"],
+                columns["solution"],
                 columns["time"],
                 columns["programs"],
                 columns.get("merged", -1),
@@ -77,7 +77,7 @@ def load_data(
             # Type conversion (success, time, num_of_programs)
             trace = [
                 (
-                    int(row[0] == "True"),
+                    len(row[0]) > 1,
                     float(row[1]),
                     int(row[2]),
                     int(row[3]),
