@@ -51,12 +51,16 @@ parser.add_argument(
 parser.add_argument(
     "-t", "--timeout", type=int, default=300, help="timeout in seconds (default: 300)"
 )
+parser.add_argument(
+    "-s", "--seed", type=int, default=-1, help="seed (default: -1, uniform)"
+)
 
 
 parameters = parser.parse_args()
 output_file: str = parameters.output
 programs: int = parameters.n
 timeout: int = parameters.timeout
+seed: int = parameters.seed
 # max_rules: int = parameters.max_rules
 max_non_terminals: int = parameters.max_non_terminals
 
@@ -84,7 +88,8 @@ def summary_enumerative_search(
     programs: int,
     timeout: int = 300,
     title: Optional[str] = None,
-) -> Tuple[str, int, int, float, int, int, int]:
+    seed: int = -1,
+) -> Tuple[str, int, int, float, int, int, int, int]:
     n = 0
     non_terminals = len(pcfg.rules)
     derivation_rules = sum(len(pcfg.rules[S]) for S in pcfg.rules)
@@ -134,6 +139,7 @@ def summary_enumerative_search(
         datum_each,
         int(enumerator.programs_in_queues() * factor),
         int(enumerator.programs_in_banks() * factor),
+        seed,
     )
 
 
@@ -146,9 +152,10 @@ def enumerative_search(
     programs: int,
     timeout: int = 300,
     title: Optional[str] = None,
+    seed: int = -1,
 ) -> Tuple[
-    Tuple[str, int, int, float, int, int, int],
-    List[Tuple[str, int, int, float, int, int, int]],
+    Tuple[str, int, int, float, int, int, int, int],
+    List[Tuple[str, int, int, float, int, int, int, int]],
 ]:
     n = 0
     non_terminals = len(pcfg.rules)
@@ -192,6 +199,7 @@ def enumerative_search(
                         n,
                         enumerator.programs_in_queues(),
                         enumerator.programs_in_banks(),
+                        seed,
                     )
                 )
                 rem_time = timeout - used_time / 1e9
@@ -211,6 +219,7 @@ def enumerative_search(
         target_generation_speed,
         int(enumerator.programs_in_queues() * factor),
         int(enumerator.programs_in_banks() * factor),
+        seed,
     ), detailed
 
 
@@ -253,6 +262,7 @@ if __name__ == "__main__":
             "programs",
             "queue",
             "bank",
+            "seed",
         )
     ]
     detailed_trace = [
@@ -264,6 +274,7 @@ if __name__ == "__main__":
             "programs",
             "queue",
             "bank",
+            "seed",
         )
     ]
     print("Working on non terminals scaling")
@@ -286,7 +297,10 @@ if __name__ == "__main__":
             syntax[f"+{i}"] = f"s1 -> s{i} -> s{i}"
             syntax[f"*{i}"] = f"s{i-1} -> s{i} -> s{i+1} -> s{i}"
         cfg = CFG.infinite(DSL(auto_type(syntax)), auto_type("s1->s1"), n_gram=1)
-        pcfg = ProbDetGrammar.uniform(cfg)
+        if seed < 0:
+            pcfg = ProbDetGrammar.uniform(cfg)
+        else:
+            pcfg = ProbDetGrammar.random(cfg, seed=seed)
         for name, enum in SEARCH_ALGOS.items():
             if first:
                 summary, detailed = enumerative_search(
@@ -296,6 +310,7 @@ if __name__ == "__main__":
                     programs,
                     timeout=timeout,
                     title=f"{name}-{non_terminals}",
+                    seed=seed,
                 )  # type: ignore
                 summary_trace.append(summary)
                 detailed_trace += detailed
@@ -308,6 +323,7 @@ if __name__ == "__main__":
                         programs,
                         timeout=timeout,
                         title=f"{name}-{non_terminals}",
+                        seed=seed,
                     )  # type: ignore
                 )
         save(summary_trace, file_name + "_growth.csv")
