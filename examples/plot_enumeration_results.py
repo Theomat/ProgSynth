@@ -44,21 +44,26 @@ def load_data(output_file: str, verbose: bool = False) -> Dict[str, Dict[int, Li
             columns["bank"],
             columns["non_terminals"],
             columns["derivation_rules"],
+            columns.get("seed", -1),
         ]
-        data = [tuple(row[k] for k in indices) for row in trace]
+        data = [tuple(row[k] if k >= 0 else 0 for k in indices) for row in trace]
         if len(data) == 0:
             if verbose:
                 print(f"filename:{output_file} is empty!")
             return {}
-        agg = defaultdict(list)
+        agg = defaultdict(dict)
         for row in data:
-            agg[row[0]].append(row[1:])
+            seed = int(row[-1])
+            if seed not in agg[row[0]]:
+                agg[row[0]][seed] = []
+            agg[row[0]][seed].append(row[1:-1])
         for name, data in agg.items():
             name = name.replace("_", " ")
             if name not in methods:
                 methods[name] = {}
             # Save data for method
-            methods[name][1] = [tuple(float(x) for x in row) for row in data]
+            for seed, vals in data.items():
+                methods[name][seed] = [tuple(float(x) for x in row) for row in vals]
             # Backend support onl yseeded data so we register every data as seed 1
     return methods
 
