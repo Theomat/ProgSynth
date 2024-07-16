@@ -27,6 +27,7 @@ def load_data(
     all_solver = set()
 
     summary = {}
+    max_len = 0
 
     for file in glob(os.path.join(output_folder, "*.csv")):
         filename = os.path.relpath(file, output_folder)
@@ -99,6 +100,7 @@ def load_data(
             summary[seed] = {}
         solved = sum(x[0] for x in trace)
         summary[seed][name] = (solved, len(trace))
+        max_len = max(max_len, len(trace))
         if verbose:
             print(
                 f"{name} (seed={seed}) solved",
@@ -120,7 +122,10 @@ def load_data(
             k.replace(solver, "").strip(" ").capitalize(): v for k, v in methods.items()
         }
     for seed in sorted(summary):
-        print(f"{F.BLUE}seed", seed, F.RESET)
+        finished = sum(
+            1 for solved, total in summary[seed].values() if total == max_len
+        )
+        print(f"seed {F.LIGHTBLUE_EX}{seed}{F.RESET} ({finished}/{len(summary[seed])})")
         for name, (solved, total) in sorted(summary[seed].items()):
             if len(to_replace) > 0:
                 name = name.replace(to_replace, "").strip()
