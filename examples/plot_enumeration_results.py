@@ -13,7 +13,7 @@ from plot_helper import (
 __DATA__ = {
     "time": (0, "Time (in s)"),
     "programs": (1, "Programs Enumerated"),
-    "queued": (2, "Programs Enqueued"),
+    "queued": (2, "Queue Size"),
     "banked": (3, "Programs in Banks"),
     "non_terminals": (4, "Non Terminals in Grammar"),
     "rules": (5, "Derivation Rules in Grammar"),
