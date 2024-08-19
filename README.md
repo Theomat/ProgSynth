@@ -100,11 +100,12 @@ There are some known issues:
 
 - **seed = 0** is the **same as no seeding**.
 - if you get an error after installation try to update/upgrade ``numpy``, it is often due to a discrepancy between the version with which ``vose`` is compiled and the version the environment is running.
+- **if you have issues with ``vose``**, you can just uninstall ``vose``, generation speed will be slower but everything will work.
 - some dependencies may be missing depending on the DSL you want to use, running any example script with -h will list you the list of available DSL with your current installation.
 
 ## The Team
 
-ProgSynth is a project initiated by [Nathanaël Fijalkow](https://nathanael-fijalkow.github.io/) and joined by [Théo Matricon](https://theomat.github.io/).
+ProgSynth is a project initiated by [Nathanaël Fijalkow](https://nathanael-fijalkow.github.io/) and by [Théo Matricon](https://theomat.github.io/).
 It is based on the [DeepSynth](https://github.com/nathanael-fijalkow/DeepSynth) project of [Nathanaël Fijalkow](https://nathanael-fijalkow.github.io/), [Guillaume Lagarde](https://guillaume-lagarde.github.io/), [Théo Matricon](https://theomat.github.io/), [Kevin Ellis](https://www.cs.cornell.edu/~ellisk/), [Pierre Ohlmann](https://www.irif.fr/~ohlmann/), Akarsh Potta
 
 Former:
