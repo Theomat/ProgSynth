@@ -14,7 +14,7 @@ from typing import (
 )
 
 import numpy as np
-import vose
+from synth.utils.vose_polyfill import Sampler as VoseSampler
 
 if TYPE_CHECKING:
     from synth.syntax.grammars.cfg import CFG
@@ -165,7 +165,7 @@ class ProbDetGrammar(TaggedDetGrammar[float, U, V, W]):
 
         for i, S in enumerate(self.tags):
             P_list = list(self.tags[S].keys())
-            self.vose_samplers[S] = vose.Sampler(
+            self.vose_samplers[S] = VoseSampler(
                 np.array(
                     [self.tags[S][P] for P in P_list],
                     dtype=float,

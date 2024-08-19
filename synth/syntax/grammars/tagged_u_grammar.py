@@ -11,7 +11,7 @@ from typing import (
 )
 
 import numpy as np
-import vose
+from synth.utils.vose_polyfill import Sampler as VoseSampler
 
 from synth.syntax.grammars.det_grammar import DerivableProgram
 from synth.syntax.grammars.u_grammar import UGrammar
@@ -183,7 +183,7 @@ class ProbUGrammar(TaggedUGrammar[float, U, V, W]):
 
         for i, S in enumerate(self.tags):
             P_list = list(self.tags[S].keys())
-            self.vose_samplers[S] = vose.Sampler(
+            self.vose_samplers[S] = VoseSampler(
                 np.array(
                     [sum(p for p in self.tags[S][P].values()) for P in P_list],
                     dtype=float,
@@ -192,7 +192,7 @@ class ProbUGrammar(TaggedUGrammar[float, U, V, W]):
             )
             self._vose_samplers_2[S] = {}
             for P in P_list:
-                self._vose_samplers_2[S][P] = vose.Sampler(
+                self._vose_samplers_2[S][P] = VoseSampler(
                     np.array(
                         [p for p in self.tags[S][P].values()],
                         dtype=float,
@@ -202,7 +202,7 @@ class ProbUGrammar(TaggedUGrammar[float, U, V, W]):
                 )
             self.sampling_map[S] = P_list
         self._int2start = list(self.starts)
-        self._start_sampler = vose.Sampler(
+        self._start_sampler = VoseSampler(
             np.array(
                 [v for v in self.start_tags.values()],
                 dtype=float,

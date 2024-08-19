@@ -14,7 +14,7 @@ from typing import (
 import copy
 
 import numpy as np
-import vose
+from synth.utils.vose_polyfill import Sampler as VoseSampler
 
 from synth.syntax.type_system import List, Type
 
@@ -53,7 +53,7 @@ class LexiconSampler(Sampler[U]):
             filled_probabilities = probabilites
         else:
             filled_probabilities = [1 / len(self.lexicon) for _ in lexicon]
-        self.sampler = vose.Sampler(np.asarray(filled_probabilities), seed=seed)
+        self.sampler = VoseSampler(np.asarray(filled_probabilities), seed=seed)
 
     def sample(self, **kwargs: Any) -> U:
         index: int = self.sampler.sample()
@@ -104,7 +104,7 @@ class ListSampler(RequestSampler[Union[TList, U]]):
             if not isinstance(probabilities[0], tuple):
                 correct_prob = [(i + 1, p) for i, p in enumerate(probabilities)]  # type: ignore
             self._length_mapping = [n for n, _ in correct_prob]
-            self.sampler = vose.Sampler(
+            self.sampler = VoseSampler(
                 np.array([p for _, p in correct_prob]), seed=seed
             )
 
