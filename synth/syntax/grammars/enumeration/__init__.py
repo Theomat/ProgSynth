@@ -18,5 +18,8 @@ from synth.syntax.grammars.enumeration.beap_search import (
 from synth.syntax.grammars.enumeration.constant_delay import (
     enumerate_prob_grammar as cd_enumerate_prob_grammar,
 )
+from synth.syntax.grammars.enumeration.a_star import (
+    enumerate_prob_grammar as as_enumerate_prob_grammar,
+)
 
 enumerate_prob_grammar = cd_enumerate_prob_grammar

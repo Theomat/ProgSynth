@@ -24,6 +24,7 @@ from synth.syntax import (
     hs_enumerate_bucket_prob_grammar,
     hs_enumerate_bucket_prob_u_grammar,
     cd_enumerate_prob_grammar,
+    as_enumerate_prob_grammar,
     ProgramEnumerator,
     Type,
     CFG,
@@ -62,6 +63,7 @@ SEARCH_ALGOS = {
         lambda x: hs_enumerate_bucket_prob_u_grammar(x, 3),
     ),
     "bee_search": (bs_enumerate_prob_grammar, None),
+    "a_star": (as_enumerate_prob_grammar, None),
 }
 
 PRUNING = {"dfta", "obs-eq"}
