@@ -34,6 +34,7 @@ from synth.filter.constraints import add_dfta_constraints
 from synth.syntax.program import Program
 from synth.task import Task
 from synth.utils import load_object
+from synth.utils.data_storage import legacy_load_object
 from synth.utils.import_utils import import_file_function
 from synth.pbe.solvers import (
     NaivePBESolver,
@@ -296,7 +297,10 @@ def load_pcfgs(
     pcfg_file: Optional[str],
 ) -> Union[List[ProbDetGrammar], List[ProbUGrammar]]:
     if pcfg_file is not None:
-        return load_object(pcfg_file)
+        if constrained:
+            return legacy_load_object(pcfg_file)
+        else:
+            return load_object(pcfg_file)
     pcfgs = []
     for task in full_dataset:
         constant_types = set()

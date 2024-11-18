@@ -20,6 +20,7 @@ from synth import Dataset, PBE
 from synth.filter import add_dfta_constraints
 from synth.syntax import CFG, UCFG, ProbDetGrammar, ProbUGrammar, DSL, Type
 from synth.utils import load_object, save_object
+from synth.utils.data_storage import legacy_save_object
 
 
 parser = argparse.ArgumentParser(
@@ -187,7 +188,10 @@ def produce_pcfgs(
     # ================================
     def save_pcfgs() -> None:
         print("Saving PCFGs...", end="")
-        save_object(file, pcfgs)
+        if constrained:
+            legacy_save_object(file, pcfgs)
+        else:
+            save_object(file, pcfgs, compress_level=9)
         print("done!")
 
     atexit.register(save_pcfgs)
