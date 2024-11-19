@@ -11,6 +11,7 @@ from synth.syntax import (
     hs_enumerate_prob_grammar,
     bs_enumerate_prob_grammar,
     bps_enumerate_prob_grammar,
+    as_enumerate_prob_grammar,
     ProgramEnumerator,
     auto_type,
 )
@@ -21,12 +22,13 @@ import tqdm
 import timeout_decorator
 
 SEARCH_ALGOS = {
+    "a_star": as_enumerate_prob_grammar,
     "bee_search": bs_enumerate_prob_grammar,
     "beap_search": bps_enumerate_prob_grammar,
     "heap_search": hs_enumerate_prob_grammar,
     "cd4": lambda x: cd(x, k=4),
-    "cd12": lambda x: cd(x, k=12),
-    "cd100": lambda x: cd(x, k=100),
+    "cd16": lambda x: cd(x, k=16),
+    "cd64": lambda x: cd(x, k=64),
 }
 
 parser = argparse.ArgumentParser(
@@ -49,6 +51,11 @@ parser.add_argument(
     dest="max_non_terminals", type=int, help="maximum number of non terminals"
 )
 parser.add_argument(
+    dest="scaling",
+    choices=["distance", "nonterminals", "derivations"],
+    help="maximum number of non terminals",
+)
+parser.add_argument(
     "-t", "--timeout", type=int, default=300, help="timeout in seconds (default: 300)"
 )
 parser.add_argument(
@@ -61,9 +68,8 @@ output_file: str = parameters.output
 programs: int = parameters.n
 timeout: int = parameters.timeout
 seed: int = parameters.seed
-# max_rules: int = parameters.max_rules
+scaling: str = parameters.scaling
 max_non_terminals: int = parameters.max_non_terminals
-
 file_name = output_file[: -len(".csv")] if output_file.endswith(".csv") else output_file
 
 
@@ -225,6 +231,41 @@ def enumerative_search(
 
 # Main ====================================================================
 
+
+def gen_distance(non_terminals: int) -> CFG:
+    syntax = {
+        "1": "s1",
+    }
+    for i in range(2, non_terminals + 1):
+        syntax[f"cast{i}"] = f"s{i} -> s1"
+        syntax[f"s{i}"] = f"s{i}"
+        syntax[f"+{i}"] = f"s1 -> s{i} -> s{i}"
+        syntax[f"*{i}"] = f"s{i-1} -> s{i} -> s{i+1} -> s{i}"
+    return CFG.infinite(DSL(auto_type(syntax)), auto_type("s1->s1"), n_gram=1)
+
+
+def gen_nonterminals(non_terminals: int) -> CFG:
+    syntax = {
+        "1": "s1",
+    }
+    for i in range(2, non_terminals + 1):
+        syntax[f"cast{i}"] = f"s{i} -> s1"
+        syntax[f"s{i}"] = f"s{i}"
+        syntax[f"+{i}"] = f"s1 -> s{i}"
+    return CFG.infinite(DSL(auto_type(syntax)), auto_type("s1->s1"), n_gram=1)
+
+
+def gen_derivations(non_terminals: int) -> CFG:
+    syntax = {
+        "1": "s1",
+    }
+    for i in range(2, non_terminals + 1):
+        syntax[f"m{i}"] = f"s1 -> s1 -> s1"
+        syntax[f"f{i}"] = f"s1 -> s1"
+        syntax[f"s{i}"] = f"s1"
+    return CFG.infinite(DSL(auto_type(syntax)), auto_type("s1->s1"), n_gram=1)
+
+
 if __name__ == "__main__":
     # trace_rules = [
     #     (
@@ -253,6 +294,11 @@ if __name__ == "__main__":
     #         )
     #     save(trace_rules, file_name + "_rules.csv")
     # print("csv file was saved as:", file_name + "_rules.csv")
+    gene = {
+        "distance": gen_distance,
+        "nonterminals": gen_nonterminals,
+        "derivations": gen_derivations,
+    }
     summary_trace = [
         (
             "search",
@@ -288,15 +334,7 @@ if __name__ == "__main__":
         non_terminals_values.append(last)
     first = True
     for non_terminals in non_terminals_values:
-        syntax = {
-            "1": "s1",
-        }
-        for i in range(2, non_terminals + 1):
-            syntax[f"cast{i}"] = f"s{i} -> s1"
-            syntax[f"s{i}"] = f"s{i}"
-            syntax[f"+{i}"] = f"s1 -> s{i} -> s{i}"
-            syntax[f"*{i}"] = f"s{i-1} -> s{i} -> s{i+1} -> s{i}"
-        cfg = CFG.infinite(DSL(auto_type(syntax)), auto_type("s1->s1"), n_gram=1)
+        cfg = gene[scaling](non_terminals)
         if seed < 0:
             pcfg = ProbDetGrammar.uniform(cfg)
         else:
