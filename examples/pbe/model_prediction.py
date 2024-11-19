@@ -20,7 +20,7 @@ from synth import Dataset, PBE
 from synth.filter import add_dfta_constraints
 from synth.syntax import CFG, UCFG, ProbDetGrammar, ProbUGrammar, DSL, Type
 from synth.utils import load_object, save_object
-from synth.utils.data_storage import legacy_save_object
+from synth.utils.data_storage import legacy_save_object, legacy_load_object
 
 
 parser = argparse.ArgumentParser(
@@ -133,7 +133,10 @@ def produce_pcfgs(
     file = os.path.join(dir, f"pcfgs_{dataset_name}_{model_name}.pickle")
     pcfgs: Union[List[ProbDetGrammar], List[ProbUGrammar]] = []
     if os.path.exists(file):
-        pcfgs = load_object(file)
+        if constrained:
+            pcfgs = legacy_load_object(file)
+        else:
+            pcfgs = load_object(file)
     tasks = full_dataset.tasks
     tasks = [
         t
