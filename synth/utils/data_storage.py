@@ -31,10 +31,7 @@ def save_object(
         fd.write(content)
 
 
-
-def legacy_load_object(
-    path: str, **kwargs: Any
-) -> Any:
+def legacy_load_object(path: str, **kwargs: Any) -> Any:
     """
     DEPRECATED
     Load an arbitrary object from the specified file.
@@ -43,9 +40,7 @@ def legacy_load_object(
         return pickle.load(fd)
 
 
-def legacy_save_object(
-    path: str, obj: Any, **kwargs: Any
-) -> None:
+def legacy_save_object(path: str, obj: Any, **kwargs: Any) -> None:
     """
     DEPRECATED
     Save an arbitrary object to the specified path.
