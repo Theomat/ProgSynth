@@ -9,6 +9,7 @@ from dsl_loader import add_dsl_choice_arg, load_DSL
 
 from synth import Dataset, PBE
 from synth.pbe.task_generator import TaskGenerator
+from synth.semantic import DSLEvaluator
 from synth.utils import chrono
 from synth.syntax import CFG, Type, Program
 
@@ -156,6 +157,8 @@ def generate_programs_and_samples_for(
         prog, unique = task_generator.generate_program(tr)
         while not unique:
             prog, unique = task_generator.generate_program(tr)
+        if isinstance(task_generator.evaluator, DSLEvaluator):
+            prog = task_generator.evaluator.compress(prog)
         programs.add(prog)
     # Phase 2
     samples, equiv = generate_samples_for(
@@ -173,6 +176,8 @@ def generate_programs_and_samples_for(
         prog, unique = task_generator.generate_program(tr)
         while not unique:
             prog, unique = task_generator.generate_program(tr)
+        if isinstance(task_generator.evaluator, DSLEvaluator):
+            prog = task_generator.evaluator.compress(prog)
         # Compute semantic hash
         cl = None
         has_none = False

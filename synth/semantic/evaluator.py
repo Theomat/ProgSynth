@@ -36,6 +36,26 @@ class DSLEvaluator(Evaluator):
         self._total_requests = 0
         self._cache_hits = 0
 
+    def compress(self, program: Program) -> Program:
+        """
+        Return a semantically equivalent version of the program by evaluating constant expressions.
+        Note for data saving/loading purposes, partial applications are left untouched.
+        """
+        if isinstance(program, Function):
+            args = [self.compress(p) for p in program.arguments]
+            if len(program.type.returns().arguments()) == 0 and all(
+                a.is_constant() for a in args
+            ):
+                before = self.use_cache
+                self.use_cache = False
+                value = self.eval(program, [])
+                self.use_cache = before
+                return Constant(program.type.returns(), value, True)
+            else:
+                return Function(program.function, args)
+        else:
+            return program
+
     def eval(self, program: Program, input: List) -> Any:
         key = __tuplify__(input)
         if self.use_cache and key not in self._cache:
