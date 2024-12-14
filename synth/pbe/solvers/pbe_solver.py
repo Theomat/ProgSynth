@@ -89,7 +89,7 @@ class PBESolver(ABC):
                         self._close_task_solving_(
                             task, enumerator, time, False, program
                         )
-                        return
+                        return False
                     self._programs += 1
                     if self._test_(task, program):
                         should_stop = yield program
@@ -97,7 +97,7 @@ class PBESolver(ABC):
                             self._close_task_solving_(
                                 task, enumerator, time, True, program
                             )
-                            return
+                            return True
             except StopIteration as e:
                 self._close_task_solving_(task, enumerator, time, False, program)
                 raise e
