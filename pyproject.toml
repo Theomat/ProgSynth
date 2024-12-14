@@ -5,7 +5,7 @@ description = "Automated Synthesis Framework"
 authors = ["Théo Matricon <theomatricon@gmail.com>", "Nathanaël Fijalkow <nathanael.fijalkow@gmail.com>"]
 license = "MIT"
 readme = "README.md"
-repository = "https://github.com/nathanael-fijalkow/AutoSynth"
+repository = "https://github.com/SynthesisLab/DeepSynth2"
 
 [tool.poetry.dependencies]
 python = ">=3.8"
