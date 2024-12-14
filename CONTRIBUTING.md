@@ -1,4 +1,4 @@
-# Contributing to ProgSynth
+# Contributing to DeepSynth2
 
 Feel free to open an issue or pull request if you have any questions or suggestions.
 If you plan to work on an issue, let us know in the issue thread so we can avoid duplicate work.
