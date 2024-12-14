@@ -15,7 +15,6 @@ from synth.syntax import (
     ProgramEnumerator,
     auto_type,
 )
-from synth.syntax.grammars.det_grammar import DetGrammar
 from synth.syntax.grammars.enumeration.constant_delay import (
     enumerate_prob_grammar as cd,
 )
@@ -23,13 +22,13 @@ import tqdm
 import timeout_decorator
 
 SEARCH_ALGOS = {
-    # "a_star": as_enumerate_prob_grammar,
-    # "bee_search": bs_enumerate_prob_grammar,
+    "a_star": as_enumerate_prob_grammar,
+    "bee_search": bs_enumerate_prob_grammar,
     "beap_search": bps_enumerate_prob_grammar,
-    # "heap_search": hs_enumerate_prob_grammar,
-    # "cd4": lambda x: cd(x, k=4),
-    # "cd16": lambda x: cd(x, k=16),
-    # "cd64": lambda x: cd(x, k=64),
+    "heap_search": hs_enumerate_prob_grammar,
+    "cd4": lambda x: cd(x, k=4),
+    "cd16": lambda x: cd(x, k=16),
+    "cd64": lambda x: cd(x, k=64),
 }
 
 parser = argparse.ArgumentParser(
@@ -164,8 +163,6 @@ def enumerative_search(
     Tuple[str, int, int, float, int, int, int, int],
     List[Tuple[str, int, int, float, int, int, int, int]],
 ]:
-    import numpy as np
-
     n = 0
     non_terminals = len(pcfg.rules)
     derivation_rules = sum(len(pcfg.rules[S]) for S in pcfg.rules)
@@ -174,11 +171,9 @@ def enumerative_search(
     pbar = tqdm.tqdm(total=programs, desc=title or name, smoothing=0)
     enumerator = custom_enumerate(pcfg)
     gen = enumerator.generator()
-    det_g = pcfg.grammar
-    assert isinstance(det_g, DetGrammar)
     program = 1
-    datum_each = 10000
-    target_generation_speed = 10000
+    datum_each = 100000
+    target_generation_speed = 1000000
     start = 0
     detailed = []
     try:
@@ -189,15 +184,9 @@ def enumerative_search(
         get_next = timeout_decorator.timeout(timeout, timeout_exception=StopIteration)(
             fun
         )
-        last_multiset = None
-        max_dist = -1
         start = time.perf_counter_ns()
         while program is not None:
             program = get_next()
-            new_m = det_g.to_multiset(program)
-            if last_multiset is not None:
-                max_dist = max(np.sum(np.abs(new_m - last_multiset)), max_dist)
-            last_multiset = new_m
             n += 1
             if n % datum_each == 0 or n >= programs:
                 used_time = time.perf_counter_ns() - start
@@ -211,7 +200,7 @@ def enumerative_search(
                     (
                         name,
                         non_terminals,
-                        max_dist,
+                        derivation_rules,
                         used_time / 1e9,
                         n,
                         enumerator.programs_in_queues(),

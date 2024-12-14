@@ -61,7 +61,7 @@ class RestartPBESolver(MetaPBESolver):
 
     def solve(
         self, task: Task[PBE], enumerator: ProgramEnumerator[None], timeout: float = 60
-    ) -> Generator[Program, None, bool]:
+    ) -> Generator[Program, bool, None]:
         with chrono.clock(f"solve.{self.name()}.{self.subsolver.name()}") as c:  # type: ignore
             self._enumerator = enumerator
             self._init_task_solving_(task, self._enumerator, timeout)
@@ -73,7 +73,7 @@ class RestartPBESolver(MetaPBESolver):
                     self._close_task_solving_(
                         task, self._enumerator, time, False, program
                     )
-                    return False
+                    return
                 self._programs += 1
                 if self._test_(task, program):
                     should_stop = yield program
@@ -81,7 +81,7 @@ class RestartPBESolver(MetaPBESolver):
                         self._close_task_solving_(
                             task, self._enumerator, time, True, program
                         )
-                        return True
+                        return
                 self._score = self.subsolver._score
                 # Saves data
                 if self._score > 0:
@@ -92,7 +92,6 @@ class RestartPBESolver(MetaPBESolver):
                     self._enumerator = self._restart_(self._enumerator)
                     gen = self._enumerator.generator()
                 program = next(gen)
-        return False
 
     def _should_restart_(self) -> bool:
         return self.restart_criterion(self)

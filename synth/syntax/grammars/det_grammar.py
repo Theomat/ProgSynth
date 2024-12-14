@@ -11,7 +11,7 @@ from typing import (
     Generic,
 )
 from functools import lru_cache
-import numpy as np
+import copy
 
 from synth.syntax.grammars.grammar import DerivableProgram, Grammar
 from synth.syntax.program import Constant, Function, Primitive, Program, Variable
@@ -21,13 +21,6 @@ U = TypeVar("U")
 V = TypeVar("V")
 W = TypeVar("W")
 T = TypeVar("T")
-
-
-def __tuplify__(element: Any) -> Any:
-    if isinstance(element, (List, Tuple)):
-        return tuple(__tuplify__(x) for x in element)
-    else:
-        return element
 
 
 class DetGrammar(Grammar, ABC, Generic[U, V, W]):
@@ -61,14 +54,6 @@ class DetGrammar(Grammar, ABC, Generic[U, V, W]):
         self.type_request = self._guess_type_request_()
         if clean:
             self.clean()
-        self._derivation2index = {}
-        self._index2derivation = []
-
-        for S in self.rules:
-            for P, args in self.rules[S].items():
-                elem = __tuplify__((S, P, args))
-                self._derivation2index[elem] = len(self._index2derivation)
-                self._index2derivation.append(elem)
 
     @lru_cache()
     def primitives_used(self) -> Set[Primitive]:
@@ -97,16 +82,6 @@ class DetGrammar(Grammar, ABC, Generic[U, V, W]):
                 out = self.rules[S][P]
                 s += "   {}\n".format(self.__rule_to_str__(P, out))
         return s
-
-    def to_multiset(self, program: Program) -> np.ndarray:
-        out = np.zeros((len(self._derivation2index)))
-
-        def reduce(acc, S, P, args):
-            elem = __tuplify__((S, P, args))
-            out[self._derivation2index[elem]] += 1
-
-        self.reduce_derivations(reduce, None, program, None)
-        return out
 
     def __repr__(self) -> str:
         return self.__str__()

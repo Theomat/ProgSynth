@@ -72,7 +72,7 @@ class PBESolver(ABC):
 
     def solve(
         self, task: Task[PBE], enumerator: ProgramEnumerator[None], timeout: float = 60
-    ) -> Generator[Program, None, bool]:
+    ) -> Generator[Program, bool, None]:
         """
         Solve the given task by enumerating programs with the given enumerator.
         When the timeout is reached, this function returns.
@@ -101,7 +101,6 @@ class PBESolver(ABC):
             except StopIteration as e:
                 self._close_task_solving_(task, enumerator, time, False, program)
                 raise e
-        return False
 
     def _test_(self, task: Task[PBE], program: Program) -> bool:
         """

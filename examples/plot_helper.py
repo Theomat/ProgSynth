@@ -246,16 +246,16 @@ def plot_dist(
     methods: Dict[str, Dict[int, List]],
     y_data: Tuple[int, str],
     x_axis_name: str,
-    nbins: int = 5,
 ) -> None:
     width = 1.0
     data_length = 0
     a_index, a_name = y_data
     max_a = max(
-        max(max(y[a_index] for y in x) for x in seed_dico.values())
+        max(max([y[a_index] for y in x]) for x in seed_dico.values())
         for seed_dico in methods.values()
     )
     bottom = None
+    nbins = 5
     bins = [max_a]
     while len(bins) <= nbins:
         bins.insert(0, np.sqrt(bins[0] + 1))
