@@ -82,7 +82,7 @@ class AStar(
         A generator which outputs the next most probable program
         """
         first = (self.G.start[0], self.G.start[1][0])  # type: ignore
-        heappush(self.frontier, HeapElement(0, [first], []))  # type: ignore
+        heappush(self.frontier, HeapElement(0, [first], []))
 
         while self.frontier:
             elem = heappop(self.frontier)
@@ -97,9 +97,9 @@ class AStar(
                     args = self.G.rules[S][P][0]  # type: ignore
                     p = self.G.probabilities[S][P]  # type: ignore
                     new_el = HeapElement(
-                        elem.priority + p,
+                        elem.priority + p,  # type: ignore
                         elem.to_expand + list(args),
-                        elem.parts + [(P, S)],  # type: ignore
+                        elem.parts + [(P, S)],
                     )
                     heappush(self.frontier, new_el)
 
