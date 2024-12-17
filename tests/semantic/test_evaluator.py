@@ -14,6 +14,7 @@ from synth.syntax.type_helper import FunctionType
 
 syntax = {
     "+1": FunctionType(INT, INT),
+    "0": INT,
     "head": FunctionType(List(PolymorphicType("a")), PolymorphicType("a")),
     "non_reachable": PrimitiveType("non_reachable"),
     "non_productive": FunctionType(INT, STRING),
@@ -21,6 +22,7 @@ syntax = {
 
 semantics = {
     "+1": lambda x: x + 1,
+    "0": 0,
 }
 max_depth = 4
 dsl = DSL(syntax)
@@ -35,7 +37,10 @@ def test_eval() -> None:
         program = pcfg.sample_program()
         try:
             for i in range(-25, 25):
-                assert eval.eval(program, [i]) == program.size() + i - 1
+                if len(program.used_variables()) == 0:
+                    assert eval.eval(program, [i]) == program.size() - 1
+                else:
+                    assert eval.eval(program, [i]) == program.size() + i - 1
         except Exception as e:
             assert False, e
 
@@ -48,7 +53,10 @@ def test_supports_list() -> None:
         program = pcfg.sample_program()
         try:
             for i in range(-25, 25):
-                assert eval.eval(program, [i, [i]]) == program.size() + i - 1
+                if len(program.used_variables()) == 0:
+                    assert eval.eval(program, [i]) == program.size() - 1
+                else:
+                    assert eval.eval(program, [i]) == program.size() + i - 1
         except Exception as e:
             assert False, e
 
@@ -61,7 +69,22 @@ def test_use_cache() -> None:
         program = pcfg.sample_program()
         try:
             for i in range(-25, 25):
-                assert eval.eval(program, [i]) == program.size() + i - 1
-                assert eval._cache[__tuplify__([i])][program] == program.size() + i - 1
+                if len(program.used_variables()) == 0:
+                    assert eval.eval(program, [i]) == program.size() - 1
+                    assert eval._cache[__tuplify__([i])][program] == program.size() - 1
+                else:
+                    assert eval.eval(program, [i]) == program.size() + i - 1
+                    assert (
+                        eval._cache[__tuplify__([i])][program] == program.size() + i - 1
+                    )
         except Exception as e:
             assert False, e
+
+
+def test_compress() -> None:
+    eval = DSLEvaluator(dsl.instantiate_semantics(semantics))
+    p = dsl.auto_parse_program("(+1 0)")
+    pp = dsl.auto_parse_program("1", constants={"1": (INT, 1)})
+    c = eval.compress(p)
+    assert c != p
+    assert c == pp
