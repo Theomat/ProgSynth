@@ -44,7 +44,7 @@ class DSLEvaluator(Evaluator):
         if isinstance(program, Function):
             args = [self.compress(p) for p in program.arguments]
             if len(program.type.returns().arguments()) == 0 and all(
-                a.is_constant() for a in args
+                not a.uses_variables() for a in args
             ):
                 before = self.use_cache
                 self.use_cache = False
