@@ -25,6 +25,12 @@ class Program(ABC):
     def __repr__(self) -> str:
         return self.__str__()
 
+    def uses_variables(self) -> bool:
+        """
+        Returns true if a variable is used.
+        """
+        return False
+
     def used_variables(self) -> Set[int]:
         """
         Returns the set of used variables numbers in this program.
@@ -138,6 +144,9 @@ class Variable(Program):
 
     def is_invariant(self, constant_types: Set[PrimitiveType]) -> bool:
         return False
+
+    def uses_variables(self) -> bool:
+        return True
 
     def clone(self) -> "Program":
         return Variable(self.variable)
@@ -297,6 +306,11 @@ class Function(Program):
             arg.is_constant() for arg in self.arguments
         )
 
+    def uses_variables(self) -> bool:
+        return self.function.uses_variables() or any(
+            arg.uses_variables() for arg in self.arguments
+        )
+
     def constants(self) -> Generator[Optional["Constant"], None, None]:
         g = [self.function.constants()] + [arg.constants() for arg in self.arguments]
         for gen in g:
@@ -381,6 +395,9 @@ class Lambda(Program):
 
     def __eq__(self, other: Any) -> bool:
         return isinstance(other, Lambda) and self.body == other.body
+
+    def uses_variables(self) -> bool:
+        return self.body.uses_variables()
 
     def __add_used_variables__(self, vars: Set[int]) -> None:
         return self.body.__add_used_variables__(vars)
