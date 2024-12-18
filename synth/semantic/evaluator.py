@@ -35,6 +35,10 @@ class DSLEvaluator(Evaluator):
         # Statistics
         self._total_requests = 0
         self._cache_hits = 0
+        self._dsl_constants: Dict[Any, Primitive] = {}
+        for p, val in semantics.items():
+            if len(p.type.arguments()) == 0:
+                self._dsl_constants[__tuplify__(val)] = p
 
     def compress(self, program: Program) -> Program:
         """
@@ -50,6 +54,9 @@ class DSLEvaluator(Evaluator):
                 self.use_cache = False
                 value = self.eval(program, [])
                 self.use_cache = before
+                tval = __tuplify__(value)
+                if tval in self._dsl_constants:
+                    return self._dsl_constants[tval]
                 return Constant(program.type.returns(), value, True)
             else:
                 return Function(program.function, args)

@@ -28,6 +28,20 @@ max_depth = 4
 dsl = DSL(syntax)
 cfg = CFG.depth_constraint(dsl, FunctionType(INT, INT), max_depth)
 
+other_syntax = {
+    "+1": FunctionType(INT, INT),
+    "0": INT,
+    "2": INT,
+}
+
+other_semantics = {
+    "+1": lambda x: x + 1,
+    "0": 0,
+    "2": 2,
+}
+other_dsl = DSL(other_syntax)
+other_cfg = CFG.depth_constraint(other_dsl, FunctionType(INT, INT), max_depth)
+
 
 def test_eval() -> None:
     eval = DSLEvaluator(dsl.instantiate_semantics(semantics))
@@ -82,9 +96,13 @@ def test_use_cache() -> None:
 
 
 def test_compress() -> None:
-    eval = DSLEvaluator(dsl.instantiate_semantics(semantics))
-    p = dsl.auto_parse_program("(+1 0)")
-    pp = dsl.auto_parse_program("1", constants={"1": (INT, 1)})
+    eval = DSLEvaluator(other_dsl.instantiate_semantics(other_semantics))
+    p = other_dsl.auto_parse_program("(+1 0)")
+    pp = other_dsl.auto_parse_program("1", constants={"1": (INT, 1)})
     c = eval.compress(p)
     assert c != p
+    assert c == pp
+    p = other_dsl.auto_parse_program("(+1 (+1 0))")
+    pp = other_dsl.auto_parse_program("2")
+    c = eval.compress(p)
     assert c == pp
