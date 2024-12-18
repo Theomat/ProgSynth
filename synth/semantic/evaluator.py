@@ -55,7 +55,7 @@ class DSLEvaluator(Evaluator):
                 value = self.eval(program, [])
                 self.use_cache = before
                 # Cancel compression of callable
-                if isinstance(value, Callable):
+                if isinstance(value, Callable): #type: ignore
                     return Function(program.function, args)
                 tval = __tuplify__(value)
                 if tval in self._dsl_constants:
