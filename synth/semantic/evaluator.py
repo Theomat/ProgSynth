@@ -40,7 +40,7 @@ class DSLEvaluator(Evaluator):
             if len(p.type.arguments()) == 0:
                 self._dsl_constants[__tuplify__(val)] = p
 
-    def compress(self, program: Program) -> Program:
+    def compress(self, program: Program, allow_constants: bool = True) -> Program:
         """
         Return a semantically equivalent version of the program by evaluating constant expressions.
         Note for data saving/loading purposes, partial applications are left untouched.
@@ -55,12 +55,15 @@ class DSLEvaluator(Evaluator):
                 value = self.eval(program, [])
                 self.use_cache = before
                 # Cancel compression of callable
-                if isinstance(value, Callable): #type: ignore
+                if isinstance(value, Callable):  # type: ignore
                     return Function(program.function, args)
                 tval = __tuplify__(value)
                 if tval in self._dsl_constants:
                     return self._dsl_constants[tval]
-                return Constant(program.type.returns(), value, True)
+                if allow_constants:
+                    return Constant(program.type.returns(), value, True)
+                else:
+                    return Function(program.function, args)
             else:
                 return Function(program.function, args)
         else:
