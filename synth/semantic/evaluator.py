@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Set
+from typing import Any, Dict, List, Set, Callable
 
 from synth.syntax.program import Constant, Function, Primitive, Program, Variable
 
@@ -54,6 +54,9 @@ class DSLEvaluator(Evaluator):
                 self.use_cache = False
                 value = self.eval(program, [])
                 self.use_cache = before
+                # Cancel compression of callable
+                if isinstance(value, Callable):
+                    return Function(program.function, args)
                 tval = __tuplify__(value)
                 if tval in self._dsl_constants:
                     return self._dsl_constants[tval]
