@@ -28,15 +28,12 @@ max_depth = 4
 dsl = DSL(syntax)
 cfg = CFG.depth_constraint(dsl, FunctionType(INT, INT), max_depth)
 
-other_syntax = {
-    "+1": FunctionType(INT, INT),
-    "0": INT,
-    "2": INT,
-}
+other_syntax = {"+1": FunctionType(INT, INT), "0": INT, "2": INT, "True": STRING}
 
 other_semantics = {
     "+1": lambda x: x + 1,
     "0": 0,
+    "True": True,
     "2": 2,
 }
 other_dsl = DSL(other_syntax)

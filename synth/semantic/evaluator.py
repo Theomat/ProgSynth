@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Set, Callable
+from typing import Any, Dict, List, Set, Callable, Tuple
 
 from synth.syntax.program import Constant, Function, Primitive, Program, Variable
 
@@ -35,10 +35,10 @@ class DSLEvaluator(Evaluator):
         # Statistics
         self._total_requests = 0
         self._cache_hits = 0
-        self._dsl_constants: Dict[Any, Primitive] = {}
+        self._dsl_constants: Dict[Tuple[Type, Any], Primitive] = {}
         for p, val in semantics.items():
             if len(p.type.arguments()) == 0:
-                self._dsl_constants[__tuplify__(val)] = p
+                self._dsl_constants[(p.type, __tuplify__(val))] = p
 
     def compress(self, program: Program, allow_constants: bool = True) -> Program:
         """
@@ -61,8 +61,9 @@ class DSLEvaluator(Evaluator):
                 if isinstance(value, Callable):  # type: ignore
                     return Function(program.function, args)
                 tval = __tuplify__(value)
-                if tval in self._dsl_constants:
-                    return self._dsl_constants[tval]
+                rtype = program.type
+                if (rtype, tval) in self._dsl_constants:
+                    return self._dsl_constants[(rtype, tval)]
                 if allow_constants:
                     return Constant(program.type.returns(), value, True)
                 else:
