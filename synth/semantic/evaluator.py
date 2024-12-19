@@ -46,7 +46,10 @@ class DSLEvaluator(Evaluator):
         Note for data saving/loading purposes, partial applications are left untouched.
         """
         if isinstance(program, Function):
-            args = [self.compress(p) for p in program.arguments]
+            args = [
+                self.compress(p, allow_constants=allow_constants)
+                for p in program.arguments
+            ]
             if len(program.type.returns().arguments()) == 0 and all(
                 not a.uses_variables() for a in args
             ):
