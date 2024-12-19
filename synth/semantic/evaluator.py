@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Set, Callable, Tuple
 
-from synth.syntax.program import Constant, Function, Primitive, Program, Variable
+from synth.syntax.program import Constant, Function, Primitive, Program, Variable, Type
 
 
 class Evaluator(ABC):
