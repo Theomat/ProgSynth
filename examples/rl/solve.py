@@ -18,7 +18,7 @@ from rl.rl_utils import type_for_env
 from synth.syntax import (
     CFG,
     ProbDetGrammar,
-    cd_enumerate_prob_grammar as enumerate_programs,
+    bps_enumerate_prob_grammar as enumerate_programs,
     auto_type,
 )
 from synth.utils.import_utils import import_file_function
@@ -71,7 +71,7 @@ filter_pot_funs = [
 # =========================================================================
 # GLOBAL PARAMETERS
 # max number of episodes that should be done at most to compare two possiby equal (optimised) candidates
-MAX_BUDGET: int = 40
+MAX_BUDGET: int = 20
 
 np.random.seed(SEED)
 
@@ -99,7 +99,8 @@ for filter in filters:
     final_filter = filter if final_filter is None else final_filter.intersection(filter)
 cfg = CFG.infinite(dsl, type_request, n_gram=1, constant_types=constant_types)
 pcfg = ProbDetGrammar.uniform(cfg)
-enumerator = enumerate_programs(pcfg, precision=1e-2)
+# enumerator = enumerate_programs(pcfg, precision=1e-2)
+enumerator = enumerate_programs(pcfg)
 enumerator.filter = final_filter
 
 
@@ -109,7 +110,31 @@ evaluator: CleverEvaluator = CleverEvaluator(
 const_opti = ConstantOptimizer(SEED)
 
 
+stats = [
+    (
+        "programs",
+        "removed",
+        "time",
+        "score-best-mean",
+        "score-best-min",
+        "score-best-max",
+    )
+]
+
+
 def print_search_state():
+    best_program, q_value, incertitude, mini, maxi = evaluator.get_best_stats()
+
+    stats.append(
+        (
+            counter.get("programs.iterated").total,
+            enumerator.filtered,
+            chronometer.total_time(),
+            q_value,
+            mini,
+            maxi,
+        )
+    )
     total = counter.get("programs.iterated").total
     print()
     print(
@@ -196,6 +221,10 @@ def at_exit():
     print_search_state()
     print("=" * 60)
     print_best_program()
+    import csv
+
+    with open(f"./search_data_{env_name}.csv", "w") as fd:
+        csv.writer(fd).writerows(stats)
     # if evaluator.num_candidates() > 0:
     # program_eval.render_program(env, evaluator.get_best_stats()[0], prog_evaluator)
 
