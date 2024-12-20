@@ -93,7 +93,14 @@ constant_types = set()
 if "float" in str(type_request):
     constant_types.add(auto_type("float"))
 # Filter
-filters = [f(type_request, constant_types) for f in filter_pot_funs]
+filters = [
+    f(
+        type_request,
+        constant_types,
+        env.action_space.n if "action" in str(type_request) else 0,
+    )
+    for f in filter_pot_funs
+]
 final_filter = None
 for filter in filters:
     final_filter = filter if final_filter is None else final_filter.intersection(filter)
@@ -152,7 +159,7 @@ def print_search_state():
         "skipped:",
         f"{enumerator.filtered} ({enumerator.filtered *100 /total:.1f}%)",
     )
-    total = counter.total("episodes")
+    total = max(1, counter.total("episodes"))
     print(
         "[SEARCH]",
         f"episodes (total:{total}):",

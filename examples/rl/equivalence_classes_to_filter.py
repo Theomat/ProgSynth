@@ -227,11 +227,14 @@ class FiltersBuilder:
                 out += f'\t"{p}": lambda *args: {code},\n'
             out += "}\n\n"
         # GETTER FUNCTION
-        out += "def get_filter(type_request: Type, constant_types: Set[Type]) -> Filter[Program]:\n"
+        out += "def get_filter(type_request: Type, constant_types: Set[Type], actions: int) -> Filter[Program]:\n"
         out += "\timport copy\n"
         out += "\tr = copy.deepcopy(__rules)\n"
         out += "\tfor i, arg_type in enumerate(type_request.arguments()):\n"
         out += f"\t\tr[(Variable(i, arg_type), tuple())] = __states[{state2index[(uk, Variable(0, uk))]}]\n"
+        out += "\tfor i in range(actions):\n"
+        out += '\t\tr[(Primitive(f"A{i}", auto_type("action")), tuple())]'
+        out += f" = __states[{state2index[(uk, Variable(0, uk))]}]\n"
         out += "\tfor cst_type in constant_types:\n"
         out += f"\t\tr[(Constant(cst_type), tuple())] = __states[{state2index[(uk, Variable(0, uk))]}]\n"
         out += "\tx: Filter[Program] = DFTAFilter(DFTA(r, set()))\n"
