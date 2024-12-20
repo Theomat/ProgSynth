@@ -26,6 +26,7 @@ class ProgramEnumerator(ABC, Generic[U]):
     def __init__(self, filter: Optional[Filter[Program]] = None) -> None:
         super().__init__()
         self.filter = filter
+        self.filtered = 0
 
     @classmethod
     @abstractmethod
@@ -63,7 +64,9 @@ class ProgramEnumerator(ABC, Generic[U]):
         pass
 
     def _should_keep_subprogram(self, program: Program) -> bool:
-        return self.filter is None or self.filter.accept(program)
+        kept = self.filter is None or self.filter.accept(program)
+        self.filtered += not kept
+        return kept
 
     @abstractmethod
     def clone(
