@@ -1,3 +1,4 @@
+from types import SimpleNamespace
 from typing import List, Dict, Optional, Set, Tuple
 import itertools
 import copy
@@ -358,7 +359,7 @@ if __name__ == "__main__":
     from control_dsl import get_dsl
 
     # Bit of a hack
-    dsl, evaluator = get_dsl(auto_type("float"), None)
+    dsl, evaluator = get_dsl(auto_type("float -> action"), SimpleNamespace(n=2))
     output_file: str = parameters.output.format(dsl="control")
 
     with open(data_file) as fd:
