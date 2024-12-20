@@ -1,0 +1,6 @@
+--env
+BipedalWalker-v3
+--goal
+300
+--env-build-arg
+{"hardcore":true}
