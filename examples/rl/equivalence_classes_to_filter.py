@@ -62,6 +62,8 @@ class FiltersBuilder:
         for state in relevant:
             del self.dfta.rules[state]
         self.stats["constraints.successes"] += 1
+        if verbose:
+            print("\texploited commutativity of", program.function)
         return True
 
     def __simple_constraint(self, program: Program) -> bool:
@@ -84,6 +86,8 @@ class FiltersBuilder:
                     relevant.append(state)
         for state in relevant:
             del self.dfta.rules[state]
+        if verbose:
+            print("\tforbid", program)
         return True
 
     def __program_to_stateless_constraint(self, program: Program) -> bool:
@@ -94,6 +98,8 @@ class FiltersBuilder:
                     return False
                 diff.append((i, arg.variable))
             self.equal_parameters_reject.add((program.function, tuple(diff)))
+            if verbose:
+                print("\tstateless exploit of", program)
             return True
         return False
 
