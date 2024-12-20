@@ -71,7 +71,7 @@ filter_pot_funs = [
 # =========================================================================
 # GLOBAL PARAMETERS
 # max number of episodes that should be done at most to compare two possiby equal (optimised) candidates
-MAX_BUDGET: int = 20
+MAX_BUDGET: int = 40
 
 np.random.seed(SEED)
 
