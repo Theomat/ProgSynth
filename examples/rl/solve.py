@@ -147,16 +147,10 @@ def print_search_state():
             ]
         ),
     )
-    total = counter.total("skipped")
     print(
         "[SEARCH]",
         "skipped:",
-        ", ".join(
-            [
-                f"{key}:{value.total} ({value.total *100 /total:.1f}%)"
-                for key, value in counter.items("skipped")
-            ]
-        ),
+        f"{enumerator.filtered} ({enumerator.filtered *100 /total:.1f}%)",
     )
     total = counter.total("episodes")
     print(
@@ -239,7 +233,7 @@ while True:
     # print("PROGRAM:", program)
     counter.count("programs.iterated", 1)
     iterated = counter.get("programs.iterated").total
-    if iterated % 200 == 0 and iterated > 0:
+    if iterated % 100 == 0 and iterated > 0:
         print_search_state()
     copy = program.clone()
     tiles = None
